@@ -1,0 +1,14 @@
+server:
+  port: 8080
+servlet:
+  context-path: /Digital_Study_Resource
+#
+spring:
+  datasource:
+    url: "jdbc:mysql://localhost:3306/ShopEProduction"
+    username: root #replace by local username
+    password: 12345678 #replace by local password
+  jpa:
+    hibernate:
+      ddl-auto: update
+      show-sql: true

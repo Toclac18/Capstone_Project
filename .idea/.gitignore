@@ -1,0 +1,70 @@
+##############################
+# Java / Spring Boot (Backend)
+##############################
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+gradle-app.setting
+
+# Logs
+*.log
+logs/
+
+# IntelliJ IDEA / JetBrains
+.idea/
+*.iml
+*.iws
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# STS (Spring Tool Suite)
+.springBeans
+
+# Mac OS
+.DS_Store
+
+##############################
+# Node.js / Next.js (Frontend)
+##############################
+
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files (DO NOT commit API keys)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor folders
+.vscode/
+
+##############################
+# General
+##############################
+tmp/

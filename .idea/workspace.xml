@@ -4,7 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="929f96a1-63ac-4e65-b9ee-5148ddf47e2d" name="Changes" comment="" />
+    <list default="true" id="929f96a1-63ac-4e65-b9ee-5148ddf47e2d" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/AndroidProjectSystem.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/be/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/be/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/be/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/be/src/main/resources/application.yaml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -35,9 +45,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 3
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
   <component name="ProjectId" id="316LsGsvlzgNa7RWuVMEs2m43p0" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -52,6 +62,8 @@
     "RequestMappingsPanelWidth0": "75",
     "RequestMappingsPanelWidth1": "75",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "Spring Boot.DistureBeApplication.executor": "Run",
     "git-widget-placeholder": "master",
     "last_opened_file_path": "/Users/quannt18/Documents/QuanNT18/FPT_University/Capstone_Project",
@@ -64,11 +76,16 @@
     "project.structure.proportion": "0.0",
     "project.structure.side.proportion": "0.0",
     "vue.rearranger.settings.migration": "true"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "postgresql"
+    ]
   }
 }]]></component>
   <component name="RunManager">
     <configuration name="DistureBeApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
-      <module name="main.main" />
+      <module name="be.main" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="com.main.DistureBeApplication" />
       <method v="2">
         <option name="Make" enabled="true" />
@@ -91,6 +108,7 @@
       <option name="presentableId" value="Default" />
       <updated>1754839780771</updated>
       <workItem from="1754839782152" duration="920000" />
+      <workItem from="1755341729517" duration="422000" />
     </task>
     <servers />
   </component>

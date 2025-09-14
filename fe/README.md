@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# My Next.js App
+
+Các file sẽ được route tự động theo src/app, những file thuộc folder nào sẽ được router theo folder đấy và bắt buộc tên file trong folder đấy phải là page hoặc route
+
+## Features
+
+- **Next.js 15** with App Router
+- **TypeScript** for type safety
+- **Tailwind CSS** for styling
+- **Responsive Design** with mobile-first approach
+- **Clean Architecture** with organized folder structure
+
+## Project Structure
+
+```
+src/
+├── app/                    # App Router pages
+│   ├── auth/              # Authentication pages
+│   │   ├── signIn/        # Sign in page
+│   │   ├── signUp/        # Sign up page
+│   │   └── layout.tsx     # Auth layout (MISSING)
+│   ├── dashboard/         # Dashboard page
+│   ├── layout.tsx         # Root layout with Header & Footer
+│   └── page.tsx           # Home page
+├── components/            # Reusable components
+│   ├── Header.tsx         # Navigation header
+│   └── Footer.tsx         # Site footer
+├── hooks/                 # Custom React hooks
+│   ├── useLocalStorage.ts # Local storage hook
+│   └── useApi.ts          # Generic API hook
+├── lib/                   # Utility libraries
+│   ├── api.ts             # Axios configuration
+│   ├── constants.ts       # API endpoints & constants
+│   └── utils.ts           # Helper functions
+├── services/              # API service layer
+│   └── auth.ts            # Authentication service 
+└── .env.local             # Environment variables
+```
 
 ## Getting Started
 
-First, run the development server:
-
+1. Install dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Run the development server:
+```bash
+npm run dev
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Available Scripts
 
-## Learn More
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
 
-To learn more about Next.js, take a look at the following resources:
+## Pages
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Home** (`/`) - Welcome page with feature cards
+- **Dashboard** (`/dashboard`) - Dashboard with stats cards
+- **Sign In** (`/auth/signIn`) - User authentication
+- **Sign Up** (`/auth/signUp`) - User registration
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Tech Stack
 
-## Deploy on Vercel
+- **Framework**: Next.js 15
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **HTTP Client**: Axios
+- **Fonts**: Geist Sans & Geist Mono
+- **Linting**: ESLint
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Development
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is set up with:
+- TypeScript for type safety
+- Tailwind CSS for styling
+- ESLint for code quality
+- Path aliases (`@/` for `src/`)
+
+## Deployment
+
+The easiest way to deploy is using [Vercel](https://vercel.com), which is optimized for Next.js applications.

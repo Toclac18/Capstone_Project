@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Gradle: me.paulschwarz:spring-dotenv:4.0.0" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="me.paulschwarz" artifactId="spring-dotenv" version="4.0.0" baseVersion="4.0.0" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/me.paulschwarz/spring-dotenv/4.0.0/e0180f80e685a9506d1942e6836a16dee050ebaf/spring-dotenv-4.0.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -1,0 +1,35 @@
+# ==== Core AI stack (CUDA 12.1 compatible) ====
+# → Cài bằng: pip install torch==2.3.0+cu121 torchvision==0.18.0+cu121 torchaudio==2.3.0+cu121 --index-url https://download.pytorch.org/whl/cu121
+torch==2.3.0+cu121
+torchvision==0.18.0+cu121
+torchaudio==2.3.0+cu121
+
+# ==== Hugging Face ecosystem (Stable Stack) ====
+transformers==4.41.2           # Giữ nguyên, tránh lỗi EncoderDecoderCache
+accelerate==0.31.0             # Phiên bản cuối cùng không có dispatch_batches/even_batches
+datasets==2.19.1
+evaluate==0.4.3
+peft==0.10.0                   # Tương thích với transformers 4.41.x
+trl==0.9.6                     # Cho training SFT / RLHF nhẹ
+sentencepiece==0.1.99
+protobuf<5                     # Giữ 3.x để tránh lỗi serialization
+huggingface-hub==0.24.5
+
+# ==== Optional metric dependencies ====
+rouge_score==0.1.2             # cho evaluate rouge
+nltk==3.9.1                    # cho evaluate rouge
+absl-py==2.1.0                 # dependency của rouge_score
+
+# ==== Web API & utilities ====
+fastapi==0.111.0
+uvicorn[standard]==0.30.0
+python-multipart==0.0.9
+pydantic==2.7.1
+python-dotenv==1.0.1
+tqdm==4.66.2
+
+# ==== System / Misc ====
+psutil>=5.9.0
+safetensors>=0.4.3
+packaging>=24.0
+numpy<2.0                      # Giữ numpy 1.x để tránh lỗi compile mismatch

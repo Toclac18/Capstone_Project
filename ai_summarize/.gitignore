@@ -1,0 +1,62 @@
+# ========================
+# Python
+# ========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.dll
+*.log
+
+# Virtual environment
+.venv/
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# ========================
+# Jupyter / Colab
+# ========================
+.ipynb_checkpoints/
+*.ipynb
+
+# ========================
+# OS specific
+# ========================
+.DS_Store
+Thumbs.db
+
+# ========================
+# Project specific
+# ========================
+# Checkpoints & pretrained weights (quá nặng, không commit)
+checkpoints/
+!checkpoints/.gitkeep
+
+# Outputs logs & history
+outputs/
+!outputs/.gitkeep
+
+# Uploaded datasets
+training/data/*.jsonl
+!training/data/sample_led.jsonl
+!training/data/sample_llama.jsonl
+
+# Training eval data
+training/training_data/*.jsonl
+!training/training_data/eval_led.jsonl
+!training/training_data/eval_llama.jsonl
+
+# Cache từ Hugging Face & Transformers
+~/.cache/
+.huggingface/
+transformers_cache/
+datasets_cache/
+
+# IDE
+.vscode/
+.idea/

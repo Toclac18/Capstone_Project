@@ -1,0 +1,14 @@
+inference:
+  llama_threshold: 300     # nếu < 300 từ thì dùng Llama
+  chunk_size: 512          # số từ tối đa trong 1 chunk cho summarizer
+
+logging:
+  history_file: "outputs/run_output/history.json"
+
+models:
+  summarizer:
+    name: "facebook/bart-base"    # hoặc allenai/led-base-16384
+    precision: "fp16"             # fp32 | fp16 | int8
+  generator:
+    name: "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+    precision: "fp16"   # fp32 | fp16 | int8 | 4bit

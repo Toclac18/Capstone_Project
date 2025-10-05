@@ -1,125 +1,120 @@
 import os
-import json
 import time
 from datetime import datetime
+
 import torch
+import evaluate
 import numpy as np
 from datasets import Dataset
-import evaluate
+
+# --- Patch tránh lỗi dispatch_batches/even_batches với accelerate ---
 import inspect
 import accelerate
-
-# --- Patch lỗi dispatch_batches / even_batches ---
-sig = inspect.signature(accelerate.Accelerator.__init__)
-if "dispatch_batches" not in sig.parameters:
-    old_init = accelerate.Accelerator.__init__
+_sig = inspect.signature(accelerate.Accelerator.__init__)
+if "dispatch_batches" not in _sig.parameters:
+    _old_init = accelerate.Accelerator.__init__
     def _patched_init(self, *args, **kwargs):
         kwargs.pop("dispatch_batches", None)
         kwargs.pop("even_batches", None)
-        return old_init(self, *args, **kwargs)
+        return _old_init(self, *args, **kwargs)
     accelerate.Accelerator.__init__ = _patched_init
-# --------------------------------------------------
+# -------------------------------------------------------------------
 
-from transformers import (
-    AutoTokenizer,
-    AutoModelForSeq2SeqLM,
-)
-# --- Patch fallback tránh lỗi EncoderDecoderCache ---
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+# Fallback an toàn nếu Seq2SeqTrainer không khả dụng
 from transformers import Trainer as BaseTrainer, TrainingArguments as BaseArgs
 try:
     from transformers import Seq2SeqTrainer, Seq2SeqTrainingArguments
+    _HAS_S2S = True
 except Exception:
     Seq2SeqTrainer = BaseTrainer
     Seq2SeqTrainingArguments = BaseArgs
-# --------------------------------------------------
+    _HAS_S2S = False
+
 from training.utils.train_history import log_eval
+from training.utils.file_loader import load_all_data_from_folder
 
 
-def train_led(train_file: str):
-    """Fine-tune BART/LED trên dataset JSONL."""
+def train_led(data_folder: str):
+    """Fine-tune BART/LED trên thư mục chứa .txt/.docx/.pdf (dùng nội dung tự tóm tắt)."""
     start_time = datetime.now().isoformat()
-    start = time.time()
+    t0 = time.time()
 
-    print(f"🚀 Fine-tuning LED/BART on {train_file}", flush=True)
+    print(f"🚀 Fine-tuning LED/BART using data in folder: {data_folder}", flush=True)
 
-    tokenizer = AutoTokenizer.from_pretrained("facebook/bart-base")
-    model = AutoModelForSeq2SeqLM.from_pretrained("facebook/bart-base")
+    # 1) Model & tokenizer (bạn có thể đổi sang 'allenai/led-base-16384' nếu cần input dài)
+    model_name = "facebook/bart-base"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
-    # --- Load dataset ---
-    data = []
-    with open(train_file, encoding="utf-8") as f:
-        for l in f:
-            if not l.strip():
-                continue
-            try:
-                obj = json.loads(l)
-                if "text" in obj and "summary" in obj:
-                    data.append(obj)
-            except Exception:
-                continue
+    if tokenizer.pad_token is None:
+        # BART đã có pad_token, phòng hờ trường hợp khác
+        tokenizer.pad_token = tokenizer.eos_token
 
-    if len(data) == 0:
-        raise ValueError("Dataset rỗng hoặc sai định dạng JSONL.")
+    # 2) Load dữ liệu (đã chuẩn hóa thành [{'text': ..., 'summary': ...}, ...])
+    data = load_all_data_from_folder(data_folder)
+    if not data:
+        raise ValueError("❌ No valid training data found in folder.")
+    raw_ds = Dataset.from_list(data)
 
-    dataset = Dataset.from_list(data)
-
+    # 3) Tiền xử lý cho batched=True
     def preprocess(batch):
-        text = batch.get("text", "")
-        summary = batch.get("summary", "")
-        if not isinstance(text, str) or not isinstance(summary, str):
-            return {}
-        model_inputs = tokenizer(
-            text,
-            max_length=512,
+        # batch["text"] & batch["summary"] là list[str]
+        enc = tokenizer(
+            batch["text"],
+            max_length=512,             # đổi nếu muốn input dài hơn khi dùng LED
             truncation=True,
-            padding="max_length"
+            padding="max_length",
         )
-        with tokenizer.as_target_tokenizer():
-            labels = tokenizer(
-                summary,
-                max_length=128,
-                truncation=True,
-                padding="max_length"
-            )
-        model_inputs["labels"] = labels["input_ids"]
-        return model_inputs
+        # dùng text_target để mã hóa label đúng nhánh decoder (không cần as_target_tokenizer)
+        lab = tokenizer(
+            text_target=batch["summary"],
+            max_length=128,
+            truncation=True,
+            padding="max_length",
+        )
+        enc["labels"] = lab["input_ids"]          # (batch, seq_len) list[list[int]]
+        return enc
 
-    dataset = dataset.map(preprocess)
+    ds = raw_ds.map(preprocess, batched=True, remove_columns=raw_ds.column_names)
 
+    # 4) Metric (ROUGE)
     rouge = evaluate.load("rouge")
 
     def compute_metrics(eval_pred):
+        """
+        Robust với cả 2 trường hợp:
+        - Seq2SeqTrainer + predict_with_generate=True -> preds là token IDs [bsz, seq]
+        - Fallback Trainer (hoặc cấu hình khác) -> có thể trả về logits [bsz, seq, vocab]
+        """
         preds, labels = eval_pred
 
-        # --- Chuẩn hóa dữ liệu ---
+        # Chuẩn hoá preds
         if isinstance(preds, tuple):
             preds = preds[0]
-        preds = np.array(preds)
-        labels = np.array(labels)
+        preds = np.asarray(preds)
+        if preds.ndim == 3:  # logits -> ids
+            preds = preds.argmax(axis=-1)
+        preds_list = preds.tolist()  # list[list[int]]
 
-        # --- Lọc bỏ token -100 (ignore index) ---
-        preds = [p for p in preds if len(p) > 0]
-        labels = [l for l in labels if len(l) > 0]
+        # Chuẩn hoá labels: thay -100 bằng pad_token_id để decode
+        labels = np.asarray(labels)
+        pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
+        labels = np.where(labels == -100, pad_id, labels)
+        labels_list = labels.tolist()
 
-        if len(preds) == 0 or len(labels) == 0:
-            return {"rougeL": 0.0}
+        # Decode
+        decoded_preds = tokenizer.batch_decode(preds_list, skip_special_tokens=True)
+        decoded_labels = tokenizer.batch_decode(labels_list, skip_special_tokens=True)
 
-        # --- Chuyển thành list[int] và bỏ -100 ---
-        preds_clean = [[int(x) for x in np.array(p).flatten().tolist() if x >= 0] for p in preds]
-        labels_clean = [[int(x) for x in np.array(l).flatten().tolist() if x >= 0] for l in labels]
+        decoded_preds = [p.strip() for p in decoded_preds]
+        decoded_labels = [l.strip() for l in decoded_labels]
 
-        if len(preds_clean) == 0 or len(labels_clean) == 0:
-            return {"rougeL": 0.0}
+        return rouge.compute(predictions=decoded_preds, references=decoded_labels)
 
-        decoded_preds = tokenizer.batch_decode(preds_clean, skip_special_tokens=True)
-        decoded_labels = tokenizer.batch_decode(labels_clean, skip_special_tokens=True)
-
-        try:
-            result = rouge.compute(predictions=decoded_preds, references=decoded_labels)
-        except Exception:
-            result = {"rougeL": 0.0}
-        return result
-
+    # 5) Training args
+    # Với Seq2SeqTrainer, predict_with_generate=True để evaluate dùng token-ids sinh từ generate()
+    # Nếu fallback về Base Trainer, cờ này được bỏ qua an toàn.
     args = Seq2SeqTrainingArguments(
         output_dir="outputs/tmp_led",
         per_device_train_batch_size=2,
@@ -128,37 +123,51 @@ def train_led(train_file: str):
         save_strategy="no",
         report_to="none",
         fp16=torch.cuda.is_available(),
+        predict_with_generate=True,        # 🔑 ưu tiên IDs thay vì logits
+        generation_max_length=128,         # độ dài khi generate cho eval
+        generation_num_beams=1,            # nhanh & đơn giản
+        remove_unused_columns=True,
     )
 
-    trainer = Seq2SeqTrainer(
+    # 6) Trainer
+    TrainerCls = Seq2SeqTrainer if _HAS_S2S else BaseTrainer
+    trainer = TrainerCls(
         model=model,
         args=args,
-        train_dataset=dataset,
-        eval_dataset=dataset,
+        train_dataset=ds,
+        eval_dataset=ds,                   # có thể đổi sang subset nếu muốn nhanh hơn
         tokenizer=tokenizer,
         compute_metrics=compute_metrics,
     )
 
+    # 7) Train & Eval
+    print("🎯 Starting fine-tuning ...", flush=True)
     trainer.train()
-    metrics = trainer.evaluate(dataset)
+    metrics = trainer.evaluate()
 
-    runtime = round(time.time() - start, 2)
+    runtime = round(time.time() - t0, 2)
     end_time = datetime.now().isoformat()
 
     metrics.update({
-        "train_file": train_file,
+        "train_folder": data_folder,
         "epochs": 1,
         "runtime": runtime,
         "start_time": start_time,
         "end_time": end_time,
+        "model_name": model_name,
     })
 
-    log_eval("led", metrics)
+    # 8) Log + save
+    try:
+        log_eval("led", metrics)
+        print("📊 Evaluation log saved successfully.", flush=True)
+    except Exception as e:
+        print(f"⚠️ Failed to log evaluation: {e}", flush=True)
 
     os.makedirs("checkpoints/led_ft", exist_ok=True)
     model.save_pretrained("checkpoints/led_ft")
     tokenizer.save_pretrained("checkpoints/led_ft")
 
-    print(f"💾 Saved fine-tuned LED model → checkpoints/led_ft")
-    print(f"✅ Completed in {runtime}s.")
+    print("💾 Saved fine-tuned LED model → checkpoints/led_ft", flush=True)
+    print(f"✅ Completed in {runtime}s.", flush=True)
     return metrics

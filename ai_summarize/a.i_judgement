@@ -1,0 +1,92 @@
+I. Các trường chung cho cả hai model
+
+Dù là TinyLLaMA hay BART/LED, pipeline của bạn ghi ra nhiều trường “meta” giống nhau, phục vụ cho theo dõi và so sánh.
+
+Trường									Ý nghĩa
+timestamp								Thời điểm log kết quả, giúp phân biệt giữa các lần train.
+task									Loại model được train (llama hoặc led).
+model_name								Tên mô hình gốc tải từ Hugging Face (VD: TinyLlama/TinyLlama-1.1B-Chat-v1.0, facebook/bart-base).
+train_folder							Thư mục dữ liệu dùng để train, thường là training/data_training.
+epochs / epoch							Số vòng lặp huấn luyện (một epoch = đi qua toàn bộ dữ liệu một lần).
+runtime									Tổng thời gian train (giây).
+eval_runtime							Thời gian đánh giá (validation).
+start_time / end_time					Dấu mốc thời gian bắt đầu và kết thúc huấn luyện.
+eval_samples_per_second					Tốc độ đánh giá (mẫu/giây) – giúp ước tính hiệu năng.
+eval_steps_per_second					Số bước đánh giá/giây – dùng khi batch size > 1.
+eval_loss								Cross-entropy loss trung bình trên tập đánh giá. Giá trị càng thấp, mô hình khớp dữ liệu càng tốt.
+epochs									Tổng số epoch đã chạy (có thể khác epoch trong lần eval nếu bạn log sớm).
+
+⚙️ Loss là giá trị mà optimizer cố gắng giảm trong quá trình train.
+Trong các log này, loss chỉ mang ý nghĩa so sánh giữa các lần train cùng model, không nên so giữa llama và led vì khác kiến trúc.
+
+🦙 II. Các trường riêng của TinyLLaMA (task = llama)
+
+Loại Causal Language Model (Chat / Text Generation)
+=> Đánh giá bằng BLEU + Perplexity
+
+Trường									Ý nghĩa chi tiết
+eval_bleu								Chỉ số BLEU (0 → 1): đo mức trùng khớp giữa câu mô hình sinh ra và câu tham chiếu (reference).
+										• 1.0 = trùng hoàn toàn, 0.0 = không trùng gì.
+eval_precisions							Danh sách 4 giá trị: độ chính xác của 1-gram, 2-gram, 3-gram, 4-gram (BLEU chi tiết).
+										• Nói cách khác, tỉ lệ phần trăm token/cụm đúng ở từng cấp.
+eval_brevity_penalty					Phạt độ ngắn trong BLEU. Nếu output quá ngắn so với reference → bị phạt.
+										• 1.0 nghĩa là độ dài phù hợp, không bị phạt.
+eval_length_ratio						Tỉ lệ độ dài output/reference. =1 → bằng nhau, <1 → ngắn hơn, >1 → dài hơn.
+eval_translation_length					Tổng số token được mô hình sinh ra (sau tokenizer).
+eval_reference_length					Tổng số token trong câu gốc (reference). Dùng để tính brevity_penalty.
+ppl										Perplexity = e^(eval_loss). Là mức “ngạc nhiên” của model trước dữ liệu:
+										• Càng thấp → model càng chắc chắn khi dự đoán từ kế tiếp.
+										• Thường: ppl≈2–3 là tốt, >10 là kém.
+epoch									Vòng lặp đang được log (ở đây 0.66 nghĩa là đang giữa epoch đầu tiên).
+
+🧠 Cách đọc BLEU/PPL:
+
+BLEU cao (≥0.7) + PPL thấp (≤3) → mô hình sinh câu chính xác, tự tin.
+
+BLEU thấp nhưng PPL thấp → sinh đúng ngữ pháp nhưng khác nội dung.
+
+BLEU cao mà PPL cao → mô hình có xu hướng “nhớ máy móc” (overfit).
+
+📘 III. Các trường riêng của BART/LED (task = led)
+
+Loại Seq2Seq Model (Encoder–Decoder)
+=> Đánh giá bằng ROUGE
+
+Trường									Ý nghĩa chi tiết
+eval_rouge1								ROUGE-1: tỉ lệ trùng unigram (từng từ đơn) giữa tóm tắt mô hình và tóm tắt thật.
+eval_rouge2								ROUGE-2: tỉ lệ trùng bigram (2 từ liên tiếp). Cho thấy mức độ chính xác ngữ cảnh.
+eval_rougeL								ROUGE-L: dựa trên chuỗi con dài nhất chung (Longest Common Subsequence). Cho thấy mức khớp cấu trúc câu.
+eval_rougeLsum							Phiên bản ROUGE-L tổng hợp toàn văn bản. Dùng nhiều trong tóm tắt vì phản ánh cả thứ tự và ý chính.
+epoch									Epoch hiện tại (ở đây là 1 → đã hoàn thành 1 vòng train).
+
+🧠 Cách đọc ROUGE:
+
+ROUGE-1 cao → mô hình “nắm được từ khoá chính”.
+
+ROUGE-2 cao → mô hình “viết liền mạch, đúng cụm”.
+
+ROUGE-Lsum cao → mô hình “nắm được cấu trúc và nội dung chung”.
+
+Thông thường:
+
+0.5–0.6: ổn cho model nhỏ.
+
+0.7–0.8: rất tốt (thường cần pretrain mạnh và dữ liệu lớn).
+
+🔍 IV. So sánh các chỉ số giữa hai loại mô hình
+Đặc điểm									TinyLLaMA (BLEU/PPL)														BART/LED (ROUGE)
+Thước đo chính								BLEU (độ trùng câu), PPL (độ tin tưởng token)								ROUGE (độ trùng nội dung tóm tắt)
+Thang điểm	0–1 							(BLEU), càng cao càng tốt													0–1 (ROUGE), càng cao càng tốt
+Loss thấp = tốt								✔️																			✔️
+Tự tin (ppl)								Có																			Không dùng
+Đo độ dài output							Có (brevity penalty, length ratio)											Không cần
+Thích hợp đánh giá							Chatbot, paraphrase, sinh văn												Tóm tắt, dịch, viết lại
+Giải thích dễ hiểu hơn						BLEU đo “giống câu gốc đến đâu”												ROUGE đo “nội dung quan trọng trùng bao nhiêu”
+
+V. Tóm tắt ngắn gọn
+Nhóm										Trường														Ý nghĩa chính
+Huấn luyện									eval_loss, ppl, epochs, runtime								Hiệu quả huấn luyện
+Tốc độ										eval_samples_per_second, eval_steps_per_second				Hiệu năng đánh giá
+Chất lượng									eval_bleu, eval_precisions, eval_rouge*						Độ giống so với bản thật
+Chiều dài									brevity_penalty, length_ratio								Cân bằng độ dài
+Thông tin hệ thống							timestamp, model_name, train_folder							Quản lý và so sánh run

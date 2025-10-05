@@ -6,14 +6,9 @@ os.makedirs(os.path.dirname(EVAL_LOG_FILE), exist_ok=True)
 
 def log_eval(task: str, metrics: dict):
     """Ghi log sau mỗi lần training hoặc evaluation."""
-    record = {
-        "timestamp": datetime.now().isoformat(),
-        "task": task,
-        "metrics": metrics,
-    }
-
-    # Load lịch sử cũ nếu có
+    record = {"timestamp": datetime.now().isoformat(), "task": task, "metrics": metrics}
     history = []
+
     if os.path.exists(EVAL_LOG_FILE):
         try:
             with open(EVAL_LOG_FILE, "r", encoding="utf-8") as f:

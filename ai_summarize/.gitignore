@@ -57,6 +57,11 @@ training/training_data/*.jsonl
 transformers_cache/
 datasets_cache/
 
+# Dataset
+training/data/_merged_dataset.jsonl
+training/data_training/*
+!training/data_training/.gitkeep
+
 # IDE
 .vscode/
 .idea/

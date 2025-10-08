@@ -7,5 +7,12 @@ export default function OAuthCallback({ searchParams }: { searchParams: { token?
       window.location.href='/dashboard';
     }else{ window.location.href='/login'; }
   },[searchParams]);
-  return <main>Processing OAuth2 callback...</main>;
+  return (
+    <div style={{ padding: '48px 24px' }}>
+      <div style={{ maxWidth: 640, margin: '0 auto', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 24 }}>
+        <h3 style={{ marginTop: 0 }}>Đang xử lý xác thực OAuth2...</h3>
+        <p style={{ color: '#475569' }}>Vui lòng đợi trong giây lát.</p>
+      </div>
+    </div>
+  );
 }

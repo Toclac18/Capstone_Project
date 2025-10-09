@@ -1,7 +1,6 @@
 package com.capstone.be.domain.entity;
 
 import com.capstone.be.domain.entity.common.BaseEntity;
-import com.capstone.be.domain.enums.ReaderStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -11,30 +10,23 @@ import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-@Entity
-@Table(name = "readers")
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class Reader extends BaseEntity {
+@Entity
+@Table(name = "reviewers")
+public class Reviewer extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false, unique = true)
+  private String name;
+
+  @Column(unique = true)
   private String email;
 
-  @Column(nullable = false, unique = true)
+  @Column(nullable = false)
   private String passwordHash;
 
-  private String avatarUrl;
-
-  @Column(nullable = false)
-  private Integer coinBalance;
-
-  @Column(nullable = false)
-  private ReaderStatus status;
-
-  private Boolean deleted;
-
+  private String ordid; //#temp
 }

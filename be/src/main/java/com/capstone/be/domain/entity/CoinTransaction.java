@@ -1,40 +1,36 @@
 package com.capstone.be.domain.entity;
 
 import com.capstone.be.domain.entity.common.BaseEntity;
-import com.capstone.be.domain.enums.ReaderStatus;
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Entity
-@Table(name = "readers")
+@Table(name = "coin_transactions")
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class Reader extends BaseEntity {
+public class CoinTransaction extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false, unique = true)
-  private String email;
+  @ManyToOne()
+  @JoinColumn(name = "reader_id")
+  private Reader reader;
 
-  @Column(nullable = false, unique = true)
-  private String passwordHash;
+  private String type; //#temp
 
-  private String avatarUrl;
+  @ManyToOne()
+  @JoinColumn(name = "document_id")
+  private Document document;
 
-  @Column(nullable = false)
-  private Integer coinBalance;
-
-  @Column(nullable = false)
-  private ReaderStatus status;
-
-  private Boolean deleted;
+  private Integer amount;
 
 }

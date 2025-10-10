@@ -4,6 +4,8 @@ import com.capstone.be.domain.entity.common.BaseEntity;
 import com.capstone.be.domain.enums.ReaderStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -22,19 +24,22 @@ public class Reader extends BaseEntity {
   private Long id;
 
   @Column(nullable = false, unique = true)
-  private String email;
+  private String username;
 
   @Column(nullable = false, unique = true)
+  private String email;
+
+  @Column(nullable = false)
   private String passwordHash;
 
   private String avatarUrl;
 
   @Column(nullable = false)
-  private Integer coinBalance;
+  private Integer coinBalance = 0;
 
   @Column(nullable = false)
-  private ReaderStatus status;
+  @Enumerated(EnumType.STRING)
+  private ReaderStatus status = ReaderStatus.UNVERIFIED;
 
-  private Boolean deleted;
-
+  private Boolean deleted = false;
 }

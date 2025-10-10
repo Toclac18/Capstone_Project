@@ -12,6 +12,7 @@ import org.springframework.data.repository.config.BootstrapMode;
 @EntityScan(basePackages = "com.capstone.be")
 @EnableJpaAuditing
 public class BeApplication {
+
   public static void main(String[] args) {
     SpringApplication.run(BeApplication.class, args);
   }

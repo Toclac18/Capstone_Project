@@ -12,7 +12,7 @@ public record ApiResponse<T>(
     String path,
     OffsetDateTime timestamp,
     String code,
-    PageMeta page
+    PageMeta page //For Paging
 ) {
 
   public static <T> ApiResponse<T> ok(T data, String message, String path) {

@@ -1,16 +1,15 @@
 package com.capstone.be.config;
 
-import com.capstone.be.dto.base.ApiResponse;
-import com.capstone.be.exception.ResourceNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import java.net.URI;
+import java.time.OffsetDateTime;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -21,67 +20,90 @@ public class GlobalExceptionHandler {
 
   // 422: Body @Valid fail
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
+  public ResponseEntity<ProblemDetail> handleValidation(MethodArgumentNotValidException ex,
+      HttpServletRequest req) {
     String msg = ex.getBindingResult().getFieldErrors().stream()
         .map(e -> e.getField() + ": " + e.getDefaultMessage())
         .findFirst().orElse("Validation error");
-    return toResponse(HttpStatus.UNPROCESSABLE_ENTITY, msg);
+    return buildProblemDetail(HttpStatus.UNPROCESSABLE_ENTITY, "Validation Error", msg,
+        "VALIDATION_ERROR", req);
   }
 
+  // 422: Query param @Validated fail
   @ExceptionHandler(ConstraintViolationException.class)
-  public ResponseEntity<ApiResponse<Void>> handleConstraint(ConstraintViolationException ex) {
+  public ResponseEntity<ProblemDetail> handleConstraint(ConstraintViolationException ex,
+      HttpServletRequest req) {
     String msg = ex.getConstraintViolations().stream()
         .map(v -> v.getPropertyPath() + ": " + v.getMessage())
         .findFirst().orElse("Constraint violation");
-    return toResponse(HttpStatus.UNPROCESSABLE_ENTITY, msg);
+    return buildProblemDetail(HttpStatus.UNPROCESSABLE_ENTITY, "Validation Error", msg,
+        "VALIDATION_ERROR", req);
   }
 
-  @ExceptionHandler(ResourceNotFoundException.class)
-  public ResponseEntity<ApiResponse<Void>> handleNotFound(ResourceNotFoundException ex) {
-    return toResponse(HttpStatus.NOT_FOUND, ex.getMessage());
-  }
-
+  // 400: Bad request
   @ExceptionHandler({
       IllegalArgumentException.class,
-      MethodArgumentTypeMismatchException.class,
-      MissingServletRequestParameterException.class
+      MethodArgumentTypeMismatchException.class
   })
-  public ResponseEntity<ApiResponse<Void>> handleBadRequest(Exception ex) {
-    return toResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+  public ResponseEntity<ProblemDetail> handleBadRequest(Exception ex, HttpServletRequest req) {
+    return buildProblemDetail(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), "BAD_REQUEST",
+        req);
   }
 
+  // 405: Wrong method (GET/POST,...)
   @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-  public ResponseEntity<ApiResponse<Void>> handleMethodNotAllowed(
-      HttpRequestMethodNotSupportedException ex) {
-    return toResponse(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage());
+  public ResponseEntity<ProblemDetail> handleMethodNotAllowed(
+      HttpRequestMethodNotSupportedException ex,
+      HttpServletRequest req) {
+    return buildProblemDetail(HttpStatus.METHOD_NOT_ALLOWED, "Method Not Allowed", ex.getMessage(),
+        "METHOD_NOT_ALLOWED", req);
   }
 
+  // 415: Wrong Content-Type
   @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
-  public ResponseEntity<ApiResponse<Void>> handleUnsupportedMedia(
-      HttpMediaTypeNotSupportedException ex) {
-    return toResponse(HttpStatus.UNSUPPORTED_MEDIA_TYPE, ex.getMessage());
+  public ResponseEntity<ProblemDetail> handleUnsupportedMedia(HttpMediaTypeNotSupportedException ex,
+      HttpServletRequest req) {
+    return buildProblemDetail(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported Media Type",
+        ex.getMessage(), "UNSUPPORTED_MEDIA_TYPE", req);
   }
 
-  @ExceptionHandler(AccessDeniedException.class)
-  public ResponseEntity<ApiResponse<Void>> handleForbidden(AccessDeniedException ex) {
-    return toResponse(HttpStatus.FORBIDDEN, "Access denied");
-  }
-
+  // 4xx: ResponseStatusException (throw by Services)
   @ExceptionHandler(ResponseStatusException.class)
-  public ResponseEntity<ApiResponse<Void>> handleResponseStatus(ResponseStatusException ex) {
-    HttpStatusCode status = ex.getStatusCode();
-    String msg = (ex.getReason() != null) ? ex.getReason() : "Error";
-    return toResponse(status, msg);
+  public ResponseEntity<ProblemDetail> handleResponseStatus(ResponseStatusException ex,
+      HttpServletRequest req) {
+    HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+    String msg = ex.getReason() != null ? ex.getReason() : "Error";
+    return buildProblemDetail(status != null ? status : HttpStatus.INTERNAL_SERVER_ERROR,
+        ex.getStatusCode().toString(), msg, status.name(), req);
   }
 
+  // 500: System error
   @ExceptionHandler(Exception.class)
-  public ResponseEntity<ApiResponse<Void>> handleAny(Exception ex) {
-    return toResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error");
+  public ResponseEntity<ProblemDetail> handleInternal(Exception ex, HttpServletRequest req) {
+    return buildProblemDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error",
+        "An unexpected error occurred", "INTERNAL_ERROR", req);
   }
 
-  private ResponseEntity<ApiResponse<Void>> toResponse(HttpStatusCode status, String message) {
-    String code = (status instanceof HttpStatus hs) ? hs.name() : String.valueOf(status.value());
-    ApiResponse<Void> body = ApiResponse.fail(message, "path", "code", null);
-    return ResponseEntity.status(status).body(body);
+  /**
+   * Helper: Create ProblemDetail standard RFC 7807 + metadata
+   */
+  private ResponseEntity<ProblemDetail> buildProblemDetail(
+      HttpStatus status,
+      String title,
+      String detail,
+      String code,
+      HttpServletRequest req) {
+
+    ProblemDetail pd = ProblemDetail.forStatus(status);
+    // pd.setType("empty");
+    pd.setTitle(title);
+    pd.setDetail(detail);
+    pd.setInstance(URI.create(req.getRequestURI()));
+
+    // Add custom fields
+    pd.setProperty("timestamp", OffsetDateTime.now());
+    pd.setProperty("code", code);
+
+    return ResponseEntity.status(status).body(pd);
   }
 }

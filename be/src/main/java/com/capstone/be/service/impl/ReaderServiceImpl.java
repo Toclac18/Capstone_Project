@@ -20,12 +20,16 @@ public class ReaderServiceImpl implements ReaderService {
   @Override
   public Reader register(ReaderRegisterRequest request) {
     // Check email existed
-    if (readerRepository.findByEmail(request.getEmail()).isPresent()) {
+    if (readerRepository.existsByEmail(request.getEmail())) {
       throw new IllegalArgumentException("Email has been used");
     }
 
+    // Check username existed
+    if (readerRepository.existsByUsername(request.getUsername())) {
+      throw new IllegalArgumentException("Username has been used");
+    }
+
     // Create Reader Entity From Dto
-    System.out.println(request);
     Reader reader = new Reader();
     reader.setUsername(request.getUsername());
     reader.setEmail(request.getEmail());

@@ -1,8 +1,9 @@
 package com.capstone.be.config;
 
-import com.capstone.be.dto.base.ApiResponse;
+import com.capstone.be.dto.base.SuccessResponse;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.ResourceHttpMessageConverter;
@@ -45,7 +46,8 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
       ServerHttpResponse response) {
 
     // Skip already-wrap
-    if (body instanceof ApiResponse<?>) {
+    if (body instanceof SuccessResponse<?> ||
+        body instanceof ProblemDetail) {
       return body;
     }
 
@@ -54,6 +56,6 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
       return body;
     }
 
-    return ApiResponse.ok(body, "success", request.getURI().getPath());
+    return SuccessResponse.of(body);
   }
 }

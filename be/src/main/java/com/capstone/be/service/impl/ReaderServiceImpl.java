@@ -21,7 +21,7 @@ public class ReaderServiceImpl implements ReaderService {
   public Reader register(ReaderRegisterRequest request) {
     // Check email existed
     if (readerRepository.findByEmail(request.getEmail()).isPresent()) {
-      throw new RuntimeException("Email has been used");
+      throw new IllegalArgumentException("Email has been used");
     }
 
     // Create Reader Entity From Dto

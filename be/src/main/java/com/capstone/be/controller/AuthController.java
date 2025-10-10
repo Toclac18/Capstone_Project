@@ -4,6 +4,10 @@ import com.capstone.be.domain.entity.Reader;
 import com.capstone.be.dto.base.ApiResponse;
 import com.capstone.be.dto.request.ReaderRegisterRequest;
 import com.capstone.be.service.ReaderService;
+import jakarta.validation.Valid;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,7 +35,9 @@ public class AuthController {
 
   //  @PostMapping("/register")
   @PostMapping("/reader/register")
-  public ApiResponse<Reader> readerRegister(@RequestBody ReaderRegisterRequest request) {
+  public ApiResponse<Reader> readerRegister(
+      @Valid @RequestBody ReaderRegisterRequest request) {
+
     Reader newReader = readerService.register(request);
     return ApiResponse.created(newReader, "/reader/register");
   }

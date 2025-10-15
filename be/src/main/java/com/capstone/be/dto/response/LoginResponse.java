@@ -1,0 +1,18 @@
+package com.capstone.be.dto.response;
+
+import com.capstone.be.domain.enums.UserRole;
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
+public class LoginResponse {
+
+  String accessToken;
+  String tokenType;
+  long expiresIn;
+  Long subjectId;
+  UserRole role;
+  String email;
+  String displayName;
+}

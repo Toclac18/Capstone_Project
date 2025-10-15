@@ -1,6 +1,6 @@
-import InputGroup from "@/components/FormElements/InputGroup";
-import { TextAreaGroup } from "@/components/FormElements/InputGroup/text-area";
-import { Select } from "@/components/FormElements/select";
+import InputGroup from "@/components/(template)/FormElements/InputGroup";
+import { TextAreaGroup } from "@/components/(template)/FormElements/InputGroup/text-area";
+import { Select } from "@/components/(template)/FormElements/select";
 import { ShowcaseSection } from "@/components/Layouts/showcase-section";
 
 export function ContactForm() {

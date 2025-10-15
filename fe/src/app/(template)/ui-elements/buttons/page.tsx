@@ -1,7 +1,7 @@
 import { MessageOutlineIcon, SearchIcon } from "@/assets/icons";
-import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
+import Breadcrumb from "@/components/(template)/Breadcrumbs/Breadcrumb";
 import { ShowcaseSection } from "@/components/Layouts/showcase-section";
-import { Button } from "@/components/ui-elements/button";
+import { Button } from "@/components/(template)/ui-elements/button";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {

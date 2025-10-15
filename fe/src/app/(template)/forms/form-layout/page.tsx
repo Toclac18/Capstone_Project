@@ -1,4 +1,4 @@
-import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
+import Breadcrumb from "@/components/(template)/Breadcrumbs/Breadcrumb";
 
 import type { Metadata } from "next";
 import { ContactForm } from "./_components/contact-form";

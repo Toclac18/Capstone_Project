@@ -1,5 +1,5 @@
-import { Alert } from "@/components/ui-elements/alert";
-import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
+import { Alert } from "@/components/(template)/ui-elements/alert";
+import Breadcrumb from "@/components/(template)/Breadcrumbs/Breadcrumb";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

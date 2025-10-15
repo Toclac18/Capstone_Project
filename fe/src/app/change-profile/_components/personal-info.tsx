@@ -4,8 +4,8 @@ import {
   PencilSquareIcon,
   UserIcon,
 } from "@/assets/icons";
-import InputGroup from "@/components/FormElements/InputGroup";
-import { TextAreaGroup } from "@/components/FormElements/InputGroup/text-area";
+import InputGroup from "@/components/(template)/FormElements/InputGroup";
+import { TextAreaGroup } from "@/components/(template)/FormElements/InputGroup/text-area";
 import { ShowcaseSection } from "@/components/Layouts/showcase-section";
 
 export function PersonalInfoForm() {

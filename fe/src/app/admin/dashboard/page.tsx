@@ -1,8 +1,8 @@
-import { PaymentsOverview } from "@/components/Charts/payments-overview";
-import { UsedDevices } from "@/components/Charts/used-devices";
-import { WeeksProfit } from "@/components/Charts/weeks-profit";
-import { TopChannels } from "@/components/Tables/top-channels";
-import { TopChannelsSkeleton } from "@/components/Tables/top-channels/skeleton";
+import { PaymentsOverview } from "@/components/(template)/Charts/payments-overview";
+import { UsedDevices } from "@/components/(template)/Charts/used-devices";
+import { WeeksProfit } from "@/components/(template)/Charts/weeks-profit";
+import { TopChannels } from "@/components/(template)/Tables/top-channels";
+import { TopChannelsSkeleton } from "@/components/(template)/Tables/top-channels/skeleton";
 import { createTimeFrameExtractor } from "@/utils/timeframe-extractor";
 import { Suspense } from "react";
 import { OverviewCardsGroup } from "./_components/overview-cards";

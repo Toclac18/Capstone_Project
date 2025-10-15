@@ -26,7 +26,7 @@ const Home = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
-            {users?.map((user) => (
+            {/* {users?.map((user) => (
               <tr key={user.id} className="hover:bg-gray-50 transition">
                 <td className="px-6 py-4 whitespace-nowrap text-gray-900">{user.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-gray-500">{user.email}</td>
@@ -36,7 +36,7 @@ const Home = () => {
                   </span>
                 </td>
               </tr>
-            ))}
+            ))} */}
             {users.length === 0 && (
               <tr>
                 <td colSpan={3} className="px-6 py-8 text-center text-gray-400">

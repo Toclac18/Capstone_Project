@@ -3,7 +3,7 @@ import Link from "next/link";
 import GoogleSigninButton from "../../_components/GoogleSigninButton";
 import { EmailIcon, GoogleIcon, PasswordIcon, UserIcon } from "@/assets/icons";
 import React, { useState } from "react";
-import InputGroup from "@/components/FormElements/InputGroup";
+import InputGroup from "@/components/(template)/FormElements/InputGroup";
 
 export default function Signup() {
   const [data, setData] = useState({

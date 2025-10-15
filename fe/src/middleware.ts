@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
 const encoder = new TextEncoder();
-const JWT_SECRET = process.env.NEXT_PUBLIC_JWT_SECRET || 'hahahaha';
+const JWT_SECRET = process.env.NEXT_PUBLIC_JWT_SECRET;
 
 async function verifyJwt(token: string) {
   try {

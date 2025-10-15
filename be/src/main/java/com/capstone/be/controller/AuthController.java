@@ -1,7 +1,10 @@
 package com.capstone.be.controller;
 
 import com.capstone.be.domain.entity.Reader;
+import com.capstone.be.dto.request.LoginRequest;
 import com.capstone.be.dto.request.ReaderRegisterRequest;
+import com.capstone.be.dto.response.LoginResponse;
+import com.capstone.be.service.AuthService;
 import com.capstone.be.service.ReaderService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +21,9 @@ public class AuthController {
   @Autowired
   ReaderService readerService;
 
+  @Autowired
+  AuthService authService;
+
   //SAMPLE API
   @GetMapping("/hello")
   public String Hello() {
@@ -28,6 +34,11 @@ public class AuthController {
   public Reader readerRegister(
       @Valid @RequestBody ReaderRegisterRequest request) {
     return readerService.register(request);
+  }
+
+  @PostMapping("/login")
+  public LoginResponse login(@Valid @RequestBody LoginRequest request) {
+    return authService.login(request);
   }
 
 }

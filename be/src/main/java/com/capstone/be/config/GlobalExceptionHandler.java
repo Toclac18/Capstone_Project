@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -17,6 +18,13 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+  @ExceptionHandler(AuthorizationDeniedException.class)
+  public ResponseEntity<ProblemDetail> handleAuthDenied(AuthorizationDeniedException ex,
+      HttpServletRequest req) {
+    return buildProblemDetail(HttpStatus.UNAUTHORIZED, "Authorization Error",
+        ex.getMessage(), "AUTHORIZATION_ERROR", req);
+  }
 
   // 422: Body @Valid fail
   @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -80,8 +88,9 @@ public class GlobalExceptionHandler {
   // 500: System error
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ProblemDetail> handleInternal(Exception ex, HttpServletRequest req) {
+    System.out.println(ex.toString());
     return buildProblemDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error",
-        "An unexpected error occurred", "INTERNAL_ERROR", req);
+        ex.getMessage(), "INTERNAL_ERROR", req);
   }
 
   /**

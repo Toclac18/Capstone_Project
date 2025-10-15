@@ -10,38 +10,27 @@ import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-@Entity
-@Table(name = "organizations")
-@Data
 @EqualsAndHashCode(callSuper = true)
-public class Organization extends BaseEntity {
+@Data
+@Entity
+@Table(name = "business_admins")
+public class BusinessAdmin extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(unique = true, nullable = false)
+  @Column(nullable = false, unique = true)
   private String email;
 
-  @Column(unique = true, nullable = false)
-  private String hotline;
-
-  private String logo;
-
-  private String address;
-
   @Column(nullable = false)
-  private String status;  //#temp
+  private String passwordHash;
 
-  /* ORGANIZATION ADMIN */
-  private String adminName;
-  private String adminPassword;
-  private String adminEmail;
+  private String fullName;
 
   @Column(nullable = false)
   private Boolean active = true;
 
   @Column(nullable = false)
   private Boolean deleted = false;
-
 }

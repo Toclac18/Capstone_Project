@@ -1,1 +1,0 @@
-export default function Home(){return <main><h1>Capstone FE</h1><p><a href='/login'>Login</a></p></main>;}

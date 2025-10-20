@@ -16,8 +16,9 @@ import com.capstone.be.domain.entity.Reviewer;
 import com.capstone.be.domain.entity.SystemAdmin;
 import com.capstone.be.domain.enums.ReaderStatus;
 import com.capstone.be.domain.enums.UserRole;
-import com.capstone.be.dto.request.LoginRequest;
-import com.capstone.be.dto.response.LoginResponse;
+import com.capstone.be.dto.request.auth.ChangePasswordRequest;
+import com.capstone.be.dto.request.auth.LoginRequest;
+import com.capstone.be.dto.response.auth.LoginResponse;
 import com.capstone.be.repository.BusinessAdminRepository;
 import com.capstone.be.repository.OrganizationRepository;
 import com.capstone.be.repository.ReaderRepository;
@@ -40,6 +41,8 @@ class AuthServiceImplTest {
 
   private static final String PASSWORD = "password";
   private static final String PASSWORD_HASH = "hashed";
+  private static final String NEW_PASSWORD = "newPassword";
+  private static final String NEW_PASSWORD_HASH = "newHashed";
 
   @Mock
   private ReaderRepository readerRepository;
@@ -324,5 +327,211 @@ class AuthServiceImplTest {
 
     assertEquals(admin.getFullName(), response.getDisplayName());
     assertEquals(4800L, response.getExpiresIn());
+  }
+
+  @Test
+  void changePassword_readerSuccess() {
+    Reader reader = new Reader();
+    reader.setId(1L);
+    reader.setEmail("reader@example.com");
+    reader.setUsername("reader");
+    reader.setPasswordHash(PASSWORD_HASH);
+    reader.setStatus(ReaderStatus.VERIFIED);
+
+    when(readerRepository.findById(reader.getId())).thenReturn(Optional.of(reader));
+    when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
+    when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn(NEW_PASSWORD_HASH);
+
+    ChangePasswordRequest request = ChangePasswordRequest.builder()
+        .currentPassword(PASSWORD)
+        .newPassword(NEW_PASSWORD)
+        .build();
+
+    authService.changePassword(reader.getId(), UserRole.READER, request);
+
+    assertEquals(NEW_PASSWORD_HASH, reader.getPasswordHash());
+    verify(readerRepository).save(reader);
+  }
+
+  @Test
+  void changePassword_readerInvalidCurrentPasswordThrows() {
+    Reader reader = new Reader();
+    reader.setId(1L);
+    reader.setPasswordHash(PASSWORD_HASH);
+    reader.setStatus(ReaderStatus.VERIFIED);
+
+    when(readerRepository.findById(reader.getId())).thenReturn(Optional.of(reader));
+    when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(false);
+
+    ChangePasswordRequest request = ChangePasswordRequest.builder()
+        .currentPassword(PASSWORD)
+        .newPassword(NEW_PASSWORD)
+        .build();
+
+    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+        () -> authService.changePassword(reader.getId(), UserRole.READER, request));
+
+    assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
+    verify(readerRepository, never()).save(any());
+  }
+
+  @Test
+  void changePassword_readerNewPasswordSameAsCurrentThrows() {
+    ChangePasswordRequest request = ChangePasswordRequest.builder()
+        .currentPassword(PASSWORD)
+        .newPassword(PASSWORD)
+        .build();
+
+    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+        () -> authService.changePassword(1L, UserRole.READER, request));
+
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+  }
+
+  @Test
+  void changePassword_readerConfirmationMismatchThrows() {
+    ChangePasswordRequest request = ChangePasswordRequest.builder()
+        .currentPassword(PASSWORD)
+        .newPassword(NEW_PASSWORD)
+        .build();
+
+    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+        () -> authService.changePassword(1L, UserRole.READER, request));
+
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+  }
+
+  @Test
+  void changePassword_readerNotFoundThrows() {
+    when(readerRepository.findById(1L)).thenReturn(Optional.empty());
+
+    ChangePasswordRequest request = ChangePasswordRequest.builder()
+        .currentPassword(PASSWORD)
+        .newPassword(NEW_PASSWORD)
+        .build();
+
+    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+        () -> authService.changePassword(1L, UserRole.READER, request));
+
+    assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+  }
+
+  @Test
+  void changePassword_reviewerSuccess() {
+    Reviewer reviewer = new Reviewer();
+    reviewer.setId(5L);
+    reviewer.setEmail("reviewer@example.com");
+    reviewer.setPasswordHash(PASSWORD_HASH);
+    reviewer.setActive(true);
+    reviewer.setDeleted(false);
+
+    when(reviewerRepository.findById(reviewer.getId())).thenReturn(Optional.of(reviewer));
+    when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
+    when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn(NEW_PASSWORD_HASH);
+
+    ChangePasswordRequest request = ChangePasswordRequest.builder()
+        .currentPassword(PASSWORD)
+        .newPassword(NEW_PASSWORD)
+        .build();
+
+    authService.changePassword(reviewer.getId(), UserRole.REVIEWER, request);
+
+    assertEquals(NEW_PASSWORD_HASH, reviewer.getPasswordHash());
+    verify(reviewerRepository).save(reviewer);
+  }
+
+  @Test
+  void changePassword_reviewerInactiveThrows() {
+    Reviewer reviewer = new Reviewer();
+    reviewer.setId(5L);
+    reviewer.setPasswordHash(PASSWORD_HASH);
+    reviewer.setActive(false);
+    reviewer.setDeleted(false);
+
+    when(reviewerRepository.findById(reviewer.getId())).thenReturn(Optional.of(reviewer));
+
+    ChangePasswordRequest request = ChangePasswordRequest.builder()
+        .currentPassword(PASSWORD)
+        .newPassword(NEW_PASSWORD)
+        .build();
+
+    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+        () -> authService.changePassword(reviewer.getId(), UserRole.REVIEWER, request));
+
+    assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+    verify(passwordEncoder, never()).matches(anyString(), anyString());
+    verify(reviewerRepository, never()).save(any());
+  }
+
+  @Test
+  void changePassword_organizationSuccess() {
+    Organization organization = new Organization();
+    organization.setId(7L);
+    organization.setAdminEmail("admin@org.com");
+    organization.setAdminPassword(PASSWORD_HASH);
+    organization.setActive(true);
+    organization.setDeleted(false);
+
+    when(organizationRepository.findById(organization.getId()))
+        .thenReturn(Optional.of(organization));
+    when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
+    when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn(NEW_PASSWORD_HASH);
+
+    ChangePasswordRequest request = ChangePasswordRequest.builder()
+        .currentPassword(PASSWORD)
+        .newPassword(NEW_PASSWORD)
+        .build();
+
+    authService.changePassword(organization.getId(), UserRole.ORGANIZATION, request);
+
+    assertEquals(NEW_PASSWORD_HASH, organization.getAdminPassword());
+    verify(organizationRepository).save(organization);
+  }
+
+  @Test
+  void changePassword_businessAdminAccountDisabledThrows() {
+    BusinessAdmin admin = new BusinessAdmin();
+    admin.setId(9L);
+    admin.setPasswordHash(PASSWORD_HASH);
+    admin.setActive(false);
+    admin.setDeleted(false);
+
+    when(businessAdminRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
+
+    ChangePasswordRequest request = ChangePasswordRequest.builder()
+        .currentPassword(PASSWORD)
+        .newPassword(NEW_PASSWORD)
+        .build();
+
+    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+        () -> authService.changePassword(admin.getId(), UserRole.BUSINESS_ADMIN, request));
+
+    assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+    verify(passwordEncoder, never()).matches(anyString(), anyString());
+    verify(businessAdminRepository, never()).save(any());
+  }
+
+  @Test
+  void changePassword_systemAdminSuccess() {
+    SystemAdmin admin = new SystemAdmin();
+    admin.setId(11L);
+    admin.setEmail("sys@example.com");
+    admin.setPasswordHash(PASSWORD_HASH);
+    admin.setActive(true);
+    admin.setDeleted(false);
+
+    when(systemAdminRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
+    when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
+    when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn(NEW_PASSWORD_HASH);
+
+    ChangePasswordRequest request = ChangePasswordRequest.builder()
+        .currentPassword(PASSWORD)
+        .newPassword(NEW_PASSWORD)
+        .build();
+
+    authService.changePassword(admin.getId(), UserRole.SYSTEM_ADMIN, request);
+
+    assertEquals(NEW_PASSWORD_HASH, admin.getPasswordHash());
+    verify(systemAdminRepository).save(admin);
   }
 }

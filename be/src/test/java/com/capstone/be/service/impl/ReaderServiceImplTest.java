@@ -9,7 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.capstone.be.domain.entity.Reader;
-import com.capstone.be.dto.request.ReaderRegisterRequest;
+import com.capstone.be.dto.request.auth.ReaderRegisterRequest;
 import com.capstone.be.repository.ReaderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

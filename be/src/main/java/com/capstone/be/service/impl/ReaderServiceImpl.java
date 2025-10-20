@@ -1,7 +1,7 @@
 package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.Reader;
-import com.capstone.be.dto.request.ReaderRegisterRequest;
+import com.capstone.be.dto.request.auth.ReaderRegisterRequest;
 import com.capstone.be.repository.ReaderRepository;
 import com.capstone.be.service.ReaderService;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,4 +1,4 @@
-package com.capstone.be.dto.response;
+package com.capstone.be.dto.response.auth;
 
 import com.capstone.be.domain.enums.UserRole;
 import lombok.Builder;

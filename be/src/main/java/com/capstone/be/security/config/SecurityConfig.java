@@ -33,7 +33,8 @@ public class SecurityConfig {
         .cors(cors -> {
         }) //Allow API call from Browser
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/auth/**").permitAll() //Endpoint not require auth
+            .requestMatchers("/api/auth/login", "/api/auth/reader/register", "/api/auth/hello")
+            .permitAll() // Public authentication endpoints
             .anyRequest().authenticated()            // Other endpoint require auth
         )
         .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {

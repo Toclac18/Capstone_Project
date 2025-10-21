@@ -20,36 +20,60 @@ configurations {
     compileOnly { extendsFrom annotationProcessor }
 }
 
+ext {
+    mapstructVersion = '1.5.5.Final'
+    lombokVersion    = '1.18.32'
+}
+
 dependencies {
-    // Spring
+    // ===== Spring =====
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
-    // DB driver
+    // ===== DB driver =====
     runtimeOnly 'org.postgresql:postgresql'
 
-    // JWT
+    // ===== JWT =====
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
-    // Password encoders
+    // ===== Password encoders =====
     implementation 'org.springframework.security:spring-security-crypto'
 
-    // Load .env for Spring via spring-dotenv
+    // ===== .env loader =====
     implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
-    // Lombok
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    testCompileOnly 'org.projectlombok:lombok'
-    testAnnotationProcessor 'org.projectlombok:lombok'
+    // ===== Lombok =====
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
-    // Test
+    // >>> MapStruct (API + Processor) <<<
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    testAnnotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+
+    // binding Lombok + MapStruct
+    annotationProcessor "org.projectlombok:lombok-mapstruct-binding:0.2.0"
+    testAnnotationProcessor "org.projectlombok:lombok-mapstruct-binding:0.2.0"
+
+    // ===== Test =====
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
-tasks.withType(Test).configureEach { useJUnitPlatform() }
+tasks.withType(JavaCompile).configureEach {
+    // Cho MapStruct default thành Spring bean nếu bạn quên đặt componentModel ở từng @Mapper
+    options.compilerArgs += [
+            '-Amapstruct.defaultComponentModel=spring'
+    ]
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+}

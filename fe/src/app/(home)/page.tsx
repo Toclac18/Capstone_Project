@@ -12,8 +12,10 @@ import {
 import { cn } from "@/utils/utils";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
 import EditConfirmation from "@/components/ui/edit-confirmation";
+import { useToast } from "@/components/ui/toast";
 
 const Home = () => {
+  const { showToast } = useToast();
   const [users, setUsers] = useState([
     {
       id: "1",
@@ -45,31 +47,69 @@ const Home = () => {
   const handleDeleteUser = async (id: string | number) => {
     const userId = typeof id === 'string' ? id : id.toString();
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    // Ví dụ nếu dùng service thật:
-    // await userService.deleteUser(userId);
-    
-    // Remove user from list
-    setUsers(prev => prev.filter(user => user.id !== userId));
-    
-    console.log(`Deleted user with id: ${userId}`);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Ví dụ nếu dùng service thật:
+      // await userService.deleteUser(userId);
+      
+      // Remove user from list
+      setUsers(prev => prev.filter(user => user.id !== userId));
+      
+      // Show success toast
+      showToast({
+        type: 'warning',
+        title: 'User Deleted',
+        message: `User has been successfully deleted`,
+        duration: 3000
+      });
+      
+      console.log(`Deleted user with id: ${userId}`);
+    } catch (error) {
+      // Show error toast
+      showToast({
+        type: 'error',
+        title: 'Delete Failed',
+        message: 'Failed to delete user. Please try again.',
+        duration: 5000
+      });
+      console.error('Delete failed:', error);
+    }
   };
 
   const handleEditUser = async (id: string | number, data: Record<string, any>) => {
     const userId = typeof id === 'string' ? id : id.toString();
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    // Ví dụ nếu dùng service thật:
-    // await userService.updateUser(userId, data);
-    
-    // Update user in list
-    setUsers(prev => prev.map(user => 
-      user.id === userId ? { ...user, ...data } : user
-    ));
-    
-    console.log(`Updated user with id: ${userId}`, data);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Ví dụ nếu dùng service thật:
+      // await userService.updateUser(userId, data);
+      
+      // Update user in list
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, ...data } : user
+      ));
+      
+      // Show success toast
+      showToast({
+        type: 'success',
+        title: 'User Updated',
+        message: `User information has been successfully updated`,
+        duration: 3000
+      });
+      
+      console.log(`Updated user with id: ${userId}`, data);
+    } catch (error) {
+      // Show error toast
+      showToast({
+        type: 'error',
+        title: 'Update Failed',
+        message: 'Failed to update user. Please try again.',
+        duration: 5000
+      });
+      console.error('Update failed:', error);
+    }
   };
 
   return (

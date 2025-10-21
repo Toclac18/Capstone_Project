@@ -23,6 +23,7 @@ configurations {
 ext {
     mapstructVersion = '1.5.5.Final'
     lombokVersion    = '1.18.32'
+    mapstructVersion = '1.5.5.Final'
 }
 
 dependencies {
@@ -61,6 +62,16 @@ dependencies {
     // binding Lombok + MapStruct
     annotationProcessor "org.projectlombok:lombok-mapstruct-binding:0.2.0"
     testAnnotationProcessor "org.projectlombok:lombok-mapstruct-binding:0.2.0"
+
+    // 1. MapStruct API (Required for @Mapper interface)
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+
+    // 2. MapStruct Processor (Required to generate the implementation class)
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    testAnnotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+
+    // 3. Lombok-MapStruct Binding (Ensures Lombok and MapStruct processors work together)
+    annotationProcessor "org.projectlombok:lombok-mapstruct-binding:0.2.0"
 
     // ===== Test =====
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

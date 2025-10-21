@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/utils/utils";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
+import EditConfirmation from "@/components/ui/edit-confirmation";
 
 const Home = () => {
   const [users, setUsers] = useState([
@@ -53,6 +54,22 @@ const Home = () => {
     setUsers(prev => prev.filter(user => user.id !== userId));
     
     console.log(`Deleted user with id: ${userId}`);
+  };
+
+  const handleEditUser = async (id: string | number, data: Record<string, any>) => {
+    const userId = typeof id === 'string' ? id : id.toString();
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Ví dụ nếu dùng service thật:
+    // await userService.updateUser(userId, data);
+    
+    // Update user in list
+    setUsers(prev => prev.map(user => 
+      user.id === userId ? { ...user, ...data } : user
+    ));
+    
+    console.log(`Updated user with id: ${userId}`, data);
   };
 
   return (
@@ -104,6 +121,52 @@ const Home = () => {
 
               <TableCell className="xl:pr-7.5">
                 <div className="flex items-center justify-end gap-x-3.5">
+                  <EditConfirmation
+                    onSave={handleEditUser}
+                    itemId={user.id}
+                    itemName={user.name}
+                    initialData={user}
+                    fields={[
+                      {
+                        name: 'name',
+                        label: 'Name',
+                        type: 'text',
+                        required: true,
+                        placeholder: 'Enter user name',
+                        validation: (value: string) => {
+                          if (value.length < 2) return 'Name must be at least 2 characters';
+                          return null;
+                        }
+                      },
+                      {
+                        name: 'email',
+                        label: 'Email',
+                        type: 'email',
+                        required: true,
+                        placeholder: 'Enter email address',
+                        validation: (value: string) => {
+                          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address';
+                          return null;
+                        }
+                      },
+                      {
+                        name: 'role',
+                        label: 'Role',
+                        type: 'select',
+                        required: true,
+                        options: [
+                          { value: 'SYSTEM_ADMIN', label: 'System Admin' },
+                          { value: 'REVIEWER', label: 'Reviewer' },
+                          { value: 'READER', label: 'Reader' },
+                          { value: 'ORGANIZATION', label: 'Organization' }
+                        ]
+                      }
+                    ]}
+                    title="Edit User"
+                    description="Update user information"
+                    size="sm"
+                    variant="text"
+                  />
                   <DeleteConfirmation
                     onDelete={handleDeleteUser}
                     itemId={user.id}

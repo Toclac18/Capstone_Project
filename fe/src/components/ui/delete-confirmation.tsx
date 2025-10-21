@@ -114,7 +114,7 @@ export default function DeleteConfirmation({
           <div className="relative z-10 w-full max-w-md mx-4">
             <div className="bg-white dark:bg-gray-dark rounded-lg shadow-xl border border-stroke dark:border-dark-3">
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-stroke dark:border-dark-3">
+              <div className="flex items-center justify-between p-3 border-b border-stroke dark:border-dark-3">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-10 h-10 bg-red-100 dark:bg-red-900/20 rounded-full">
                     <svg 
@@ -183,7 +183,7 @@ export default function DeleteConfirmation({
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-end gap-3 p-6 border-t border-stroke dark:border-dark-3 bg-gray-50 dark:bg-gray-800/50">
+              <div className="flex items-center justify-end gap-3 p-2 border-t border-stroke dark:border-dark-3 bg-gray-50 dark:bg-gray-800/50">
                 <button
                   onClick={handleCloseModal}
                   className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"

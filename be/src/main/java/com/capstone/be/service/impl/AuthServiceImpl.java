@@ -19,6 +19,7 @@ import com.capstone.be.security.service.JwtService;
 import com.capstone.be.service.AuthService;
 import com.capstone.be.util.ExceptionBuilder;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -159,13 +160,13 @@ public class AuthServiceImpl implements AuthService {
     }
   }
 
-  private LoginResponse baseResponse(String token, Long id, UserRole role, String email,
+  private LoginResponse baseResponse(String token, UUID id, UserRole role, String email,
       String displayName) {
     return LoginResponse.builder()
         .accessToken(token)
         .tokenType("Bearer")
         .expiresIn(jwtService.getExpirationMs())
-        .subjectId(id)
+        .subjectId(id.toString())
         .role(role)
         .email(email)
         .displayName(displayName)
@@ -174,7 +175,7 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   @Transactional
-  public void changePassword(Long subjectId, UserRole role, ChangePasswordRequest request) {
+  public void changePassword(UUID subjectId, UserRole role, ChangePasswordRequest request) {
     if (subjectId == null || role == null) {
       throw ExceptionBuilder.badRequest("Subject information is required");
     }
@@ -192,15 +193,9 @@ public class AuthServiceImpl implements AuthService {
     }
   }
 
-  private void changeReaderPassword(Long subjectId, ChangePasswordRequest request) {
+  private void changeReaderPassword(UUID subjectId, ChangePasswordRequest request) {
     Reader reader = readerRepository.findById(subjectId)
         .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
-
-    if (Boolean.TRUE.equals(reader.getDeleted())
-        || ReaderStatus.BANNED.equals(reader.getStatus())
-        || ReaderStatus.DELETING.equals(reader.getStatus())) {
-      throw ExceptionBuilder.forbidden("Account is disabled");
-    }
 
     assertCurrentPasswordMatches(request.getCurrentPassword(), reader.getPasswordHash());
 
@@ -209,7 +204,7 @@ public class AuthServiceImpl implements AuthService {
     readerRepository.save(reader);
   }
 
-  private void changeReviewerPassword(Long subjectId, ChangePasswordRequest request) {
+  private void changeReviewerPassword(UUID subjectId, ChangePasswordRequest request) {
     Reviewer reviewer = reviewerRepository.findById(subjectId)
         .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
 
@@ -224,7 +219,7 @@ public class AuthServiceImpl implements AuthService {
     reviewerRepository.save(reviewer);
   }
 
-  private void changeOrganizationPassword(Long subjectId, ChangePasswordRequest request) {
+  private void changeOrganizationPassword(UUID subjectId, ChangePasswordRequest request) {
     Organization organization = organizationRepository.findById(subjectId)
         .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
 
@@ -240,7 +235,7 @@ public class AuthServiceImpl implements AuthService {
     organizationRepository.save(organization);
   }
 
-  private void changeBusinessAdminPassword(Long subjectId, ChangePasswordRequest request) {
+  private void changeBusinessAdminPassword(UUID subjectId, ChangePasswordRequest request) {
     BusinessAdmin admin = businessAdminRepository.findById(subjectId)
         .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
 
@@ -255,7 +250,7 @@ public class AuthServiceImpl implements AuthService {
     businessAdminRepository.save(admin);
   }
 
-  private void changeSystemAdminPassword(Long subjectId, ChangePasswordRequest request) {
+  private void changeSystemAdminPassword(UUID subjectId, ChangePasswordRequest request) {
     SystemAdmin admin = systemAdminRepository.findById(subjectId)
         .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
 

@@ -12,6 +12,7 @@ import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Objects;
+import java.util.UUID;
 import javax.crypto.SecretKey;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
@@ -65,7 +66,7 @@ public class JwtUtil {
         .build();
   }
 
-  public String generateToken(Long subjectId, UserRole role, String email) {
+  public String generateToken(UUID subjectId, UserRole role, String email) {
     Objects.requireNonNull(subjectId, "subjectId must not be null");
     Objects.requireNonNull(role, "role must not be null");
 

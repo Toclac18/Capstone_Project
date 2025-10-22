@@ -4,6 +4,7 @@ import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.security.util.JwtUtil;
 import io.jsonwebtoken.Claims;
+import java.util.UUID;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -20,13 +21,13 @@ public class JwtService {
     this.accountDetailsService = accountDetailsService;
   }
 
-  public String generateToken(Long subjectId, UserRole role, String email) {
+  public String generateToken(UUID subjectId, UserRole role, String email) {
     return jwtUtil.generateToken(subjectId, role, email);
   }
 
   public Authentication buildAuthentication(String token) {
     Claims claims = jwtUtil.parseClaims(token);
-    Long subjectId = parseSubjectId(claims);
+    UUID subjectId = parseSubjectId(claims);
     UserRole role = jwtUtil.extractRole(claims);
 
     UserPrincipal principal = accountDetailsService.loadPrincipal(role, subjectId);
@@ -38,9 +39,9 @@ public class JwtService {
     return jwtUtil.getExpirationMs();
   }
 
-  private Long parseSubjectId(Claims claims) {
+  private UUID parseSubjectId(Claims claims) {
     try {
-      return Long.parseLong(claims.getSubject());
+      return UUID.fromString(claims.getSubject());
     } catch (NumberFormatException ex) {
       throw new BadCredentialsException("Invalid token subject");
     }

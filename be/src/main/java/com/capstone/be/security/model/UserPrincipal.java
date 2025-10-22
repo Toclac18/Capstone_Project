@@ -46,9 +46,9 @@ public class UserPrincipal implements UserDetails {
   }
 
   public static UserPrincipal fromReader(Reader reader) {
-    boolean locked = ReaderStatus.BANNED.equals(reader.getStatus());
+    boolean locked = Boolean.TRUE.equals(reader.getBanned());
     boolean enabled = !Boolean.TRUE.equals(reader.getDeleted())
-        && !ReaderStatus.DELETING.equals(reader.getStatus());
+        && Boolean.TRUE.equals(reader.getVerified()) ;
     return new UserPrincipal(
         reader.getId(),
         UserRole.READER,

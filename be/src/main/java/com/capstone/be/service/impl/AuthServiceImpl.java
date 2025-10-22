@@ -73,8 +73,8 @@ public class AuthServiceImpl implements AuthService {
     verifyPassword(rawPassword, reader.getPasswordHash());
 
     if (Boolean.TRUE.equals(reader.getDeleted())
-        || ReaderStatus.BANNED.equals(reader.getStatus())
-        || ReaderStatus.DELETING.equals(reader.getStatus())) {
+        || Boolean.FALSE.equals(reader.getVerified())
+        || Boolean.TRUE.equals(reader.getBanned())) {
       throw ExceptionBuilder.unauthorized("Account is disabled");
     }
 

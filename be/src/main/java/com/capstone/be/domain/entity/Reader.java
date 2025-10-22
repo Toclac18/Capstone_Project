@@ -38,8 +38,10 @@ public class Reader extends BaseEntity {
   private Integer coinBalance = 0;
 
   @Column(nullable = false)
-  @Enumerated(EnumType.STRING)
-  private ReaderStatus status = ReaderStatus.UNVERIFIED;
+  private Boolean verified = false;
+
+  @Column(nullable = false)
+  private Boolean banned = false;
 
   private Boolean deleted = false;
 }

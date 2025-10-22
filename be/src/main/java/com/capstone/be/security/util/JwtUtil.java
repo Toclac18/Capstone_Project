@@ -112,4 +112,18 @@ public class JwtUtil {
       return false;
     }
   }
+
+  public String generateEmailVerifyToken(String email) {
+    Objects.requireNonNull(email, "Email must not be Null");
+
+    Date now = new Date();
+    Date expiry = new Date(now.getTime() + expirationMs);
+
+    return Jwts.builder()
+        .setIssuedAt(now)
+        .setExpiration(expiry)
+        .claim(CLAIM_EMAIL, email)
+        .signWith(secretKey, SignatureAlgorithm.HS256)
+        .compact();
+  }
 }

@@ -16,7 +16,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
@@ -36,7 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       return true;
     }
     String path = request.getRequestURI();
-    return path.startsWith("/api/auth/login") || path.startsWith("/api/auth/register");
+    return path.startsWith("/api/auth/login") || path.matches("/api/auth/.*/register$");
   }
 
   @Override
@@ -45,31 +44,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     String header = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-    if (StringUtils.hasText(header) && header.startsWith(BEARER_PREFIX)) {
-      String token = header.substring(BEARER_PREFIX.length()).trim();
+    if (header == null
+        || !header.startsWith(BEARER_PREFIX)
+        || !(header.length() > BEARER_PREFIX.length())) {
+      sendUnauthorized(response, "Invalid Token or required");
+      return;
+    }
 
-      if (!StringUtils.hasText(token)) {
-        filterChain.doFilter(request, response);
+    String token = header.substring(BEARER_PREFIX.length()).trim();
+
+    if (SecurityContextHolder.getContext().getAuthentication() == null) {
+      try {
+        Authentication authentication = jwtService.buildAuthentication(token);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+      } catch (JwtException | IllegalArgumentException | UsernameNotFoundException ex) {
+        sendUnauthorized(response, "Invalid or expired token");
         return;
-      }
-
-      if (SecurityContextHolder.getContext().getAuthentication() == null) {
-        try {
-          Authentication authentication = jwtService.buildAuthentication(token);
-          SecurityContextHolder.getContext().setAuthentication(authentication);
-        } catch (JwtException | IllegalArgumentException | UsernameNotFoundException ex) {
-          sendUnauthorized(response, "Invalid or expired token");
-          return;
-        } catch (BadCredentialsException ex) {
-          sendUnauthorized(response, "Invalid token");
-          return;
-        } catch (LockedException ex) {
-          sendUnauthorized(response, "Account is banned");
-          return;
-        } catch (DisabledException ex) {
-          sendUnauthorized(response, "Account is disabled");
-          return;
-        }
+      } catch (BadCredentialsException ex) {
+        sendUnauthorized(response, "Invalid token");
+        return;
+      } catch (LockedException ex) {
+        sendUnauthorized(response, "Account is banned");
+        return;
+      } catch (DisabledException ex) {
+        sendUnauthorized(response, "Account is disabled");
+        return;
       }
     }
 

@@ -22,7 +22,7 @@ export function Header() {
         <span className="sr-only">Toggle Sidebar</span>
       </button>
 
-      {isMobile && (
+      {/* {isMobile && (
         <Link href={"/"} className="ml-2 max-[430px]:hidden min-[375px]:ml-4">
           <Image
             src={"/images/logo/logo-icon.svg"}
@@ -32,13 +32,15 @@ export function Header() {
             role="presentation"
           />
         </Link>
+      )} */}
+      {!isOpen && (
+        <div className="max-xl:hidden">
+          <h1 className="ml-4 mb-0.5 text-heading-5 font-bold text-dark dark:text-white">
+            Readee
+          </h1>
+        </div>
       )}
-
-      <div className="max-xl:hidden">
-        <h1 className="mb-0.5 text-heading-5 font-bold text-dark dark:text-white">
-          Readee
-        </h1>
-      </div>
+      
 
       <div className="flex flex-1 items-center justify-end gap-2 min-[375px]:gap-4">
         {/* <div className="relative w-full max-w-[300px]">

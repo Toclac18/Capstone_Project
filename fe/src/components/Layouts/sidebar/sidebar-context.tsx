@@ -36,8 +36,6 @@ export function SidebarProvider({
   useEffect(() => {
     if (isMobile) {
       setIsOpen(false);
-    } else {
-      setIsOpen(true);
     }
   }, [isMobile]);
 

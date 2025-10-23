@@ -478,3 +478,13 @@ input[type="search"]::-webkit-search-cancel-button {
 .custom-gradient-1 {
   background-image: linear-gradient(145deg, #eef 0%, #fff8fc 100%);
 }
+
+/* Toast animations */
+@keyframes toast-progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}

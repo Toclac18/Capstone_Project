@@ -1,6 +1,7 @@
 package com.capstone.be.domain.entity;
 
 import com.capstone.be.domain.entity.common.BaseEntity;
+import com.capstone.be.domain.enums.ReaderStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -38,10 +39,7 @@ public class Reader extends BaseEntity {
   private Integer coinBalance = 0;
 
   @Column(nullable = false)
-  private Boolean verified = false;
+  @Enumerated(EnumType.STRING)
+  private ReaderStatus status = ReaderStatus.PENDING_VERIFICATION;
 
-  @Column(nullable = false)
-  private Boolean banned = false;
-
-  private Boolean deleted = false;
 }

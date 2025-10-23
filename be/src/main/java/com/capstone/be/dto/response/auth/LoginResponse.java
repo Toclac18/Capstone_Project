@@ -1,7 +1,6 @@
 package com.capstone.be.dto.response.auth;
 
 import com.capstone.be.domain.enums.UserRole;
-import java.util.UUID;
 import lombok.Builder;
 import lombok.Value;
 

@@ -25,7 +25,7 @@ public class JwtService {
     return jwtUtil.generateToken(subjectId, role, email);
   }
 
-  public String generateEmailVerifyToken(String email){
+  public String generateEmailVerifyToken(String email) {
     return jwtUtil.generateEmailVerifyToken(email);
   }
 

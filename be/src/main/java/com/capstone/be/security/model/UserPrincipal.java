@@ -5,6 +5,7 @@ import com.capstone.be.domain.entity.Organization;
 import com.capstone.be.domain.entity.Reader;
 import com.capstone.be.domain.entity.Reviewer;
 import com.capstone.be.domain.entity.SystemAdmin;
+import com.capstone.be.domain.enums.ReaderStatus;
 import com.capstone.be.domain.enums.UserRole;
 import java.util.Collection;
 import java.util.List;
@@ -46,9 +47,8 @@ public class UserPrincipal implements UserDetails {
   }
 
   public static UserPrincipal fromReader(Reader reader) {
-    boolean locked = Boolean.TRUE.equals(reader.getBanned());
-    boolean enabled = !Boolean.TRUE.equals(reader.getDeleted())
-        && Boolean.TRUE.equals(reader.getVerified()) ;
+    boolean locked = ReaderStatus.DEACTIVE.equals(reader.getStatus());
+    boolean enabled = ReaderStatus.PENDING_VERIFICATION.equals(reader.getStatus());
     return new UserPrincipal(
         reader.getId(),
         UserRole.READER,

@@ -1,52 +1,227 @@
 "use client";
-import { userService } from "@/services/userService";
-import { User } from "@/types/user";
-import { useEffect, useState } from "react";
+
+import { useState } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/utils/utils";
+import DeleteConfirmation from "@/components/ui/delete-confirmation";
+import EditConfirmation from "@/components/ui/edit-confirmation";
+import { useToast } from "@/components/ui/toast";
 
 const Home = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  
-  
-  useEffect(() => {
-    userService.getUsers().then((users) => {
-      setUsers(users);
-    });
-  }, []);
-  
+  const { showToast } = useToast();
+  const [users, setUsers] = useState([
+    {
+      id: "1",
+      name: "Hung Dinh",
+      email: "john.doe@example.com",
+      role: "SYSTEM_ADMIN",
+    },
+    {
+      id: "2",
+      name: "Nguyen Van A",
+      email: "jane.doe@example.com",
+      role: "REVIEWER",
+    },
+    {
+      id: "3",
+      name: "Nguyen Van B",
+      email: "jim.doe@example.com",
+      role: "READER",
+    },
+    {
+      id: "4",
+      name: "Nguyen Van C",
+      email: "jill.doe@example.com",
+      role: "ORGANIZATION",
+    },
+  ]);
+
+
+  const handleDeleteUser = async (id: string | number) => {
+    const userId = typeof id === 'string' ? id : id.toString();
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Ví dụ nếu dùng service thật:
+      // await userService.deleteUser(userId);
+      
+      // Remove user from list
+      setUsers(prev => prev.filter(user => user.id !== userId));
+      
+      // Show success toast
+      showToast({
+        type: 'warning',
+        title: 'User Deleted',
+        message: `User has been successfully deleted`,
+        duration: 3000
+      });
+      
+      console.log(`Deleted user with id: ${userId}`);
+    } catch (error) {
+      // Show error toast
+      showToast({
+        type: 'error',
+        title: 'Delete Failed',
+        message: 'Failed to delete user. Please try again.',
+        duration: 5000
+      });
+      console.error('Delete failed:', error);
+    }
+  };
+
+  const handleEditUser = async (id: string | number, data: Record<string, any>) => {
+    const userId = typeof id === 'string' ? id : id.toString();
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Ví dụ nếu dùng service thật:
+      // await userService.updateUser(userId, data);
+      
+      // Update user in list
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, ...data } : user
+      ));
+      
+      // Show success toast
+      showToast({
+        type: 'success',
+        title: 'User Updated',
+        message: `User information has been successfully updated`,
+        duration: 3000
+      });
+      
+      console.log(`Updated user with id: ${userId}`, data);
+    } catch (error) {
+      // Show error toast
+      showToast({
+        type: 'error',
+        title: 'Update Failed',
+        message: 'Failed to update user. Please try again.',
+        duration: 5000
+      });
+      console.error('Update failed:', error);
+    }
+  };
+
   return (
-    <div className="max-w-2xl mx-auto mt-10">
-      <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">Users</h1>
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Role</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
-            {/* {users?.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50 transition">
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900">{user.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-500">{user.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
-                    {user.role}
-                  </span>
-                </td>
-              </tr>
-            ))} */}
-            {users.length === 0 && (
-              <tr>
-                <td colSpan={3} className="px-6 py-8 text-center text-gray-400">
-                  No users found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+    <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
+      <h1 className="text-3xl font-bold text-center text-gray-800 mb-8 text-dark dark:text-white" >Users</h1>
+      <Table>
+        <TableHeader>
+          <TableRow className="border-none bg-[#F7F9FC] dark:bg-dark-2 [&>th]:py-4 [&>th]:text-base [&>th]:text-dark [&>th]:dark:text-white">
+            <TableHead className="min-w-[155px] xl:pl-7.5">Name</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Role</TableHead>
+            <TableHead className="text-right xl:pr-7.5">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+
+        <TableBody>
+          {users.map((user, index) => (
+            <TableRow key={index} className="border-[#eee] dark:border-dark-3">
+              <TableCell className="min-w-[155px] xl:pl-7.5">
+                <h5 className="text-dark dark:text-white">{user.name}</h5>
+                <p className="mt-[3px] text-body-sm font-medium">
+                  {user.id}
+                </p>
+              </TableCell>
+
+              <TableCell>
+                <p className="text-dark dark:text-white">
+                  {user.email}
+                </p>
+              </TableCell>
+
+              <TableCell>
+                <div
+                  className={cn(
+                    "max-w-fit rounded-full px-3.5 py-1 text-sm font-medium",
+                    {
+                      "bg-[#219653]/[0.08] text-[#219653]":
+                        user.role === "SYSTEM_ADMIN",
+                      "bg-[#D34053]/[0.08] text-[#D34053]":
+                        user.role === "REVIEWER",
+                      "bg-[#FFA70B]/[0.08] text-[#FFA70B]":
+                        user.role === "READER",
+                    },
+                  )}
+                >
+                  {user.role}
+                </div>
+              </TableCell>
+
+              <TableCell className="xl:pr-7.5">
+                <div className="flex items-center justify-end gap-x-3.5">
+                  <EditConfirmation
+                    onSave={handleEditUser}
+                    itemId={user.id}
+                    itemName={user.name}
+                    initialData={user}
+                    fields={[
+                      {
+                        name: 'name',
+                        label: 'Name',
+                        type: 'text',
+                        required: true,
+                        placeholder: 'Enter user name',
+                        validation: (value: string) => {
+                          if (value.length < 2) return 'Name must be at least 2 characters';
+                          return null;
+                        }
+                      },
+                      {
+                        name: 'email',
+                        label: 'Email',
+                        type: 'email',
+                        required: true,
+                        placeholder: 'Enter email address',
+                        validation: (value: string) => {
+                          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address';
+                          return null;
+                        }
+                      },
+                      {
+                        name: 'role',
+                        label: 'Role',
+                        type: 'select',
+                        required: true,
+                        options: [
+                          { value: 'SYSTEM_ADMIN', label: 'System Admin' },
+                          { value: 'REVIEWER', label: 'Reviewer' },
+                          { value: 'READER', label: 'Reader' },
+                          { value: 'ORGANIZATION', label: 'Organization' }
+                        ]
+                      }
+                    ]}
+                    title="Edit User"
+                    description="Update user information"
+                    size="sm"
+                    variant="text"
+                  />
+                  <DeleteConfirmation
+                    onDelete={handleDeleteUser}
+                    itemId={user.id}
+                    itemName={user.name}
+                    title="Delete User"
+                    description={`Are you sure you want to delete user "${user.name}"?`}
+                    size="sm"
+                    variant="text"
+                  />
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

@@ -5,26 +5,30 @@ import com.capstone.be.domain.entity.Organization;
 import com.capstone.be.domain.entity.Reader;
 import com.capstone.be.domain.entity.Reviewer;
 import com.capstone.be.domain.entity.SystemAdmin;
-import com.capstone.be.domain.enums.ReaderStatus;
 import com.capstone.be.domain.enums.UserRole;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 public class UserPrincipal implements UserDetails {
 
-  private final Long id;
+  @Getter
+  private final UUID id;
+  @Getter
   private final UserRole role;
   private final String email;
+  @Getter
   private final String displayName;
   private final String passwordHash;
   private final boolean accountNonLocked;
   private final boolean enabled;
   private final List<GrantedAuthority> authorities;
 
-  private UserPrincipal(Long id,
+  private UserPrincipal(UUID id,
       UserRole role,
       String email,
       String displayName,
@@ -42,9 +46,9 @@ public class UserPrincipal implements UserDetails {
   }
 
   public static UserPrincipal fromReader(Reader reader) {
-    boolean locked = ReaderStatus.BANNED.equals(reader.getStatus());
+    boolean locked = Boolean.TRUE.equals(reader.getBanned());
     boolean enabled = !Boolean.TRUE.equals(reader.getDeleted())
-        && !ReaderStatus.DELETING.equals(reader.getStatus());
+        && Boolean.TRUE.equals(reader.getVerified()) ;
     return new UserPrincipal(
         reader.getId(),
         UserRole.READER,
@@ -110,18 +114,6 @@ public class UserPrincipal implements UserDetails {
         true,
         enabled
     );
-  }
-
-  public Long getId() {
-    return id;
-  }
-
-  public UserRole getRole() {
-    return role;
-  }
-
-  public String getDisplayName() {
-    return displayName;
   }
 
   @Override

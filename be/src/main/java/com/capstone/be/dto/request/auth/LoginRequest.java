@@ -1,4 +1,4 @@
-package com.capstone.be.dto.request;
+package com.capstone.be.dto.request.auth;
 
 import com.capstone.be.domain.enums.UserRole;
 import jakarta.validation.constraints.Email;

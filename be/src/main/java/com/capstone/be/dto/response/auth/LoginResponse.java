@@ -1,6 +1,7 @@
-package com.capstone.be.dto.response;
+package com.capstone.be.dto.response.auth;
 
 import com.capstone.be.domain.enums.UserRole;
+import java.util.UUID;
 import lombok.Builder;
 import lombok.Value;
 
@@ -11,7 +12,7 @@ public class LoginResponse {
   String accessToken;
   String tokenType;
   long expiresIn;
-  Long subjectId;
+  String subjectId;
   UserRole role;
   String email;
   String displayName;

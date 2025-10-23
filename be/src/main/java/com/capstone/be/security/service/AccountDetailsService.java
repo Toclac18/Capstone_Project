@@ -7,6 +7,7 @@ import com.capstone.be.repository.ReaderRepository;
 import com.capstone.be.repository.ReviewerRepository;
 import com.capstone.be.repository.SystemAdminRepository;
 import com.capstone.be.security.model.UserPrincipal;
+import java.util.UUID;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -35,7 +36,7 @@ public class AccountDetailsService {
   }
 
   @Transactional(readOnly = true)
-  public UserPrincipal loadPrincipal(UserRole role, Long userId) {
+  public UserPrincipal loadPrincipal(UserRole role, UUID userId) {
     return switch (role) {
       case READER -> readerRepository.findById(userId)
           .map(UserPrincipal::fromReader)

@@ -1,0 +1,22 @@
+name: Block WIP PRs
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  check-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title for [WIP]
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.pull_request.title;
+            if (/
+
+\[WIP\]
+
+/i.test(title)) {
+              core.setFailed("PR title contains [WIP]. Please remove it before merging.");
+            }

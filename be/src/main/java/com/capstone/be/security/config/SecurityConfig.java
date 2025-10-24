@@ -25,6 +25,13 @@ public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+  private static final String[] PUBLIC_ENDPOINTS = {
+      "/api/auth/login",
+      "/api/auth/*/register",
+      "/api/auth/reader/verify-email",
+      "/api/auth/hello"
+  };
+
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
@@ -33,14 +40,14 @@ public class SecurityConfig {
         .cors(cors -> {
         }) //Allow API call from Browser
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/auth/login", "/api/auth/reader/register", "/api/auth/hello")
+            .requestMatchers(PUBLIC_ENDPOINTS)
             .permitAll() // Public authentication endpoints
             .anyRequest().authenticated()            // Other endpoint require auth
         )
         .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
           response.setStatus(HttpStatus.UNAUTHORIZED.value());
           response.setContentType("application/json");
-          response.getWriter().write("{\"message\":\"Unauthorized\"}");
+          response.getWriter().write("{\"message\":\"Security Config: Unauthorized\"}");
         }))
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -62,5 +69,9 @@ public class SecurityConfig {
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
+  }
+
+  public static String[] getPublicEndpoints() {
+    return PUBLIC_ENDPOINTS;
   }
 }

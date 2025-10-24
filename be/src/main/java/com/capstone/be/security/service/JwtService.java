@@ -29,6 +29,11 @@ public class JwtService {
     return jwtUtil.generateEmailVerifyToken(email);
   }
 
+  public String extractEmailFromEmailVerifyToken(String token) {
+    Claims claims = jwtUtil.parseClaims(token);
+    return jwtUtil.extractEmail(claims);
+  }
+
   public Authentication buildAuthentication(String token) {
     Claims claims = jwtUtil.parseClaims(token);
     UUID subjectId = parseSubjectId(claims);

@@ -44,6 +44,17 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  async rewrites() {
+    if (process.env.USE_MOCK === "true") {
+      return [
+        {
+          source: "/api/contact-admin",
+          destination: "/api/mock/contact-admin",
+        },
+      ];
+    }
+    return [];
+  },
 };
 
 export default nextConfig;

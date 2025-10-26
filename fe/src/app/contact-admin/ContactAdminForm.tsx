@@ -1,11 +1,15 @@
+// src/app/contact-admin/ContactAdminForm.tsx
 "use client";
 
 import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
-import { postJSON, type ContactAdminResponse } from "./api";
+import {
+  postJSON,
+  type ContactAdminResponse,
+  type ContactAdminPayload,
+} from "./api";
 import styles from "./styles.module.css";
 
-// BE enum mapping
 const CATEGORIES = [
   "PAYMENT",
   "ACCESS",
@@ -20,21 +24,18 @@ type FormValues = {
   name: string;
   email: string;
   category: (typeof CATEGORIES)[number];
-  otherCategory?: string; // only when category = OTHER
+  otherCategory?: string;
   urgency: (typeof URGENCY_LEVELS)[number];
   subject: string;
   message: string;
 };
 
 export default function ContactAdminForm() {
-  // TODO: thay bằng token thật từ state/context
-  const TEMP_AUTH_TOKEN = "YOUR_JWT_TOKEN_HERE";
-
   const {
     register,
     handleSubmit,
-    formState: { errors },
     watch,
+    formState: { errors },
     reset,
   } = useForm<FormValues>({
     defaultValues: {
@@ -48,37 +49,30 @@ export default function ContactAdminForm() {
     },
   });
 
-  const categoryValue = watch("category");
+  const isOther = watch("category") === "OTHER";
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<ContactAdminResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
-    if (!TEMP_AUTH_TOKEN || TEMP_AUTH_TOKEN === "YOUR_JWT_TOKEN_HERE") {
-      setError("Missing or placeholder auth token. Please log in first.");
-      return;
-    }
-
-    // Merge otherCategory if category = OTHER
-    const payload = {
-      ...data,
-      category:
-        data.category === "OTHER" && data.otherCategory
-          ? `OTHER: ${data.otherCategory}`
-          : data.category,
-    };
-
     setLoading(true);
     setError(null);
     setSuccess(null);
 
+    // Payload đúng với BE (enum); otherCategory sẽ được xử lý ở service.
+    const payload: ContactAdminPayload = {
+      name: data.name,
+      email: data.email,
+      category: data.category,
+      otherCategory: data.otherCategory,
+      urgency: data.urgency,
+      subject: data.subject,
+      message: data.message,
+    };
+
     try {
-      const resp = await postJSON<ContactAdminResponse>(
-        "/contact/admin",
-        payload,
-        TEMP_AUTH_TOKEN,
-      );
+      const resp = await postJSON(payload);
       setSuccess(resp);
       reset();
     } catch (e: unknown) {
@@ -99,7 +93,7 @@ export default function ContactAdminForm() {
         <div className={styles["form-alert-success"]}>
           Ticket created successfully! ID: {success.ticketId} — Code:{" "}
           {success.ticketCode}
-          <p className="mt-1 text-emerald-700">{success.message}</p>
+          <p className="mt-1">{success.message}</p>
         </div>
       )}
       {error && <div className={styles["form-alert-error"]}>{error}</div>}
@@ -107,8 +101,11 @@ export default function ContactAdminForm() {
       <h3 className={styles["form-section-header"]}>Your Contact Details</h3>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className={styles["form-field-group"]}>
-          <label className={styles["form-label"]}>Full Name *</label>
+          <label htmlFor="name" className={styles["form-label"]}>
+            Full Name *
+          </label>
           <input
+            id="name"
             className={`${styles["form-input"]} ${errors.name ? styles.error : ""}`}
             placeholder="John Doe"
             {...register("name", {
@@ -118,6 +115,7 @@ export default function ContactAdminForm() {
                 message: "Name must be at least 2 characters",
               },
             })}
+            aria-invalid={!!errors.name}
           />
           {errors.name && (
             <p className={styles["form-error-message"]}>
@@ -127,18 +125,22 @@ export default function ContactAdminForm() {
         </div>
 
         <div className={styles["form-field-group"]}>
-          <label className={styles["form-label"]}>Email *</label>
+          <label htmlFor="email" className={styles["form-label"]}>
+            Email *
+          </label>
           <input
+            id="email"
             type="email"
             className={`${styles["form-input"]} ${errors.email ? styles.error : ""}`}
             placeholder="john@example.com"
             {...register("email", {
-              required: "Email is required",
+              required: "Your email is required",
               pattern: {
                 value: /^\S+@\S+$/i,
-                message: "Enter a valid email address",
+                message: "Please enter a valid email address",
               },
             })}
+            aria-invalid={!!errors.email}
           />
           {errors.email && (
             <p className={styles["form-error-message"]}>
@@ -151,10 +153,14 @@ export default function ContactAdminForm() {
       <h3 className={styles["form-section-header"]}>Issue Details</h3>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className={styles["form-field-group"]}>
-          <label className={styles["form-label"]}>Category *</label>
+          <label htmlFor="category" className={styles["form-label"]}>
+            Category *
+          </label>
           <select
+            id="category"
             className={`${styles["form-select"]} ${errors.category ? styles.error : ""}`}
             {...register("category", { required: "Please select a category" })}
+            aria-invalid={!!errors.category}
           >
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>
@@ -170,12 +176,16 @@ export default function ContactAdminForm() {
         </div>
 
         <div className={styles["form-field-group"]}>
-          <label className={styles["form-label"]}>Urgency *</label>
+          <label htmlFor="urgency" className={styles["form-label"]}>
+            Urgency *
+          </label>
           <select
+            id="urgency"
             className={`${styles["form-select"]} ${errors.urgency ? styles.error : ""}`}
             {...register("urgency", {
-              required: "Please select urgency level",
+              required: "Please select an urgency level",
             })}
+            aria-invalid={!!errors.urgency}
           >
             {URGENCY_LEVELS.map((u) => (
               <option key={u} value={u}>
@@ -191,19 +201,20 @@ export default function ContactAdminForm() {
         </div>
       </div>
 
-      {categoryValue === "OTHER" && (
+      {isOther && (
         <div className={styles["form-field-group"]}>
-          <label className={styles["form-label"]}>Please specify *</label>
+          <label htmlFor="otherCategory" className={styles["form-label"]}>
+            Please specify *
+          </label>
           <input
+            id="otherCategory"
             className={`${styles["form-input"]} ${errors.otherCategory ? styles.error : ""}`}
-            placeholder="Describe the category"
+            placeholder="Describe your issue type (e.g., Partnership, Feedback...)"
             {...register("otherCategory", {
-              required: "Please specify a category when choosing OTHER",
-              minLength: {
-                value: 3,
-                message: "At least 3 characters required",
-              },
+              required: "Please specify your issue type",
+              minLength: { value: 3, message: "Must be at least 3 characters" },
             })}
+            aria-invalid={!!errors.otherCategory}
           />
           {errors.otherCategory && (
             <p className={styles["form-error-message"]}>
@@ -214,14 +225,21 @@ export default function ContactAdminForm() {
       )}
 
       <div className={styles["form-field-group"]}>
-        <label className={styles["form-label"]}>Subject *</label>
+        <label htmlFor="subject" className={styles["form-label"]}>
+          Subject *
+        </label>
         <input
+          id="subject"
           className={`${styles["form-input"]} ${errors.subject ? styles.error : ""}`}
-          placeholder="Brief issue summary (e.g., 'Login not working')"
+          placeholder="Briefly describe your issue"
           {...register("subject", {
             required: "Subject is required",
-            minLength: { value: 3, message: "At least 3 characters" },
+            minLength: {
+              value: 3,
+              message: "Subject must be at least 3 characters",
+            },
           })}
+          aria-invalid={!!errors.subject}
         />
         {errors.subject && (
           <p className={styles["form-error-message"]}>
@@ -231,11 +249,14 @@ export default function ContactAdminForm() {
       </div>
 
       <div className={styles["form-field-group"]}>
-        <label className={styles["form-label"]}>Message *</label>
+        <label htmlFor="message" className={styles["form-label"]}>
+          Message *
+        </label>
         <textarea
+          id="message"
           rows={6}
           className={`${styles["form-textarea"]} ${errors.message ? styles.error : ""}`}
-          placeholder="Describe your issue in detail, including steps to reproduce."
+          placeholder="Provide detailed information about your issue..."
           {...register("message", {
             required: "Message is required",
             minLength: {
@@ -243,6 +264,7 @@ export default function ContactAdminForm() {
               message: "Message must be at least 10 characters",
             },
           })}
+          aria-invalid={!!errors.message}
         />
         {errors.message && (
           <p className={styles["form-error-message"]}>
@@ -251,7 +273,8 @@ export default function ContactAdminForm() {
         )}
       </div>
 
-      <div className="mt-4 flex justify-end">
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-end">
+        <div />
         <button
           type="submit"
           disabled={loading}
@@ -262,7 +285,10 @@ export default function ContactAdminForm() {
       </div>
 
       <p className={styles["form-meta-text"]}>
-        API endpoint: <code>POST /contact/admin</code>
+        API endpoint (via FE):{" "}
+        <code className={styles["form-code-block"]}>
+          POST /api/contact-admin
+        </code>
       </p>
     </form>
   );

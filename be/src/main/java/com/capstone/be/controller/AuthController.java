@@ -1,10 +1,10 @@
 package com.capstone.be.controller;
 
-import com.capstone.be.domain.entity.Reader;
 import com.capstone.be.dto.request.auth.ChangePasswordRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
 import com.capstone.be.dto.request.auth.ReaderRegisterRequest;
 import com.capstone.be.dto.response.auth.LoginResponse;
+import com.capstone.be.dto.response.auth.ReaderRegisterResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.AuthService;
 import com.capstone.be.service.ReaderService;
@@ -38,7 +38,7 @@ public class AuthController {
   }
 
   @PostMapping("/reader/register")
-  public Reader readerRegister(
+  public ReaderRegisterResponse readerRegister(
       @Valid @RequestBody ReaderRegisterRequest request) {
     return readerService.register(request);
   }

@@ -3,6 +3,8 @@ package com.capstone.be.service.impl;
 import com.capstone.be.domain.entity.Reader;
 import com.capstone.be.domain.enums.ReaderStatus;
 import com.capstone.be.dto.request.auth.ReaderRegisterRequest;
+import com.capstone.be.dto.response.auth.ReaderRegisterResponse;
+import com.capstone.be.mapper.ReaderMapper;
 import com.capstone.be.repository.ReaderRepository;
 import com.capstone.be.security.service.JwtService;
 import com.capstone.be.service.EmailService;
@@ -30,9 +32,12 @@ public class ReaderServiceImpl implements ReaderService {
   @Autowired
   private EmailService emailService;
 
+  @Autowired
+  private ReaderMapper readerMapper;
+
   @Override
   @Transactional
-  public Reader register(ReaderRegisterRequest request) {
+  public ReaderRegisterResponse register(ReaderRegisterRequest request) {
     // Check email existed
     if (readerRepository.existsByEmail(request.getEmail())) {
       throw new IllegalArgumentException("Email has been used");
@@ -44,9 +49,7 @@ public class ReaderServiceImpl implements ReaderService {
     }
 
     // Create Reader Entity From Dto
-    Reader reader = new Reader();
-    reader.setUsername(request.getUsername());
-    reader.setEmail(request.getEmail());
+    Reader reader = readerMapper.toReader(request);
     reader.setPasswordHash(passwordEncoder.encode(request.getPassword()));
 
     // Save Reader to DB
@@ -57,7 +60,7 @@ public class ReaderServiceImpl implements ReaderService {
 
     emailService.sendReaderVerificationEmail(savedReader, verificationToken);
 
-    return savedReader;
+    return readerMapper.toRegisterResponse(savedReader);
   }
 
   @Override

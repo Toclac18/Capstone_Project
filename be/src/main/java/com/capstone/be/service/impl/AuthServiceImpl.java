@@ -270,4 +270,11 @@ public class AuthServiceImpl implements AuthService {
     }
   }
 
+  public boolean isEmailExisted(String email) {
+    return readerRepository.existsByEmail(email)
+        || reviewerRepository.existsByEmail(email)
+        || organizationRepository.existsByEmail(email)
+        || systemAdminRepository.existsByEmail(email)
+        || businessAdminRepository.existsByEmail(email);
+  }
 }

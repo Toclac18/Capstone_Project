@@ -23,14 +23,17 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-  private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
   private static final String[] PUBLIC_ENDPOINTS = {
       "/api/auth/login",
       "/api/auth/*/register",
       "/api/auth/reader/verify-email",
       "/api/auth/hello"
   };
+  private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+  public static String[] getPublicEndpoints() {
+    return PUBLIC_ENDPOINTS;
+  }
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -69,9 +72,5 @@ public class SecurityConfig {
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
-  }
-
-  public static String[] getPublicEndpoints() {
-    return PUBLIC_ENDPOINTS;
   }
 }

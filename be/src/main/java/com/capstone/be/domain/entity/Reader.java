@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import java.util.UUID;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,8 +25,14 @@ public class Reader extends BaseEntity {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
+  @Column(nullable = false)
+  private String fullName;
+
   @Column(nullable = false, unique = true)
   private String username;
+
+  @Column(nullable = false)
+  private LocalDate dateOfBirth;
 
   @Column(nullable = false, unique = true)
   private String email;

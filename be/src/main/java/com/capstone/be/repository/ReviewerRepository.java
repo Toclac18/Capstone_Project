@@ -9,5 +9,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ReviewerRepository extends JpaRepository<Reviewer, UUID> {
 
+  boolean existsByEmail(String email);
+
+  boolean existsByUsername(String username);
+
   Optional<Reviewer> findByEmail(String email);
 }

@@ -7,6 +7,7 @@ import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.io.DecodingException;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
@@ -55,7 +56,7 @@ public class JwtUtil {
     byte[] keyBytes;
     try {
       keyBytes = Decoders.BASE64.decode(secret);
-    } catch (IllegalArgumentException ex) {
+    } catch (IllegalArgumentException | DecodingException ex) {
       keyBytes = secret.getBytes(StandardCharsets.UTF_8);
     }
 

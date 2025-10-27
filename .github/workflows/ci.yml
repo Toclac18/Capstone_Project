@@ -1,14 +1,12 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
-      - quangvh
+  # push:
+  #   branches:
+  #     - dev
   pull_request:
     branches:
-      - main
-      - quangvh
+      - dev
   workflow_dispatch:
 
 jobs:
@@ -21,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1 # Only lastest commit
 
       - id: filter
         uses: dorny/paths-filter@v3

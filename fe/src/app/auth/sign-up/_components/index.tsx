@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import GoogleSigninButton from "../../_components/GoogleSigninButton";
 import { EmailIcon, GoogleIcon, PasswordIcon, UserIcon } from "@/assets/icons";
 import React, { useState } from "react";
 import InputGroup from "@/components/(template)/FormElements/InputGroup";
@@ -32,7 +31,6 @@ export default function Signup() {
       setLoading(false);
     }, 1000);
   };
-
 
   return (
     <>

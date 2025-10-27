@@ -10,13 +10,20 @@ import static org.mockito.Mockito.when;
 
 import com.capstone.be.domain.entity.Reader;
 import com.capstone.be.dto.request.auth.ReaderRegisterRequest;
+import com.capstone.be.dto.response.auth.ReaderRegisterResponse;
+import com.capstone.be.mapper.ReaderMapper;
 import com.capstone.be.repository.ReaderRepository;
+import com.capstone.be.security.service.JwtService;
+import com.capstone.be.service.EmailService;
+import java.time.LocalDate;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -25,19 +32,28 @@ class ReaderServiceImplTest {
 
   private static final String EMAIL = "user@example.com";
   private static final String USERNAME = "user";
-  private static final String RAW_PASSWORD = "secret";
+  private static final String RAW_PASSWORD = "secret123";
+  private static final LocalDate DATE_OF_BIRTH = LocalDate.of(2000, 1, 1);
+  private static final String FULL_NAME = "User Name";
 
   @Mock
   private ReaderRepository readerRepository;
-
   @Mock
   private PasswordEncoder passwordEncoder;
+  @Mock
+  private JwtService jwtService;
+  @Mock
+  private EmailService emailService;
+  @Mock
+  private ReaderMapper readerMapper;
 
   @InjectMocks
   private ReaderServiceImpl readerService;
 
   private ReaderRegisterRequest buildRequest() {
     return ReaderRegisterRequest.builder()
+        .fullName(FULL_NAME)
+        .dateOfBirth(DATE_OF_BIRTH)
         .email(EMAIL)
         .username(USERNAME)
         .password(RAW_PASSWORD)
@@ -46,33 +62,49 @@ class ReaderServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    when(passwordEncoder.encode(RAW_PASSWORD)).thenReturn("encoded-password");
+    Mockito.lenient().when(passwordEncoder.encode(RAW_PASSWORD)).thenReturn("encoded-password");
   }
 
   @Test
-  void register_createsReader_withEncodedPassword() {
+  void register_createsReader_withEncodedPasswordAndSendsVerification() {
     ReaderRegisterRequest request = buildRequest();
+
     when(readerRepository.existsByEmail(EMAIL)).thenReturn(false);
     when(readerRepository.existsByUsername(USERNAME)).thenReturn(false);
-    when(readerRepository.save(any(Reader.class))).thenAnswer(invocation -> {
-      Reader toSave = invocation.getArgument(0);
-      toSave.setId(1L);
-      return toSave;
-    });
 
-    Reader savedReader = readerService.register(request);
+    Reader mappedReader = new Reader();
+    mappedReader.setEmail(EMAIL);
+    mappedReader.setUsername(USERNAME);
+    mappedReader.setPasswordHash("initial");
+    when(readerMapper.toReader(request)).thenReturn(mappedReader);
 
-    assertEquals(1L, savedReader.getId());
-    assertEquals(USERNAME, savedReader.getUsername());
-    assertEquals(EMAIL, savedReader.getEmail());
-    assertEquals("encoded-password", savedReader.getPasswordHash());
+    Reader savedReader = new Reader();
+    savedReader.setId(UUID.randomUUID());
+    savedReader.setEmail(EMAIL);
+    savedReader.setUsername(USERNAME);
+    savedReader.setPasswordHash("encoded-password");
+    when(readerRepository.save(any(Reader.class))).thenReturn(savedReader);
 
-    ArgumentCaptor<Reader> captor = ArgumentCaptor.forClass(Reader.class);
-    verify(readerRepository).save(captor.capture());
-    Reader persisted = captor.getValue();
+    String verifyToken = "verify-token";
+    when(jwtService.generateEmailVerifyToken(EMAIL)).thenReturn(verifyToken);
+
+    ReaderRegisterResponse expectedResponse = ReaderRegisterResponse.builder()
+        .email(EMAIL)
+        .username(USERNAME)
+        .build();
+    when(readerMapper.toRegisterResponse(savedReader)).thenReturn(expectedResponse);
+
+    ReaderRegisterResponse response = readerService.register(request);
+
+    assertEquals(expectedResponse, response);
+
+    ArgumentCaptor<Reader> readerCaptor = ArgumentCaptor.forClass(Reader.class);
+    verify(readerRepository).save(readerCaptor.capture());
+    Reader persisted = readerCaptor.getValue();
     assertEquals("encoded-password", persisted.getPasswordHash());
-    assertEquals(USERNAME, persisted.getUsername());
-    assertEquals(EMAIL, persisted.getEmail());
+
+    verify(jwtService).generateEmailVerifyToken(EMAIL);
+    verify(emailService).sendReaderVerificationEmail(savedReader, verifyToken);
   }
 
   @Test
@@ -86,6 +118,7 @@ class ReaderServiceImplTest {
     assertEquals("Email has been used", ex.getMessage());
     verify(readerRepository, never()).existsByUsername(anyString());
     verify(readerRepository, never()).save(any(Reader.class));
+    verify(emailService, never()).sendReaderVerificationEmail(any(), anyString());
   }
 
   @Test
@@ -99,5 +132,6 @@ class ReaderServiceImplTest {
 
     assertEquals("Username has been used", ex.getMessage());
     verify(readerRepository, never()).save(any(Reader.class));
+    verify(emailService, never()).sendReaderVerificationEmail(any(), anyString());
   }
 }

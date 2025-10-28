@@ -25,8 +25,13 @@ public class JwtService {
     return jwtUtil.generateToken(subjectId, role, email);
   }
 
-  public String generateEmailVerifyToken(String email){
+  public String generateEmailVerifyToken(String email) {
     return jwtUtil.generateEmailVerifyToken(email);
+  }
+
+  public String extractEmailFromEmailVerifyToken(String token) {
+    Claims claims = jwtUtil.parseClaims(token);
+    return jwtUtil.extractEmail(claims);
   }
 
   public Authentication buildAuthentication(String token) {

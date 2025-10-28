@@ -1,229 +1,89 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { cn } from "@/utils/utils";
-import DeleteConfirmation from "@/components/ui/delete-confirmation";
-import EditConfirmation from "@/components/ui/edit-confirmation";
+import { FeaturedCarousel } from "./_components/featured-carousel";
+import { SystemDescription } from "./_components/system-description";
+import { ContentCards } from "./_components/content-cards";
+import { mockFeaturedCards, mockContentCards } from "./_components/mock-data";
 import { useToast } from "@/components/ui/toast";
 
 const Home = () => {
   const { showToast } = useToast();
-  const [users, setUsers] = useState([
-    {
-      id: "1",
-      name: "Hung Dinh",
-      email: "john.doe@example.com",
-      role: "SYSTEM_ADMIN",
-    },
-    {
-      id: "2",
-      name: "Nguyen Van A",
-      email: "jane.doe@example.com",
-      role: "REVIEWER",
-    },
-    {
-      id: "3",
-      name: "Nguyen Van B",
-      email: "jim.doe@example.com",
-      role: "READER",
-    },
-    {
-      id: "4",
-      name: "Nguyen Van C",
-      email: "jill.doe@example.com",
-      role: "ORGANIZATION",
-    },
-  ]);
 
-
-  const handleDeleteUser = async (id: string | number) => {
-    const userId = typeof id === 'string' ? id : id.toString();
-    
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      // Ví dụ nếu dùng service thật:
-      // await userService.deleteUser(userId);
-      
-      // Remove user from list
-      setUsers(prev => prev.filter(user => user.id !== userId));
-      
-      // Show success toast
-      showToast({
-        type: 'warning',
-        title: 'User Deleted',
-        message: `User has been successfully deleted`,
-        duration: 3000
-      });
-      
-      console.log(`Deleted user with id: ${userId}`);
-    } catch (error) {
-      // Show error toast
-      showToast({
-        type: 'error',
-        title: 'Delete Failed',
-        message: 'Failed to delete user. Please try again.',
-        duration: 5000
-      });
-      console.error('Delete failed:', error);
-    }
+  const handleFeaturedCardClick = (card: any) => {
+    showToast({
+      type: 'info',
+      title: 'Featured Course',
+      message: `You clicked on "${card.title}"`,
+      duration: 3000
+    });
   };
 
-  const handleEditUser = async (id: string | number, data: Record<string, any>) => {
-    const userId = typeof id === 'string' ? id : id.toString();
-    
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      // Ví dụ nếu dùng service thật:
-      // await userService.updateUser(userId, data);
-      
-      // Update user in list
-      setUsers(prev => prev.map(user => 
-        user.id === userId ? { ...user, ...data } : user
-      ));
-      
-      // Show success toast
-      showToast({
-        type: 'success',
-        title: 'User Updated',
-        message: `User information has been successfully updated`,
-        duration: 3000
-      });
-      
-      console.log(`Updated user with id: ${userId}`, data);
-    } catch (error) {
-      // Show error toast
-      showToast({
-        type: 'error',
-        title: 'Update Failed',
-        message: 'Failed to update user. Please try again.',
-        duration: 5000
-      });
-      console.error('Update failed:', error);
-    }
+  const handleContentCardClick = (card: any) => {
+    showToast({
+      type: 'info',
+      title: 'Course Selected',
+      message: `You selected "${card.title}"`,
+      duration: 3000
+    });
   };
 
   return (
-    <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
-      <h1 className="text-3xl font-bold text-center text-gray-800 mb-8 text-dark dark:text-white" >Users</h1>
-      <Table>
-        <TableHeader>
-          <TableRow className="border-none bg-[#F7F9FC] dark:bg-dark-2 [&>th]:py-4 [&>th]:text-base [&>th]:text-dark [&>th]:dark:text-white">
-            <TableHead className="min-w-[155px] xl:pl-7.5">Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead className="text-right xl:pr-7.5">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 rounded-2xl">
+      <div className="container mx-auto px-4 py-8">
+        {/* System Description */}
+        <SystemDescription />
 
-        <TableBody>
-          {users.map((user, index) => (
-            <TableRow key={index} className="border-[#eee] dark:border-dark-3">
-              <TableCell className="min-w-[155px] xl:pl-7.5">
-                <h5 className="text-dark dark:text-white">{user.name}</h5>
-                <p className="mt-[3px] text-body-sm font-medium">
-                  {user.id}
-                </p>
-              </TableCell>
+        {/* Featured Carousel */}
+        <div className="mb-12">
+          {/* <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Featured Courses
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Discover our most popular and trending courses
+            </p>
+          </div> */}
+          
+          <FeaturedCarousel 
+            cards={mockFeaturedCards}
+            onCardClick={handleFeaturedCardClick}
+          />
+        </div>
 
-              <TableCell>
-                <p className="text-dark dark:text-white">
-                  {user.email}
-                </p>
-              </TableCell>
+        {/* Content Cards */}
+        <div className="mb-12">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Popular Learning Paths
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Comprehensive courses designed to advance your career
+            </p>
+          </div>
+          
+          <ContentCards 
+            cards={mockContentCards}
+            onCardClick={handleContentCardClick}
+          />
+        </div>
 
-              <TableCell>
-                <div
-                  className={cn(
-                    "max-w-fit rounded-full px-3.5 py-1 text-sm font-medium",
-                    {
-                      "bg-[#219653]/[0.08] text-[#219653]":
-                        user.role === "SYSTEM_ADMIN",
-                      "bg-[#D34053]/[0.08] text-[#D34053]":
-                        user.role === "REVIEWER",
-                      "bg-[#FFA70B]/[0.08] text-[#FFA70B]":
-                        user.role === "READER",
-                    },
-                  )}
-                >
-                  {user.role}
-                </div>
-              </TableCell>
-
-              <TableCell className="xl:pr-7.5">
-                <div className="flex items-center justify-end gap-x-3.5">
-                  <EditConfirmation
-                    onSave={handleEditUser}
-                    itemId={user.id}
-                    itemName={user.name}
-                    initialData={user}
-                    fields={[
-                      {
-                        name: 'name',
-                        label: 'Name',
-                        type: 'text',
-                        required: true,
-                        placeholder: 'Enter user name',
-                        validation: (value: string) => {
-                          if (value.length < 2) return 'Name must be at least 2 characters';
-                          return null;
-                        }
-                      },
-                      {
-                        name: 'email',
-                        label: 'Email',
-                        type: 'email',
-                        required: true,
-                        placeholder: 'Enter email address',
-                        validation: (value: string) => {
-                          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address';
-                          return null;
-                        }
-                      },
-                      {
-                        name: 'role',
-                        label: 'Role',
-                        type: 'select',
-                        required: true,
-                        options: [
-                          { value: 'SYSTEM_ADMIN', label: 'System Admin' },
-                          { value: 'REVIEWER', label: 'Reviewer' },
-                          { value: 'READER', label: 'Reader' },
-                          { value: 'ORGANIZATION', label: 'Organization' }
-                        ]
-                      }
-                    ]}
-                    title="Edit User"
-                    description="Update user information"
-                    size="sm"
-                    variant="text"
-                  />
-                  <DeleteConfirmation
-                    onDelete={handleDeleteUser}
-                    itemId={user.id}
-                    itemName={user.name}
-                    title="Delete User"
-                    description={`Are you sure you want to delete user "${user.name}"?`}
-                    size="sm"
-                    variant="text"
-                  />
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+        {/* Additional Info Section */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 text-white shadow-xl hover:shadow-2xl transition-all duration-500">
+          <div className="text-center">
+            <h3 className="text-2xl font-bold mb-4">
+              Ready to Start Learning?
+            </h3>
+            <p className="text-lg mb-6 opacity-90">
+              Join thousands of students who are already advancing their careers with our courses
+            </p>
+            <button className="bg-white text-blue-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+              Get Started Today
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
-}
+};
 
 export default Home;

@@ -7,6 +7,7 @@ import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.io.DecodingException;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +29,8 @@ public class JwtUtil {
   private final String secret;
   @Getter
   private final long expirationMs;
+  @Getter
+  private final long emailVerificationExpirationMs;
   private final String issuer;
 
   private SecretKey secretKey;
@@ -36,9 +39,11 @@ public class JwtUtil {
   public JwtUtil(
       @Value("${app.security.jwt.secret}") String secret,
       @Value("${app.security.jwt.expirationMs}") long expirationMs,
+      @Value("${app.security.jwt.emailVerificationExpirationMs}") long emailVerificationExpirationMs,
       @Value("${app.security.jwt.issuer}") String issuer) {
     this.secret = secret;
     this.expirationMs = expirationMs;
+    this.emailVerificationExpirationMs = emailVerificationExpirationMs;
     this.issuer = issuer;
   }
 
@@ -51,7 +56,7 @@ public class JwtUtil {
     byte[] keyBytes;
     try {
       keyBytes = Decoders.BASE64.decode(secret);
-    } catch (IllegalArgumentException ex) {
+    } catch (IllegalArgumentException | DecodingException ex) {
       keyBytes = secret.getBytes(StandardCharsets.UTF_8);
     }
 
@@ -117,9 +122,10 @@ public class JwtUtil {
     Objects.requireNonNull(email, "Email must not be Null");
 
     Date now = new Date();
-    Date expiry = new Date(now.getTime() + expirationMs);
+    Date expiry = new Date(now.getTime() + emailVerificationExpirationMs);
 
     return Jwts.builder()
+        .setIssuer(issuer)
         .setIssuedAt(now)
         .setExpiration(expiry)
         .claim(CLAIM_EMAIL, email)

@@ -7,7 +7,6 @@ import {
 } from "@/components/ui/dropdown";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/utils/utils";
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { BellIcon } from "./icons";
@@ -89,7 +88,6 @@ export function Notification() {
                 onClick={() => setIsOpen(false)}
                 className="flex items-center gap-4 rounded-lg px-2 py-1.5 outline-none hover:bg-gray-2 focus-visible:bg-gray-2 dark:hover:bg-dark-3 dark:focus-visible:bg-dark-3"
               >
-
                 <div>
                   <strong className="block text-sm font-medium text-dark dark:text-white">
                     {item.title}

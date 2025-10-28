@@ -1,8 +1,8 @@
 package com.capstone.be.domain.enums;
 
 public enum ReaderStatus {
-  UNVERIFIED,
-  VERIFIED,
-  BANNED,
-  DELETING
+  PENDING_VERIFICATION,
+  ACTIVE,
+  DEACTIVE,
+  DELETED
 }

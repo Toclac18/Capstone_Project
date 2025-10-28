@@ -72,10 +72,9 @@ public class AuthServiceImpl implements AuthService {
 
     verifyPassword(rawPassword, reader.getPasswordHash());
 
-    if (Boolean.TRUE.equals(reader.getDeleted())
-        || Boolean.FALSE.equals(reader.getVerified())
-        || Boolean.TRUE.equals(reader.getBanned())) {
-      throw ExceptionBuilder.unauthorized("Account is disabled");
+    if (!ReaderStatus.ACTIVE.equals(reader.getStatus())) {
+      throw ExceptionBuilder.unauthorized("Account is disable or not verified");
+
     }
 
     String token = jwtService.generateToken(reader.getId(), UserRole.READER,
@@ -271,4 +270,11 @@ public class AuthServiceImpl implements AuthService {
     }
   }
 
+  public boolean isEmailExisted(String email) {
+    return readerRepository.existsByEmail(email)
+        || reviewerRepository.existsByEmail(email)
+        || organizationRepository.existsByEmail(email)
+        || systemAdminRepository.existsByEmail(email)
+        || businessAdminRepository.existsByEmail(email);
+  }
 }

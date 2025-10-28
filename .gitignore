@@ -3,3 +3,5 @@ be/.idea/
 be/out/
 */DS_Store
 .DS_Store
+
+be/src/main/generated

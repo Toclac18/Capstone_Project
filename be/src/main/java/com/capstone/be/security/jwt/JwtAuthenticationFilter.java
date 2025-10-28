@@ -1,5 +1,6 @@
 package com.capstone.be.security.jwt;
 
+import com.capstone.be.security.config.SecurityConfig;
 import com.capstone.be.security.service.JwtService;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -16,6 +17,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
@@ -24,6 +26,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private static final String BEARER_PREFIX = "Bearer ";
 
   private final JwtService jwtService;
+
+  private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
   public JwtAuthenticationFilter(JwtService jwtService) {
     this.jwtService = jwtService;
@@ -35,7 +39,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       return true;
     }
     String path = request.getRequestURI();
-    return path.startsWith("/api/auth/login") || path.matches("/api/auth/.*/register$");
+    // Sử dụng danh sách public endpoints từ SecurityConfig
+    for (String pattern : SecurityConfig.getPublicEndpoints()) {
+      if (pathMatcher.match(pattern, path)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
@@ -47,7 +57,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     if (header == null
         || !header.startsWith(BEARER_PREFIX)
         || !(header.length() > BEARER_PREFIX.length())) {
-      sendUnauthorized(response, "Invalid Token or required");
+      sendUnauthorized(response, "JwtFilter: Invalid Token or required"); //#dev
       return;
     }
 

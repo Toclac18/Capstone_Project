@@ -9,5 +9,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface BusinessAdminRepository extends JpaRepository<BusinessAdmin, UUID> {
 
+  boolean existsByEmail(String email);
+
   Optional<BusinessAdmin> findByEmail(String email);
 }

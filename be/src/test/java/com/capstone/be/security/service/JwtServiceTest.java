@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,12 +15,12 @@ import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.security.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 
@@ -40,12 +41,13 @@ class JwtServiceTest {
 
   @Test
   void generateToken_delegatesToUtil() {
-    when(jwtUtil.generateToken(1L, UserRole.READER, "user@example.com")).thenReturn("token");
+    UUID subjectId = UUID.randomUUID();
+    when(jwtUtil.generateToken(subjectId, UserRole.READER, "user@example.com")).thenReturn("token");
 
-    String token = jwtService.generateToken(1L, UserRole.READER, "user@example.com");
+    String token = jwtService.generateToken(subjectId, UserRole.READER, "user@example.com");
 
     assertEquals("token", token);
-    verify(jwtUtil).generateToken(1L, UserRole.READER, "user@example.com");
+    verify(jwtUtil).generateToken(subjectId, UserRole.READER, "user@example.com");
   }
 
   @Test
@@ -59,20 +61,21 @@ class JwtServiceTest {
   @Test
   void buildAuthentication_returnsUsernamePasswordToken() {
     String token = "jwt-token";
-    Claims claims = Jwts.claims().setSubject("42");
+    UUID subjectId = UUID.randomUUID();
+    Claims claims = Jwts.claims().setSubject(subjectId.toString());
 
     when(jwtUtil.parseClaims(token)).thenReturn(claims);
     when(jwtUtil.extractRole(claims)).thenReturn(UserRole.READER);
 
     Reader reader = new Reader();
-    reader.setId(42L);
+    reader.setId(subjectId);
     reader.setEmail("reader@example.com");
     reader.setUsername("reader");
     reader.setPasswordHash("hash");
-    reader.setStatus(ReaderStatus.VERIFIED);
+    reader.setStatus(ReaderStatus.PENDING_VERIFICATION);
 
     UserPrincipal principal = UserPrincipal.fromReader(reader);
-    when(accountDetailsService.loadPrincipal(UserRole.READER, 42L)).thenReturn(principal);
+    when(accountDetailsService.loadPrincipal(UserRole.READER, subjectId)).thenReturn(principal);
 
     Authentication authentication = jwtService.buildAuthentication(token);
 
@@ -89,7 +92,7 @@ class JwtServiceTest {
 
     when(jwtUtil.parseClaims(token)).thenReturn(claims);
 
-    assertThrows(BadCredentialsException.class, () -> jwtService.buildAuthentication(token));
-    verify(accountDetailsService, org.mockito.Mockito.never()).loadPrincipal(any(), any());
+    assertThrows(IllegalArgumentException.class, () -> jwtService.buildAuthentication(token));
+    verify(accountDetailsService, never()).loadPrincipal(any(), any());
   }
 }

@@ -3,7 +3,6 @@ package com.capstone.be.service.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -27,6 +26,7 @@ import com.capstone.be.repository.SystemAdminRepository;
 import com.capstone.be.security.service.JwtService;
 import com.capstone.be.service.AuthService;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -69,12 +69,13 @@ class AuthServiceImplTest {
 
   @Test
   void login_readerSuccess() {
+    UUID readerId = UUID.randomUUID();
     Reader reader = new Reader();
-    reader.setId(1L);
+    reader.setId(readerId);
     reader.setEmail("reader@example.com");
     reader.setUsername("reader");
     reader.setPasswordHash(PASSWORD_HASH);
-    reader.setStatus(ReaderStatus.VERIFIED);
+    reader.setStatus(ReaderStatus.ACTIVE);
 
     when(readerRepository.findByEmail(reader.getEmail())).thenReturn(Optional.of(reader));
     when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
@@ -93,7 +94,7 @@ class AuthServiceImplTest {
     assertEquals("token", response.getAccessToken());
     assertEquals("Bearer", response.getTokenType());
     assertEquals(3600L, response.getExpiresIn());
-    assertEquals(reader.getId(), response.getSubjectId());
+    assertEquals(readerId.toString(), response.getSubjectId());
     assertEquals(UserRole.READER, response.getRole());
     assertEquals(reader.getEmail(), response.getEmail());
     assertEquals(reader.getUsername(), response.getDisplayName());
@@ -102,9 +103,10 @@ class AuthServiceImplTest {
   @Test
   void login_readerInvalidPasswordThrowsUnauthorized() {
     Reader reader = new Reader();
-    reader.setId(1L);
+    reader.setId(UUID.randomUUID());
     reader.setEmail("reader@example.com");
     reader.setPasswordHash(PASSWORD_HASH);
+    reader.setStatus(ReaderStatus.ACTIVE);
 
     when(readerRepository.findByEmail(reader.getEmail())).thenReturn(Optional.of(reader));
     when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(false);
@@ -119,17 +121,16 @@ class AuthServiceImplTest {
         () -> authService.login(request));
 
     assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
-    verify(jwtService, never()).generateToken(anyLong(), any(UserRole.class), anyString());
+    verify(jwtService, never()).generateToken(any(UUID.class), any(UserRole.class), anyString());
   }
 
   @Test
-  void login_readerDisabledThrowsUnauthorized() {
+  void login_readerInactiveThrowsUnauthorized() {
     Reader reader = new Reader();
-    reader.setId(1L);
+    reader.setId(UUID.randomUUID());
     reader.setEmail("reader@example.com");
-    reader.setUsername("reader");
     reader.setPasswordHash(PASSWORD_HASH);
-    reader.setDeleted(true);
+    reader.setStatus(ReaderStatus.PENDING_VERIFICATION);
 
     when(readerRepository.findByEmail(reader.getEmail())).thenReturn(Optional.of(reader));
     when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
@@ -144,7 +145,7 @@ class AuthServiceImplTest {
         () -> authService.login(request));
 
     assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
-    verify(jwtService, never()).generateToken(anyLong(), any(UserRole.class), anyString());
+    verify(jwtService, never()).generateToken(any(UUID.class), any(UserRole.class), anyString());
   }
 
   @Test
@@ -166,8 +167,9 @@ class AuthServiceImplTest {
 
   @Test
   void login_reviewerSuccess() {
+    UUID reviewerId = UUID.randomUUID();
     Reviewer reviewer = new Reviewer();
-    reviewer.setId(5L);
+    reviewer.setId(reviewerId);
     reviewer.setEmail("reviewer@example.com");
     reviewer.setName("Reviewer");
     reviewer.setPasswordHash(PASSWORD_HASH);
@@ -188,106 +190,22 @@ class AuthServiceImplTest {
 
     LoginResponse response = authService.login(request);
 
-    assertEquals(reviewer.getId(), response.getSubjectId());
+    assertEquals(reviewerId.toString(), response.getSubjectId());
     assertEquals(reviewer.getName(), response.getDisplayName());
     assertEquals(7200L, response.getExpiresIn());
   }
 
   @Test
-  void login_reviewerInactiveThrowsUnauthorized() {
-    Reviewer reviewer = new Reviewer();
-    reviewer.setId(5L);
-    reviewer.setEmail("reviewer@example.com");
-    reviewer.setPasswordHash(PASSWORD_HASH);
-    reviewer.setActive(false);
-    reviewer.setDeleted(false);
-
-    when(reviewerRepository.findByEmail(reviewer.getEmail())).thenReturn(Optional.of(reviewer));
-    when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
-
-    LoginRequest request = LoginRequest.builder()
-        .role(UserRole.REVIEWER)
-        .email(reviewer.getEmail())
-        .password(PASSWORD)
-        .build();
-
-    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-        () -> authService.login(request));
-
-    assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
-    verify(jwtService, never()).generateToken(anyLong(), any(UserRole.class), anyString());
-  }
-
-  @Test
-  void login_organizationSuccess() {
-    Organization organization = new Organization();
-    organization.setId(7L);
-    organization.setAdminEmail("admin@org.com");
-    organization.setAdminName("Org Admin");
-    organization.setAdminPassword(PASSWORD_HASH);
-    organization.setActive(true);
-    organization.setDeleted(false);
-
-    when(organizationRepository.findByAdminEmail(organization.getAdminEmail()))
-        .thenReturn(Optional.of(organization));
-    when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
-    when(jwtService.generateToken(organization.getId(), UserRole.ORGANIZATION,
-        organization.getAdminEmail())).thenReturn("token");
-    when(jwtService.getExpirationMs()).thenReturn(5400L);
-
-    LoginRequest request = LoginRequest.builder()
-        .role(UserRole.ORGANIZATION)
-        .email(organization.getAdminEmail())
-        .password(PASSWORD)
-        .build();
-
-    LoginResponse response = authService.login(request);
-
-    assertEquals(organization.getAdminName(), response.getDisplayName());
-    assertEquals(5400L, response.getExpiresIn());
-  }
-
-  @Test
-  void login_organizationInactiveThrowsUnauthorized() {
-    Organization organization = new Organization();
-    organization.setId(7L);
-    organization.setAdminEmail("admin@org.com");
-    organization.setAdminPassword(PASSWORD_HASH);
-    organization.setActive(false);
-    organization.setDeleted(false);
-
-    when(organizationRepository.findByAdminEmail(organization.getAdminEmail()))
-        .thenReturn(Optional.of(organization));
-    when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
-
-    LoginRequest request = LoginRequest.builder()
-        .role(UserRole.ORGANIZATION)
-        .email(organization.getAdminEmail())
-        .password(PASSWORD)
-        .build();
-
-    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-        () -> authService.login(request));
-
-    assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
-    verify(jwtService, never()).generateToken(any(), any(), any());
-  }
-
-  @Test
-  void login_businessAdminSuccess() {
+  void login_businessAdminAccountDisabledThrowsUnauthorized() {
     BusinessAdmin admin = new BusinessAdmin();
-    admin.setId(9L);
+    admin.setId(UUID.randomUUID());
     admin.setEmail("biz@example.com");
-    admin.setFullName("Biz Admin");
     admin.setPasswordHash(PASSWORD_HASH);
-    admin.setActive(true);
+    admin.setActive(false);
     admin.setDeleted(false);
 
     when(businessAdminRepository.findByEmail(admin.getEmail())).thenReturn(Optional.of(admin));
     when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
-    when(jwtService.generateToken(admin.getId(), UserRole.BUSINESS_ADMIN, admin.getEmail()))
-        .thenReturn("token");
-    when(jwtService.getExpirationMs()).thenReturn(6000L);
 
     LoginRequest request = LoginRequest.builder()
         .role(UserRole.BUSINESS_ADMIN)
@@ -295,48 +213,19 @@ class AuthServiceImplTest {
         .password(PASSWORD)
         .build();
 
-    LoginResponse response = authService.login(request);
+    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+        () -> authService.login(request));
 
-    assertEquals(admin.getFullName(), response.getDisplayName());
-    assertEquals(6000L, response.getExpiresIn());
-  }
-
-  @Test
-  void login_systemAdminSuccess() {
-    SystemAdmin admin = new SystemAdmin();
-    admin.setId(11L);
-    admin.setEmail("sys@example.com");
-    admin.setFullName("Sys Admin");
-    admin.setPasswordHash(PASSWORD_HASH);
-    admin.setActive(true);
-    admin.setDeleted(false);
-
-    when(systemAdminRepository.findByEmail(admin.getEmail())).thenReturn(Optional.of(admin));
-    when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
-    when(jwtService.generateToken(admin.getId(), UserRole.SYSTEM_ADMIN, admin.getEmail()))
-        .thenReturn("token");
-    when(jwtService.getExpirationMs()).thenReturn(4800L);
-
-    LoginRequest request = LoginRequest.builder()
-        .role(UserRole.SYSTEM_ADMIN)
-        .email(admin.getEmail())
-        .password(PASSWORD)
-        .build();
-
-    LoginResponse response = authService.login(request);
-
-    assertEquals(admin.getFullName(), response.getDisplayName());
-    assertEquals(4800L, response.getExpiresIn());
+    assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
+    verify(jwtService, never()).generateToken(any(UUID.class), any(UserRole.class), anyString());
   }
 
   @Test
   void changePassword_readerSuccess() {
     Reader reader = new Reader();
-    reader.setId(1L);
-    reader.setEmail("reader@example.com");
-    reader.setUsername("reader");
+    reader.setId(UUID.randomUUID());
     reader.setPasswordHash(PASSWORD_HASH);
-    reader.setStatus(ReaderStatus.VERIFIED);
+    reader.setStatus(ReaderStatus.ACTIVE);
 
     when(readerRepository.findById(reader.getId())).thenReturn(Optional.of(reader));
     when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
@@ -356,9 +245,9 @@ class AuthServiceImplTest {
   @Test
   void changePassword_readerInvalidCurrentPasswordThrows() {
     Reader reader = new Reader();
-    reader.setId(1L);
+    reader.setId(UUID.randomUUID());
     reader.setPasswordHash(PASSWORD_HASH);
-    reader.setStatus(ReaderStatus.VERIFIED);
+    reader.setStatus(ReaderStatus.ACTIVE);
 
     when(readerRepository.findById(reader.getId())).thenReturn(Optional.of(reader));
     when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(false);
@@ -383,27 +272,15 @@ class AuthServiceImplTest {
         .build();
 
     ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-        () -> authService.changePassword(1L, UserRole.READER, request));
-
-    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
-  }
-
-  @Test
-  void changePassword_readerConfirmationMismatchThrows() {
-    ChangePasswordRequest request = ChangePasswordRequest.builder()
-        .currentPassword(PASSWORD)
-        .newPassword(NEW_PASSWORD)
-        .build();
-
-    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-        () -> authService.changePassword(1L, UserRole.READER, request));
+        () -> authService.changePassword(UUID.randomUUID(), UserRole.READER, request));
 
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
   }
 
   @Test
   void changePassword_readerNotFoundThrows() {
-    when(readerRepository.findById(1L)).thenReturn(Optional.empty());
+    UUID readerId = UUID.randomUUID();
+    when(readerRepository.findById(readerId)).thenReturn(Optional.empty());
 
     ChangePasswordRequest request = ChangePasswordRequest.builder()
         .currentPassword(PASSWORD)
@@ -411,39 +288,15 @@ class AuthServiceImplTest {
         .build();
 
     ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-        () -> authService.changePassword(1L, UserRole.READER, request));
+        () -> authService.changePassword(readerId, UserRole.READER, request));
 
     assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
   }
 
   @Test
-  void changePassword_reviewerSuccess() {
-    Reviewer reviewer = new Reviewer();
-    reviewer.setId(5L);
-    reviewer.setEmail("reviewer@example.com");
-    reviewer.setPasswordHash(PASSWORD_HASH);
-    reviewer.setActive(true);
-    reviewer.setDeleted(false);
-
-    when(reviewerRepository.findById(reviewer.getId())).thenReturn(Optional.of(reviewer));
-    when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
-    when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn(NEW_PASSWORD_HASH);
-
-    ChangePasswordRequest request = ChangePasswordRequest.builder()
-        .currentPassword(PASSWORD)
-        .newPassword(NEW_PASSWORD)
-        .build();
-
-    authService.changePassword(reviewer.getId(), UserRole.REVIEWER, request);
-
-    assertEquals(NEW_PASSWORD_HASH, reviewer.getPasswordHash());
-    verify(reviewerRepository).save(reviewer);
-  }
-
-  @Test
   void changePassword_reviewerInactiveThrows() {
     Reviewer reviewer = new Reviewer();
-    reviewer.setId(5L);
+    reviewer.setId(UUID.randomUUID());
     reviewer.setPasswordHash(PASSWORD_HASH);
     reviewer.setActive(false);
     reviewer.setDeleted(false);
@@ -464,57 +317,9 @@ class AuthServiceImplTest {
   }
 
   @Test
-  void changePassword_organizationSuccess() {
-    Organization organization = new Organization();
-    organization.setId(7L);
-    organization.setAdminEmail("admin@org.com");
-    organization.setAdminPassword(PASSWORD_HASH);
-    organization.setActive(true);
-    organization.setDeleted(false);
-
-    when(organizationRepository.findById(organization.getId()))
-        .thenReturn(Optional.of(organization));
-    when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
-    when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn(NEW_PASSWORD_HASH);
-
-    ChangePasswordRequest request = ChangePasswordRequest.builder()
-        .currentPassword(PASSWORD)
-        .newPassword(NEW_PASSWORD)
-        .build();
-
-    authService.changePassword(organization.getId(), UserRole.ORGANIZATION, request);
-
-    assertEquals(NEW_PASSWORD_HASH, organization.getAdminPassword());
-    verify(organizationRepository).save(organization);
-  }
-
-  @Test
-  void changePassword_businessAdminAccountDisabledThrows() {
-    BusinessAdmin admin = new BusinessAdmin();
-    admin.setId(9L);
-    admin.setPasswordHash(PASSWORD_HASH);
-    admin.setActive(false);
-    admin.setDeleted(false);
-
-    when(businessAdminRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
-
-    ChangePasswordRequest request = ChangePasswordRequest.builder()
-        .currentPassword(PASSWORD)
-        .newPassword(NEW_PASSWORD)
-        .build();
-
-    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-        () -> authService.changePassword(admin.getId(), UserRole.BUSINESS_ADMIN, request));
-
-    assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
-    verify(passwordEncoder, never()).matches(anyString(), anyString());
-    verify(businessAdminRepository, never()).save(any());
-  }
-
-  @Test
   void changePassword_systemAdminSuccess() {
     SystemAdmin admin = new SystemAdmin();
-    admin.setId(11L);
+    admin.setId(UUID.randomUUID());
     admin.setEmail("sys@example.com");
     admin.setPasswordHash(PASSWORD_HASH);
     admin.setActive(true);

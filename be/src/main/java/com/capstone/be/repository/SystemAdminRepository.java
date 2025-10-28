@@ -9,5 +9,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SystemAdminRepository extends JpaRepository<SystemAdmin, UUID> {
 
+  boolean existsByEmail(String email);
+
   Optional<SystemAdmin> findByEmail(String email);
 }

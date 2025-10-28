@@ -23,7 +23,11 @@ export function UserFilters({ onFiltersChange, loading = false }: UserFiltersPro
   const handleFilterChange = (key: keyof UserQueryParams, value: string) => {
     const newFilters = { ...filters, [key]: value, page: 1 }; // Reset to page 1 when filters change
     setFilters(newFilters);
-    onFiltersChange(newFilters);
+  };
+
+  const handleSearch = () => {
+    const searchFilters: UserQueryParams = { ...filters, page: 1 };
+    onFiltersChange(searchFilters);
   };
 
   const handleClearFilters = () => {
@@ -98,6 +102,14 @@ export function UserFilters({ onFiltersChange, loading = false }: UserFiltersPro
             {showAdvanced ? 'Hide' : 'Show'} Advanced Filters
           </button>
           
+          <button
+            onClick={handleSearch}
+            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:opacity-90 transition disabled:opacity-50"
+            disabled={loading}
+          >
+            Search
+          </button>
+
           <button
             onClick={handleClearFilters}
             className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition"

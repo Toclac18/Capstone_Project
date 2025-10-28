@@ -1,7 +1,8 @@
 import axios from 'axios';
 import type { User, UserResponse, UserQueryParams } from '@/types/user';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'api';
+type SuccessResponse<T> = { data: T; meta?: any };
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL + '/api';
 
 const userManagementApiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -26,8 +27,8 @@ export const userManagementApi = {
   // Get users with query parameters (POST method with body)
   getUsers: async (params?: UserQueryParams): Promise<UserResponse> => {
     try {
-      const response = await userManagementApiClient.post<UserResponse>('/users', params || {});
-      return response.data;
+      const response = await userManagementApiClient.post<SuccessResponse<UserResponse>>('users', params || {});
+      return response.data.data;
     } catch (error) {
       handleApiError(error, 'Error fetching users');
       throw error;
@@ -37,8 +38,8 @@ export const userManagementApi = {
   // Update user status (ACTIVE, INACTIVE, DELETED)
   updateUserStatus: async (id: string, status: string): Promise<User> => {
     try {
-      const response = await userManagementApiClient.patch<User>(`/users/${id}/status`, { status });
-      return response.data;
+      const response = await userManagementApiClient.patch<SuccessResponse<User>>(`users/${id}/status`, { status });
+      return response.data.data;
     } catch (error) {
       handleApiError(error, `Error updating user status ${id}`);
       throw error;

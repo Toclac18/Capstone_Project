@@ -1,7 +1,7 @@
 // src/app/contact-admin/ContactAdminForm.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import {
   postJSON,
@@ -37,6 +37,8 @@ export default function ContactAdminForm() {
     watch,
     formState: { errors },
     reset,
+    setValue,
+    clearErrors,
   } = useForm<FormValues>({
     defaultValues: {
       name: "",
@@ -51,6 +53,13 @@ export default function ContactAdminForm() {
 
   const isOther = watch("category") === "OTHER";
 
+  useEffect(() => {
+    if (!isOther) {
+      setValue("otherCategory", "");
+      clearErrors("otherCategory");
+    }
+  }, [isOther, setValue, clearErrors]);
+
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<ContactAdminResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +69,6 @@ export default function ContactAdminForm() {
     setError(null);
     setSuccess(null);
 
-    // Payload đúng với BE (enum); otherCategory sẽ được xử lý ở service.
     const payload: ContactAdminPayload = {
       name: data.name,
       email: data.email,
@@ -82,6 +90,9 @@ export default function ContactAdminForm() {
     }
   };
 
+  // Always render a line under each field; if no error, render NBSP
+  const errorTextOrSpacer = (msg?: string) => (msg ? msg : "\u00A0");
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
@@ -90,13 +101,19 @@ export default function ContactAdminForm() {
       <h2 className={styles["form-title"]}>Submit a Support Ticket</h2>
 
       {success && (
-        <div className={styles["form-alert-success"]}>
-          Ticket created successfully! ID: {success.ticketId} — Code:{" "}
-          {success.ticketCode}
-          <p className="mt-1">{success.message}</p>
+        <div className="w-full">
+          <div className={styles["form-alert-success"]}>
+            Ticket created successfully! ID: {success.ticketId} — Code:{" "}
+            {success.ticketCode}
+            <p className="mt-1">{success.message}</p>
+          </div>
         </div>
       )}
-      {error && <div className={styles["form-alert-error"]}>{error}</div>}
+      {error && (
+        <div className="w-full">
+          <div className={styles["form-alert-error"]}>{error}</div>
+        </div>
+      )}
 
       <h3 className={styles["form-section-header"]}>Your Contact Details</h3>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -117,11 +134,9 @@ export default function ContactAdminForm() {
             })}
             aria-invalid={!!errors.name}
           />
-          {errors.name && (
-            <p className={styles["form-error-message"]}>
-              {errors.name.message}
-            </p>
-          )}
+          <p className={styles["form-error-message"]}>
+            {errorTextOrSpacer(errors.name?.message)}
+          </p>
         </div>
 
         <div className={styles["form-field-group"]}>
@@ -142,11 +157,9 @@ export default function ContactAdminForm() {
             })}
             aria-invalid={!!errors.email}
           />
-          {errors.email && (
-            <p className={styles["form-error-message"]}>
-              {errors.email.message}
-            </p>
-          )}
+          <p className={styles["form-error-message"]}>
+            {errorTextOrSpacer(errors.email?.message)}
+          </p>
         </div>
       </div>
 
@@ -168,11 +181,9 @@ export default function ContactAdminForm() {
               </option>
             ))}
           </select>
-          {errors.category && (
-            <p className={styles["form-error-message"]}>
-              {errors.category.message}
-            </p>
-          )}
+          <p className={styles["form-error-message"]}>
+            {errorTextOrSpacer(errors.category?.message)}
+          </p>
         </div>
 
         <div className={styles["form-field-group"]}>
@@ -193,11 +204,9 @@ export default function ContactAdminForm() {
               </option>
             ))}
           </select>
-          {errors.urgency && (
-            <p className={styles["form-error-message"]}>
-              {errors.urgency.message}
-            </p>
-          )}
+          <p className={styles["form-error-message"]}>
+            {errorTextOrSpacer(errors.urgency?.message)}
+          </p>
         </div>
       </div>
 
@@ -216,11 +225,9 @@ export default function ContactAdminForm() {
             })}
             aria-invalid={!!errors.otherCategory}
           />
-          {errors.otherCategory && (
-            <p className={styles["form-error-message"]}>
-              {errors.otherCategory.message}
-            </p>
-          )}
+          <p className={styles["form-error-message"]}>
+            {errorTextOrSpacer(errors.otherCategory?.message)}
+          </p>
         </div>
       )}
 
@@ -241,11 +248,9 @@ export default function ContactAdminForm() {
           })}
           aria-invalid={!!errors.subject}
         />
-        {errors.subject && (
-          <p className={styles["form-error-message"]}>
-            {errors.subject.message}
-          </p>
-        )}
+        <p className={styles["form-error-message"]}>
+          {errorTextOrSpacer(errors.subject?.message)}
+        </p>
       </div>
 
       <div className={styles["form-field-group"]}>
@@ -266,15 +271,13 @@ export default function ContactAdminForm() {
           })}
           aria-invalid={!!errors.message}
         />
-        {errors.message && (
-          <p className={styles["form-error-message"]}>
-            {errors.message.message}
-          </p>
-        )}
+        <p className={styles["form-error-message"]}>
+          {errorTextOrSpacer(errors.message?.message)}
+        </p>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-end">
-        <div />
+      {/* Centered submit area */}
+      <div className={styles["form-actions"]}>
         <button
           type="submit"
           disabled={loading}
@@ -283,13 +286,6 @@ export default function ContactAdminForm() {
           {loading ? "Submitting..." : "Submit Ticket"}
         </button>
       </div>
-
-      <p className={styles["form-meta-text"]}>
-        API endpoint (via FE):{" "}
-        <code className={styles["form-code-block"]}>
-          POST /api/contact-admin
-        </code>
-      </p>
     </form>
   );
 }

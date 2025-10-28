@@ -55,6 +55,10 @@
   @apply min-h-[140px] resize-y;
 }
 
+/* --- Exported error marker so TSX can use styles.error --- */
+.error {
+}
+
 /* Error state */
 .form-input.error,
 .form-select.error,
@@ -67,8 +71,13 @@
   @apply border-red focus:ring-red;
 }
 
+/* Keep layout stable:
+   - fixed line height (h-5 ~ 20px)
+   - single line, no wrap, clipped if long
+   => both columns reserve identical space whether there's an error or not */
 .form-error-message {
-  @apply mt-1 text-sm text-red; /* same both modes */
+  @apply mt-1 text-sm text-red;
+  @apply h-5 overflow-hidden text-ellipsis whitespace-nowrap leading-5;
 }
 
 /* Button */
@@ -82,6 +91,11 @@
 }
 .form-submit-btn:disabled {
   @apply cursor-not-allowed opacity-60;
+}
+
+/* Centered submit row */
+.form-actions {
+  @apply mt-4 flex justify-center;
 }
 
 /* Alerts */

@@ -4,24 +4,24 @@ import { reportsApi } from "../api";
 
 export function Reports() {
   const [loading, setLoading] = useState(false);
-  const [reports, setReports] = useState<any[]>([]);
+  // const [reports, setReports] = useState<any[]>([]);
 
-  useEffect(() => {
-    // Load reports data
-    const loadReports = async () => {
-      setLoading(true);
-      try {
-        const data = await reportsApi.getReports();
-        setReports(data);
-      } catch (error) {
-        console.error('Error loading reports:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // useEffect(() => {
+  //   // Load reports data
+  //   const loadReports = async () => {
+  //     setLoading(true);
+  //     try {
+  //       const data = await reportsApi.getReports();
+  //       setReports(data);
+  //     } catch (error) {
+  //       console.error('Error loading reports:', error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    loadReports();
-  }, []);
+  //   loadReports();
+  // }, []);
 
   return (
     <>
@@ -46,7 +46,7 @@ export function Reports() {
           Reports Coming Soon
         </h3>
         <p className="text-gray-600 dark:text-gray-400 mb-6">
-          We're working on comprehensive reporting features. Stay tuned!
+          We are working on comprehensive reporting features. Stay tuned!
         </p>
         <button 
           onClick={async () => {

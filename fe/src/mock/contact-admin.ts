@@ -58,7 +58,7 @@ export function setupMockContactAdmin() {
             status: 201,
             headers: { "content-type": "application/json" },
           });
-        } catch (err) {
+        } catch {
           return new Response(JSON.stringify({ error: "Invalid JSON" }), {
             status: 400,
             headers: { "content-type": "application/json" },

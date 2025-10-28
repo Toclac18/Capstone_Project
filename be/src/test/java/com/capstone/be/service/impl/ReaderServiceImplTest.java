@@ -9,8 +9,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.capstone.be.domain.entity.Reader;
-import com.capstone.be.dto.request.auth.ReaderRegisterRequest;
-import com.capstone.be.dto.response.auth.ReaderRegisterResponse;
+import com.capstone.be.dto.request.auth.RegisterReaderRequest;
+import com.capstone.be.dto.response.auth.RegisterReaderResponse;
 import com.capstone.be.mapper.ReaderMapper;
 import com.capstone.be.repository.ReaderRepository;
 import com.capstone.be.security.service.JwtService;
@@ -50,8 +50,8 @@ class ReaderServiceImplTest {
   @InjectMocks
   private ReaderServiceImpl readerService;
 
-  private ReaderRegisterRequest buildRequest() {
-    return ReaderRegisterRequest.builder()
+  private RegisterReaderRequest buildRequest() {
+    return RegisterReaderRequest.builder()
         .fullName(FULL_NAME)
         .dateOfBirth(DATE_OF_BIRTH)
         .email(EMAIL)
@@ -67,7 +67,7 @@ class ReaderServiceImplTest {
 
   @Test
   void register_createsReader_withEncodedPasswordAndSendsVerification() {
-    ReaderRegisterRequest request = buildRequest();
+    RegisterReaderRequest request = buildRequest();
 
     when(readerRepository.existsByEmail(EMAIL)).thenReturn(false);
     when(readerRepository.existsByUsername(USERNAME)).thenReturn(false);
@@ -88,13 +88,13 @@ class ReaderServiceImplTest {
     String verifyToken = "verify-token";
     when(jwtService.generateEmailVerifyToken(EMAIL)).thenReturn(verifyToken);
 
-    ReaderRegisterResponse expectedResponse = ReaderRegisterResponse.builder()
+    RegisterReaderResponse expectedResponse = RegisterReaderResponse.builder()
         .email(EMAIL)
         .username(USERNAME)
         .build();
     when(readerMapper.toRegisterResponse(savedReader)).thenReturn(expectedResponse);
 
-    ReaderRegisterResponse response = readerService.register(request);
+    RegisterReaderResponse response = readerService.register(request);
 
     assertEquals(expectedResponse, response);
 
@@ -109,7 +109,7 @@ class ReaderServiceImplTest {
 
   @Test
   void register_throwsWhenEmailExists() {
-    ReaderRegisterRequest request = buildRequest();
+    RegisterReaderRequest request = buildRequest();
     when(readerRepository.existsByEmail(EMAIL)).thenReturn(true);
 
     IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -123,7 +123,7 @@ class ReaderServiceImplTest {
 
   @Test
   void register_throwsWhenUsernameExists() {
-    ReaderRegisterRequest request = buildRequest();
+    RegisterReaderRequest request = buildRequest();
     when(readerRepository.existsByEmail(EMAIL)).thenReturn(false);
     when(readerRepository.existsByUsername(USERNAME)).thenReturn(true);
 

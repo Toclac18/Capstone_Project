@@ -8,7 +8,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class ReaderRegisterResponse {
+public class RegisterReaderResponse {
 
   private String fullName;
 

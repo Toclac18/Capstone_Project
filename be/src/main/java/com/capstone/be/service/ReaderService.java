@@ -1,11 +1,11 @@
 package com.capstone.be.service;
 
-import com.capstone.be.dto.request.auth.ReaderRegisterRequest;
-import com.capstone.be.dto.response.auth.ReaderRegisterResponse;
+import com.capstone.be.dto.request.auth.RegisterReaderRequest;
+import com.capstone.be.dto.response.auth.RegisterReaderResponse;
 
 public interface ReaderService {
 
-  ReaderRegisterResponse register(ReaderRegisterRequest request);
+  RegisterReaderResponse register(RegisterReaderRequest request);
 
   void verifyEmail(String token);
 }

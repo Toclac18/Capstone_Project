@@ -2,14 +2,16 @@ package com.capstone.be.controller;
 
 import com.capstone.be.dto.request.auth.ChangePasswordRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
-import com.capstone.be.dto.request.auth.ReaderRegisterRequest;
+import com.capstone.be.dto.request.auth.RegisterReaderRequest;
+import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
 import com.capstone.be.dto.response.auth.LoginResponse;
-import com.capstone.be.dto.response.auth.ReaderRegisterResponse;
+import com.capstone.be.dto.response.auth.RegisterReaderResponse;
+import com.capstone.be.dto.response.auth.RegisterReviewerResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.AuthService;
 import com.capstone.be.service.ReaderService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,25 +24,23 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/auth")
 public class AuthController {
 
-  @Autowired
-  ReaderService readerService;
+  private final ReaderService readerService;
+  private final AuthService authService;
 
-  @Autowired
-  AuthService authService;
-
-  //SAMPLE API
-  @GetMapping("/hello")
-  public String Hello() {
-    return "Hello world!";
+  @PostMapping("/register/reader")
+  public RegisterReaderResponse registerReader(
+      @Valid @RequestBody RegisterReaderRequest request) {
+    return authService.registerReader(request);
   }
 
-  @PostMapping("/reader/register")
-  public ReaderRegisterResponse readerRegister(
-      @Valid @RequestBody ReaderRegisterRequest request) {
-    return readerService.register(request);
+  @PostMapping("/register/reviewer")
+  public RegisterReviewerResponse registerReviewer(
+      @Valid @RequestBody RegisterReviewerRequest request) {
+    return authService.registerReviewer(request);
   }
 
   @GetMapping("/reader/verify-email")

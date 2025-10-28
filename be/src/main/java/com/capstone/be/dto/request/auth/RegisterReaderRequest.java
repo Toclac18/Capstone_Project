@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ReaderRegisterRequest {
+public class RegisterReaderRequest {
 
   @NotBlank
   private String fullName;

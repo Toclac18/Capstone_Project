@@ -9,7 +9,12 @@ import com.capstone.be.domain.enums.ReaderStatus;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.dto.request.auth.ChangePasswordRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
+import com.capstone.be.dto.request.auth.RegisterReaderRequest;
+import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
 import com.capstone.be.dto.response.auth.LoginResponse;
+import com.capstone.be.dto.response.auth.RegisterReaderResponse;
+import com.capstone.be.dto.response.auth.RegisterReviewerResponse;
+import com.capstone.be.mapper.ReaderMapper;
 import com.capstone.be.repository.BusinessAdminRepository;
 import com.capstone.be.repository.OrganizationRepository;
 import com.capstone.be.repository.ReaderRepository;
@@ -17,14 +22,17 @@ import com.capstone.be.repository.ReviewerRepository;
 import com.capstone.be.repository.SystemAdminRepository;
 import com.capstone.be.security.service.JwtService;
 import com.capstone.be.service.AuthService;
+import com.capstone.be.service.EmailService;
 import com.capstone.be.util.ExceptionBuilder;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
   private final ReaderRepository readerRepository;
@@ -32,23 +40,43 @@ public class AuthServiceImpl implements AuthService {
   private final OrganizationRepository organizationRepository;
   private final BusinessAdminRepository businessAdminRepository;
   private final SystemAdminRepository systemAdminRepository;
+
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
+  private final ReaderMapper readerMapper;
+  private final EmailService emailService;
 
-  public AuthServiceImpl(ReaderRepository readerRepository,
-      ReviewerRepository reviewerRepository,
-      OrganizationRepository organizationRepository,
-      BusinessAdminRepository businessAdminRepository,
-      SystemAdminRepository systemAdminRepository,
-      PasswordEncoder passwordEncoder,
-      JwtService jwtService) {
-    this.readerRepository = readerRepository;
-    this.reviewerRepository = reviewerRepository;
-    this.organizationRepository = organizationRepository;
-    this.businessAdminRepository = businessAdminRepository;
-    this.systemAdminRepository = systemAdminRepository;
-    this.passwordEncoder = passwordEncoder;
-    this.jwtService = jwtService;
+  @Override
+  @Transactional
+  public RegisterReaderResponse registerReader(RegisterReaderRequest request) {
+    // Check email existed
+    if (readerRepository.existsByEmail(request.getEmail())) {
+      throw new IllegalArgumentException("Email has been used");
+    }
+
+    // Check username existed
+    if (readerRepository.existsByUsername(request.getUsername())) {
+      throw new IllegalArgumentException("Username has been used");
+    }
+
+    // Create Reader Entity From Dto
+    Reader reader = readerMapper.toReader(request);
+    reader.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+
+    // Save Reader to DB
+    Reader savedReader = readerRepository.save(reader);
+
+    String verificationToken = jwtService.generateEmailVerifyToken(savedReader.getEmail());
+    System.out.println("Verify Token for " + savedReader.getEmail() + " : " + verificationToken);
+
+    emailService.sendReaderVerificationEmail(savedReader, verificationToken);
+
+    return readerMapper.toRegisterResponse(savedReader);
+  }
+
+  @Override
+  public RegisterReviewerResponse registerReviewer(RegisterReviewerRequest request) {
+    return null;
   }
 
   @Override

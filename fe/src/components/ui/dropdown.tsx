@@ -4,10 +4,10 @@ import { useClickOutside } from "@/hooks/use-click-outside";
 import { cn } from "@/utils/utils";
 import {
   createContext,
-  type PropsWithChildren,
   useContext,
   useEffect,
   useRef,
+  type PropsWithChildren,
 } from "react";
 
 type DropdownContextType = {
@@ -29,7 +29,7 @@ function useDropdownContext() {
 type DropdownProps = {
   children: React.ReactNode;
   isOpen: boolean;
-  setIsOpen: boolean;
+  setIsOpen: (value: boolean) => void;
 };
 
 export function Dropdown({ children, isOpen, setIsOpen }: DropdownProps) {
@@ -44,11 +44,9 @@ export function Dropdown({ children, isOpen, setIsOpen }: DropdownProps) {
   useEffect(() => {
     if (isOpen) {
       triggerRef.current = document.activeElement as HTMLElement;
-
       document.body.style.pointerEvents = "none";
     } else {
       document.body.style.removeProperty("pointer-events");
-
       setTimeout(() => {
         triggerRef.current?.focus();
       }, 0);

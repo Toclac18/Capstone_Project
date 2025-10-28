@@ -1,10 +1,35 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
+import { NextRequest, NextResponse } from "next/server";
+import { jwtVerify, type JWTPayload } from "jose";
 
+const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+const JWT_SECRET = process.env.JWT_SECRET; // server-only
 const encoder = new TextEncoder();
-const JWT_SECRET = process.env.NEXT_PUBLIC_JWT_SECRET;
 
-async function verifyJwt(token: string) {
+const PUBLIC_PAGE_PATHS = ["/", "/auth/sign-in", "/auth/sign-up"];
+const PUBLIC_API_PREFIXES = ["/api/auth", "/api/health"]; // auth & health public
+const ALWAYS_PUBLIC_PREFIXES = [
+  "/_next/",
+  "/favicon.ico",
+  "/robots.txt",
+  "/sitemap.xml",
+  "/images/",
+  "/assets/",
+];
+
+function isPublicPage(path: string) {
+  return PUBLIC_PAGE_PATHS.some((p) =>
+    p === "/" ? path === "/" : path.startsWith(p),
+  );
+}
+function isPublicApi(path: string) {
+  return PUBLIC_API_PREFIXES.some((p) => path.startsWith(p));
+}
+function isAlwaysPublic(path: string) {
+  return ALWAYS_PUBLIC_PREFIXES.some((p) => path.startsWith(p));
+}
+
+async function verifyJwt(token: string): Promise<JWTPayload | null> {
+  if (!JWT_SECRET) return null;
   try {
     const { payload } = await jwtVerify(token, encoder.encode(JWT_SECRET));
     return payload;
@@ -16,49 +41,27 @@ async function verifyJwt(token: string) {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Define public paths that don't require authentication
-  const publicPaths = [
-    '/',
-    '/auth/sign-in',
-    '/auth/sign-up',
-  ];
-  
-  // Check if current path is public
-  const isPublic = publicPaths.some((p) => {
-    if (p === '/') {
-      return pathname === '/';
-    }
-    return pathname.startsWith(p);
-  });
-  
-  // Allow public paths without authentication
-  if (isPublic) {
-    return NextResponse.next();
-  }
+  if (isAlwaysPublic(pathname)) return NextResponse.next();
+  if (req.method === "OPTIONS") return NextResponse.json({}, { status: 200 });
 
-  // All other routes require authentication
-  const token = req.cookies.get('access_token')?.value;
-  const isValid = token ? await verifyJwt(token) : null;
+  const isApi = pathname.startsWith("/api");
+  if (!isApi && isPublicPage(pathname)) return NextResponse.next();
+  if (isApi && isPublicApi(pathname)) return NextResponse.next();
 
-  if (!isValid) {
+  const token = req.cookies.get(COOKIE_NAME)?.value;
+  const valid = token ? await verifyJwt(token) : null;
+
+  if (!valid) {
+    if (isApi)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const url = req.nextUrl.clone();
-    url.pathname = '/auth/sign-in';
-    url.searchParams.set('next', pathname);
+    url.pathname = "/auth/sign-in";
+    url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
-
   return NextResponse.next();
 }
 
 export const config = {
-  // Apply to all paths
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

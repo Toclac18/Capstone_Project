@@ -1,6 +1,6 @@
 package com.capstone.be.controller;
 
-import com.capstone.be.dto.request.ContactAdminRequest;
+import com.capstone.be.dto.request.contactAdmin.ContactAdminRequest;
 import com.capstone.be.dto.response.ContactAdminResponse;
 import com.capstone.be.service.ContactAdminService;
 import jakarta.validation.Valid;

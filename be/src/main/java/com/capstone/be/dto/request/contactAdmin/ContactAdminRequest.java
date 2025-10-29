@@ -1,4 +1,4 @@
-package com.capstone.be.dto.request;
+package com.capstone.be.dto.request.contactAdmin;
 
 import com.capstone.be.domain.enums.*;
 import jakarta.validation.constraints.*;

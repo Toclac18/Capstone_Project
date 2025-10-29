@@ -1,6 +1,6 @@
 package com.capstone.be.service;
 
-import com.capstone.be.dto.request.ContactAdminRequest;
+import com.capstone.be.dto.request.contactAdmin.ContactAdminRequest;
 import com.capstone.be.dto.response.ContactAdminResponse;
 
 /**

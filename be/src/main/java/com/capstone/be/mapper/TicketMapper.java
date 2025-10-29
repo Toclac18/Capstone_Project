@@ -1,7 +1,7 @@
 package com.capstone.be.mapper;
 
 import com.capstone.be.domain.entity.Ticket;
-import com.capstone.be.dto.request.ContactAdminRequest;
+import com.capstone.be.dto.request.contactAdmin.ContactAdminRequest;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

@@ -3,7 +3,7 @@ package com.capstone.be.service.impl;
 import com.capstone.be.domain.entity.Ticket;
 import com.capstone.be.domain.entity.TicketMessage;
 import com.capstone.be.domain.enums.MsgAuthorType;
-import com.capstone.be.dto.request.ContactAdminRequest;
+import com.capstone.be.dto.request.contactAdmin.ContactAdminRequest;
 import com.capstone.be.dto.response.ContactAdminResponse;
 import com.capstone.be.mapper.TicketMapper;
 import com.capstone.be.repository.TicketMessageRepository;

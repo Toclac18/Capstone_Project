@@ -6,14 +6,14 @@ import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.Builder;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", builder = @Builder(disableBuilder = true))
 public interface TicketMapper {
 
-    @Mapping(target = "ticketId", ignore = true) // DB identity
+    @Mapping(target = "ticketId", ignore = true)
     @Mapping(target = "ticketCode", expression = "java(generateTicketCode())")
     @Mapping(target = "requesterUserId", ignore = true)
     @Mapping(target = "requesterName", source = "name")
@@ -25,8 +25,6 @@ public interface TicketMapper {
     @Mapping(target = "status", constant = "OPEN")
     @Mapping(target = "assignedTo", ignore = true)
     @Mapping(target = "closedAt", ignore = true)
-    @Mapping(target = "createdAt", expression = "java(java.time.LocalDateTime.now())")
-    @Mapping(target = "updatedAt", expression = "java(java.time.LocalDateTime.now())")
     Ticket toTicket(ContactAdminRequest req);
 
     default String generateTicketCode() {
@@ -39,7 +37,7 @@ public interface TicketMapper {
 
     @AfterMapping
     default void ensureTimestamps(@MappingTarget Ticket t) {
-        if (t.getCreatedAt() == null) t.setCreatedAt(LocalDateTime.from(Instant.now()));
-        if (t.getUpdatedAt() == null) t.setUpdatedAt(LocalDateTime.from(Instant.now()));
+        if (t.getCreatedAt() == null) t.setCreatedAt(LocalDateTime.now());
+        if (t.getUpdatedAt() == null) t.setUpdatedAt(LocalDateTime.now());
     }
 }

@@ -6,7 +6,7 @@ export type TicketCategory =
   | "ACCOUNT"
   | "OTHER";
 
-export type Urgency = "LOW" | "MEDIUM" | "HIGH";
+export type Urgency = "LOW" | "NORMAL" | "HIGH";
 export type TicketStatus = "OPEN" | "PENDING" | "RESOLVED" | "CLOSED";
 
 export interface ContactAdminPayload {

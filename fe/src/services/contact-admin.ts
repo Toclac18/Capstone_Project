@@ -17,8 +17,8 @@ export type ContactAdminPayload = {
     | "TECHNICAL"
     | "ACCOUNT"
     | "OTHER";
-  otherCategory?: string; // text bổ sung khi chọn OTHER
-  urgency: "LOW" | "MEDIUM" | "HIGH";
+  otherCategory?: string;
+  urgency: "LOW" | "NORMAL" | "HIGH";
   subject: string;
   message: string;
 };

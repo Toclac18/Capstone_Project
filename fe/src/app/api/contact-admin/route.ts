@@ -1,8 +1,8 @@
+// app/api/contact-admin/route.ts
 import { headers } from "next/headers";
 import { mockDB, type ContactAdminPayload } from "@/mock/db";
 
-const USE_MOCK = process.env.USE_MOCK === "true";
-const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+const DEFAULT_BE_BASE = "http://localhost:8080";
 
 function badRequest(msg: string) {
   return new Response(JSON.stringify({ error: msg }), {
@@ -11,21 +11,12 @@ function badRequest(msg: string) {
   });
 }
 
-export async function GET() {
-  if (USE_MOCK) {
-    const data = mockDB.list();
-    return new Response(JSON.stringify({ items: data, total: data.length }), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
-  }
-  return new Response(JSON.stringify({ error: "Method not allowed" }), {
-    status: 405,
-    headers: { "content-type": "application/json" },
-  });
-}
-
 export async function POST(req: Request) {
+  const USE_MOCK = process.env.USE_MOCK === "true";
+  const BE_BASE =
+    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
+    DEFAULT_BE_BASE;
+
   let body: ContactAdminPayload;
   try {
     body = await req.json();
@@ -40,22 +31,17 @@ export async function POST(req: Request) {
     "urgency",
     "subject",
     "message",
-  ] as const;
+  ];
   for (const k of required) {
-    if (!body[k] || (typeof body[k] === "string" && !String(body[k]).trim())) {
+    if (!(body as any)[k] || String((body as any)[k]).trim() === "") {
       return badRequest(`Field "${k}" is required`);
     }
   }
 
   if (USE_MOCK) {
-    if (body.category === "OTHER" && body.otherCategory) {
-      body.subject = `[OTHER: ${body.otherCategory}] ${body.subject}`;
-    }
-    const ip =
-      (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      "unknown";
+    const h = await headers();
+    const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const ticket = mockDB.insert(body);
-
     const response = {
       ticketId: ticket.ticketId,
       ticketCode: ticket.ticketCode,
@@ -65,24 +51,37 @@ export async function POST(req: Request) {
     };
     return new Response(JSON.stringify(response), {
       status: 201,
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "x-mode": "mock",
+      },
     });
   }
 
-  // (Sau này) Proxy thật
-  // const token = cookies().get(process.env.COOKIE_NAME || "access_token")?.value ?? "";
-  const upstream = await fetch(`${BE_BASE}/contact/admin`, {
+  const h = await headers();
+  const authHeader = h.get("authorization") || "";
+  const cookieHeader = h.get("cookie") || "";
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
+
+  const fh = new Headers({ "Content-Type": "application/json" });
+  if (authHeader) fh.set("Authorization", authHeader);
+  if (cookieHeader) fh.set("Cookie", cookieHeader);
+  if (ip) fh.set("X-Forwarded-For", ip);
+
+  const upstream = await fetch(`${BE_BASE}/api/contact-admin`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: fh,
     body: JSON.stringify(body),
     cache: "no-store",
   });
 
   const text = await upstream.text();
-  const contentType =
-    upstream.headers.get("content-type") ?? "application/json";
   return new Response(text, {
     status: upstream.status,
-    headers: { "content-type": contentType },
+    headers: {
+      "content-type":
+        upstream.headers.get("content-type") ?? "application/json",
+      "x-mode": "real",
+    },
   });
 }

@@ -4,15 +4,18 @@ import com.capstone.be.domain.entity.common.BaseEntity;
 import com.capstone.be.domain.enums.TicketCategory;
 import com.capstone.be.domain.enums.TicketStatus;
 import com.capstone.be.domain.enums.TicketUrgency;
+import com.capstone.be.util.TicketCode;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
 import java.time.Instant;
 
 @EqualsAndHashCode(callSuper = true)
-@Data
+@Builder
 @Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "tickets")
 public class Ticket extends BaseEntity {
     @Id
@@ -55,4 +58,11 @@ public class Ticket extends BaseEntity {
 
     @Column(name = "closed_at")
     private Instant closedAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.ticketCode == null || this.ticketCode.isBlank()) {
+            this.ticketCode = TicketCode.generate();
+        }
+    }
 }

@@ -18,7 +18,7 @@ const CATEGORIES = [
   "ACCOUNT",
   "OTHER",
 ] as const;
-const URGENCY_LEVELS = ["LOW", "MEDIUM", "HIGH"] as const;
+const URGENCY_LEVELS = ["LOW", "NORMAL", "HIGH"] as const;
 
 type FormValues = {
   name: string;
@@ -44,7 +44,7 @@ export default function ContactAdminForm() {
       name: "",
       email: "",
       category: "TECHNICAL",
-      urgency: "MEDIUM",
+      urgency: "NORMAL",
       subject: "",
       message: "",
       otherCategory: "",
@@ -103,8 +103,7 @@ export default function ContactAdminForm() {
       {success && (
         <div className="w-full">
           <div className={styles["form-alert-success"]}>
-            Ticket created successfully! ID: {success.ticketId} — Code:{" "}
-            {success.ticketCode}
+            Ticket created successfully!
             <p className="mt-1">{success.message}</p>
           </div>
         </div>

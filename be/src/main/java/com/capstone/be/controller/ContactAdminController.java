@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/contact/admin")
+@RequestMapping("api/contact-admin")
 public class ContactAdminController {
 
     private final ContactAdminService contactAdminService;

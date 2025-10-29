@@ -3,63 +3,54 @@ package com.capstone.be.service.impl;
 import com.capstone.be.domain.entity.Ticket;
 import com.capstone.be.domain.entity.TicketMessage;
 import com.capstone.be.domain.enums.MsgAuthorType;
+import com.capstone.be.domain.enums.TicketStatus;
 import com.capstone.be.dto.request.contactAdmin.ContactAdminRequest;
 import com.capstone.be.dto.response.ContactAdminResponse;
-import com.capstone.be.mapper.TicketMapper;
 import com.capstone.be.repository.TicketMessageRepository;
 import com.capstone.be.repository.TicketRepository;
-import com.capstone.be.service.ContactAdminService; // Import the new interface
-import lombok.extern.slf4j.Slf4j; // Optional: for logging
+import com.capstone.be.service.ContactAdminService;
+import com.capstone.be.util.TicketCode;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service // Spring context recognizes this as a service bean
+@Service
+@RequiredArgsConstructor
 @Slf4j
-public class ContactAdminServiceImpl implements ContactAdminService { // Implement the interface
+public class ContactAdminServiceImpl implements ContactAdminService {
 
-    private final TicketRepository ticketRepo;
-    private final TicketMessageRepository messageRepo;
-    private final TicketMapper mapper;
+    private final TicketRepository ticketRepository;
+    private final TicketMessageRepository ticketMessageRepository;
 
-    // Use constructor injection for dependencies
-    public ContactAdminServiceImpl(TicketRepository ticketRepo, TicketMessageRepository messageRepo, TicketMapper mapper) {
-        this.ticketRepo = ticketRepo;
-        this.messageRepo = messageRepo;
-        this.mapper = mapper;
-    }
-
-    @Override // Implementing the method from the interface
+    @Override
     @Transactional
     public ContactAdminResponse createTicket(ContactAdminRequest req) {
-        log.info("Attempting to create a new ticket from request: {}", req.getSubject());
 
-        // 1. Map DTO to Ticket entity
-        Ticket t = mapper.toTicket(req);
+        Ticket t = new Ticket();
+        t.setRequesterName(req.getName());
+        t.setRequesterEmail(req.getEmail());
+        t.setSubject(req.getSubject());
+        t.setCategory(req.getCategory());
+        t.setUrgency(req.getUrgency());
+        t.setStatus(TicketStatus.OPEN);
+        t.setMessage(req.getMessage());
+        t.setTicketCode(TicketCode.generate());
 
-        // 2. Save the new ticket entity
-        Ticket savedTicket = ticketRepo.save(t);
-        log.debug("Ticket saved successfully with ID: {}", savedTicket.getTicketId());
+        Ticket saved = ticketRepository.save(t);
 
-        // 3. Create the initial message entity
-        TicketMessage initialMessage = TicketMessage.builder()
-                .ticketId(savedTicket.getTicketId())
-                .authorType(MsgAuthorType.USER)
-                .authorUserId(null)
-                .body(req.getMessage())
-                .build();
+        TicketMessage m = new TicketMessage();
+        m.setTicketId(saved.getTicketId());
+        m.setAuthorType(MsgAuthorType.USER);
+        m.setAuthorUserId(null);
+        m.setBody(req.getMessage());
+        ticketMessageRepository.save(m);
 
-        // 4. Save the initial message
-        messageRepo.save(initialMessage);
-        log.debug("Initial message saved for ticket ID: {}", savedTicket.getTicketId());
-
-        // 5. Map and return the response DTO
-        // NOTE: Adjusted to use ContactAdminResponse as the return type for consistency,
-        // and assuming your ContactResponse class implements/extends ContactAdminResponse.
-        return new ContactAdminResponse(
-                savedTicket.getTicketId().toString(),
-                savedTicket.getTicketCode(),
-                savedTicket.getStatus().name(),
-                "Your message has been received. We'll get back to you shortly."
-        );
+        ContactAdminResponse res = new ContactAdminResponse();
+        res.setTicketId(String.valueOf(saved.getTicketId()));
+        res.setTicketCode(saved.getTicketCode());
+        res.setStatus(saved.getStatus().name());
+        res.setMessage("Your message has been received. We'll get back to you shortly.");
+        return res;
     }
 }

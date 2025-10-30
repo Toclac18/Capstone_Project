@@ -1,9 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { reportsApi } from "../api";
 
 export function Reports() {
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   // const [reports, setReports] = useState<any[]>([]);
 
   // useEffect(() => {

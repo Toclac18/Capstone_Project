@@ -12,7 +12,7 @@ export default function SignUp() {
         <div className="rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card xl:w-1/2">
           <div className="flex flex-wrap items-center">
             <div className="w-full">
-              <div className="w-full p-4 sm:p-12.5 xl:p-15">
+              <div className="w-full p-4 sm:p-12.5 xl:p-10">
                 <Signup />
               </div>
             </div>

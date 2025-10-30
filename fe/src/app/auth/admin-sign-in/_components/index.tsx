@@ -5,8 +5,7 @@ import React, { useState } from "react";
 import InputGroup from "@/components/(template)/FormElements/InputGroup";
 import { Checkbox } from "@/components/(template)/FormElements/checkbox";
 import { Select } from "@/components/(template)/FormElements/select";
-import { LogoPlaceholder } from "@/components/logo";
-
+import { Logo } from "@/components/logo";
 // Admin role options
 const adminRoles = [
   { value: "BUSINESS_ADMIN", label: "Business Admin" },
@@ -48,7 +47,7 @@ export default function AdminSignin() {
     <>
       {/* Logo placeholder */}
       <div className="mb-8 text-center">
-        <LogoPlaceholder size="md" className="mb-4" useImage={true} />
+        <Logo/>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           Readee Admin Portal
         </h1>

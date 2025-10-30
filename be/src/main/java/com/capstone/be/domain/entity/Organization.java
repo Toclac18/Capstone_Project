@@ -1,6 +1,7 @@
 package com.capstone.be.domain.entity;
 
 import com.capstone.be.domain.entity.common.BaseEntity;
+import com.capstone.be.domain.enums.OrganizationStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -21,6 +22,9 @@ public class Organization extends BaseEntity {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
+  @Column(nullable = true, unique = true)
+  private String name;
+
   @Column(unique = true, nullable = false)
   private String email;
 
@@ -32,7 +36,7 @@ public class Organization extends BaseEntity {
   private String address;
 
   @Column(nullable = false)
-  private String status;  //#temp
+  private OrganizationStatus status = OrganizationStatus.PENDING_VERIFICATION;
 
   /* ORGANIZATION ADMIN */
   private String adminName;

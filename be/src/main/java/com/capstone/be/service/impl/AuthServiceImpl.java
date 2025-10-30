@@ -5,12 +5,15 @@ import com.capstone.be.domain.entity.Organization;
 import com.capstone.be.domain.entity.Reader;
 import com.capstone.be.domain.entity.Reviewer;
 import com.capstone.be.domain.entity.SystemAdmin;
+import com.capstone.be.domain.enums.OrganizationStatus;
 import com.capstone.be.domain.enums.ReaderStatus;
+import com.capstone.be.domain.enums.ReviewerStatus;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.dto.request.auth.ChangePasswordRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
 import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
+import com.capstone.be.dto.request.auth.VerifyEmailRequest;
 import com.capstone.be.dto.response.auth.LoginResponse;
 import com.capstone.be.dto.response.auth.RegisterReaderResponse;
 import com.capstone.be.dto.response.auth.RegisterReviewerResponse;
@@ -21,11 +24,15 @@ import com.capstone.be.repository.ReaderRepository;
 import com.capstone.be.repository.ReviewerRepository;
 import com.capstone.be.repository.SystemAdminRepository;
 import com.capstone.be.security.service.JwtService;
+import com.capstone.be.security.util.JwtUtil;
 import com.capstone.be.service.AuthService;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.util.ExceptionBuilder;
+import io.jsonwebtoken.JwtException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -43,6 +50,7 @@ public class AuthServiceImpl implements AuthService {
 
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
+  private final JwtUtil jwtUtil;
   private final ReaderMapper readerMapper;
   private final EmailService emailService;
 
@@ -66,9 +74,10 @@ public class AuthServiceImpl implements AuthService {
     // Save Reader to DB
     Reader savedReader = readerRepository.save(reader);
 
-    String verificationToken = jwtService.generateEmailVerifyToken(savedReader.getEmail());
+    //Send Verification email
+    String verificationToken = jwtService.generateEmailVerifyToken(UserRole.READER,
+        savedReader.getEmail());
     System.out.println("Verify Token for " + savedReader.getEmail() + " : " + verificationToken);
-
     emailService.sendReaderVerificationEmail(savedReader, verificationToken);
 
     return readerMapper.toRegisterResponse(savedReader);
@@ -77,6 +86,47 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public RegisterReviewerResponse registerReviewer(RegisterReviewerRequest request) {
     return null;
+  }
+
+  @Override
+  @Transactional
+  public void verifyEmail(VerifyEmailRequest request) {
+    String token = request.getToken();
+    UserRole role;
+    String email;
+    try {
+      role = jwtService.extractRoleFromToken(token);
+      email = jwtService.extractEmailFromToken(token);
+    } catch (JwtException | IllegalArgumentException ex) {
+      throw ExceptionBuilder.badRequest("Verify token is invalid or expired");
+    }
+
+    findAndVerifyEmail(role, email);
+  }
+
+  private void findAndVerifyEmail(UserRole role, String email) {
+    switch (role) {
+      case READER -> activate(readerRepository.findByEmail(email),
+          r -> ReaderStatus.PENDING_VERIFICATION.equals(r.getStatus()),
+          r -> r.setStatus(ReaderStatus.ACTIVE));
+
+      case REVIEWER -> activate(reviewerRepository.findByEmail(email),
+          r -> ReviewerStatus.PENDING_VERIFICATION.equals(r.getStatus()),
+          r -> r.setStatus(ReviewerStatus.ACTIVE));
+
+      case ORGANIZATION -> activate(organizationRepository.findByEmail(email),
+          o -> OrganizationStatus.PENDING_VERIFICATION.equals(o.getStatus()),
+          o -> o.setStatus(OrganizationStatus.ACTIVE));
+
+      default -> throw ExceptionBuilder.badRequest("Invalid role: " + role);
+    }
+  }
+
+  private <T> void activate(Optional<T> opt, Predicate<T> isPending, Consumer<T> activate) {
+    T entity = opt.orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
+    if (isPending.test(entity)) {
+      activate.accept(entity);
+    }
   }
 
   @Override

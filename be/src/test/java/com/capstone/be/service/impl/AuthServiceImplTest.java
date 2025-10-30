@@ -17,7 +17,10 @@ import com.capstone.be.domain.enums.ReaderStatus;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.dto.request.auth.ChangePasswordRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
+import com.capstone.be.dto.request.auth.RegisterReaderRequest;
 import com.capstone.be.dto.response.auth.LoginResponse;
+import com.capstone.be.dto.response.auth.RegisterReaderResponse;
+import com.capstone.be.mapper.ReaderMapper;
 import com.capstone.be.repository.BusinessAdminRepository;
 import com.capstone.be.repository.OrganizationRepository;
 import com.capstone.be.repository.ReaderRepository;
@@ -25,6 +28,8 @@ import com.capstone.be.repository.ReviewerRepository;
 import com.capstone.be.repository.SystemAdminRepository;
 import com.capstone.be.security.service.JwtService;
 import com.capstone.be.service.AuthService;
+import com.capstone.be.service.EmailService;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,13 +63,90 @@ class AuthServiceImplTest {
   private PasswordEncoder passwordEncoder;
   @Mock
   private JwtService jwtService;
+  @Mock
+  private ReaderMapper readerMapper;
+  @Mock
+  private EmailService emailService;
 
   private AuthService authService;
 
   @BeforeEach
   void setUp() {
     authService = new AuthServiceImpl(readerRepository, reviewerRepository, organizationRepository,
-        businessAdminRepository, systemAdminRepository, passwordEncoder, jwtService);
+        businessAdminRepository, systemAdminRepository, passwordEncoder, jwtService, readerMapper,
+        emailService);
+  }
+
+  @Test
+  void registerReader_success() {
+    RegisterReaderRequest request = RegisterReaderRequest.builder()
+        .fullName("John Doe")
+        .dateOfBirth(LocalDate.of(1990, 1, 1))
+        .username("johnny")
+        .email("john@example.com")
+        .password(PASSWORD)
+        .build();
+
+    Reader mappedReader = new Reader();
+    mappedReader.setEmail(request.getEmail());
+    mappedReader.setUsername(request.getUsername());
+
+    RegisterReaderResponse expectedResponse = RegisterReaderResponse.builder()
+        .email(request.getEmail())
+        .username(request.getUsername())
+        .fullName(request.getFullName())
+        .build();
+
+    when(readerRepository.existsByEmail(request.getEmail())).thenReturn(false);
+    when(readerRepository.existsByUsername(request.getUsername())).thenReturn(false);
+    when(readerMapper.toReader(request)).thenReturn(mappedReader);
+    when(passwordEncoder.encode(request.getPassword())).thenReturn(PASSWORD_HASH);
+    when(readerRepository.save(mappedReader)).thenAnswer(invocation -> invocation.getArgument(0));
+    when(jwtService.generateEmailVerifyToken(request.getEmail())).thenReturn("verify-token");
+    when(readerMapper.toRegisterResponse(mappedReader)).thenReturn(expectedResponse);
+
+    RegisterReaderResponse response = authService.registerReader(request);
+
+    assertEquals(expectedResponse, response);
+    assertEquals(PASSWORD_HASH, mappedReader.getPasswordHash());
+    verify(emailService).sendReaderVerificationEmail(mappedReader, "verify-token");
+    verify(readerRepository).save(mappedReader);
+  }
+
+  @Test
+  void registerReader_emailAlreadyExistsThrows() {
+    RegisterReaderRequest request = RegisterReaderRequest.builder()
+        .email("dupe@example.com")
+        .username("dupUser")
+        .password(PASSWORD)
+        .build();
+
+    when(readerRepository.existsByEmail(request.getEmail())).thenReturn(true);
+
+    IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        () -> authService.registerReader(request));
+
+    assertEquals("Email has been used", ex.getMessage());
+    verify(readerRepository, never()).existsByUsername(anyString());
+    verify(readerMapper, never()).toReader(any(RegisterReaderRequest.class));
+  }
+
+  @Test
+  void registerReader_usernameAlreadyExistsThrows() {
+    RegisterReaderRequest request = RegisterReaderRequest.builder()
+        .email("unique@example.com")
+        .username("dupUser")
+        .password(PASSWORD)
+        .build();
+
+    when(readerRepository.existsByEmail(request.getEmail())).thenReturn(false);
+    when(readerRepository.existsByUsername(request.getUsername())).thenReturn(true);
+
+    IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        () -> authService.registerReader(request));
+
+    assertEquals("Username has been used", ex.getMessage());
+    verify(readerMapper, never()).toReader(any(RegisterReaderRequest.class));
   }
 
   @Test

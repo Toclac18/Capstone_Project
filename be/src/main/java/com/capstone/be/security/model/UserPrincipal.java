@@ -5,7 +5,9 @@ import com.capstone.be.domain.entity.Organization;
 import com.capstone.be.domain.entity.Reader;
 import com.capstone.be.domain.entity.Reviewer;
 import com.capstone.be.domain.entity.SystemAdmin;
+import com.capstone.be.domain.enums.OrganizationStatus;
 import com.capstone.be.domain.enums.ReaderStatus;
+import com.capstone.be.domain.enums.ReviewerStatus;
 import com.capstone.be.domain.enums.UserRole;
 import java.util.Collection;
 import java.util.List;
@@ -61,36 +63,35 @@ public class UserPrincipal implements UserDetails {
   }
 
   public static UserPrincipal fromReviewer(Reviewer reviewer) {
-    boolean enabled =
-        !Boolean.TRUE.equals(reviewer.getDeleted()) && Boolean.TRUE.equals(reviewer.getActive());
+    boolean locked = ReviewerStatus.DEACTIVE.equals(reviewer.getStatus());
+    boolean enabled = ReviewerStatus.PENDING_VERIFICATION.equals(reviewer.getStatus());
     return new UserPrincipal(
         reviewer.getId(),
         UserRole.REVIEWER,
         reviewer.getEmail(),
         reviewer.getName(),
         reviewer.getPasswordHash(),
-        true,
+        !locked,
         enabled
     );
   }
 
-  public static UserPrincipal fromOrganization(Organization organization) {
-    boolean enabled = !Boolean.TRUE.equals(organization.getDeleted()) && Boolean.TRUE.equals(
-        organization.getActive());
+  public static UserPrincipal fromOrganization(Organization org) {
+    boolean locked = OrganizationStatus.DEACTIVE.equals(org.getStatus());
+    boolean enabled = OrganizationStatus.PENDING_VERIFICATION.equals(org.getStatus());
     return new UserPrincipal(
-        organization.getId(),
+        org.getId(),
         UserRole.ORGANIZATION,
-        organization.getAdminEmail(),
-        organization.getAdminName(),
-        organization.getAdminPassword(),
-        true,
+        org.getAdminEmail(),
+        org.getAdminName(),
+        org.getAdminPassword(),
+        !locked,
         enabled
     );
   }
 
+  //#Temp: Admins are not Locked or Disabled
   public static UserPrincipal fromBusinessAdmin(BusinessAdmin admin) {
-    boolean enabled =
-        !Boolean.TRUE.equals(admin.getDeleted()) && Boolean.TRUE.equals(admin.getActive());
     return new UserPrincipal(
         admin.getId(),
         UserRole.BUSINESS_ADMIN,
@@ -98,13 +99,11 @@ public class UserPrincipal implements UserDetails {
         admin.getFullName(),
         admin.getPasswordHash(),
         true,
-        enabled
+        true
     );
   }
 
   public static UserPrincipal fromSystemAdmin(SystemAdmin admin) {
-    boolean enabled =
-        !Boolean.TRUE.equals(admin.getDeleted()) && Boolean.TRUE.equals(admin.getActive());
     return new UserPrincipal(
         admin.getId(),
         UserRole.SYSTEM_ADMIN,
@@ -112,7 +111,7 @@ public class UserPrincipal implements UserDetails {
         admin.getFullName(),
         admin.getPasswordHash(),
         true,
-        enabled
+        true
     );
   }
 

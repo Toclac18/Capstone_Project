@@ -5,6 +5,7 @@ import com.capstone.be.dto.request.auth.ChangePasswordRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
 import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
+import com.capstone.be.dto.request.auth.VerifyEmailRequest;
 import com.capstone.be.dto.response.auth.LoginResponse;
 import com.capstone.be.dto.response.auth.RegisterReaderResponse;
 import com.capstone.be.dto.response.auth.RegisterReviewerResponse;
@@ -15,6 +16,8 @@ public interface AuthService {
   RegisterReaderResponse registerReader(RegisterReaderRequest request);
 
   RegisterReviewerResponse registerReviewer(RegisterReviewerRequest request);
+
+  void verifyEmail(VerifyEmailRequest request);
 
   LoginResponse login(LoginRequest request);
 

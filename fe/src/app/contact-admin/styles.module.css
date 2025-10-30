@@ -1,0 +1,124 @@
+/* Contact Admin Form Styles – stable dark-mode with :global(html.dark) + higher contrast in light */
+
+/* Card / container */
+.form-container {
+  @apply mx-auto grid max-w-2xl gap-7 rounded-xl border p-10 shadow-lg;
+  @apply border-stroke bg-white text-dark; /* high-contrast for light */
+}
+:global(html.dark) .form-container {
+  @apply border-stroke-dark bg-dark-2 text-dark-8;
+}
+
+/* Title */
+.form-title {
+  @apply mb-8 text-center text-3xl font-extrabold text-dark;
+}
+:global(html.dark) .form-title {
+  @apply text-white;
+}
+
+/* Section headers */
+.form-section-header {
+  @apply mb-4 pt-4 text-xl font-bold text-dark-3;
+}
+:global(html.dark) .form-section-header {
+  @apply text-dark-6; /* a bit softer than pure white in dark */
+}
+
+/* Groups & labels */
+.form-field-group {
+  @apply grid gap-2;
+}
+
+.form-label {
+  @apply mb-1 block text-base font-semibold text-dark-4; /* clearer in light */
+}
+:global(html.dark) .form-label {
+  @apply text-dark-6; /* readable on dark card */
+}
+
+/* Inputs / Select / Textarea */
+.form-input,
+.form-select,
+.form-textarea {
+  @apply w-full rounded-lg border p-3.5 text-base shadow-sm transition-all duration-200 ease-in-out;
+  @apply border-stroke bg-white text-dark placeholder-gray-6; /* stronger placeholder */
+  @apply focus:border-primary focus:ring-2 focus:ring-primary/60;
+}
+:global(html.dark) .form-input,
+:global(html.dark) .form-select,
+:global(html.dark) .form-textarea {
+  @apply border-stroke-dark bg-dark-3 text-dark-8 placeholder-dark-6; /* darker field bg for contrast */
+}
+
+.form-textarea {
+  @apply min-h-[140px] resize-y;
+}
+
+/* --- Exported error marker so TSX can use styles.error --- */
+.error {
+}
+
+/* Error state */
+.form-input.error,
+.form-select.error,
+.form-textarea.error {
+  @apply border-red focus:border-red focus:ring-red/30;
+}
+:global(html.dark) .form-input.error,
+:global(html.dark) .form-select.error,
+:global(html.dark) .form-textarea.error {
+  @apply border-red focus:ring-red;
+}
+
+/* Keep layout stable:
+   - fixed line height (h-5 ~ 20px)
+   - single line, no wrap, clipped if long
+   => both columns reserve identical space whether there's an error or not */
+.form-error-message {
+  @apply mt-1 text-sm text-red;
+  @apply h-5 overflow-hidden text-ellipsis whitespace-nowrap leading-5;
+}
+
+/* Button */
+.form-submit-btn {
+  @apply w-full rounded-lg bg-primary px-6 py-3.5 text-lg font-bold text-white shadow-md;
+  @apply transition-all duration-200 ease-in-out hover:brightness-110;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+}
+:global(html.dark) .form-submit-btn {
+  @apply focus:ring-offset-dark-2;
+}
+.form-submit-btn:disabled {
+  @apply cursor-not-allowed opacity-60;
+}
+
+/* Centered submit row */
+.form-actions {
+  @apply mt-4 flex justify-center;
+}
+
+/* Alerts */
+.form-alert-success {
+  @apply rounded-lg border-l-4 p-4 text-sm font-medium;
+  @apply border-green bg-green-light-6 text-green-dark;
+}
+:global(html.dark) .form-alert-success {
+  @apply border-green bg-dark-2 text-green-light-1;
+}
+
+.form-alert-error {
+  @apply rounded-lg border-l-4 p-4 text-sm font-medium;
+  @apply border-red bg-red-light-6 text-red-dark;
+}
+:global(html.dark) .form-alert-error {
+  @apply border-red bg-dark-2 text-red;
+}
+
+/* Meta */
+.form-meta-text {
+  @apply mt-4 text-center text-xs text-gray-6;
+}
+:global(html.dark) .form-meta-text {
+  @apply text-dark-6;
+}

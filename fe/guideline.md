@@ -285,7 +285,7 @@ meta: { ip, createdAt: row.createdAt },
 );
 }
 
-const upstream = await fetch(`${BE_BASE}/contact/admin`, {
+const upstream = await fetch(`${BE_BASE}/contact-admin`, {
 method: "POST",
 headers: { "Content-Type": "application/json" },
 body: JSON.stringify(body),

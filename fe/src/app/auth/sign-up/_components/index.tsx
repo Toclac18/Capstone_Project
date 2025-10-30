@@ -7,6 +7,7 @@ import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
 import Image from "next/image";
 import { useToast } from "@/components/ui/toast";
+import { registerReader } from "@/services/authService";
 
 
 export default function Signup() {
@@ -103,27 +104,14 @@ export default function Signup() {
         return;
       }
 
-      const resp = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: data.name,
-          dateOfBirth: data.date_of_birth,
-          username: data.username,
-          email: data.email,
-          password: data.password,
-        }),
+      // Use service layer
+      await registerReader({
+        fullName: data.name,
+        dateOfBirth: data.date_of_birth,
+        username: data.username,
+        email: data.email,
+        password: data.password,
       });
-
-      const json = await resp.json();
-      if (!resp.ok) {
-        showToast({
-          type: 'error',
-          title: 'Registration Failed',
-          message: json?.error || 'Registration failed',
-        });
-        return;
-      }
 
       // Success: inform user to check email for verification
       showToast({

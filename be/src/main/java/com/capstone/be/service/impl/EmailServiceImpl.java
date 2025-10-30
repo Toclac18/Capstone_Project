@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -26,6 +27,7 @@ public class EmailServiceImpl implements EmailService {
   private String verificationBaseUrl;
 
   @Override
+  @Async
   public void sendReaderVerificationEmail(Reader reader, String token) {
     Objects.requireNonNull(reader, "Reader must not be null");
     if (!StringUtils.hasText(token)) {

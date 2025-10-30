@@ -1,43 +1,53 @@
-import { NextRequest, NextResponse } from 'next/server';
+const USE_MOCK = process.env.USE_MOCK === "true";
+const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-const BACKEND_API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const token = searchParams.get("token");
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const token = searchParams.get('token');
+  if (!token) {
+    return Response.json({ error: "Token is required" }, { status: 400 });
+  }
 
-    if (!token) {
-      return NextResponse.json({ error: 'Token is required' }, { status: 400 });
-    }
-
-    const response = await fetch(
-      `${BACKEND_API_BASE}/api/auth/reader/verify-email?token=${encodeURIComponent(token)}`,
+  if (USE_MOCK) {
+    // Mock verification - always success
+    return Response.json(
       {
-        method: 'GET',
-        cache: 'no-store',
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      return NextResponse.json(
-        { error: `Backend error: ${response.status} - ${errorText}` },
-        { status: response.status }
-      );
-    }
-
-    const text = await response.text();
-    return new NextResponse(text, {
-      status: 200,
-      headers: { 'Content-Type': 'text/plain' },
-    });
-  } catch (error) {
-    console.error('API route error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+        message: "Email has been verified successfully (mock)",
+        success: true,
+      },
+      { status: 200 }
     );
   }
-}
 
+  // Proxy to BE
+  const upstream = await fetch(
+    `${BE_BASE}/api/auth/reader/verify-email?token=${encodeURIComponent(token)}`,
+    {
+      method: "GET",
+      cache: "no-store",
+    }
+  );
+
+  const text = await upstream.text();
+
+  if (!upstream.ok) {
+    let errorMsg = "Verification failed";
+    try {
+      const json = JSON.parse(text);
+      errorMsg = json?.detail || json?.message || errorMsg;
+    } catch {
+      errorMsg = text || errorMsg;
+    }
+    return Response.json({ error: errorMsg }, { status: upstream.status });
+  }
+
+  // Backend returns plain text, convert to JSON
+  return Response.json(
+    {
+      message: text || "Email has been verified successfully",
+      success: true,
+    },
+    { status: 200 }
+  );
+}

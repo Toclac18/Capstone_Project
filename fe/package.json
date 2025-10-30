@@ -10,7 +10,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "lint:hook": "next lint --dir src/app/business-admin --fix"
   },
   "dependencies": {
     "apexcharts": "^4.5.0",

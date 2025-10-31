@@ -26,9 +26,10 @@ public class SecurityConfig {
   private static final String[] PUBLIC_ENDPOINTS = {
       "/api/auth/*",
       "/api/auth/*/*",
-      "/api/auth/*/*/*"
-
+      "/api/auth/*/*/*",
+      "/api/contact-admin"
   };
+
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
   public static String[] getPublicEndpoints() {

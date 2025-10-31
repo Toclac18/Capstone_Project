@@ -1,12 +1,16 @@
 package com.capstone.be.dto.request.auth;
 
+import com.capstone.be.domain.enums.EducationLevel;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.io.File;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
 
 public class RegisterReviewerRequest {
 
@@ -29,16 +33,16 @@ public class RegisterReviewerRequest {
       message = "Password must contain digit and alphabet")
   private String password;
 
-  private String educationLevel;
+  private EducationLevel educationLevel;
 
-  private String areaOfExpertise;
+  private UUID areaOfExpertise;
 
-  private String reviewDocumentCategory;
+  private List<UUID> reviewFields;
 
   private String referenceOrganizationName;
 
   private String referenceOrganizationEmail;
 
-  private String verifiedBackgroundUpload;
+  private File verifiedBackgroundUpload;
 
 }

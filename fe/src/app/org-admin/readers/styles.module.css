@@ -1,0 +1,154 @@
+/* Admin Readers Styles – refined table, badges, actions, dark-mode aware */
+
+/* ===== Layout ===== */
+.readers-container {
+  @apply mx-auto max-w-5xl p-6;
+}
+
+.readers-title {
+  @apply mb-6 text-2xl font-bold text-dark;
+}
+:global(html.dark) .readers-title {
+  @apply text-white;
+}
+
+.readers-toolbar {
+  @apply mb-4 flex items-center gap-2;
+}
+.readers-search {
+  @apply w-full rounded-lg border px-3 py-2 text-base;
+  @apply border-stroke bg-white text-dark placeholder-gray-6;
+}
+:global(html.dark) .readers-search {
+  @apply border-stroke-dark bg-dark-3 text-dark-8 placeholder-dark-6;
+}
+
+.readers-reload-btn {
+  @apply rounded-lg border px-3 py-2 text-sm font-medium;
+  @apply border-stroke bg-gray-1 text-dark transition-colors duration-150 hover:bg-gray-2;
+}
+:global(html.dark) .readers-reload-btn {
+  @apply border-stroke-dark bg-dark-2 text-dark-6 hover:bg-dark-3;
+}
+
+/* ===== Alerts ===== */
+.alert-error {
+  @apply mb-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-red-700;
+}
+:global(html.dark) .alert-error {
+  @apply border-red bg-dark-2 text-red;
+}
+.alert-success {
+  @apply mb-3 rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-green-700;
+}
+:global(html.dark) .alert-success {
+  @apply border-green bg-dark-2 text-green-light-1;
+}
+
+/* ===== Table Card ===== */
+.table-container {
+  @apply overflow-x-auto rounded-2xl border border-stroke bg-white shadow-sm;
+}
+:global(html.dark) .table-container {
+  @apply border-stroke-dark bg-dark-2 shadow-none;
+}
+
+.table {
+  @apply min-w-full text-sm;
+  border-collapse: collapse;
+}
+
+.table thead {
+  @apply bg-gray-50;
+}
+:global(html.dark) .table thead {
+  @apply bg-dark-3;
+}
+
+.table th,
+.table td {
+  @apply px-3 py-3;
+  vertical-align: middle;
+}
+
+.table th {
+  @apply text-left font-semibold text-dark-3;
+  white-space: nowrap;
+}
+:global(html.dark) .table th {
+  @apply text-dark-6;
+}
+
+.table-row {
+  @apply border-t border-stroke;
+}
+.table-row:hover {
+  @apply bg-gray-50;
+}
+:global(html.dark) .table-row {
+  @apply border-stroke-dark;
+}
+:global(html.dark) .table-row:hover {
+  @apply bg-dark-3;
+}
+
+.cell-right {
+  @apply align-middle;
+}
+.header-right {
+  @apply text-right align-middle;
+}
+
+.cell-content-center {
+  @apply flex h-full w-full items-center;
+}
+
+.status-badge {
+  @apply inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium;
+  letter-spacing: 0.02em;
+}
+.status-active {
+  @apply border-emerald-200 bg-emerald-50 text-emerald-700;
+}
+.status-suspended {
+  @apply border-amber-200 bg-amber-50 text-amber-700;
+}
+.status-pending {
+  @apply border-gray-200 bg-gray-50 text-gray-700;
+}
+:global(html.dark) .status-active {
+  @apply border-emerald-700 bg-emerald-900/30 text-emerald-300;
+}
+:global(html.dark) .status-suspended {
+  @apply border-amber-700 bg-amber-900/30 text-amber-300;
+}
+:global(html.dark) .status-pending {
+  @apply border-dark-6 bg-dark-4 text-dark-8;
+}
+
+/* ===== Action Button ===== */
+.action-btn {
+  @apply inline-flex items-center justify-center rounded-full border border-red-300 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700;
+  @apply transition-all duration-150 ease-in-out hover:bg-red-100 active:scale-[0.98];
+}
+.action-btn:disabled {
+  @apply cursor-not-allowed opacity-50;
+}
+:global(html.dark) .action-btn {
+  @apply border-red bg-dark-2 text-red hover:bg-dark-3;
+}
+
+/* ===== Footer Meta ===== */
+.readers-meta {
+  @apply mt-3 text-center text-xs text-gray-6;
+}
+:global(html.dark) .readers-meta {
+  @apply text-dark-6;
+}
+
+@media (max-width: 640px) {
+  .col-email,
+  .col-coins {
+    display: none;
+  }
+}

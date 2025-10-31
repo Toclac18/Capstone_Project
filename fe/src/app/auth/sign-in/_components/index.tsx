@@ -48,6 +48,8 @@ export default function Signin() {
       localStorage.setItem('accessToken', result.accessToken);
       localStorage.setItem('userRole', result.role);
       localStorage.setItem('userId', result.subjectId);
+      localStorage.setItem('userEmail', result.email);
+      localStorage.setItem('userName', result.displayName);
 
       showToast({ type: 'success', title: 'Login Successful' });
 

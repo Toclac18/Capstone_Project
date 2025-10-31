@@ -49,9 +49,9 @@ export async function middleware(req: NextRequest) {
   if (isApi && isPublicApi(pathname)) return NextResponse.next();
 
   const token = req.cookies.get(COOKIE_NAME)?.value;
-  const valid = token ? await verifyJwt(token) : null;
+  // const valid = token ? await verifyJwt(token) : null;
 
-  if (!valid) {
+  if (!token) {
     if (isApi)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const url = req.nextUrl.clone();

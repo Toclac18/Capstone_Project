@@ -72,3 +72,14 @@ export async function verifyEmail(token: string): Promise<VerifyEmailResponse> {
   return res.data;
 }
 
+/**
+ * Logout - clear cookie and localStorage
+ */
+export async function logout(): Promise<void> {
+  await apiClient.post("/auth/logout");
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('userRole');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('userEmail');
+  localStorage.removeItem('userName');
+}

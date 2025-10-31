@@ -52,18 +52,6 @@ export const NAV_DATA = [
           },
         ],
       },
-      {
-        title: "Login",
-        url: "/auth/sign-in",
-        icon: Icons.Authentication,
-        items: [],
-      },
-      {
-        title: "Sign Up",
-        url: "/auth/sign-up",
-        icon: Icons.Authentication,
-        items: [],
-      },
     ],
   },
 ];

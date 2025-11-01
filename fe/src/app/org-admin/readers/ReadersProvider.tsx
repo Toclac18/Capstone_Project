@@ -51,17 +51,18 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
 
     setError(null);
     setInfo(null);
-    setReaders((arr) =>
-      arr.map((r) =>
-        r.id === id ? { ...r, status: enable ? "ACTIVE" : "SUSPENDED" } : r,
-      ),
-    );
 
     try {
       const updated = await changeReaderAccess({ userId: id, enable });
 
       setReaders((arr) =>
         arr.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)),
+      );
+
+      setReaders((arr) =>
+        arr.map((r) =>
+          r.id === id ? { ...r, status: enable ? "ACTIVE" : "SUSPENDED" } : r,
+        ),
       );
 
       const msg = enable

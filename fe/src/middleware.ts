@@ -5,7 +5,7 @@ const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
 const JWT_SECRET = process.env.JWT_SECRET; // server-only
 const encoder = new TextEncoder();
 
-const PUBLIC_PAGE_PATHS = ["/", "/auth/sign-in", "/auth/sign-up"];
+const PUBLIC_PAGE_PATHS = ["/", "/auth/sign-in", "/auth/sign-up","/auth/verify-email"];
 const PUBLIC_API_PREFIXES = ["/api/auth", "/api/health"]; // auth & health public
 const ALWAYS_PUBLIC_PREFIXES = [
   "/_next/",

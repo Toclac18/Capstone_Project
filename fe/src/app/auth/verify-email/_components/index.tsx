@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
-import { verifyEmail } from "@/services/authService";
+import { verifyEmail } from "../api";
 
 export default function VerifyEmailContent() {
   const searchParams = useSearchParams();
@@ -38,9 +38,10 @@ export default function VerifyEmailContent() {
         setTimeout(() => {
           router.push("/auth/sign-in");
         }, 3000);
-      } catch (error: any) {
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "Verification failed. Please try again.";
         setStatus("error");
-        setMessage(error?.message || "Verification failed. Please try again.");
+        setMessage(msg);
       }
     };
 

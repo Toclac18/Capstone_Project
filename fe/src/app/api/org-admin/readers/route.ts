@@ -1,5 +1,6 @@
+// src/app/api/org-admin/readers/route.ts
 import { headers } from "next/headers";
-import { mockReaders } from "@/mock/readers";
+import { mockReaders } from "src/mock/readers";
 
 const DEFAULT_BE_BASE = "http://localhost:8081";
 
@@ -10,20 +11,15 @@ export async function GET() {
     DEFAULT_BE_BASE;
 
   if (USE_MOCK) {
-    const res = {
-      items: mockReaders,
-      total: mockReaders.length,
-    };
-    return new Response(JSON.stringify(res), {
-      status: 200,
-      headers: {
-        "content-type": "application/json",
-        "x-mode": "mock",
+    return new Response(
+      JSON.stringify({ items: mockReaders, total: mockReaders.length }),
+      {
+        status: 200,
+        headers: { "content-type": "application/json", "x-mode": "mock" },
       },
-    });
+    );
   }
 
-  // REAL: forward Authorization & Cookie sang BE
   const h = await headers();
   const authHeader = h.get("authorization") || "";
   const cookieHeader = h.get("cookie") || "";
@@ -39,7 +35,6 @@ export async function GET() {
     headers: fh,
     cache: "no-store",
   });
-
   const text = await upstream.text();
   return new Response(text, {
     status: upstream.status,

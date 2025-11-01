@@ -1,36 +1,29 @@
-// src/app/admin/readers/api.ts
+// src/app/contact-admin/api.ts
 
-import { apiClient } from "@/services/http";
+import {
+  changeReaderAccess,
+  fetchReaders,
+  ReaderAccessPayload,
+  ReaderResponse,
+} from "src/services/orgAdmin-reader";
 
-export type ReaderItem = {
-  id: string;
-  fullName: string;
-  username: string;
-  email: string;
-  status: "ACTIVE" | "SUSPENDED" | "PENDING_VERIFICATION";
-  coinBalance: number;
-};
+export {
+  fetchReaders,
+  changeReaderAccess,
+  type ReaderAccessPayload,
+  type ReaderResponse,
+} from "@/services/orgAdmin-reader";
 
-export async function fetchReaders(): Promise<{
-  items: ReaderItem[];
-  total: number;
-}> {
-  const res = await apiClient.get("/org-admin/readers");
-  return res.data;
+export async function postJSON(
+  payload: ReaderAccessPayload,
+): Promise<ReaderResponse> {
+  return changeReaderAccess(payload);
 }
 
-/**
- * Đổi trạng thái truy cập:
- *  - enable = false => remove access (SUSPENDED)
- *  - enable = true  => enable access (ACTIVE)
- */
-export async function changeReaderAccess(
-  userId: string,
-  enable: boolean,
-): Promise<{ success: boolean; message: string }> {
-  const res = await apiClient.post("/org-admin/reader-change-access", {
-    userId,
-    enable,
-  });
-  return res.data;
+export async function getJSON(): Promise<ReaderResponse> {
+  const data = await fetchReaders();
+  if (!data.items || data.items.length === 0) {
+    throw new Error("Reader list is empty");
+  }
+  return data.items[0];
 }

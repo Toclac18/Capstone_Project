@@ -7,11 +7,11 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { fetchReaders, changeReaderAccess, type ReaderItem } from "./api";
+import { fetchReaders, changeReaderAccess, type ReaderResponse } from "./api";
 import { toast, useToast } from "@/components/ui/toast";
 
 interface ReadersContextValue {
-  readers: ReaderItem[];
+  readers: ReaderResponse[];
   loading: boolean;
   error: string | null;
   info: string | null;
@@ -24,7 +24,7 @@ interface ReadersContextValue {
 const ReadersContext = createContext<ReadersContextValue | null>(null);
 
 export function ReadersProvider({ children }: { children: React.ReactNode }) {
-  const [readers, setReaders] = useState<ReaderItem[]>([]);
+  const [readers, setReaders] = useState<ReaderResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -46,13 +46,11 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  /** Toggle reader access (Enable / Disable) */
   const toggleAccess = async (id: string, enable: boolean) => {
-    const prev = readers;
+    const snapshot = readers;
+
     setError(null);
     setInfo(null);
-
-    // optimistic update
     setReaders((arr) =>
       arr.map((r) =>
         r.id === id ? { ...r, status: enable ? "ACTIVE" : "SUSPENDED" } : r,
@@ -60,12 +58,15 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
     );
 
     try {
-      const res = await changeReaderAccess(id, enable);
-      const msg =
-        res?.message ||
-        (enable
-          ? "Access enabled successfully"
-          : "Access removed successfully");
+      const updated = await changeReaderAccess({ userId: id, enable });
+
+      setReaders((arr) =>
+        arr.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)),
+      );
+
+      const msg = enable
+        ? "Access enabled successfully"
+        : "Access removed successfully";
       setInfo(msg);
       showToast(
         enable
@@ -73,9 +74,8 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
           : toast.error("Access Removed", msg),
       );
     } catch (e: any) {
-      // rollback nếu lỗi
-      setReaders(prev);
-      const msg = e?.message || "Failed to update access";
+      setReaders(snapshot);
+      const msg = e?.message ?? "Failed to update access";
       setError(msg);
       showToast(toast.error("Action failed", msg));
       throw e;

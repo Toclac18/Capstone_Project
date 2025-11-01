@@ -69,7 +69,7 @@ public class UserPrincipal implements UserDetails {
         reviewer.getId(),
         UserRole.REVIEWER,
         reviewer.getEmail(),
-        reviewer.getName(),
+        reviewer.getFullName(),
         reviewer.getPasswordHash(),
         !locked,
         enabled

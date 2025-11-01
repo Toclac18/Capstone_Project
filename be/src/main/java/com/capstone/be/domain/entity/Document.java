@@ -57,6 +57,6 @@ public class Document extends BaseEntity {
   private Boolean deleted;
 
   @ManyToMany(mappedBy = "documents")
-  private Set<Field> fields = new HashSet<>();
+  private Set<Specialization> specializations = new HashSet<>();
 
 }

@@ -20,8 +20,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
-@Table(name = "fields")
-public class Field extends BaseEntity {
+@Table(name = "specializations")
+public class Specialization extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -33,18 +33,18 @@ public class Field extends BaseEntity {
   private String name;
 
   @ManyToOne
-  @JoinColumn(name = "group_id")
-  private FieldGroup fieldGroup;
+  @JoinColumn(name = "domain_id")
+  private Domain domain;
 
   @ManyToMany
-  @JoinTable(name = "document_field_n_n",
-      joinColumns = @JoinColumn(name = "field_id"),
+  @JoinTable(name = "document_specialization_n_n",
+      joinColumns = @JoinColumn(name = "specialization_id"),
       inverseJoinColumns = @JoinColumn(name = "document_id"))
   private Set<Document> documents = new HashSet<>();
 
   @ManyToMany
-  @JoinTable(name = "reviewer_field_n_n",
-      joinColumns = @JoinColumn(name = "field_id"),
+  @JoinTable(name = "reviewer_specialization_n_n",
+      joinColumns = @JoinColumn(name = "specialization_id"),
       inverseJoinColumns = @JoinColumn(name = "reviewer_id"))
   private Set<Reviewer> reviewers = new HashSet<>();
 

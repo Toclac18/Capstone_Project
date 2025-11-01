@@ -177,7 +177,7 @@ public class AuthServiceImpl implements AuthService {
         reviewer.getEmail());
 
     return baseResponse(token, reviewer.getId(), UserRole.REVIEWER, reviewer.getEmail(),
-        reviewer.getName());
+        reviewer.getFullName());
   }
 
   private LoginResponse authenticateOrganization(String adminEmail, String rawPassword) {

@@ -5,7 +5,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -13,8 +18,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
-@Table(name = "field_groups")
-public class FieldGroup extends BaseEntity {
+@Table(name = "domains")
+public class Domain extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -23,4 +28,10 @@ public class FieldGroup extends BaseEntity {
   private int code;
 
   private String name;
+
+  @ManyToMany
+  @JoinTable(name = "reviewer_domain_n_n",
+      joinColumns = @JoinColumn(name = "domain_id"),
+      inverseJoinColumns = @JoinColumn(name = "reviewer_id"))
+  private Set<Reviewer> reviewers = new HashSet<>();
 }

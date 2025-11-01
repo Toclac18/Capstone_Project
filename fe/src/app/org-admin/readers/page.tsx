@@ -1,27 +1,34 @@
+// src/app/contact-admin/page.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import styles from "./styles.module.css";
 import { ReadersProvider, useReaders } from "./ReadersProvider";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
 import EnableButton from "./_components/EnableButton";
 
 function ReadersContent() {
-  const { readers, loading, reload, toggleAccess } = useReaders();
-  const [q, setQ] = useState("");
+  const {
+    readers,
+    loading,
+    reload,
+    toggleAccess,
+    page,
+    pageSize,
+    total,
+    q,
+    setPage,
+    setPageSize,
+    setQ,
+  } = useReaders();
+
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    if (!s) return readers;
-    return readers.filter(
-      (r) =>
-        r.fullName.toLowerCase().includes(s) ||
-        r.username.toLowerCase().includes(s) ||
-        r.email.toLowerCase().includes(s) ||
-        r.status.toLowerCase().includes(s),
-    );
-  }, [q, readers]);
+  // derive range & buttons
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, total);
+  const hasPrev = page > 1;
+  const hasNext = end < total;
 
   async function onEnable(id: string) {
     setBusyId(id);
@@ -49,10 +56,31 @@ function ReadersContent() {
       <div className={styles["readers-toolbar"]}>
         <input
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => {
+            setPage(1); // reset to first page when searching
+            setQ(e.target.value);
+          }}
           placeholder="Search by name, username, email, or status…"
           className={styles["readers-search"]}
         />
+
+        <select
+          value={pageSize}
+          onChange={(e) => {
+            setPage(1); // reset page
+            setPageSize(Number(e.target.value));
+          }}
+          className={styles["readers-pagesize"]}
+          disabled={loading}
+          title="Rows per page"
+        >
+          {[10, 20, 50, 100].map((s) => (
+            <option key={s} value={s}>
+              {s} / page
+            </option>
+          ))}
+        </select>
+
         <button
           onClick={reload}
           className={styles["readers-reload-btn"]}
@@ -97,14 +125,14 @@ function ReadersContent() {
                   Loading…
                 </td>
               </tr>
-            ) : filtered.length === 0 ? (
+            ) : readers.length === 0 ? (
               <tr>
                 <td colSpan={6} className={styles["cell-right"]}>
                   No readers found
                 </td>
               </tr>
             ) : (
-              filtered.map((r) => {
+              readers.map((r) => {
                 const isSuspended = r.status === "SUSPENDED";
                 return (
                   <tr key={r.id} className={styles["table-row"]}>
@@ -157,6 +185,30 @@ function ReadersContent() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination footer */}
+      <div className={styles["readers-pagination"]}>
+        <span className={styles["readers-range"]}>
+          {total === 0 ? "No results" : `Showing ${start}–${end} of ${total}`}
+        </span>
+        <div className={styles["readers-page-controls"]}>
+          <button
+            onClick={() => setPage(Math.max(1, page - 1))}
+            disabled={!hasPrev || loading}
+            className={styles["page-btn"]}
+          >
+            Prev
+          </button>
+          <span className={styles["readers-page"]}>Page {page}</span>
+          <button
+            onClick={() => setPage(page + 1)}
+            disabled={!hasNext || loading}
+            className={styles["page-btn"]}
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );

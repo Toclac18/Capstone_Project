@@ -1,7 +1,5 @@
-package com.capstone.be.dto.request;
+package com.capstone.be.dto.request.auth;
 
-
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -13,17 +11,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ReaderRegisterRequest {
+public class ChangePasswordRequest {
 
   @NotBlank
-  private String username;
-
-  @Email
-  @NotBlank
-  private String email;
+  private String currentPassword;
 
   @NotBlank
   @Size(min = 8, max = 64)
-  private String password;
-
+  private String newPassword;
 }

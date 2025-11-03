@@ -88,7 +88,7 @@ public class GlobalExceptionHandler {
   // 500: System error
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ProblemDetail> handleInternal(Exception ex, HttpServletRequest req) {
-    System.out.println(ex.toString());
+    ex.printStackTrace(); //#dev
     return buildProblemDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error",
         ex.getMessage(), "INTERNAL_ERROR", req);
   }

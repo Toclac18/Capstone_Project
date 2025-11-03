@@ -23,7 +23,17 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+  private static final String[] PUBLIC_ENDPOINTS = {
+      "/api/auth/login",
+      "/api/auth/*/register",
+      "/api/auth/reader/verify-email",
+      "/api/auth/hello"
+  };
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+  public static String[] getPublicEndpoints() {
+    return PUBLIC_ENDPOINTS;
+  }
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -33,13 +43,14 @@ public class SecurityConfig {
         .cors(cors -> {
         }) //Allow API call from Browser
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/auth/**").permitAll() //Endpoint not require auth
+            .requestMatchers(PUBLIC_ENDPOINTS)
+            .permitAll() // Public authentication endpoints
             .anyRequest().authenticated()            // Other endpoint require auth
         )
         .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
           response.setStatus(HttpStatus.UNAUTHORIZED.value());
           response.setContentType("application/json");
-          response.getWriter().write("{\"message\":\"Unauthorized\"}");
+          response.getWriter().write("{\"message\":\"Security Config: Unauthorized\"}");
         }))
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

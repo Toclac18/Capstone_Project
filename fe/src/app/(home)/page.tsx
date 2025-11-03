@@ -1,54 +1,89 @@
 "use client";
-import { userService } from "@/services/userService";
-import { User } from "@/types/user";
-import { useEffect, useState } from "react";
+
+import { FeaturedCarousel } from "./_components/featured-carousel";
+import { SystemDescription } from "./_components/system-description";
+import { ContentCards } from "./_components/content-cards";
+import { mockFeaturedCards, mockContentCards } from "./_components/mock-data";
+import { useToast } from "@/components/ui/toast";
 
 const Home = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  
-  
-  useEffect(() => {
-    userService.getUsers().then((users) => {
-      setUsers(users);
+  const { showToast } = useToast();
+
+  const handleFeaturedCardClick = (card: any) => {
+    showToast({
+      type: 'info',
+      title: 'Featured Course',
+      message: `You clicked on "${card.title}"`,
+      duration: 3000
     });
-  }, []);
-  
+  };
+
+  const handleContentCardClick = (card: any) => {
+    showToast({
+      type: 'info',
+      title: 'Course Selected',
+      message: `You selected "${card.title}"`,
+      duration: 3000
+    });
+  };
+
   return (
-    <div className="max-w-2xl mx-auto mt-10">
-      <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">Users</h1>
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Role</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
-            {/* {users?.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50 transition">
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900">{user.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-500">{user.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
-                    {user.role}
-                  </span>
-                </td>
-              </tr>
-            ))} */}
-            {users.length === 0 && (
-              <tr>
-                <td colSpan={3} className="px-6 py-8 text-center text-gray-400">
-                  No users found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 rounded-2xl">
+      <div className="container mx-auto px-4 py-8">
+        {/* System Description */}
+        <SystemDescription />
+
+        {/* Featured Carousel */}
+        <div className="mb-12">
+          {/* <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Featured Courses
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Discover our most popular and trending courses
+            </p>
+          </div> */}
+          
+          <FeaturedCarousel 
+            cards={mockFeaturedCards}
+            onCardClick={handleFeaturedCardClick}
+          />
+        </div>
+
+        {/* Content Cards */}
+        <div className="mb-12">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Popular Learning Paths
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Comprehensive courses designed to advance your career
+            </p>
+          </div>
+          
+          <ContentCards 
+            cards={mockContentCards}
+            onCardClick={handleContentCardClick}
+          />
+        </div>
+
+        {/* Additional Info Section */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 text-white shadow-xl hover:shadow-2xl transition-all duration-500">
+          <div className="text-center">
+            <h3 className="text-2xl font-bold mb-4">
+              Ready to Start Learning?
+            </h3>
+            <p className="text-lg mb-6 opacity-90">
+              Join thousands of students who are already advancing their careers with our courses
+            </p>
+            <button className="bg-white text-blue-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+              Get Started Today
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default Home;

@@ -1,28 +1,28 @@
 "use client";
 
-import { SearchIcon } from "@/assets/icons";
-import Image from "next/image";
-import Link from "next/link";
 import { useSidebarContext } from "../sidebar/sidebar-context";
-import { MenuIcon } from "./icons";
+import { AnimatedMenuIcon } from "./icons";
 import { Notification } from "./notification";
 import { ThemeToggleSwitch } from "./theme-toggle";
 import { UserInfo } from "./user-info";
 
 export function Header() {
-  const { toggleSidebar, isMobile } = useSidebarContext();
+  const { toggleSidebar, isOpen } = useSidebarContext();
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-stroke bg-white px-4 py-5 shadow-1 dark:border-stroke-dark dark:bg-gray-dark md:px-5 2xl:px-10">
       <button
         onClick={toggleSidebar}
-        className="rounded-lg border px-1.5 py-1 dark:border-stroke-dark dark:bg-[#020D1A] hover:dark:bg-[#FFFFFF1A] lg:hidden"
+        className="group flex items-center justify-center rounded-lg p-2 transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-700"
       >
-        <MenuIcon />
-        <span className="">Toggle Sidebar</span>
+        <AnimatedMenuIcon
+          isOpen={isOpen}
+          className="text-gray-700 group-hover:text-gray-900 dark:text-gray-300 dark:group-hover:text-white"
+        />
+        <span className="sr-only">Toggle Sidebar</span>
       </button>
 
-      {isMobile && (
+      {/* {isMobile && (
         <Link href={"/"} className="ml-2 max-[430px]:hidden min-[375px]:ml-4">
           <Image
             src={"/images/logo/logo-icon.svg"}
@@ -32,13 +32,14 @@ export function Header() {
             role="presentation"
           />
         </Link>
+      )} */}
+      {!isOpen && (
+        <div className="max-xl:hidden">
+          <h1 className="mb-0.5 ml-4 text-heading-5 font-bold text-dark dark:text-white">
+            Readee
+          </h1>
+        </div>
       )}
-
-      <div className="max-xl:hidden">
-        <h1 className="mb-0.5 text-heading-5 font-bold text-dark dark:text-white">
-          Readee
-        </h1>
-      </div>
 
       <div className="flex flex-1 items-center justify-end gap-2 min-[375px]:gap-4">
         {/* <div className="relative w-full max-w-[300px]">

@@ -7,8 +7,9 @@ import com.capstone.be.domain.entity.Reviewer;
 import com.capstone.be.domain.entity.SystemAdmin;
 import com.capstone.be.domain.enums.ReaderStatus;
 import com.capstone.be.domain.enums.UserRole;
-import com.capstone.be.dto.request.LoginRequest;
-import com.capstone.be.dto.response.LoginResponse;
+import com.capstone.be.dto.request.auth.ChangePasswordRequest;
+import com.capstone.be.dto.request.auth.LoginRequest;
+import com.capstone.be.dto.response.auth.LoginResponse;
 import com.capstone.be.repository.BusinessAdminRepository;
 import com.capstone.be.repository.OrganizationRepository;
 import com.capstone.be.repository.ReaderRepository;
@@ -16,12 +17,12 @@ import com.capstone.be.repository.ReviewerRepository;
 import com.capstone.be.repository.SystemAdminRepository;
 import com.capstone.be.security.service.JwtService;
 import com.capstone.be.service.AuthService;
+import com.capstone.be.util.ExceptionBuilder;
 import java.util.Optional;
-import org.springframework.http.HttpStatus;
+import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -67,14 +68,13 @@ public class AuthServiceImpl implements AuthService {
 
   private LoginResponse authenticateReader(String email, String rawPassword) {
     Reader reader = readerRepository.findByEmail(email)
-        .orElseThrow(() -> unauthorized("Invalid email or password"));
+        .orElseThrow(() -> ExceptionBuilder.unauthorized("Invalid email or password"));
 
     verifyPassword(rawPassword, reader.getPasswordHash());
 
-    if (Boolean.TRUE.equals(reader.getDeleted())
-        || ReaderStatus.BANNED.equals(reader.getStatus())
-        || ReaderStatus.DELETING.equals(reader.getStatus())) {
-      throw unauthorized("Account is disabled");
+    if (!ReaderStatus.ACTIVE.equals(reader.getStatus())) {
+      throw ExceptionBuilder.unauthorized("Account is disable or not verified");
+
     }
 
     String token = jwtService.generateToken(reader.getId(), UserRole.READER,
@@ -86,13 +86,13 @@ public class AuthServiceImpl implements AuthService {
 
   private LoginResponse authenticateReviewer(String email, String rawPassword) {
     Reviewer reviewer = reviewerRepository.findByEmail(email)
-        .orElseThrow(() -> unauthorized("Invalid email or password"));
+        .orElseThrow(() -> ExceptionBuilder.unauthorized("Invalid email or password"));
 
     verifyPassword(rawPassword, reviewer.getPasswordHash());
 
     if (!Boolean.TRUE.equals(reviewer.getActive())
         || Boolean.TRUE.equals(reviewer.getDeleted())) {
-      throw unauthorized("Account is disabled");
+      throw ExceptionBuilder.unauthorized("Account is disabled");
     }
 
     String token = jwtService.generateToken(reviewer.getId(), UserRole.REVIEWER,
@@ -104,13 +104,13 @@ public class AuthServiceImpl implements AuthService {
 
   private LoginResponse authenticateOrganization(String adminEmail, String rawPassword) {
     Organization organization = organizationRepository.findByAdminEmail(adminEmail)
-        .orElseThrow(() -> unauthorized("Invalid email or password"));
+        .orElseThrow(() -> ExceptionBuilder.unauthorized("Invalid email or password"));
 
     verifyPassword(rawPassword, organization.getAdminPassword());
 
     if (!Boolean.TRUE.equals(organization.getActive()) || Boolean.TRUE.equals(
         organization.getDeleted())) {
-      throw unauthorized("Account is disabled");
+      throw ExceptionBuilder.unauthorized("Account is disabled");
     }
 
     String token = jwtService.generateToken(organization.getId(), UserRole.ORGANIZATION,
@@ -122,12 +122,12 @@ public class AuthServiceImpl implements AuthService {
 
   private LoginResponse authenticateBusinessAdmin(String email, String rawPassword) {
     BusinessAdmin admin = businessAdminRepository.findByEmail(email)
-        .orElseThrow(() -> unauthorized("Invalid email or password"));
+        .orElseThrow(() -> ExceptionBuilder.unauthorized("Invalid email or password"));
 
     verifyPassword(rawPassword, admin.getPasswordHash());
 
     if (!Boolean.TRUE.equals(admin.getActive()) || Boolean.TRUE.equals(admin.getDeleted())) {
-      throw unauthorized("Account is disabled");
+      throw ExceptionBuilder.unauthorized("Account is disabled");
     }
 
     String token = jwtService.generateToken(admin.getId(), UserRole.BUSINESS_ADMIN,
@@ -139,12 +139,12 @@ public class AuthServiceImpl implements AuthService {
 
   private LoginResponse authenticateSystemAdmin(String email, String rawPassword) {
     SystemAdmin admin = systemAdminRepository.findByEmail(email)
-        .orElseThrow(() -> unauthorized("Invalid email or password"));
+        .orElseThrow(() -> ExceptionBuilder.unauthorized("Invalid email or password"));
 
     verifyPassword(rawPassword, admin.getPasswordHash());
 
     if (!Boolean.TRUE.equals(admin.getActive()) || Boolean.TRUE.equals(admin.getDeleted())) {
-      throw unauthorized("Account is disabled");
+      throw ExceptionBuilder.unauthorized("Account is disabled");
     }
 
     String token = jwtService.generateToken(admin.getId(), UserRole.SYSTEM_ADMIN, admin.getEmail());
@@ -155,24 +155,126 @@ public class AuthServiceImpl implements AuthService {
 
   private void verifyPassword(String rawPassword, String passwordHash) {
     if (!passwordEncoder.matches(rawPassword, Optional.ofNullable(passwordHash).orElse(""))) {
-      throw unauthorized("Invalid email or password");
+      throw ExceptionBuilder.unauthorized("Invalid email or password");
     }
   }
 
-  private LoginResponse baseResponse(String token, Long id, UserRole role, String email,
+  private LoginResponse baseResponse(String token, UUID id, UserRole role, String email,
       String displayName) {
     return LoginResponse.builder()
         .accessToken(token)
         .tokenType("Bearer")
         .expiresIn(jwtService.getExpirationMs())
-        .subjectId(id)
+        .subjectId(id.toString())
         .role(role)
         .email(email)
         .displayName(displayName)
         .build();
   }
 
-  private ResponseStatusException unauthorized(String message) {
-    return new ResponseStatusException(HttpStatus.UNAUTHORIZED, message);
+  @Override
+  @Transactional
+  public void changePassword(UUID subjectId, UserRole role, ChangePasswordRequest request) {
+    if (subjectId == null || role == null) {
+      throw ExceptionBuilder.badRequest("Subject information is required");
+    }
+
+    if (request.getNewPassword().equals(request.getCurrentPassword())) {
+      throw ExceptionBuilder.badRequest("New password must be different from current password");
+    }
+
+    switch (role) {
+      case READER -> changeReaderPassword(subjectId, request);
+      case REVIEWER -> changeReviewerPassword(subjectId, request);
+      case ORGANIZATION -> changeOrganizationPassword(subjectId, request);
+      case BUSINESS_ADMIN -> changeBusinessAdminPassword(subjectId, request);
+      case SYSTEM_ADMIN -> changeSystemAdminPassword(subjectId, request);
+    }
+  }
+
+  private void changeReaderPassword(UUID subjectId, ChangePasswordRequest request) {
+    Reader reader = readerRepository.findById(subjectId)
+        .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
+
+    assertCurrentPasswordMatches(request.getCurrentPassword(), reader.getPasswordHash());
+
+    String encoded = passwordEncoder.encode(request.getNewPassword());
+    reader.setPasswordHash(encoded);
+    readerRepository.save(reader);
+  }
+
+  private void changeReviewerPassword(UUID subjectId, ChangePasswordRequest request) {
+    Reviewer reviewer = reviewerRepository.findById(subjectId)
+        .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
+
+    if (!Boolean.TRUE.equals(reviewer.getActive()) || Boolean.TRUE.equals(reviewer.getDeleted())) {
+      throw ExceptionBuilder.forbidden("Account is disabled");
+    }
+
+    assertCurrentPasswordMatches(request.getCurrentPassword(), reviewer.getPasswordHash());
+
+    String encoded = passwordEncoder.encode(request.getNewPassword());
+    reviewer.setPasswordHash(encoded);
+    reviewerRepository.save(reviewer);
+  }
+
+  private void changeOrganizationPassword(UUID subjectId, ChangePasswordRequest request) {
+    Organization organization = organizationRepository.findById(subjectId)
+        .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
+
+    if (!Boolean.TRUE.equals(organization.getActive())
+        || Boolean.TRUE.equals(organization.getDeleted())) {
+      throw ExceptionBuilder.forbidden("Account is disabled");
+    }
+
+    assertCurrentPasswordMatches(request.getCurrentPassword(), organization.getAdminPassword());
+
+    String encoded = passwordEncoder.encode(request.getNewPassword());
+    organization.setAdminPassword(encoded);
+    organizationRepository.save(organization);
+  }
+
+  private void changeBusinessAdminPassword(UUID subjectId, ChangePasswordRequest request) {
+    BusinessAdmin admin = businessAdminRepository.findById(subjectId)
+        .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
+
+    if (!Boolean.TRUE.equals(admin.getActive()) || Boolean.TRUE.equals(admin.getDeleted())) {
+      throw ExceptionBuilder.unauthorized("Account is disabled");
+    }
+
+    assertCurrentPasswordMatches(request.getCurrentPassword(), admin.getPasswordHash());
+
+    String encoded = passwordEncoder.encode(request.getNewPassword());
+    admin.setPasswordHash(encoded);
+    businessAdminRepository.save(admin);
+  }
+
+  private void changeSystemAdminPassword(UUID subjectId, ChangePasswordRequest request) {
+    SystemAdmin admin = systemAdminRepository.findById(subjectId)
+        .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
+
+    if (!Boolean.TRUE.equals(admin.getActive()) || Boolean.TRUE.equals(admin.getDeleted())) {
+      throw ExceptionBuilder.unauthorized("Account is disabled");
+    }
+
+    assertCurrentPasswordMatches(request.getCurrentPassword(), admin.getPasswordHash());
+
+    String encoded = passwordEncoder.encode(request.getNewPassword());
+    admin.setPasswordHash(encoded);
+    systemAdminRepository.save(admin);
+  }
+
+  private void assertCurrentPasswordMatches(String rawPassword, String passwordHash) {
+    if (!passwordEncoder.matches(rawPassword, Optional.ofNullable(passwordHash).orElse(""))) {
+      throw ExceptionBuilder.unauthorized("Current password is incorrect");
+    }
+  }
+
+  public boolean isEmailExisted(String email) {
+    return readerRepository.existsByEmail(email)
+        || reviewerRepository.existsByEmail(email)
+        || organizationRepository.existsByEmail(email)
+        || systemAdminRepository.existsByEmail(email)
+        || businessAdminRepository.existsByEmail(email);
   }
 }

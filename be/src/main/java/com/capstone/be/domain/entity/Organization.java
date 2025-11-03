@@ -22,6 +22,9 @@ public class Organization extends BaseEntity {
   private UUID id;
 
   @Column(unique = true, nullable = false)
+  private String Name;
+
+  @Column(unique = true, nullable = false)
   private String email;
 
   @Column(unique = true, nullable = false)

@@ -13,6 +13,7 @@ import com.capstone.be.repository.ReaderRepository;
 import com.capstone.be.repository.ReviewerRepository;
 import com.capstone.be.repository.SystemAdminRepository;
 import com.capstone.be.service.ProfileService;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,7 +42,7 @@ public class ProfileServiceImpl implements ProfileService {
 
   @Override
   @Transactional(readOnly = true)
-  public ProfileResponse getProfile(Long subjectId, UserRole role) {
+  public ProfileResponse getProfile(UUID subjectId, UserRole role) {
     return switch (role) {
       case READER -> getReaderProfile(subjectId);
       case REVIEWER -> getReviewerProfile(subjectId);
@@ -51,7 +52,7 @@ public class ProfileServiceImpl implements ProfileService {
     };
   }
 
-  private ProfileResponse getReaderProfile(Long subjectId) {
+  private ProfileResponse getReaderProfile(UUID subjectId) {
     Reader reader = readerRepository.findById(subjectId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reader not found"));
 
@@ -59,15 +60,15 @@ public class ProfileServiceImpl implements ProfileService {
         .id(reader.getId())
         .role(UserRole.READER)
         .email(reader.getEmail())
-        .displayName(reader.getUsername())
+        .fullName(reader.getFullName())
+        .dateOfBirth(reader.getDateOfBirth())
+        .username(reader.getUsername())
         .coinBalance(reader.getCoinBalance())
         .status(reader.getStatus())
-        .active(!Boolean.TRUE.equals(reader.getDeleted()))
-        .deleted(Boolean.TRUE.equals(reader.getDeleted()))
         .build();
   }
 
-  private ProfileResponse getReviewerProfile(Long subjectId) {
+  private ProfileResponse getReviewerProfile(UUID subjectId) {
     Reviewer reviewer = reviewerRepository.findById(subjectId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reviewer not found"));
 
@@ -75,13 +76,16 @@ public class ProfileServiceImpl implements ProfileService {
         .id(reviewer.getId())
         .role(UserRole.REVIEWER)
         .email(reviewer.getEmail())
-        .displayName(reviewer.getName())
+        .fullName(reviewer.getName())
+        .dateOfBirth(reviewer.getDateOfBirth())
+        .username(reviewer.getUsername())
+        .ordid(reviewer.getOrdid())
         .active(Boolean.TRUE.equals(reviewer.getActive()))
         .deleted(Boolean.TRUE.equals(reviewer.getDeleted()))
         .build();
   }
 
-  private ProfileResponse getOrganizationProfile(Long subjectId) {
+  private ProfileResponse getOrganizationProfile(UUID subjectId) {
     Organization organization = organizationRepository.findById(subjectId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Organization not found"));
 
@@ -89,17 +93,18 @@ public class ProfileServiceImpl implements ProfileService {
         .id(organization.getId())
         .role(UserRole.ORGANIZATION)
         .email(organization.getAdminEmail())
-        .displayName(organization.getAdminName())
-        .organizationName(organization.getEmail()) // Using email as organization name
-        .organizationAddress(organization.getAddress())
+        .fullName(organization.getAdminName())
+        .organizationName(organization.getName()) // Using email as organization name
+        .organizationEmail(organization.getAdminEmail())
         .organizationHotline(organization.getHotline())
         .organizationLogo(organization.getLogo())
+        .organizationAddress(organization.getAddress())
         .active(Boolean.TRUE.equals(organization.getActive()))
         .deleted(Boolean.TRUE.equals(organization.getDeleted()))
         .build();
   }
 
-  private ProfileResponse getBusinessAdminProfile(Long subjectId) {
+  private ProfileResponse getBusinessAdminProfile(UUID subjectId) {
     BusinessAdmin admin = businessAdminRepository.findById(subjectId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Business Admin not found"));
 
@@ -107,13 +112,13 @@ public class ProfileServiceImpl implements ProfileService {
         .id(admin.getId())
         .role(UserRole.BUSINESS_ADMIN)
         .email(admin.getEmail())
-        .displayName(admin.getFullName())
+        .fullName(admin.getFullName())
         .active(Boolean.TRUE.equals(admin.getActive()))
         .deleted(Boolean.TRUE.equals(admin.getDeleted()))
         .build();
   }
 
-  private ProfileResponse getSystemAdminProfile(Long subjectId) {
+  private ProfileResponse getSystemAdminProfile(UUID subjectId) {
     SystemAdmin admin = systemAdminRepository.findById(subjectId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "System Admin not found"));
 
@@ -121,7 +126,7 @@ public class ProfileServiceImpl implements ProfileService {
         .id(admin.getId())
         .role(UserRole.SYSTEM_ADMIN)
         .email(admin.getEmail())
-        .displayName(admin.getFullName())
+        .fullName(admin.getFullName())
         .active(Boolean.TRUE.equals(admin.getActive()))
         .deleted(Boolean.TRUE.equals(admin.getDeleted()))
         .build();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Edit3, X, Save, AlertCircle } from "lucide-react";
 
 interface FormField {
@@ -40,8 +41,13 @@ export default function EditConfirmation({
 }: EditConfirmationProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Initialize form data when modal opens
   useEffect(() => {
@@ -234,7 +240,7 @@ export default function EditConfirmation({
       </button>
 
       {/* Edit Modal */}
-      {isModalOpen && (
+      {isModalOpen && mounted && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           {/* Backdrop */}
           <div 
@@ -335,7 +341,8 @@ export default function EditConfirmation({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

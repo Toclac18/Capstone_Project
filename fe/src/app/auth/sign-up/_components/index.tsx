@@ -11,6 +11,7 @@ import {
   register, 
   type RegisterPayload
 } from "../api";
+import styles from "../styles.module.css";
 
 
 export default function Signup() {
@@ -139,22 +140,22 @@ export default function Signup() {
 
   return (
     <>
-      <div className="flex justify-center items-center">
+      <div className={styles["logo-row"]}>
         <Image src={Logo} alt="Logo" width={100} height={100} className="dark:hidden"/>
         <Image src={LogoDark} alt="Logo" width={100} height={100} className="hidden dark:block"/>
       </div>
 
-      <button className="flex w-full items-center justify-center gap-3.5 rounded-lg border border-stroke bg-gray-2 p-[15px] font-medium hover:bg-opacity-50 dark:border-dark-3 dark:bg-dark-2 dark:hover:bg-opacity-50 mt-6">
+      <button className={styles["oauth-btn"]}>
         <GoogleIcon />
         Sign up with Google
       </button>
 
-      <div className="my-6 flex items-center justify-center">
-        <span className="block h-px w-full bg-stroke dark:bg-dark-3"></span>
-        <div className="block w-full min-w-fit bg-white px-3 text-center font-medium dark:bg-gray-dark">
+      <div className={styles.divider}>
+        <span className={styles["divider-line"]}></span>
+        <div className={styles["divider-text"]}>
           Or sign up with email
         </div>
-        <span className="block h-px w-full bg-stroke dark:bg-dark-3"></span>
+        <span className={styles["divider-line"]}></span>
       </div>
 
       <div>
@@ -162,7 +163,7 @@ export default function Signup() {
             <InputGroup
             type="string"
             label="Name"
-            className="mb-5 [&_input]:py-[15px]"
+            className={styles["input-group"]}
             placeholder="Enter your name"
             name="name"
             handleChange={handleChange}
@@ -170,24 +171,24 @@ export default function Signup() {
             icon={<UserIcon />}
               error={errors.name}
             />
-            {errors.name && <p className="-mt-4 mb-4 text-sm text-red-500">{errors.name}</p>}
+            {errors.name && <p className={styles["error-text"]}>{errors.name}</p>}
 
             <InputGroup
             type="date"
             label="Date of birth"
-            className="mb-5 [&_input]:py-[15px]"
+            className={styles["input-group"]}
             placeholder="Enter your date of birth"
             name="date_of_birth"
             handleChange={handleChange}
             value={data.date_of_birth}
               error={errors.date_of_birth}
             />
-            {errors.date_of_birth && <p className="-mt-4 mb-4 text-sm text-red-500">{errors.date_of_birth}</p>}
+            {errors.date_of_birth && <p className={styles["error-text"]}>{errors.date_of_birth}</p>}
 
             <InputGroup
             type="string"
             label="UserName"
-            className="mb-5 [&_input]:py-[15px]"
+            className={styles["input-group"]}
             placeholder="Enter your username"
             name="username"
             handleChange={handleChange}
@@ -195,12 +196,12 @@ export default function Signup() {
             icon={<UserIcon />}
               error={errors.username}
             />
-            {errors.username && <p className="-mt-4 mb-4 text-sm text-red-500">{errors.username}</p>}
+            {errors.username && <p className={styles["error-text"]}>{errors.username}</p>}
 
             <InputGroup
             type="email"
             label="Email"
-            className="mb-4 [&_input]:py-[15px]"
+            className={styles["input-group-tight"]}
             placeholder="Enter your email"
             name="email"
             handleChange={handleChange}
@@ -208,12 +209,12 @@ export default function Signup() {
             icon={<EmailIcon />}
               error={errors.email}
             />
-            {errors.email && <p className="-mt-3 mb-4 text-sm text-red-500">{errors.email}</p>}
+            {errors.email && <p className={styles["error-text-slight"]}>{errors.email}</p>}
 
             <InputGroup
             type="password"
             label="Password"
-            className="mb-5 [&_input]:py-[15px]"
+            className={styles["input-group"]}
             placeholder="Enter your password"
             name="password"
             handleChange={handleChange}
@@ -221,12 +222,12 @@ export default function Signup() {
             icon={<PasswordIcon />}
               error={errors.password}
             />
-            {errors.password && <p className="-mt-4 mb-4 text-sm text-red-500">{errors.password}</p>}
+            {errors.password && <p className={styles["error-text"]}>{errors.password}</p>}
 
             <InputGroup
             type="password"
             label="Confirm Password"
-            className="mb-5 [&_input]:py-[15px]"
+            className={styles["input-group"]}
             placeholder="Re-enter your password"
             name="repassword"
             handleChange={handleChange}
@@ -234,24 +235,24 @@ export default function Signup() {
             icon={<PasswordIcon />}
               error={errors.repassword}
             />
-            {errors.repassword && <p className="-mt-4 mb-4 text-sm text-red-500">{errors.repassword}</p>}
+            {errors.repassword && <p className={styles["error-text"]}>{errors.repassword}</p>}
 
           <div className="mb-4.5">
             <button
               type="submit"
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary p-4 font-medium text-white transition hover:bg-opacity-90"
+              className={styles["submit-btn"]}
               disabled={loading}
             >
               Create Account
               {loading && (
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-t-transparent dark:border-primary dark:border-t-transparent" />
+                <span className={styles.spinner} />
               )}
             </button>
           </div>
         </form>
       </div>
 
-      <div className="mt-6 text-center">
+      <div className={styles.footer}>
         <p>
           Already have an account?{" "}
           <Link href="/auth/sign-in" className="text-primary">

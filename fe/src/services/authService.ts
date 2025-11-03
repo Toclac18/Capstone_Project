@@ -27,6 +27,31 @@ export type VerifyEmailResponse = {
   success: boolean;
 };
 
+export type LoginPayload = {
+  email: string;
+  password: string;
+  role: "READER" | "REVIEWER" | "ORGANIZATION" | "SYSTEM_ADMIN" | "BUSINESS_ADMIN";
+  remember?: boolean;
+};
+
+export type LoginResponse = {
+  accessToken: string;
+  tokenType: string;
+  expiresIn: number;
+  subjectId: string;
+  role: string;
+  email: string;
+  displayName: string;
+};
+
+/**
+ * Login with email, password and role
+ */
+export async function login(data: LoginPayload): Promise<LoginResponse> {
+  const res = await apiClient.post<LoginResponse>("/auth/login", data);
+  return res.data;
+}
+
 /**
  * Register new reader account
  */
@@ -47,3 +72,14 @@ export async function verifyEmail(token: string): Promise<VerifyEmailResponse> {
   return res.data;
 }
 
+/**
+ * Logout - clear cookie and localStorage
+ */
+export async function logout(): Promise<void> {
+  await apiClient.post("/auth/logout");
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('userRole');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('userEmail');
+  localStorage.removeItem('userName');
+}

@@ -133,32 +133,35 @@ function ReadersContent() {
               </tr>
             ) : (
               readers.map((r) => {
-                const isSuspended = r.status === "SUSPENDED";
+                const statusUpper = String(r.status).toUpperCase();
+
+                const isActive = statusUpper === "ACTIVE";
+                const isPending = statusUpper === "PENDING_VERIFICATION";
+
+                const badgeClass = isActive
+                  ? styles["status-active"]
+                  : isPending
+                    ? styles["status-pending"]
+                    : styles["status-suspended"];
+
+                const statusLabel =
+                  statusUpper === "PENDING_VERIFICATION" ? "PENDING_VERIFICATION" : statusUpper;
+
                 return (
                   <tr key={r.id} className={styles["table-row"]}>
                     <td>{r.fullName}</td>
                     <td>{r.username}</td>
                     <td className={styles["col-email"]}>{r.email}</td>
                     <td>
-                      <span
-                        className={`${styles["status-badge"]} ${
-                          r.status === "ACTIVE"
-                            ? styles["status-active"]
-                            : r.status === "SUSPENDED"
-                              ? styles["status-suspended"]
-                              : styles["status-pending"]
-                        }`}
-                      >
-                        {r.status}
+                      <span className={`${styles["status-badge"]} ${badgeClass}`}>
+                        {statusLabel}
                       </span>
                     </td>
-                    <td
-                      className={`${styles["cell-right"]} ${styles["col-coins"]}`}
-                    >
+                    <td className={`${styles["cell-right"]} ${styles["col-coins"]}`}>
                       {r.coinBalance.toLocaleString()}
                     </td>
                     <td className={styles["cell-right"]}>
-                      {isSuspended ? (
+                      {!isActive ? (
                         <EnableButton
                           onClick={() => onEnable(r.id)}
                           disabled={busyId === r.id}
@@ -182,6 +185,7 @@ function ReadersContent() {
                   </tr>
                 );
               })
+
             )}
           </tbody>
         </table>

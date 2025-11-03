@@ -1,6 +1,6 @@
 // src/app/api/org-admin/readers/route.ts
 import { mockReaders } from "@/mock/readers";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 
 const DEFAULT_BE_BASE = "http://localhost:8081";
 
@@ -13,12 +13,11 @@ type Reader = {
   coinBalance: number;
 };
 
-// Helpers
+// helpers
 function toInt(v: string | null, def: number) {
   const n = Number(v);
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : def;
 }
-
 function normalizeParams(url: URL) {
   const page = toInt(url.searchParams.get("page"), 1);
   const pageSize = toInt(url.searchParams.get("pageSize"), 10);
@@ -27,12 +26,10 @@ function normalizeParams(url: URL) {
     (url.searchParams.get("status") as Reader["status"] | "ALL") || "ALL";
   return { page, pageSize, q, status };
 }
-
 function filterSortPaginate(
   data: Reader[],
   { page, pageSize, q, status }: ReturnType<typeof normalizeParams>,
 ) {
-  // filter
   let filtered = data.filter((r) => {
     const textMatch =
       !q ||
@@ -42,23 +39,18 @@ function filterSortPaginate(
     const statusMatch = status === "ALL" ? true : r.status === status;
     return textMatch && statusMatch;
   });
-
-  // stable sort to tránh “nhảy hàng” giữa các request
   filtered = filtered.sort((a, b) => {
     const byName = a.fullName.localeCompare(b.fullName);
     if (byName !== 0) return byName;
-    // fallback theo id dạng số nếu có thể
     const ai = Number(a.id);
     const bi = Number(b.id);
     if (Number.isFinite(ai) && Number.isFinite(bi)) return ai - bi;
     return String(a.id).localeCompare(String(b.id));
   });
-
   const total = filtered.length;
   const start = (page - 1) * pageSize;
   const end = start + pageSize;
   const items = filtered.slice(start, end);
-
   return { items, total, page, pageSize };
 }
 
@@ -84,38 +76,60 @@ export async function GET(req: Request) {
     });
   }
 
-  // Forward headers (auth, cookie, ip)
+  // headers → build Authorization
   const h = await headers();
-  const authHeader = h.get("authorization") || "";
-  const cookieHeader = h.get("cookie") || "";
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const cookieStore = cookies();
+  const headerAuth = h.get("authorization") || "";
+  const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
+  const effectiveAuth = headerAuth || cookieAuth;
 
-  const fh = new Headers();
-  if (authHeader) fh.set("Authorization", authHeader);
-  if (cookieHeader) fh.set("Cookie", cookieHeader);
-  if (ip) fh.set("X-Forwarded-For", ip);
-
-  // Forward query params to BE
+  // build upstream URL
   const upstreamUrl = new URL(`${BE_BASE}/api/org-admin/readers`);
   upstreamUrl.searchParams.set("page", String(page));
   upstreamUrl.searchParams.set("pageSize", String(pageSize));
   if (q) upstreamUrl.searchParams.set("q", q);
-  if (status && status !== "ALL")
-    upstreamUrl.searchParams.set("status", status);
+  if (status && status !== "ALL") upstreamUrl.searchParams.set("status", status);
 
   const upstream = await fetch(upstreamUrl.toString(), {
     method: "GET",
-    headers: fh,
+    headers: {
+      ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
+      "Content-Type": "application/json",
+    },
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
+  // parse & normalize
+  const raw = await upstream.json().catch(() => ({}));
+  const payload = raw?.data ?? raw; // BE có thể bọc trong {data: ...}
+
+  const items = payload?.content ?? payload?.items ?? [];
+  const total =
+    payload?.totalElements ??
+    payload?.total ??
+    (Array.isArray(items) ? items.length : 0);
+  const currentPage =
+    (typeof payload?.number === "number"
+      ? payload.number + 1
+      : payload?.page ?? page) || page;
+  const size =
+    payload?.size ??
+    payload?.pageSize ??
+    (typeof pageSize === "number" ? pageSize : 10);
+
+  return new Response(
+    JSON.stringify({
+      items,
+      total,
+      page: currentPage,
+      pageSize: size,
+    }),
+    {
+      status: upstream.status,
+      headers: {
+        "content-type": "application/json",
+        "x-mode": "real",
+      },
     },
-  });
+  );
 }

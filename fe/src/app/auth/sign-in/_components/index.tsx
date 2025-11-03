@@ -1,90 +1,223 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import {
+  login,
+  type LoginPayload,
+  type LoginResponse,
+} from "../api";
 import { EmailIcon, GoogleIcon, PasswordIcon } from "@/assets/icons";
-import React, { useState } from "react";
-import InputGroup from "@/components/(template)/FormElements/InputGroup";
-import { Checkbox } from "@/components/(template)/FormElements/checkbox";
+import { useToast } from "@/components/ui/toast";
+import Logo from "@/assets/logos/logo-icon.svg";
+import LogoDark from "@/assets/logos/logo-icon-dark.svg";
+import styles from "../styles.module.css";
+
+type FormValues = {
+  email: string;
+  password: string;
+  role: "READER" | "REVIEWER" | "ORGANIZATION" | "SYSTEM_ADMIN" | "BUSINESS_ADMIN";
+  remember: boolean;
+};
 
 export default function Signin() {
-  const [data, setData] = useState({
-    email: process.env.NEXT_PUBLIC_DEMO_USER_MAIL || "",
-    password: process.env.NEXT_PUBLIC_DEMO_USER_PASS || "",
-    remember: false,
+  const { showToast } = useToast();
+  const router = useRouter();
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({
+    defaultValues: {
+      email: "",
+      password: "",
+      role: "READER",
+      remember: false,
+    },
   });
 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setData({
-      ...data,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    // You can remove this code block
+  const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setLoading(true);
+    setError(null);
 
-    setTimeout(() => {
+    const payload: LoginPayload = {
+      email: data.email,
+      password: data.password,
+      role: data.role,
+      remember: data.remember,
+    };
+
+    try {
+      const result: LoginResponse = await login(payload);
+
+      localStorage.setItem('accessToken', result.accessToken);
+      localStorage.setItem('userRole', result.role);
+      localStorage.setItem('userId', result.subjectId);
+      localStorage.setItem('userEmail', result.email);
+      localStorage.setItem('userName', result.displayName);
+
+      showToast({ type: 'success', title: 'Login Successful' });
+
+      // Redirect based on role
+      const roleRoutes: Record<typeof data.role, string> = {
+        READER: '/',
+        REVIEWER: '/reviewer/dashboard',
+        ORGANIZATION: '/organization/dashboard',
+        SYSTEM_ADMIN: '/admin/system/dashboard',
+        BUSINESS_ADMIN: '/admin/business/dashboard',
+      };
+
+      setTimeout(() => {
+        router.push(roleRoutes[data.role] || '/');
+      }, 1500);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Invalid email or password';
+      setError(msg);
+      showToast({
+        type: 'error',
+        title: 'Login Failed',
+        message: msg,
+      });
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
     <>
-      <button className="flex w-full items-center justify-center gap-3.5 rounded-lg border border-stroke bg-gray-2 p-[15px] font-medium hover:bg-opacity-50 dark:border-dark-3 dark:bg-dark-2 dark:hover:bg-opacity-50">
+      <div className={styles["logo-row"]}>
+        <Image src={Logo} alt="Logo" width={100} height={100} className="dark:hidden"/>
+        <Image src={LogoDark} alt="Logo" width={100} height={100} className="hidden dark:block"/>
+      </div>
+
+      <button className={styles["oauth-btn"]}>
         <GoogleIcon />
         Sign in with Google
       </button>
 
-      <div className="my-6 flex items-center justify-center">
-        <span className="block h-px w-full bg-stroke dark:bg-dark-3"></span>
-        <div className="block w-full min-w-fit bg-white px-3 text-center font-medium dark:bg-gray-dark">
+      <div className={styles.divider}>
+        <span className={styles["divider-line"]}></span>
+        <div className={styles["divider-text"]}>
           Or sign in with email
         </div>
-        <span className="block h-px w-full bg-stroke dark:bg-dark-3"></span>
+        <span className={styles["divider-line"]}></span>
       </div>
 
-      <div>
-        <form onSubmit={handleSubmit}>
-          <InputGroup
-            type="email"
-            label="Email"
-            className="mb-4 [&_input]:py-[15px]"
-            placeholder="Enter your email"
-            name="email"
-            handleChange={handleChange}
-            value={data.email}
-            icon={<EmailIcon />}
-          />
+      {error && (
+        <div className={styles["alert-error"]}>{error}</div>
+      )}
 
-          <InputGroup
-            type="password"
-            label="Password"
-            className="mb-5 [&_input]:py-[15px]"
-            placeholder="Enter your password"
-            name="password"
-            handleChange={handleChange}
-            value={data.password}
-            icon={<PasswordIcon />}
-          />
+      <div>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          {/* Role Selector */}
+          <div className="mb-4">
+            <label htmlFor="role" className="mb-3 block text-body-sm font-medium text-dark dark:text-white">
+              Login as
+            </label>
+            <div className="relative w-full">
+              <select
+                id="role"
+                {...register("role", { required: "Please select your role" })}
+                className="peer w-full appearance-none rounded-lg border border-stroke bg-white px-5 py-3 pr-12 text-dark shadow-sm outline-none ring-1 ring-transparent transition duration-150 focus:border-primary focus:ring-2 focus:ring-primary active:border-primary dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary dark:focus:ring-primary"
+                aria-invalid={!!errors.role}
+              >
+                <option value="READER">Reader</option>
+                <option value="REVIEWER">Reviewer</option>
+                <option value="ORGANIZATION">Organization</option>
+                <option value="SYSTEM_ADMIN">System Admin</option>
+                <option value="BUSINESS_ADMIN">Business Admin</option>
+              </select>
+              <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">
+                <svg width={20} height={20} fill="none" viewBox="0 0 20 20">
+                  <path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
+            </div>
+            <p className="mt-1 h-5 overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-5 text-red">
+              {errors.role?.message || "\u00A0"}
+            </p>
+          </div>
+
+          <div className="mb-4">
+            <label htmlFor="email" className="mb-3 block text-body-sm font-medium text-dark dark:text-white">
+              Email *
+            </label>
+            <div className="relative">
+              <input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                className={`w-full rounded-lg border-[1.5px] bg-transparent px-5.5 py-[15px] pr-12.5 outline-none transition placeholder:text-dark-6 dark:bg-dark-2 dark:text-white ${
+                  errors.email
+                    ? "border-red focus:border-red dark:border-red"
+                    : "border-stroke dark:border-dark-3 focus:border-primary"
+                }`}
+                {...register("email", {
+                  required: "Email is required",
+                  pattern: {
+                    value: /^\S+@\S+$/i,
+                    message: "Please enter a valid email address",
+                  },
+                })}
+                aria-invalid={!!errors.email}
+              />
+              <EmailIcon className="absolute right-4.5 top-1/2 -translate-y-1/2" />
+            </div>
+            <p className="mt-1 h-5 overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-5 text-red">
+              {errors.email?.message || "\u00A0"}
+            </p>
+          </div>
+
+          <div className="mb-5">
+            <label htmlFor="password" className="mb-3 block text-body-sm font-medium text-dark dark:text-white">
+              Password *
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                className={`w-full rounded-lg border-[1.5px] bg-transparent px-5.5 py-[15px] pr-12.5 outline-none transition placeholder:text-dark-6 dark:bg-dark-2 dark:text-white ${
+                  errors.password
+                    ? "border-red focus:border-red dark:border-red"
+                    : "border-stroke dark:border-dark-3 focus:border-primary"
+                }`}
+                {...register("password", {
+                  required: "Password is required",
+                  minLength: {
+                    value: 6,
+                    message: "Password must be at least 6 characters",
+                  },
+                })}
+                aria-invalid={!!errors.password}
+              />
+              <PasswordIcon className="absolute right-4.5 top-1/2 -translate-y-1/2" />
+            </div>
+            <p className="mt-1 h-5 overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-5 text-red">
+              {errors.password?.message || "\u00A0"}
+            </p>
+          </div>
 
           <div className="mb-6 flex items-center justify-between gap-2 py-2 font-medium">
-            <Checkbox
-              label="Remember me"
-              name="remember"
-              withIcon="check"
-              minimal
-              radius="md"
-              onChange={(e) =>
-                setData({
-                  ...data,
-                  remember: e.target.checked,
-                })
-              }
-            />
+            <label className="flex cursor-pointer select-none items-center text-body-sm font-medium">
+              <input
+                type="checkbox"
+                {...register("remember")}
+                className="peer sr-only"
+              />
+              <div className="mr-3 flex size-5 items-center justify-center rounded-md border border-stroke dark:border-dark-3 peer-checked:border-primary peer-checked:bg-gray-2 peer-checked:[&>*]:block dark:peer-checked:bg-transparent">
+                <svg className="hidden text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+              <span>Remember me</span>
+            </label>
 
             <Link
               href="/auth/forgot-password"
@@ -97,20 +230,21 @@ export default function Signin() {
           <div className="mb-4.5">
             <button
               type="submit"
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary p-4 font-medium text-white transition hover:bg-opacity-90"
+              disabled={loading}
+              className={styles["submit-btn"]}
             >
-              Sign In
+              {loading ? "Signing in..." : "Sign In"}
               {loading && (
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-t-transparent dark:border-primary dark:border-t-transparent" />
+                <span className={styles.spinner} />
               )}
             </button>
           </div>
         </form>
       </div>
 
-      <div className="mt-6 text-center">
+      <div className={styles.footer}>
         <p>
-          Don’t have any account?{" "}
+          Don&apos;t have any account?{" "}
           <Link href="/auth/sign-up" className="text-primary">
             Sign Up
           </Link>

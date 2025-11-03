@@ -4,44 +4,48 @@ import com.capstone.be.dto.base.SuccessResponse;
 import com.capstone.be.dto.request.auth.ChangePasswordRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
-import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
+import com.capstone.be.dto.request.auth.RegisterReviewerInfoRequest;
 import com.capstone.be.dto.request.auth.VerifyEmailRequest;
 import com.capstone.be.dto.response.auth.LoginResponse;
 import com.capstone.be.dto.response.auth.RegisterReaderResponse;
 import com.capstone.be.dto.response.auth.RegisterReviewerResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.AuthService;
-import com.capstone.be.service.ReaderService;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
 public class AuthController {
 
-  private final ReaderService readerService;
   private final AuthService authService;
 
-  @PostMapping("/reader/register")
+  @PostMapping("/register-reader")
   public RegisterReaderResponse registerReader(
       @Valid @RequestBody RegisterReaderRequest request) {
     return authService.registerReader(request);
   }
 
-  @PostMapping("/reviewer/register")
+  @PostMapping(value = "/register-reviewer", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public RegisterReviewerResponse registerReviewer(
-      @Valid @RequestBody RegisterReviewerRequest request) {
-    return authService.registerReviewer(request);
+      @Valid @RequestPart("info") RegisterReviewerInfoRequest info,
+      @RequestPart("backgroundUploads") List<MultipartFile> files
+  ) {
+    return authService.registerReviewer(info, files);
   }
 
   @PostMapping("/verify-email")

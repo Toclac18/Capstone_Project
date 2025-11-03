@@ -1,8 +1,9 @@
 package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.Reader;
+import com.capstone.be.domain.entity.Reviewer;
 import com.capstone.be.service.EmailService;
-import java.util.Objects;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,8 +29,8 @@ public class EmailServiceImpl implements EmailService {
 
   @Override
   @Async
-  public void sendReaderVerificationEmail(Reader reader, String token) {
-    Objects.requireNonNull(reader, "Reader must not be null");
+  public void sendReaderVerificationEmail(@NotNull Reader reader, String token) {
+//    Objects.requireNonNull(reader, "Reader must not be null");
     if (!StringUtils.hasText(token)) {
       throw new IllegalArgumentException("Verification token must not be blank");
     }
@@ -47,6 +48,11 @@ public class EmailServiceImpl implements EmailService {
 
     mailSender.send(message);
     log.info("Sent reader verification email to {}", reader.getEmail());
+  }
+
+  @Override
+  public void sendReviewerVerificationEmail(Reviewer reviewer, String token) {
+
   }
 
   private String buildEmailBody(String username, String verificationUrl) {

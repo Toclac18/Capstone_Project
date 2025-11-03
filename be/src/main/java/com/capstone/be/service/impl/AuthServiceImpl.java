@@ -1,9 +1,11 @@
 package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.BusinessAdmin;
+import com.capstone.be.domain.entity.Domain;
 import com.capstone.be.domain.entity.Organization;
 import com.capstone.be.domain.entity.Reader;
 import com.capstone.be.domain.entity.Reviewer;
+import com.capstone.be.domain.entity.Specialization;
 import com.capstone.be.domain.entity.SystemAdmin;
 import com.capstone.be.domain.enums.OrganizationStatus;
 import com.capstone.be.domain.enums.ReaderStatus;
@@ -12,16 +14,19 @@ import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.dto.request.auth.ChangePasswordRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
-import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
+import com.capstone.be.dto.request.auth.RegisterReviewerInfoRequest;
 import com.capstone.be.dto.request.auth.VerifyEmailRequest;
 import com.capstone.be.dto.response.auth.LoginResponse;
 import com.capstone.be.dto.response.auth.RegisterReaderResponse;
 import com.capstone.be.dto.response.auth.RegisterReviewerResponse;
 import com.capstone.be.mapper.ReaderMapper;
+import com.capstone.be.mapper.ReviewerMapper;
 import com.capstone.be.repository.BusinessAdminRepository;
+import com.capstone.be.repository.DomainRepository;
 import com.capstone.be.repository.OrganizationRepository;
 import com.capstone.be.repository.ReaderRepository;
 import com.capstone.be.repository.ReviewerRepository;
+import com.capstone.be.repository.SpecializationRepository;
 import com.capstone.be.repository.SystemAdminRepository;
 import com.capstone.be.security.service.JwtService;
 import com.capstone.be.security.util.JwtUtil;
@@ -29,17 +34,24 @@ import com.capstone.be.service.AuthService;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.util.ExceptionBuilder;
 import io.jsonwebtoken.JwtException;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
   private final ReaderRepository readerRepository;
@@ -48,10 +60,15 @@ public class AuthServiceImpl implements AuthService {
   private final BusinessAdminRepository businessAdminRepository;
   private final SystemAdminRepository systemAdminRepository;
 
+  private final DomainRepository domainRepository;
+  private final SpecializationRepository specializationRepository;
+
+  private final ReaderMapper readerMapper;
+  private final ReviewerMapper reviewerMapper;
+
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final JwtUtil jwtUtil;
-  private final ReaderMapper readerMapper;
   private final EmailService emailService;
 
   @Override
@@ -84,8 +101,73 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  public RegisterReviewerResponse registerReviewer(RegisterReviewerRequest request) {
-    return null;
+  @Transactional
+  public RegisterReviewerResponse registerReviewer(RegisterReviewerInfoRequest info,
+      List<MultipartFile> files) {
+
+    //Validate: Email and username existed
+    if (isEmailExisted(info.getEmail())) {
+      throw ExceptionBuilder.conflict("Email is already exist");
+    }
+
+    if (isUsernameExisted(info.getUsername())) {
+      throw ExceptionBuilder.conflict("Username is already exist");
+    }
+
+    //Validate: Option limit (3 domain, 5 spec)
+    final int MAX_DOMAIN = 3, MAX_SPECIALIZATION = 5;
+    if (info.getDomainIds().size() > MAX_DOMAIN) {
+      throw ExceptionBuilder.badRequest("Maximum 3 domain");
+    }
+
+    if (info.getReviewSpecializationIds().size() > MAX_SPECIALIZATION) {
+      throw ExceptionBuilder.badRequest("Maximum 5 specialization");
+    }
+
+    //Validate: Domain & Specialization exist
+    Set<UUID> domainIds = info.getDomainIds();
+    Set<UUID> existingDomainIds = domainRepository.findExistingIds(domainIds);
+    if (existingDomainIds.size() != domainIds.size()) {
+      Set<UUID> missing = new HashSet<>(domainIds);
+      missing.removeAll(existingDomainIds);
+      throw ExceptionBuilder.notFound("Invalid domain ids: " + missing);
+    }
+
+    Set<UUID> specIds = info.getReviewSpecializationIds();
+    Set<UUID> existingSpecIds = specializationRepository.findExistingIds(specIds);
+    if (existingSpecIds.size() != specIds.size()) {
+      Set<UUID> missing = new HashSet<>(specIds);
+      missing.removeAll(existingSpecIds);
+      throw ExceptionBuilder.notFound("Invalid specialization ids: " + missing);
+    }
+
+    //Validate: All Specialization belong to correct Domain
+    Set<UUID> mismatched = specializationRepository
+        .findIdsNotBelongingToDomains(specIds, domainIds);
+    if (!mismatched.isEmpty()) {
+      throw ExceptionBuilder.badRequest(
+          "Specialization(s) not in selected domain(s): " + mismatched);
+    }
+
+    //Save Reviewer
+    Set<Domain> domains = new HashSet<>(domainRepository.findAllById(info.getDomainIds()));
+    Set<Specialization> reviewSpecializations = new HashSet<>(specializationRepository.findAllById(
+        info.getReviewSpecializationIds()));
+
+    Reviewer reviewer = reviewerMapper.toReviewer(info, domains, reviewSpecializations);
+    reviewer.setPasswordHash(passwordEncoder.encode(info.getPassword()));
+
+    Reviewer savedReviewer = reviewerRepository.save(reviewer);
+
+    //Send Verification email
+    String token = jwtService.generateEmailVerifyToken(UserRole.REVIEWER, savedReviewer.getEmail());
+    System.out.println("Verify Token for " + savedReviewer.getEmail() + " : " + token);
+    emailService.sendReviewerVerificationEmail(savedReviewer, token);
+
+    Set<String> domainNames = domains.stream().map(Domain::getName).collect(Collectors.toSet());
+    Set<String> specializationNames = reviewSpecializations.stream().map(Specialization::getName)
+        .collect(Collectors.toSet());
+    return reviewerMapper.toRegisterReviewerResponse(reviewer, domainNames, specializationNames);
   }
 
   @Override
@@ -354,5 +436,10 @@ public class AuthServiceImpl implements AuthService {
         || organizationRepository.existsByEmail(email)
         || systemAdminRepository.existsByEmail(email)
         || businessAdminRepository.existsByEmail(email);
+  }
+
+  public boolean isUsernameExisted(String email) {
+    return readerRepository.existsByUsername(email)
+        || reviewerRepository.existsByUsername(email);
   }
 }

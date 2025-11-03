@@ -12,7 +12,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
-import java.util.HashSet;
+import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
 import lombok.Data;
@@ -24,13 +25,12 @@ import lombok.EqualsAndHashCode;
 @Table(name = "reviewers")
 public class Reviewer extends BaseEntity {
 
-  ReviewerStatus status;
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
   @Column(nullable = false)
-  private String fullName;
+  private String username;
 
   @Column(unique = true)
   private String email;
@@ -38,11 +38,27 @@ public class Reviewer extends BaseEntity {
   @Column(nullable = false)
   private String passwordHash;
 
+  @Column(nullable = false)
+  private String fullName;
+
+  @Column(nullable = false)
+  private LocalDate dateOfBirth;
+
   private String ordid; //#temp, nullable
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
   private EducationLevel educationLevel;
+
+  @Column(nullable = false)
+  private String organizationName;
+
+  @Column(nullable = false)
+  private String organizationEmail;
+
+  @NotNull
+  @Enumerated(EnumType.STRING)
+  ReviewerStatus status = ReviewerStatus.PENDING_VERIFICATION;
 
   @Column(nullable = false)
   private Boolean active = true;
@@ -54,5 +70,5 @@ public class Reviewer extends BaseEntity {
   private Set<Domain> domains;
 
   @ManyToMany(mappedBy = "reviewers")
-  private Set<Specialization> reviewSpecializations = new HashSet<>();
+  private Set<Specialization> reviewSpecializations;
 }

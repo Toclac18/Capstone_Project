@@ -3,16 +3,18 @@ package com.capstone.be.dto.request.auth;
 import com.capstone.be.domain.enums.EducationLevel;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import java.io.File;
 import java.time.LocalDate;
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import lombok.Data;
 
-public class RegisterReviewerRequest {
+@Data
+public class RegisterReviewerInfoRequest {
 
   @NotBlank
   private String fullName;
@@ -24,6 +26,7 @@ public class RegisterReviewerRequest {
   @NotBlank
   private String username;
 
+  @NotBlank
   @Email
   private String email;
 
@@ -33,16 +36,21 @@ public class RegisterReviewerRequest {
       message = "Password must contain digit and alphabet")
   private String password;
 
+  @NotNull
   private EducationLevel educationLevel;
 
-  private UUID areaOfExpertise;
+  @NotEmpty
+  private Set<UUID> domainIds;
 
-  private List<UUID> reviewFields;
+  @NotEmpty
+  private Set<UUID> reviewSpecializationIds;
 
-  private String referenceOrganizationName;
+  @NotBlank
+  private String organizationName;
 
-  private String referenceOrganizationEmail;
+  @NotBlank
+  @Email
+  private String organizationEmail;
 
-  private File verifiedBackgroundUpload;
 
 }

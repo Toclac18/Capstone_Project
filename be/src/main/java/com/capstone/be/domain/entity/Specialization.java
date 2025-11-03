@@ -3,6 +3,7 @@ package com.capstone.be.domain.entity;
 import com.capstone.be.domain.entity.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -32,17 +33,20 @@ public class Specialization extends BaseEntity {
   @Column(nullable = false, unique = true)
   private String name;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "domain_id")
   private Domain domain;
 
-  @ManyToMany
+  @Column(name = "domain_id", insertable = false, updatable = false, nullable = false)
+  private UUID domainId;
+
+  @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(name = "document_specialization_n_n",
       joinColumns = @JoinColumn(name = "specialization_id"),
       inverseJoinColumns = @JoinColumn(name = "document_id"))
   private Set<Document> documents = new HashSet<>();
 
-  @ManyToMany
+  @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(name = "reviewer_specialization_n_n",
       joinColumns = @JoinColumn(name = "specialization_id"),
       inverseJoinColumns = @JoinColumn(name = "reviewer_id"))

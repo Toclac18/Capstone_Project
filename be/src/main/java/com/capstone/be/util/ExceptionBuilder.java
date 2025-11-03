@@ -25,5 +25,9 @@ public class ExceptionBuilder {
     return new ResponseStatusException(HttpStatus.CONFLICT, message);
   }
 
+  public static ResponseStatusException internalServerError(String message) {
+    return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message);
+  }
+
 
 }

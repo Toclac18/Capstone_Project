@@ -13,6 +13,7 @@ import { EmailIcon, GoogleIcon, PasswordIcon } from "@/assets/icons";
 import { useToast } from "@/components/ui/toast";
 import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
+import styles from "../styles.module.css";
 
 type FormValues = {
   email: string;
@@ -90,28 +91,26 @@ export default function Signin() {
 
   return (
     <>
-      <div className="flex justify-center items-center">
+      <div className={styles["logo-row"]}>
         <Image src={Logo} alt="Logo" width={100} height={100} className="dark:hidden"/>
         <Image src={LogoDark} alt="Logo" width={100} height={100} className="hidden dark:block"/>
       </div>
 
-      <button className="flex w-full items-center justify-center gap-3.5 rounded-lg border border-stroke bg-gray-2 p-[15px] font-medium hover:bg-opacity-50 dark:border-dark-3 dark:bg-dark-2 dark:hover:bg-opacity-50 mt-6">
+      <button className={styles["oauth-btn"]}>
         <GoogleIcon />
         Sign in with Google
       </button>
 
-      <div className="my-6 flex items-center justify-center">
-        <span className="block h-px w-full bg-stroke dark:bg-dark-3"></span>
-        <div className="block w-full min-w-fit bg-white px-3 text-center font-medium dark:bg-gray-dark">
+      <div className={styles.divider}>
+        <span className={styles["divider-line"]}></span>
+        <div className={styles["divider-text"]}>
           Or sign in with email
         </div>
-        <span className="block h-px w-full bg-stroke dark:bg-dark-3"></span>
+        <span className={styles["divider-line"]}></span>
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border-l-4 border-red bg-red-light-6 p-4 text-sm font-medium text-red-dark dark:border-red dark:bg-dark-2 dark:text-red">
-          {error}
-        </div>
+        <div className={styles["alert-error"]}>{error}</div>
       )}
 
       <div>
@@ -232,18 +231,18 @@ export default function Signin() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary p-4 font-medium text-white transition hover:bg-opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className={styles["submit-btn"]}
             >
               {loading ? "Signing in..." : "Sign In"}
               {loading && (
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-t-transparent dark:border-primary dark:border-t-transparent" />
+                <span className={styles.spinner} />
               )}
             </button>
           </div>
         </form>
       </div>
 
-      <div className="mt-6 text-center">
+      <div className={styles.footer}>
         <p>
           Don&apos;t have any account?{" "}
           <Link href="/auth/sign-up" className="text-primary">

@@ -190,7 +190,7 @@ export default function Page() {
     });
   };
 
-  const handleDeleteAccount = async (password: string, confirmText: string) => {
+  const handleDeleteAccount = async (password: string) => {
     await deleteAccount(password);
     showToast({
       type: "success",

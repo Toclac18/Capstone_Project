@@ -7,6 +7,7 @@
 
 import { setupMockContactAdmin } from "./contact-admin";
 import { setupMockAuth } from "./auth";
+import { setupMockProfile } from "./profile";
 import { setupMockNotification } from "./notification";
 
 export function setupMocks() {
@@ -15,5 +16,6 @@ export function setupMocks() {
   console.info("[MOCK] Starting mock API handlers...");
   setupMockAuth();
   setupMockContactAdmin();
+  setupMockProfile();
   setupMockNotification();
 }

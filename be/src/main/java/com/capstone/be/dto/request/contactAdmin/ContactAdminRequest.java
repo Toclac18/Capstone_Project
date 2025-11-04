@@ -6,24 +6,24 @@ import lombok.Data;
 
 @Data
 public class ContactAdminRequest {
-    @NotBlank
-    @Size(max = 120)
-    private String name;
+  @NotBlank
+  @Size(max = 120)
+  private String name;
 
-    @NotBlank
-    @Email
-    @Size(max = 180)
-    private String email;
+  @NotBlank
+  @Email
+  @Size(max = 180)
+  private String email;
 
-    @NotBlank
-    @Size(max = 160)
-    private String subject;
+  @NotBlank
+  @Size(max = 160)
+  private String subject;
 
-    @NotBlank
-    @Size(max = 5000)
-    private String message;
+  @NotBlank
+  @Size(max = 5000)
+  private String message;
 
-    private TicketCategory category = TicketCategory.OTHER;
+  private TicketCategory category = TicketCategory.OTHER;
 
-    private TicketUrgency urgency = TicketUrgency.NORMAL;
+  private TicketUrgency urgency = TicketUrgency.NORMAL;
 }

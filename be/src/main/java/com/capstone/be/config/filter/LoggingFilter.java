@@ -12,8 +12,9 @@ import java.io.IOException;
 public class LoggingFilter implements Filter {
 
   @Override
-  public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
-      FilterChain filterChain) throws IOException, ServletException {
+  public void doFilter(
+      ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
+      throws IOException, ServletException {
     HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
     HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
 
@@ -21,8 +22,14 @@ public class LoggingFilter implements Filter {
     filterChain.doFilter(servletRequest, servletResponse);
     long duration = System.currentTimeMillis() - startTime;
 
-    System.out.println("Request : " + httpRequest.getMethod() +
-        " " + httpRequest.getRequestURL() + " done in " + duration +
-        "ms with code " + httpResponse.getStatus());
+    System.out.println(
+        "Request : "
+            + httpRequest.getMethod()
+            + " "
+            + httpRequest.getRequestURL()
+            + " done in "
+            + duration
+            + "ms with code "
+            + httpResponse.getStatus());
   }
 }

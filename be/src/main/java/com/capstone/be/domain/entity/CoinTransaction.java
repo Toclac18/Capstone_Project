@@ -26,12 +26,11 @@ public class CoinTransaction extends BaseEntity {
   @JoinColumn(name = "reader_id")
   private Reader reader;
 
-  private String type; //#temp
+  private String type; // #temp
 
   @ManyToOne()
   @JoinColumn(name = "document_id")
   private Document document;
 
   private Integer amount;
-
 }

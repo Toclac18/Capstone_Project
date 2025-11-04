@@ -22,5 +22,4 @@ public class _ExampleController {
   public String method2() {
     return "READER and REVIEWER's route";
   }
-
 }

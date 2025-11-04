@@ -44,7 +44,7 @@ public class UserManagementServiceImpl implements UserManagementService {
     }
 
     List<UserResponse> allUsers = new ArrayList<>();
-    
+
     List<Reader> readers = readerRepository.findAll();
     for (Reader reader : readers) {
       if (applyFilters(reader, request)) {
@@ -52,7 +52,7 @@ public class UserManagementServiceImpl implements UserManagementService {
         allUsers.add(userResponse);
       }
     }
-    
+
     List<Reviewer> reviewers = reviewerRepository.findAll();
     for (Reviewer reviewer : reviewers) {
       if (Boolean.TRUE.equals(reviewer.getDeleted())) continue;
@@ -61,7 +61,7 @@ public class UserManagementServiceImpl implements UserManagementService {
         allUsers.add(userResponse);
       }
     }
-    
+
     List<Organization> organizations = organizationRepository.findAll();
     for (Organization org : organizations) {
       if (Boolean.TRUE.equals(org.getDeleted())) continue;
@@ -70,29 +70,29 @@ public class UserManagementServiceImpl implements UserManagementService {
         allUsers.add(userResponse);
       }
     }
-    
+
     // Sort and paginate
     return sortAndPaginate(allUsers, request);
   }
-  
+
   private UserListResponse getReaders(UserQueryRequest request) {
     List<Reader> readers = readerRepository.findAll();
     List<UserResponse> userResponses = new ArrayList<>();
-    
+
     for (Reader reader : readers) {
       if (applyFilters(reader, request)) {
         UserResponse userResponse = userManagementMapper.toUserResponse(reader);
         userResponses.add(userResponse);
       }
     }
-    
+
     return sortAndPaginate(userResponses, request);
   }
-  
+
   private UserListResponse getReviewers(UserQueryRequest request) {
     List<Reviewer> reviewers = reviewerRepository.findAll();
     List<UserResponse> userResponses = new ArrayList<>();
-    
+
     for (Reviewer reviewer : reviewers) {
       if (Boolean.TRUE.equals(reviewer.getDeleted())) continue;
       if (applyFilters(reviewer, request)) {
@@ -100,14 +100,14 @@ public class UserManagementServiceImpl implements UserManagementService {
         userResponses.add(userResponse);
       }
     }
-    
+
     return sortAndPaginate(userResponses, request);
   }
-  
+
   private UserListResponse getOrganizations(UserQueryRequest request) {
     List<Organization> organizations = organizationRepository.findAll();
     List<UserResponse> userResponses = new ArrayList<>();
-    
+
     for (Organization org : organizations) {
       if (Boolean.TRUE.equals(org.getDeleted())) continue;
       if (applyFilters(org, request)) {
@@ -115,35 +115,38 @@ public class UserManagementServiceImpl implements UserManagementService {
         userResponses.add(userResponse);
       }
     }
-    
+
     return sortAndPaginate(userResponses, request);
   }
-  
+
   private boolean applyFilters(Object entity, UserQueryRequest request) {
     String search = request.getSearch();
     String status = request.getStatus();
-    
+
     // Search filter
     if (search != null && !search.isEmpty()) {
       String searchLower = search.toLowerCase();
       boolean matchesSearch = false;
-      
+
       if (entity instanceof Reader reader) {
-        matchesSearch = reader.getFullName().toLowerCase().contains(searchLower) 
-            || reader.getEmail().toLowerCase().contains(searchLower);
+        matchesSearch =
+            reader.getFullName().toLowerCase().contains(searchLower)
+                || reader.getEmail().toLowerCase().contains(searchLower);
       } else if (entity instanceof Reviewer reviewer) {
-        matchesSearch = reviewer.getName().toLowerCase().contains(searchLower) 
-            || reviewer.getEmail().toLowerCase().contains(searchLower);
+        matchesSearch =
+            reviewer.getName().toLowerCase().contains(searchLower)
+                || reviewer.getEmail().toLowerCase().contains(searchLower);
       } else if (entity instanceof Organization org) {
-        matchesSearch = org.getEmail().toLowerCase().contains(searchLower) 
-            || org.getAdminEmail().toLowerCase().contains(searchLower);
+        matchesSearch =
+            org.getEmail().toLowerCase().contains(searchLower)
+                || org.getAdminEmail().toLowerCase().contains(searchLower);
       }
-      
+
       if (!matchesSearch) {
         return false;
       }
     }
-    
+
     // Status filter
     if (status != null && !status.isEmpty()) {
       if (entity instanceof Reader reader) {
@@ -163,48 +166,48 @@ public class UserManagementServiceImpl implements UserManagementService {
         }
       }
     }
-    
+
     return true;
   }
-  
+
   private UserListResponse sortAndPaginate(List<UserResponse> users, UserQueryRequest request) {
     String sortBy = request.getSortBy() != null ? request.getSortBy() : "createdAt";
     String sortOrder = request.getSortOrder() != null ? request.getSortOrder() : "desc";
-    
-    users.sort((a, b) -> {
-      int comparison = 0;
-      
-      switch (sortBy) {
-        case "name":
-          comparison = a.getName().compareToIgnoreCase(b.getName());
-          break;
-        case "email":
-          comparison = a.getEmail().compareToIgnoreCase(b.getEmail());
-          break;
-        case "role":
-          comparison = a.getRole().compareToIgnoreCase(b.getRole());
-          break;
-        case "status":
-          comparison = a.getStatus().compareToIgnoreCase(b.getStatus());
-          break;
-        case "createdAt":
-        default:
-          comparison = a.getCreatedAt().compareTo(b.getCreatedAt());
-          break;
-      }
-      
-      return sortOrder.equalsIgnoreCase("asc") ? comparison : -comparison;
-    });
-    
+
+    users.sort(
+        (a, b) -> {
+          int comparison = 0;
+
+          switch (sortBy) {
+            case "name":
+              comparison = a.getName().compareToIgnoreCase(b.getName());
+              break;
+            case "email":
+              comparison = a.getEmail().compareToIgnoreCase(b.getEmail());
+              break;
+            case "role":
+              comparison = a.getRole().compareToIgnoreCase(b.getRole());
+              break;
+            case "status":
+              comparison = a.getStatus().compareToIgnoreCase(b.getStatus());
+              break;
+            case "createdAt":
+            default:
+              comparison = a.getCreatedAt().compareTo(b.getCreatedAt());
+              break;
+          }
+
+          return sortOrder.equalsIgnoreCase("asc") ? comparison : -comparison;
+        });
+
     int page = request.getPage() != null ? request.getPage() : 1;
     int limit = request.getLimit() != null ? request.getLimit() : 10;
     int start = (page - 1) * limit;
     int end = Math.min(start + limit, users.size());
-    
-    List<UserResponse> paginatedUsers = start < users.size() 
-        ? users.subList(start, end) 
-        : new ArrayList<>();
-    
+
+    List<UserResponse> paginatedUsers =
+        start < users.size() ? users.subList(start, end) : new ArrayList<>();
+
     return UserListResponse.builder()
         .users(paginatedUsers)
         .total(users.size())
@@ -217,7 +220,7 @@ public class UserManagementServiceImpl implements UserManagementService {
   @Transactional
   public void updateUserStatus(UUID userId, UpdateUserStatusRequest request) {
     String status = request.getStatus();
-    
+
     // Try to find in each repository
     Reader reader = readerRepository.findById(userId).orElse(null);
     if (reader != null) {
@@ -226,7 +229,7 @@ public class UserManagementServiceImpl implements UserManagementService {
       readerRepository.save(reader);
       return;
     }
-    
+
     Reviewer reviewer = reviewerRepository.findById(userId).orElse(null);
     if (reviewer != null) {
       if (status.equals("DELETED")) {
@@ -239,7 +242,7 @@ public class UserManagementServiceImpl implements UserManagementService {
       reviewerRepository.save(reviewer);
       return;
     }
-    
+
     Organization organization = organizationRepository.findById(userId).orElse(null);
     if (organization != null) {
       if (status.equals("DELETED")) {
@@ -252,8 +255,7 @@ public class UserManagementServiceImpl implements UserManagementService {
       organizationRepository.save(organization);
       return;
     }
-    
+
     throw new RuntimeException("User not found with id: " + userId);
   }
 }
-

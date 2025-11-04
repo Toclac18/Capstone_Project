@@ -26,9 +26,9 @@ public class DocumentTag extends BaseEntity {
   private UUID id;
 
   @ManyToMany
-  @JoinTable(name = "document_tag_n_n",
+  @JoinTable(
+      name = "document_tag_n_n",
       joinColumns = @JoinColumn(name = "tag_id"),
       inverseJoinColumns = @JoinColumn(name = "document_id"))
   private Set<Document> documents = new HashSet<>();
-
 }

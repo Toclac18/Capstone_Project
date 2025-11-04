@@ -27,23 +27,23 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 @ExtendWith(MockitoExtension.class)
 class AccountDetailsServiceTest {
 
-  @Mock
-  private ReaderRepository readerRepository;
-  @Mock
-  private ReviewerRepository reviewerRepository;
-  @Mock
-  private OrganizationRepository organizationRepository;
-  @Mock
-  private BusinessAdminRepository businessAdminRepository;
-  @Mock
-  private SystemAdminRepository systemAdminRepository;
+  @Mock private ReaderRepository readerRepository;
+  @Mock private ReviewerRepository reviewerRepository;
+  @Mock private OrganizationRepository organizationRepository;
+  @Mock private BusinessAdminRepository businessAdminRepository;
+  @Mock private SystemAdminRepository systemAdminRepository;
 
   private AccountDetailsService accountDetailsService;
 
   @BeforeEach
   void setUp() {
-    accountDetailsService = new AccountDetailsService(readerRepository, reviewerRepository,
-        organizationRepository, businessAdminRepository, systemAdminRepository);
+    accountDetailsService =
+        new AccountDetailsService(
+            readerRepository,
+            reviewerRepository,
+            organizationRepository,
+            businessAdminRepository,
+            systemAdminRepository);
   }
 
   @Test
@@ -77,7 +77,8 @@ class AccountDetailsServiceTest {
 
     when(readerRepository.findById(readerId)).thenReturn(Optional.of(reader));
 
-    assertThrows(DisabledException.class,
+    assertThrows(
+        DisabledException.class,
         () -> accountDetailsService.loadPrincipal(UserRole.READER, readerId));
   }
 
@@ -86,7 +87,8 @@ class AccountDetailsServiceTest {
     UUID readerId = UUID.randomUUID();
     when(readerRepository.findById(readerId)).thenReturn(Optional.empty());
 
-    assertThrows(UsernameNotFoundException.class,
+    assertThrows(
+        UsernameNotFoundException.class,
         () -> accountDetailsService.loadPrincipal(UserRole.READER, readerId));
   }
 
@@ -95,7 +97,8 @@ class AccountDetailsServiceTest {
     UUID reviewerId = UUID.randomUUID();
     when(reviewerRepository.findById(reviewerId)).thenReturn(Optional.empty());
 
-    assertThrows(UsernameNotFoundException.class,
+    assertThrows(
+        UsernameNotFoundException.class,
         () -> accountDetailsService.loadPrincipal(UserRole.REVIEWER, reviewerId));
   }
 
@@ -111,7 +114,8 @@ class AccountDetailsServiceTest {
 
     when(reviewerRepository.findById(reviewerId)).thenReturn(Optional.of(reviewer));
 
-    assertThrows(DisabledException.class,
+    assertThrows(
+        DisabledException.class,
         () -> accountDetailsService.loadPrincipal(UserRole.REVIEWER, reviewerId));
   }
 }

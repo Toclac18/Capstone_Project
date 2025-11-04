@@ -32,10 +32,11 @@ public class EmailServiceImpl implements EmailService {
       throw new IllegalArgumentException("Verification token must not be blank");
     }
 
-    String verificationUrl = UriComponentsBuilder.fromHttpUrl(verificationBaseUrl)
-        .queryParam("token", token)
-        .build()
-        .toUriString();
+    String verificationUrl =
+        UriComponentsBuilder.fromHttpUrl(verificationBaseUrl)
+            .queryParam("token", token)
+            .build()
+            .toUriString();
 
     SimpleMailMessage message = new SimpleMailMessage();
     message.setFrom(fromAddress);
@@ -49,11 +50,35 @@ public class EmailServiceImpl implements EmailService {
 
   private String buildEmailBody(String username, String verificationUrl) {
     String greeting = StringUtils.hasText(username) ? "Hello " + username + "," : "Hello,";
-    return greeting + "\n\n"
+    return greeting
+        + "\n\n"
         + "Thank you for registering with Readee. Please verify your email address "
         + "by clicking the link below within 10 minutes:\n\n"
-        + verificationUrl + "\n\n"
+        + verificationUrl
+        + "\n\n"
         + "If you did not make this request, please ignore this email.";
   }
-}
 
+  //  @Override
+  //  public boolean sendWelcomeEmail(String toEmail, String username, String temporaryPassword) {
+  //    // TODO: thay bằng JavaMailSender để gửi thật. Hiện tại mock để FE test.
+  //    log.info("Mock send email to={} username={} tempPassword={}", toEmail, username,
+  // temporaryPassword);
+  //    return true;
+  //  }
+
+  @Override
+  public boolean sendWelcomeEmail(String toEmail, String username, String temporaryPassword) {
+    try {
+      SimpleMailMessage msg = new SimpleMailMessage();
+      msg.setTo(toEmail);
+      msg.setSubject("[System] Welcome " + username);
+      msg.setText("Your temporary password: " + temporaryPassword);
+      mailSender.send(msg);
+      return true;
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
+  }
+}

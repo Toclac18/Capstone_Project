@@ -17,7 +17,6 @@ import lombok.EqualsAndHashCode;
 @Table(name = "saved_documents")
 @Data
 @EqualsAndHashCode(callSuper = true)
-
 public class SavedDocument extends BaseEntity {
 
   @Id
@@ -33,5 +32,4 @@ public class SavedDocument extends BaseEntity {
   private Document document;
 
   private LocalDateTime addedAt;
-
 }

@@ -17,7 +17,6 @@ import lombok.EqualsAndHashCode;
 @Data
 @Entity
 @Table(name = "enrollments")
-
 public class Enrollment extends BaseEntity {
 
   @Id
@@ -33,5 +32,4 @@ public class Enrollment extends BaseEntity {
   private Organization organization;
 
   private LocalDateTime addedAt;
-
 }

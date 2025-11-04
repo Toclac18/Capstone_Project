@@ -31,7 +31,7 @@ public class DocumentReport extends BaseEntity {
   @JoinColumn(name = "document_id")
   private Document document;
 
-  private String type; //#temp
+  private String type; // #temp
 
   private String reportContent;
 
@@ -39,6 +39,5 @@ public class DocumentReport extends BaseEntity {
 
   private LocalDateTime responseAt;
 
-  private String status; //#temp
-
+  private String status; // #temp
 }

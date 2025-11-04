@@ -14,7 +14,6 @@ import lombok.EqualsAndHashCode;
 @Data
 @Entity
 @Table(name = "document_types")
-
 public class DocumentType extends BaseEntity {
 
   @Id

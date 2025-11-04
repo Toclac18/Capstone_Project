@@ -17,19 +17,17 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 public class UserPrincipal implements UserDetails {
 
-  @Getter
-  private final UUID id;
-  @Getter
-  private final UserRole role;
+  @Getter private final UUID id;
+  @Getter private final UserRole role;
   private final String email;
-  @Getter
-  private final String displayName;
+  @Getter private final String displayName;
   private final String passwordHash;
   private final boolean accountNonLocked;
   private final boolean enabled;
   private final List<GrantedAuthority> authorities;
 
-  private UserPrincipal(UUID id,
+  private UserPrincipal(
+      UUID id,
       UserRole role,
       String email,
       String displayName,
@@ -56,8 +54,7 @@ public class UserPrincipal implements UserDetails {
         reader.getUsername(),
         reader.getPasswordHash(),
         !locked,
-        enabled
-    );
+        enabled);
   }
 
   public static UserPrincipal fromReviewer(Reviewer reviewer) {
@@ -70,13 +67,13 @@ public class UserPrincipal implements UserDetails {
         reviewer.getName(),
         reviewer.getPasswordHash(),
         true,
-        enabled
-    );
+        enabled);
   }
 
   public static UserPrincipal fromOrganization(Organization organization) {
-    boolean enabled = !Boolean.TRUE.equals(organization.getDeleted()) && Boolean.TRUE.equals(
-        organization.getActive());
+    boolean enabled =
+        !Boolean.TRUE.equals(organization.getDeleted())
+            && Boolean.TRUE.equals(organization.getActive());
     return new UserPrincipal(
         organization.getId(),
         UserRole.ORGANIZATION,
@@ -84,8 +81,7 @@ public class UserPrincipal implements UserDetails {
         organization.getAdminName(),
         organization.getAdminPassword(),
         true,
-        enabled
-    );
+        enabled);
   }
 
   public static UserPrincipal fromBusinessAdmin(BusinessAdmin admin) {
@@ -98,8 +94,7 @@ public class UserPrincipal implements UserDetails {
         admin.getFullName(),
         admin.getPasswordHash(),
         true,
-        enabled
-    );
+        enabled);
   }
 
   public static UserPrincipal fromSystemAdmin(SystemAdmin admin) {
@@ -112,8 +107,7 @@ public class UserPrincipal implements UserDetails {
         admin.getFullName(),
         admin.getPasswordHash(),
         true,
-        enabled
-    );
+        enabled);
   }
 
   @Override

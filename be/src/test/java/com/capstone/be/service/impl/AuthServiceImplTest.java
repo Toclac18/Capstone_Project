@@ -9,7 +9,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.capstone.be.domain.entity.BusinessAdmin;
-import com.capstone.be.domain.entity.Organization;
 import com.capstone.be.domain.entity.Reader;
 import com.capstone.be.domain.entity.Reviewer;
 import com.capstone.be.domain.entity.SystemAdmin;
@@ -44,27 +43,27 @@ class AuthServiceImplTest {
   private static final String NEW_PASSWORD = "newPassword";
   private static final String NEW_PASSWORD_HASH = "newHashed";
 
-  @Mock
-  private ReaderRepository readerRepository;
-  @Mock
-  private ReviewerRepository reviewerRepository;
-  @Mock
-  private OrganizationRepository organizationRepository;
-  @Mock
-  private BusinessAdminRepository businessAdminRepository;
-  @Mock
-  private SystemAdminRepository systemAdminRepository;
-  @Mock
-  private PasswordEncoder passwordEncoder;
-  @Mock
-  private JwtService jwtService;
+  @Mock private ReaderRepository readerRepository;
+  @Mock private ReviewerRepository reviewerRepository;
+  @Mock private OrganizationRepository organizationRepository;
+  @Mock private BusinessAdminRepository businessAdminRepository;
+  @Mock private SystemAdminRepository systemAdminRepository;
+  @Mock private PasswordEncoder passwordEncoder;
+  @Mock private JwtService jwtService;
 
   private AuthService authService;
 
   @BeforeEach
   void setUp() {
-    authService = new AuthServiceImpl(readerRepository, reviewerRepository, organizationRepository,
-        businessAdminRepository, systemAdminRepository, passwordEncoder, jwtService);
+    authService =
+        new AuthServiceImpl(
+            readerRepository,
+            reviewerRepository,
+            organizationRepository,
+            businessAdminRepository,
+            systemAdminRepository,
+            passwordEncoder,
+            jwtService);
   }
 
   @Test
@@ -83,11 +82,12 @@ class AuthServiceImplTest {
         .thenReturn("token");
     when(jwtService.getExpirationMs()).thenReturn(3600L);
 
-    LoginRequest request = LoginRequest.builder()
-        .role(UserRole.READER)
-        .email(reader.getEmail())
-        .password(PASSWORD)
-        .build();
+    LoginRequest request =
+        LoginRequest.builder()
+            .role(UserRole.READER)
+            .email(reader.getEmail())
+            .password(PASSWORD)
+            .build();
 
     LoginResponse response = authService.login(request);
 
@@ -111,14 +111,15 @@ class AuthServiceImplTest {
     when(readerRepository.findByEmail(reader.getEmail())).thenReturn(Optional.of(reader));
     when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(false);
 
-    LoginRequest request = LoginRequest.builder()
-        .role(UserRole.READER)
-        .email(reader.getEmail())
-        .password(PASSWORD)
-        .build();
+    LoginRequest request =
+        LoginRequest.builder()
+            .role(UserRole.READER)
+            .email(reader.getEmail())
+            .password(PASSWORD)
+            .build();
 
-    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-        () -> authService.login(request));
+    ResponseStatusException ex =
+        assertThrows(ResponseStatusException.class, () -> authService.login(request));
 
     assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
     verify(jwtService, never()).generateToken(any(UUID.class), any(UserRole.class), anyString());
@@ -135,14 +136,15 @@ class AuthServiceImplTest {
     when(readerRepository.findByEmail(reader.getEmail())).thenReturn(Optional.of(reader));
     when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
 
-    LoginRequest request = LoginRequest.builder()
-        .role(UserRole.READER)
-        .email(reader.getEmail())
-        .password(PASSWORD)
-        .build();
+    LoginRequest request =
+        LoginRequest.builder()
+            .role(UserRole.READER)
+            .email(reader.getEmail())
+            .password(PASSWORD)
+            .build();
 
-    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-        () -> authService.login(request));
+    ResponseStatusException ex =
+        assertThrows(ResponseStatusException.class, () -> authService.login(request));
 
     assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
     verify(jwtService, never()).generateToken(any(UUID.class), any(UserRole.class), anyString());
@@ -153,14 +155,11 @@ class AuthServiceImplTest {
     String email = "missing@example.com";
     when(readerRepository.findByEmail(email)).thenReturn(Optional.empty());
 
-    LoginRequest request = LoginRequest.builder()
-        .role(UserRole.READER)
-        .email(email)
-        .password(PASSWORD)
-        .build();
+    LoginRequest request =
+        LoginRequest.builder().role(UserRole.READER).email(email).password(PASSWORD).build();
 
-    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-        () -> authService.login(request));
+    ResponseStatusException ex =
+        assertThrows(ResponseStatusException.class, () -> authService.login(request));
 
     assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
   }
@@ -182,11 +181,12 @@ class AuthServiceImplTest {
         .thenReturn("token");
     when(jwtService.getExpirationMs()).thenReturn(7200L);
 
-    LoginRequest request = LoginRequest.builder()
-        .role(UserRole.REVIEWER)
-        .email(reviewer.getEmail())
-        .password(PASSWORD)
-        .build();
+    LoginRequest request =
+        LoginRequest.builder()
+            .role(UserRole.REVIEWER)
+            .email(reviewer.getEmail())
+            .password(PASSWORD)
+            .build();
 
     LoginResponse response = authService.login(request);
 
@@ -207,14 +207,15 @@ class AuthServiceImplTest {
     when(businessAdminRepository.findByEmail(admin.getEmail())).thenReturn(Optional.of(admin));
     when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
 
-    LoginRequest request = LoginRequest.builder()
-        .role(UserRole.BUSINESS_ADMIN)
-        .email(admin.getEmail())
-        .password(PASSWORD)
-        .build();
+    LoginRequest request =
+        LoginRequest.builder()
+            .role(UserRole.BUSINESS_ADMIN)
+            .email(admin.getEmail())
+            .password(PASSWORD)
+            .build();
 
-    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-        () -> authService.login(request));
+    ResponseStatusException ex =
+        assertThrows(ResponseStatusException.class, () -> authService.login(request));
 
     assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
     verify(jwtService, never()).generateToken(any(UUID.class), any(UserRole.class), anyString());
@@ -231,10 +232,8 @@ class AuthServiceImplTest {
     when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
     when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn(NEW_PASSWORD_HASH);
 
-    ChangePasswordRequest request = ChangePasswordRequest.builder()
-        .currentPassword(PASSWORD)
-        .newPassword(NEW_PASSWORD)
-        .build();
+    ChangePasswordRequest request =
+        ChangePasswordRequest.builder().currentPassword(PASSWORD).newPassword(NEW_PASSWORD).build();
 
     authService.changePassword(reader.getId(), UserRole.READER, request);
 
@@ -252,13 +251,13 @@ class AuthServiceImplTest {
     when(readerRepository.findById(reader.getId())).thenReturn(Optional.of(reader));
     when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(false);
 
-    ChangePasswordRequest request = ChangePasswordRequest.builder()
-        .currentPassword(PASSWORD)
-        .newPassword(NEW_PASSWORD)
-        .build();
+    ChangePasswordRequest request =
+        ChangePasswordRequest.builder().currentPassword(PASSWORD).newPassword(NEW_PASSWORD).build();
 
-    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-        () -> authService.changePassword(reader.getId(), UserRole.READER, request));
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> authService.changePassword(reader.getId(), UserRole.READER, request));
 
     assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
     verify(readerRepository, never()).save(any());
@@ -266,13 +265,13 @@ class AuthServiceImplTest {
 
   @Test
   void changePassword_readerNewPasswordSameAsCurrentThrows() {
-    ChangePasswordRequest request = ChangePasswordRequest.builder()
-        .currentPassword(PASSWORD)
-        .newPassword(PASSWORD)
-        .build();
+    ChangePasswordRequest request =
+        ChangePasswordRequest.builder().currentPassword(PASSWORD).newPassword(PASSWORD).build();
 
-    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-        () -> authService.changePassword(UUID.randomUUID(), UserRole.READER, request));
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> authService.changePassword(UUID.randomUUID(), UserRole.READER, request));
 
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
   }
@@ -282,13 +281,13 @@ class AuthServiceImplTest {
     UUID readerId = UUID.randomUUID();
     when(readerRepository.findById(readerId)).thenReturn(Optional.empty());
 
-    ChangePasswordRequest request = ChangePasswordRequest.builder()
-        .currentPassword(PASSWORD)
-        .newPassword(NEW_PASSWORD)
-        .build();
+    ChangePasswordRequest request =
+        ChangePasswordRequest.builder().currentPassword(PASSWORD).newPassword(NEW_PASSWORD).build();
 
-    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-        () -> authService.changePassword(readerId, UserRole.READER, request));
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> authService.changePassword(readerId, UserRole.READER, request));
 
     assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
   }
@@ -303,13 +302,13 @@ class AuthServiceImplTest {
 
     when(reviewerRepository.findById(reviewer.getId())).thenReturn(Optional.of(reviewer));
 
-    ChangePasswordRequest request = ChangePasswordRequest.builder()
-        .currentPassword(PASSWORD)
-        .newPassword(NEW_PASSWORD)
-        .build();
+    ChangePasswordRequest request =
+        ChangePasswordRequest.builder().currentPassword(PASSWORD).newPassword(NEW_PASSWORD).build();
 
-    ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-        () -> authService.changePassword(reviewer.getId(), UserRole.REVIEWER, request));
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> authService.changePassword(reviewer.getId(), UserRole.REVIEWER, request));
 
     assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     verify(passwordEncoder, never()).matches(anyString(), anyString());
@@ -329,10 +328,8 @@ class AuthServiceImplTest {
     when(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).thenReturn(true);
     when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn(NEW_PASSWORD_HASH);
 
-    ChangePasswordRequest request = ChangePasswordRequest.builder()
-        .currentPassword(PASSWORD)
-        .newPassword(NEW_PASSWORD)
-        .build();
+    ChangePasswordRequest request =
+        ChangePasswordRequest.builder().currentPassword(PASSWORD).newPassword(NEW_PASSWORD).build();
 
     authService.changePassword(admin.getId(), UserRole.SYSTEM_ADMIN, request);
 

@@ -1,5 +1,3 @@
 package com.capstone.be.util;
 
-public class DateUtil {
-
-}
+public class DateUtil {}

@@ -5,6 +5,4 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/documents")
-public class DocumentController {
-
-}
+public class DocumentController {}

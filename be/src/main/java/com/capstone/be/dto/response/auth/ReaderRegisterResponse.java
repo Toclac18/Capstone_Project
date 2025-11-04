@@ -1,6 +1,5 @@
 package com.capstone.be.dto.response.auth;
 
-
 import com.capstone.be.domain.enums.ReaderStatus;
 import java.time.LocalDate;
 import lombok.Builder;
@@ -23,5 +22,4 @@ public class ReaderRegisterResponse {
   private Integer coinBalance;
 
   private ReaderStatus status;
-
 }

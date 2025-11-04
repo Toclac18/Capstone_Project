@@ -16,7 +16,6 @@ import lombok.EqualsAndHashCode;
 @Table(name = "saved_lists")
 @Data
 @EqualsAndHashCode(callSuper = true)
-
 public class SavedList extends BaseEntity {
 
   @Id
@@ -28,5 +27,4 @@ public class SavedList extends BaseEntity {
   private Reader reader;
 
   private String name;
-
 }

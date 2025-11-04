@@ -1,5 +1,3 @@
 package com.capstone.be.domain.enums;
 
-public class DocumentStatus {
-
-}
+public class DocumentStatus {}

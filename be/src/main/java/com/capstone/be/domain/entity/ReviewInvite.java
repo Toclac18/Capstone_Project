@@ -17,7 +17,6 @@ import lombok.EqualsAndHashCode;
 @Table(name = "review_invites")
 @Data
 @EqualsAndHashCode(callSuper = true)
-
 public class ReviewInvite extends BaseEntity {
 
   @Id
@@ -32,8 +31,7 @@ public class ReviewInvite extends BaseEntity {
   @JoinColumn(name = "document_id")
   private Document document;
 
-  private String status; //#temp
+  private String status; // #temp
 
   private LocalDateTime expiry;
-
 }

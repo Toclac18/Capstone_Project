@@ -29,8 +29,7 @@ public class Document extends BaseEntity {
   @Column(nullable = false)
   private String title;
 
-  @Column()
-  private String description;
+  @Column() private String description;
 
   @ManyToOne
   @JoinColumn(name = "uploader_id")
@@ -58,6 +57,4 @@ public class Document extends BaseEntity {
   private String file_name;
 
   private Boolean deleted;
-
-
 }

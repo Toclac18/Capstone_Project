@@ -46,4 +46,3 @@ public interface UserManagementMapper {
     return active ? "ACTIVE" : "INACTIVE";
   }
 }
-

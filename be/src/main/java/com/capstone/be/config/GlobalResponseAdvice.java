@@ -19,8 +19,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
 
   @Override
-  public boolean supports(MethodParameter returnType,
-      Class<? extends HttpMessageConverter<?>> converterType) {
+  public boolean supports(
+      MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
     // Skip non-JSON converter
     if (StringHttpMessageConverter.class.isAssignableFrom(converterType)) {
       return false;
@@ -38,7 +38,8 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
   }
 
   @Override
-  public Object beforeBodyWrite(Object body,
+  public Object beforeBodyWrite(
+      Object body,
       MethodParameter returnType,
       MediaType selectedContentType,
       Class<? extends HttpMessageConverter<?>> selectedConverterType,
@@ -46,8 +47,7 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
       ServerHttpResponse response) {
 
     // Skip already-wrap
-    if (body instanceof SuccessResponse<?> ||
-        body instanceof ProblemDetail) {
+    if (body instanceof SuccessResponse<?> || body instanceof ProblemDetail) {
       return body;
     }
 

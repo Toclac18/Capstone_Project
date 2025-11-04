@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Trash2, X } from "lucide-react";
 
 interface DeleteConfirmationProps {
@@ -26,6 +27,11 @@ export default function DeleteConfirmation({
 }: DeleteConfirmationProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Button styles
   const sizeClasses = {
@@ -102,7 +108,7 @@ export default function DeleteConfirmation({
       </button>
 
       {/* Delete Modal */}
-      {isModalOpen && (
+      {isModalOpen && mounted && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           {/* Backdrop */}
           <div 
@@ -222,7 +228,8 @@ export default function DeleteConfirmation({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

@@ -1,6 +1,6 @@
 // app/api/users/[id]/status/route.ts
 import { mockUserDB } from "@/mock/user";
-import type { User } from "@/types/user";
+// import type { User } from "@/types/user";
 
 const DEFAULT_BE_BASE = "http://localhost:8080";
 

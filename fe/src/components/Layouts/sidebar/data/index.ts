@@ -1,4 +1,3 @@
-import { Organization } from './../../../../types/organization';
 import * as Icons from "../icons";
 
 export const NAV_DATA = [

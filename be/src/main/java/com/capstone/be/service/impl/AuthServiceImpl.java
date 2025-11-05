@@ -13,12 +13,15 @@ import com.capstone.be.domain.enums.ReviewerStatus;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.dto.request.auth.ChangePasswordRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
+import com.capstone.be.dto.request.auth.RegisterOrganizationInfo;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
-import com.capstone.be.dto.request.auth.RegisterReviewerInfoRequest;
+import com.capstone.be.dto.request.auth.RegisterReviewerInfo;
 import com.capstone.be.dto.request.auth.VerifyEmailRequest;
 import com.capstone.be.dto.response.auth.LoginResponse;
+import com.capstone.be.dto.response.auth.RegisterOrganizationResponse;
 import com.capstone.be.dto.response.auth.RegisterReaderResponse;
 import com.capstone.be.dto.response.auth.RegisterReviewerResponse;
+import com.capstone.be.mapper.OrganizationMapper;
 import com.capstone.be.mapper.ReaderMapper;
 import com.capstone.be.mapper.ReviewerMapper;
 import com.capstone.be.repository.BusinessAdminRepository;
@@ -65,6 +68,7 @@ public class AuthServiceImpl implements AuthService {
 
   private final ReaderMapper readerMapper;
   private final ReviewerMapper reviewerMapper;
+  private final OrganizationMapper organizationMapper;
 
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
@@ -92,17 +96,15 @@ public class AuthServiceImpl implements AuthService {
     Reader savedReader = readerRepository.save(reader);
 
     //Send Verification email
-    String verificationToken = jwtService.generateEmailVerifyToken(UserRole.READER,
-        savedReader.getEmail());
-    System.out.println("Verify Token for " + savedReader.getEmail() + " : " + verificationToken);
-    emailService.sendReaderVerificationEmail(savedReader, verificationToken);
+    emailService.sendVerificationEmail(UserRole.READER, savedReader.getEmail(),
+        savedReader.getFullName());
 
     return readerMapper.toRegisterResponse(savedReader);
   }
 
   @Override
   @Transactional
-  public RegisterReviewerResponse registerReviewer(RegisterReviewerInfoRequest info,
+  public RegisterReviewerResponse registerReviewer(RegisterReviewerInfo info,
       List<MultipartFile> files) {
 
     //Validate: Email and username existed
@@ -160,15 +162,41 @@ public class AuthServiceImpl implements AuthService {
     Reviewer savedReviewer = reviewerRepository.save(reviewer);
 
     //Send Verification email
-    String token = jwtService.generateEmailVerifyToken(UserRole.REVIEWER, savedReviewer.getEmail());
-    System.out.println("Verify Token for " + savedReviewer.getEmail() + " : " + token);
-    emailService.sendReviewerVerificationEmail(savedReviewer, token);
+    emailService.sendVerificationEmail(UserRole.REVIEWER, savedReviewer.getEmail(),
+        savedReviewer.getFullName());
 
     Set<String> domainNames = domains.stream().map(Domain::getName).collect(Collectors.toSet());
     Set<String> specializationNames = reviewSpecializations.stream().map(Specialization::getName)
         .collect(Collectors.toSet());
     return reviewerMapper.toRegisterReviewerResponse(reviewer, domainNames, specializationNames);
   }
+
+  @Override
+  @Transactional
+  public RegisterOrganizationResponse registerOrganization(
+      RegisterOrganizationInfo info,
+      List<MultipartFile> files) {
+    //Validate
+    if (isEmailExisted(info.getEmail())) {
+      throw ExceptionBuilder.conflict("Email is already exist");
+    }
+    if (isEmailExisted(info.getAdminEmail())) {
+      throw ExceptionBuilder.conflict("Admin email is already exist");
+    }
+    if (organizationRepository.existsByName(info.getName())) {
+      throw ExceptionBuilder.conflict("Organization name is already exist: " + info.getName());
+    }
+
+    Organization savedOrg =
+        organizationRepository.save(organizationMapper.toOrganization(info));
+
+    //Send verification email
+    emailService.sendVerificationEmail(UserRole.ORGANIZATION, savedOrg.getEmail(),
+        savedOrg.getName());
+
+    return organizationMapper.toRegisterOrganizationResponse(savedOrg);
+  }
+
 
   @Override
   @Transactional
@@ -351,6 +379,7 @@ public class AuthServiceImpl implements AuthService {
       case SYSTEM_ADMIN -> changeSystemAdminPassword(subjectId, request);
     }
   }
+
 
   private void changeReaderPassword(UUID subjectId, ChangePasswordRequest request) {
     Reader reader = readerRepository.findById(subjectId)

@@ -3,10 +3,12 @@ package com.capstone.be.service;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.dto.request.auth.ChangePasswordRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
+import com.capstone.be.dto.request.auth.RegisterOrganizationInfo;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
-import com.capstone.be.dto.request.auth.RegisterReviewerInfoRequest;
+import com.capstone.be.dto.request.auth.RegisterReviewerInfo;
 import com.capstone.be.dto.request.auth.VerifyEmailRequest;
 import com.capstone.be.dto.response.auth.LoginResponse;
+import com.capstone.be.dto.response.auth.RegisterOrganizationResponse;
 import com.capstone.be.dto.response.auth.RegisterReaderResponse;
 import com.capstone.be.dto.response.auth.RegisterReviewerResponse;
 import java.util.List;
@@ -17,7 +19,10 @@ public interface AuthService {
 
   RegisterReaderResponse registerReader(RegisterReaderRequest request);
 
-  RegisterReviewerResponse registerReviewer(RegisterReviewerInfoRequest info,
+  RegisterReviewerResponse registerReviewer(RegisterReviewerInfo info,
+      List<MultipartFile> files);
+
+  RegisterOrganizationResponse registerOrganization(RegisterOrganizationInfo info,
       List<MultipartFile> files);
 
   void verifyEmail(VerifyEmailRequest request);
@@ -25,4 +30,5 @@ public interface AuthService {
   LoginResponse login(LoginRequest request);
 
   void changePassword(UUID subjectId, UserRole role, ChangePasswordRequest request);
+
 }

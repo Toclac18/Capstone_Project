@@ -14,7 +14,7 @@ import java.util.UUID;
 import lombok.Data;
 
 @Data
-public class RegisterReviewerInfoRequest {
+public class RegisterReviewerInfo {
 
   @NotBlank
   private String fullName;

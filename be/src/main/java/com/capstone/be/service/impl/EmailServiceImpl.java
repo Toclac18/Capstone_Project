@@ -1,9 +1,9 @@
 package com.capstone.be.service.impl;
 
-import com.capstone.be.domain.entity.Reader;
-import com.capstone.be.domain.entity.Reviewer;
+import com.capstone.be.domain.enums.UserRole;
+import com.capstone.be.security.service.JwtService;
 import com.capstone.be.service.EmailService;
-import jakarta.validation.constraints.NotNull;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +20,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class EmailServiceImpl implements EmailService {
 
   private final JavaMailSender mailSender;
+  private final JwtService jwtService;
 
   @Value("${app.mail.from}")
   private String fromAddress;
@@ -29,12 +30,11 @@ public class EmailServiceImpl implements EmailService {
 
   @Override
   @Async
-  public void sendReaderVerificationEmail(@NotNull Reader reader, String token) {
-//    Objects.requireNonNull(reader, "Reader must not be null");
-    if (!StringUtils.hasText(token)) {
-      throw new IllegalArgumentException("Verification token must not be blank");
-    }
+  public void sendVerificationEmail(UserRole role, String toEmail, String toName) {
+    Objects.requireNonNull(toEmail, "Email must not be null");
+    Objects.requireNonNull(toName, "Email must not be null");
 
+    String token = jwtService.generateEmailVerifyToken(role, toEmail);
     String verificationUrl = UriComponentsBuilder.fromHttpUrl(verificationBaseUrl)
         .queryParam("token", token)
         .build()
@@ -42,17 +42,12 @@ public class EmailServiceImpl implements EmailService {
 
     SimpleMailMessage message = new SimpleMailMessage();
     message.setFrom(fromAddress);
-    message.setTo(reader.getEmail());
+    message.setTo(toEmail);
     message.setSubject("Verify your Capstone account email");
-    message.setText(buildEmailBody(reader.getUsername(), verificationUrl));
+    message.setText(buildEmailBody(toName, verificationUrl));
 
     mailSender.send(message);
-    log.info("Sent reader verification email to {}", reader.getEmail());
-  }
-
-  @Override
-  public void sendReviewerVerificationEmail(Reviewer reviewer, String token) {
-
+    log.info("Sent reader verification email to {}, token : {}\t\t", toEmail, token);
   }
 
   private String buildEmailBody(String username, String verificationUrl) {

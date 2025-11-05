@@ -12,15 +12,19 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchOrganizations, type OrganizationSummary } from "./api";
+import { Pagination } from "@/components/ui/pagination";
 import styles from "./styles.module.css";
 
 type LoadState = "loading" | "success" | "empty" | "error";
+
+const ITEMS_PER_PAGE = 8;
 
 export default function Page() {
   const router = useRouter();
   const [state, setState] = useState<LoadState>("loading");
   const [items, setItems] = useState<OrganizationSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   useEffect(() => {
     const run = async () => {
@@ -29,6 +33,7 @@ export default function Page() {
         const res = await fetchOrganizations();
         setItems(res.items);
         setState(res.items.length ? "success" : "empty");
+        setCurrentPage(1); // Reset to first page when data changes
       } catch (e: any) {
         setError(e?.message || "Unable to load organization list. Please try again later.");
         setState("error");
@@ -37,15 +42,26 @@ export default function Page() {
     run();
   }, []);
 
+  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+
   const rows = useMemo(() => {
-    return items.map((org) => ({
-      id: org.id,
-      name: org.name,
-      type: org.type,
-      joinDate: org.joinDate,
-      logo: org.logo,
-    }));
-  }, [items]);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return items
+      .slice(startIndex, endIndex)
+      .map((org) => ({
+        id: org.id,
+        name: org.name,
+        type: org.type,
+        joinDate: org.joinDate,
+        logo: org.logo,
+      }));
+  }, [items, currentPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <main className={styles["page-container"]}>
@@ -122,6 +138,16 @@ export default function Page() {
               ))}
             </TableBody>
           </Table>
+          {items.length > ITEMS_PER_PAGE && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={items.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={handlePageChange}
+              loading={false}
+            />
+          )}
         </div>
       )}
     </main>

@@ -1,0 +1,220 @@
+/* 1) Biến theme gắn trên .wrapper (local) + override khi có .dark (global) */
+.wrapper {
+    /* light vars */
+    --bg: #f7f7f8;
+    --surface: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --ring: #60a5fa;
+    --shadow: 0 6px 24px rgba(2, 6, 23, .06);
+
+    --primary: #111827;
+    --primary-contrast: #ffffff;
+
+    --chip-green-bg: #dcfce7;
+    --chip-green-fg: #166534;
+    --chip-red-bg: #fee2e2;
+    --chip-red-fg: #991b1b;
+    --chip-blue-bg: #dbeafe;
+    --chip-blue-fg: #1e3a8a;
+    --chip-yellow-bg: #fef9c3;
+    --chip-yellow-fg: #854d0e;
+    --chip-gray-bg: #f3f4f6;
+    --chip-gray-fg: #111827;
+
+    --thead-bg: #f8fafc;
+    --row-hover: #f9fafb;
+
+    padding: 24px;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100%;
+}
+
+/* Dark override – vẫn “thuần” vì selector có class local .wrapper */
+:global(.dark) .wrapper {
+    --bg: #0b0e14;
+    --surface: #111827;
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --border: #1f2937;
+    --ring: #2563eb;
+    --shadow: 0 8px 30px rgba(0, 0, 0, .35);
+
+    --primary: #e5e7eb;
+    --primary-contrast: #111827;
+
+    --chip-green-bg: #064e3b;
+    --chip-green-fg: #a7f3d0;
+    --chip-red-bg: #3f1d1d;
+    --chip-red-fg: #fecaca;
+    --chip-blue-bg: #0b2447;
+    --chip-blue-fg: #bfdbfe;
+    --chip-yellow-bg: #3b2f1a;
+    --chip-yellow-fg: #fde68a;
+    --chip-gray-bg: #1f2937;
+    --chip-gray-fg: #e5e7eb;
+
+    --thead-bg: #0f172a;
+    --row-hover: #0d1420;
+}
+
+/* header + actions */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+/* inputs / buttons */
+.input {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.input:focus {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 25%, transparent);
+}
+
+.toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: transform .06s ease, background .15s ease, border-color .15s ease;
+    box-shadow: var(--shadow);
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    background: color-mix(in oklab, var(--surface) 92%, var(--row-hover));
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btnPrimary {
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 0;
+    background: var(--primary);
+    color: var(--primary-contrast);
+    box-shadow: var(--shadow);
+    transition: transform .06s ease, filter .15s ease, background .15s ease;
+}
+
+.btnPrimary:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+}
+
+.btnPrimary:active {
+    transform: translateY(0);
+}
+
+/* table */
+.tableWrap {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+
+.tableWrap table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.tableWrap thead {
+    background: var(--thead-bg);
+}
+
+.tableWrap th {
+    text-align: left;
+    padding: 12px 14px;
+    font-weight: 700;
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: .2px;
+}
+
+.tableWrap td {
+    padding: 12px 14px;
+    border-top: 1px solid var(--border);
+}
+
+.tableWrap tbody tr:hover {
+    background: var(--row-hover);
+}
+
+.cellLeft {
+    text-align: left;
+}
+
+/* pager */
+.pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+}
+
+/* badges */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.badgeGreen {
+    background: var(--chip-green-bg);
+    color: var(--chip-green-fg);
+}
+
+.badgeRed {
+    background: var(--chip-red-bg);
+    color: var(--chip-red-fg);
+}
+
+.badgeBlue {
+    background: var(--chip-blue-bg);
+    color: var(--chip-blue-fg);
+}
+
+.badgeYellow {
+    background: var(--chip-yellow-bg);
+    color: var(--chip-yellow-fg);
+}
+
+.badgeGray {
+    background: var(--chip-gray-bg);
+    color: var(--chip-gray-fg);
+}
+
+.link {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}

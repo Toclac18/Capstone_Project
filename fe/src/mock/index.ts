@@ -9,6 +9,7 @@ import { setupMockContactAdmin } from "./contact-admin";
 import { setupMockAuth } from "./auth";
 import { setupMockProfile } from "./profile";
 import { setupMockNotification } from "./notification";
+import { setupMockManageOrganization } from "./manageOrganization";
 
 export function setupMocks() {
   if (process.env.NODE_ENV !== "development") return;
@@ -18,4 +19,5 @@ export function setupMocks() {
   setupMockContactAdmin();
   setupMockProfile();
   setupMockNotification();
+  setupMockManageOrganization();
 }

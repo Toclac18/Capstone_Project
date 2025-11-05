@@ -28,14 +28,12 @@ interface DeleteOrganizationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onDelete: () => Promise<void>;
-  organizationName: string;
 }
 
 export default function DeleteOrganizationModal({
   isOpen,
   onClose,
   onDelete,
-  organizationName,
 }: DeleteOrganizationModalProps) {
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

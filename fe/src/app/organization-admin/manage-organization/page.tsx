@@ -83,8 +83,13 @@ export default function ManageOrganizationPage() {
       setTimeout(async () => {
         try {
           await logout();
-        } catch (e) {
-          // Logout failed, continue with redirect anyway
+        } catch (e: any) {
+          showToast({
+            type: "error",
+            title: "Logout Failed",
+            message: e?.message || "Failed to logout. Please try again.",
+            duration: 5000,
+          });
         }
         router.push("/auth/sign-in");
       }, 2000);

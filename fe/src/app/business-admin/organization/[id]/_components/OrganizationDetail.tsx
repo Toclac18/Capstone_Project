@@ -18,6 +18,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     fetchOrganization();
@@ -115,16 +116,24 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
           <span>Back to Organization List</span>
         </button>
         <div className={styles["header-content"]}>
-          {organization.logo ? (
+          {organization.logo && !imageError ? (
             <img
               src={organization.logo}
-              alt={organization.organizationName || organization.email}
+              alt={organization.name || organization.email}
               className={styles["logo"]}
+              onError={(e) => {
+                console.error("Failed to load organization logo:", organization.logo, e);
+                setImageError(true);
+              }}
+              onLoad={() => {
+                console.log("Organization logo loaded successfully:", organization.logo);
+              }}
+              loading="lazy"
             />
           ) : (
             <div className={styles["logo-placeholder"]}>
               <span className={styles["logo-placeholder-text"]}>
-                {(organization.organizationName || organization.email)
+                {(organization.name || organization.email)
                   .substring(0, 2)
                   .toUpperCase()}
               </span>
@@ -132,7 +141,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
           )}
           <div className={styles["title-wrapper"]}>
             <h1 className={styles["page-title"]}>
-              {organization.organizationName || organization.email}
+              {organization.name || organization.email}
             </h1>
             <p className={styles["page-subtitle"]}>
               Organization Details
@@ -166,7 +175,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
               <div className={styles["field-item"]}>
                 <label className={styles["label"]}>Organization Name</label>
                 <p className={styles["field-value"]}>
-                  {organization.organizationName || organization.email}
+                  {organization.name || organization.email}
                 </p>
               </div>
 
@@ -271,7 +280,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
               <StatusConfirmation
                 onConfirm={handleStatusUpdate}
                 currentStatus={(organization.status === "ACTIVE" || organization.active) ? "ACTIVE" : "INACTIVE"}
-                itemName={organization.organizationName || organization.email}
+                itemName={organization.name || organization.email}
                 title={
                   (organization.status === "ACTIVE" || organization.active)
                     ? "Confirm Inactive Status"
@@ -279,8 +288,8 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                 }
                 description={
                   (organization.status === "ACTIVE" || organization.active)
-                    ? `Are you sure you want to set "${organization.organizationName || organization.email}" to Inactive?`
-                    : `Are you sure you want to set "${organization.organizationName || organization.email}" to Active?`
+                    ? `Are you sure you want to set "${organization.name || organization.email}" to Inactive?`
+                    : `Are you sure you want to set "${organization.name || organization.email}" to Active?`
                 }
                 size="lg"
                 variant="outline"

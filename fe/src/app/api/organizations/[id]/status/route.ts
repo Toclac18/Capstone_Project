@@ -1,42 +1,34 @@
 // app/api/organizations/[id]/status/route.ts
-const DEFAULT_BE_BASE = "http://localhost:8080";
+import { cookies } from "next/headers";
 
-function badRequest(msg: string) {
-  return new Response(JSON.stringify({ error: msg }), {
-    status: 400,
-    headers: { "content-type": "application/json" },
-  });
+const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+
+async function getAuthHeader(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(COOKIE_NAME)?.value;
+  return token ? `Bearer ${token}` : null;
 }
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   const { id } = await params;
 
-  let body: { status?: string };
-  try {
-    body = await req.json();
-  } catch {
-    return badRequest("Invalid JSON body");
+  const body = await req.json().catch(() => null);
+  if (!body) {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
   if (!body.status) {
-    return badRequest("Status is required");
+    return Response.json({ error: "Status is required" }, { status: 400 });
   }
 
-  // Forward to backend
-  const h = await import("next/headers").then((m) => m.headers());
-  const authHeader = h.get("authorization") || "";
-  const cookieHeader = h.get("cookie") || "";
+  const authHeader = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (authHeader) fh.set("Authorization", authHeader);
-  if (cookieHeader) fh.set("Cookie", cookieHeader);
 
   const upstream = await fetch(`${BE_BASE}/api/organizations/${id}/status`, {
     method: "PATCH",
@@ -46,12 +38,30 @@ export async function PATCH(
   });
 
   const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-    },
-  });
+  if (!upstream.ok) {
+    return Response.json(
+      { error: parseError(text) },
+      { status: upstream.status }
+    );
+  }
+
+  try {
+    const response = JSON.parse(text);
+    return Response.json(response);
+  } catch {
+    return Response.json(
+      { error: "Failed to process response" },
+      { status: 500 }
+    );
+  }
+}
+
+function parseError(text: string): string {
+  try {
+    const json = JSON.parse(text);
+    return json?.error || json?.message || "Request failed";
+  } catch {
+    return text || "Request failed";
+  }
 }
 

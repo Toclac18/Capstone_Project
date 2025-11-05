@@ -311,7 +311,11 @@
 
 /* Logo */
 .logo {
-  @apply h-10 w-10 rounded-full object-cover;
+  @apply rounded-full object-cover;
+  display: block;
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
 }
 
 .logo-placeholder {

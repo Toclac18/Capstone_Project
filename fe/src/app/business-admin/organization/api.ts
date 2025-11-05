@@ -4,12 +4,14 @@ import type {
   Organization,
   OrganizationResponse,
   OrganizationQueryParams,
+  OrganizationStatus,
 } from "@/types/organization";
 
 export type {
   Organization,
   OrganizationResponse,
   OrganizationQueryParams,
+  OrganizationStatus,
 };
 
 // BE response wrapper
@@ -36,15 +38,19 @@ export async function getOrganizations(
 }
 
 /**
- * Update organization status (ACTIVE, INACTIVE)
+ * Update organization status (PENDING_VERIFICATION, ACTIVE, DEACTIVE, DELETED)
  */
 export async function updateOrganizationStatus(
   id: string,
-  status: "ACTIVE" | "INACTIVE",
+  status: OrganizationStatus | "ACTIVE" | "INACTIVE" | "DEACTIVE" | "PENDING_VERIFICATION" | "DELETED",
 ): Promise<Organization & {
   totalMembers?: number;
   totalDocuments?: number;
 }> {
+  // Map legacy "INACTIVE" to "DEACTIVE"
+  if (status === "INACTIVE") {
+    status = "DEACTIVE";
+  }
   const res = await apiClient.patch<SuccessResponse<Organization & {
     totalMembers?: number;
     totalDocuments?: number;

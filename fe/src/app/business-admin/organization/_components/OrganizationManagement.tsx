@@ -25,6 +25,7 @@ export function OrganizationManagement() {
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   const [filters, setFilters] = useState<OrganizationQueryParams>({
     page: 1,
@@ -161,16 +162,24 @@ export function OrganizationManagement() {
                 organizations.map((org) => (
                   <tr key={org.id} className={styles["table-row"]}>
                     <td className={styles["table-cell"]}>
-                      {org.logo ? (
+                      {org.logo && !imageErrors.has(org.id) ? (
                         <img
                           src={org.logo}
-                          alt={org.organizationName || org.email}
+                          alt={org.name || org.email}
                           className={styles["logo"]}
+                          onError={() => {
+                            console.error(`Failed to load image for org ${org.id}:`, org.logo);
+                            setImageErrors(prev => new Set(prev).add(org.id));
+                          }}
+                          onLoad={() => {
+                            console.log(`Image loaded successfully for org ${org.id}:`, org.logo);
+                          }}
+                          loading="lazy"
                         />
                       ) : (
                         <div className={styles["logo-placeholder"]}>
                           <span className={styles["logo-text"]}>
-                            {(org.organizationName || org.email)
+                            {(org.name || org.email)
                               .substring(0, 2)
                               .toUpperCase()}
                           </span>
@@ -179,7 +188,7 @@ export function OrganizationManagement() {
                     </td>
                     <td className={styles["table-cell"]}>
                       <div className={styles["table-cell-main"]}>
-                        {org.organizationName || org.email}
+                        {org.name || org.email}
                       </div>
                     </td>
                     <td className={styles["table-cell"]}>
@@ -215,9 +224,9 @@ export function OrganizationManagement() {
                         <DeleteConfirmation
                           onDelete={handleDelete}
                           itemId={org.id}
-                          itemName={org.organizationName || org.email}
+                          itemName={org.name || org.email}
                           title="Delete Organization"
-                          description={`Are you sure you want to delete "${org.organizationName || org.email}"?`}
+                          description={`Are you sure you want to delete "${org.name || org.email}"?`}
                           size="sm"
                           variant="text"
                           className={styles["delete-btn-wrapper"]}

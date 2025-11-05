@@ -1,3 +1,4 @@
+import { Organization } from './../../../../types/organization';
 import * as Icons from "../icons";
 
 export const NAV_DATA = [
@@ -82,6 +83,12 @@ export const BUSINESS_ADMIN_NAV_DATA = [
         title: "User Management",
         icon: Icons.User,
         url: "/business-admin/users",
+        items: [],
+      },
+      {
+        title: "Organization Management",
+        icon: Icons.HomeIcon,
+        url: "/business-admin/organization",
         items: [],
       },
       {

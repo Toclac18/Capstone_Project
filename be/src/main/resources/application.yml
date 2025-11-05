@@ -50,3 +50,10 @@ app:
 logging:
   level:
     org.hibernate: INFO
+
+aws:
+  accessKeyId: ${AWS_ACCESS_KEY_ID:xxxxxx}
+  secretKey: ${AWS_SECRET_KEY:xxxxxx}
+  region: ${AWS_REGION:xxxxxx}
+  s3:
+    bucket: ${AWS_S3_BUCKET:xxxxxx}

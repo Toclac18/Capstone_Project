@@ -118,7 +118,7 @@ public class JwtUtil {
     }
   }
 
-  public String generateEmailVerifyToken(String email) {
+  public String generateEmailVerifyToken(UserRole role, String email) {
     Objects.requireNonNull(email, "Email must not be Null");
 
     Date now = new Date();
@@ -129,6 +129,7 @@ public class JwtUtil {
         .setIssuedAt(now)
         .setExpiration(expiry)
         .claim(CLAIM_EMAIL, email)
+        .claim(CLAIM_ROLE, role)
         .signWith(secretKey, SignatureAlgorithm.HS256)
         .compact();
   }

@@ -1,52 +1,66 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.dto.base.SuccessResponse;
 import com.capstone.be.dto.request.auth.ChangePasswordRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
-import com.capstone.be.dto.request.auth.ReaderRegisterRequest;
+import com.capstone.be.dto.request.auth.RegisterOrganizationInfo;
+import com.capstone.be.dto.request.auth.RegisterReaderRequest;
+import com.capstone.be.dto.request.auth.RegisterReviewerInfo;
+import com.capstone.be.dto.request.auth.VerifyEmailRequest;
 import com.capstone.be.dto.response.auth.LoginResponse;
-import com.capstone.be.dto.response.auth.ReaderRegisterResponse;
+import com.capstone.be.dto.response.auth.RegisterOrganizationResponse;
+import com.capstone.be.dto.response.auth.RegisterReaderResponse;
+import com.capstone.be.dto.response.auth.RegisterReviewerResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.AuthService;
-import com.capstone.be.service.ReaderService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/auth")
 public class AuthController {
 
-  @Autowired
-  ReaderService readerService;
+  private final AuthService authService;
 
-  @Autowired
-  AuthService authService;
-
-  //SAMPLE API
-  @GetMapping("/hello")
-  public String Hello() {
-    return "Hello world!";
+  @PostMapping("/register-reader")
+  public RegisterReaderResponse registerReader(
+      @Valid @RequestBody RegisterReaderRequest request) {
+    return authService.registerReader(request);
   }
 
-  @PostMapping("/reader/register")
-  public ReaderRegisterResponse readerRegister(
-      @Valid @RequestBody ReaderRegisterRequest request) {
-    return readerService.register(request);
+  @PostMapping(value = "/register-reviewer", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public RegisterReviewerResponse registerReviewer(
+      @Valid @RequestPart("info") RegisterReviewerInfo info,
+      @RequestPart("backgroundUploads") List<MultipartFile> files
+  ) {
+    return authService.registerReviewer(info, files);
   }
 
-  @GetMapping("/reader/verify-email")
-  public String verifyReaderEmail(@RequestParam("token") String token) {
-    readerService.verifyEmail(token);
-    return "Email has been verified successfully";
+  @PostMapping("/register-organization")
+  public RegisterOrganizationResponse registerOrganization(
+      @Valid @RequestPart("info") RegisterOrganizationInfo info,
+      @RequestPart("certificateUploads") List<MultipartFile> files
+  ) {
+    return authService.registerOrganization(info, files);
+  }
+
+  @PostMapping("/verify-email")
+  public void verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+    authService.verifyEmail(request);
   }
 
   @PostMapping("/login")
@@ -60,6 +74,11 @@ public class AuthController {
   public void changePassword(@Valid @RequestBody ChangePasswordRequest request,
       @AuthenticationPrincipal UserPrincipal principal) {
     authService.changePassword(principal.getId(), principal.getRole(), request);
+  }
+
+  @GetMapping("/hello")
+  public SuccessResponse<?> test() {
+    return SuccessResponse.ofMessage("Hello World");
   }
 
 }

@@ -21,7 +21,7 @@ public class LoggingFilter implements Filter {
     filterChain.doFilter(servletRequest, servletResponse);
     long duration = System.currentTimeMillis() - startTime;
 
-    System.out.println("Request : " + httpRequest.getMethod() +
+    System.out.println("**Request : " + httpRequest.getMethod() +
         " " + httpRequest.getRequestURL() + " done in " + duration +
         "ms with code " + httpResponse.getStatus());
   }

@@ -43,7 +43,7 @@ public class Reader extends BaseEntity {
   private String avatarUrl;
 
   @Column(nullable = false)
-  private Integer coinBalance = 0;
+  private Integer point = 0;
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)

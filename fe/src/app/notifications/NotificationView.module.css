@@ -1,0 +1,155 @@
+/* Notification View Page Styles - Dark/Light Mode Support */
+
+/* Page Container */
+.pageContainer {
+  @apply rounded-[10px] border border-stroke bg-white p-4 shadow-1 sm:p-7.5;
+}
+:global(html.dark) .pageContainer {
+  @apply border-dark-3 bg-gray-dark;
+}
+
+/* Header Section */
+.pageHeader {
+  @apply mb-6 flex items-center justify-between;
+}
+
+.pageTitle {
+  @apply text-xl font-bold text-dark;
+}
+:global(html.dark) .pageTitle {
+  @apply text-white;
+}
+
+/* Unread Badge */
+.unreadBadge {
+  @apply rounded-full bg-primary px-3 py-1 text-sm font-medium text-white;
+}
+
+/* Notifications List */
+.notificationsContainer {
+  @apply space-y-3;
+}
+
+/* Notification Item */
+.notificationCard {
+  @apply flex cursor-pointer items-start gap-4 rounded-lg border p-4 transition-colors hover:bg-gray-2;
+}
+:global(html.dark) .notificationCard {
+  @apply hover:bg-dark-3;
+}
+
+.notificationCardRead {
+  @apply border-stroke;
+}
+:global(html.dark) .notificationCardRead {
+  @apply border-dark-3;
+}
+
+.notificationCardUnread {
+  @apply border-primary bg-blue-light-5;
+}
+:global(html.dark) .notificationCardUnread {
+  @apply border-primary bg-dark-2;
+}
+
+/* Type Indicator */
+.typeIndicator {
+  @apply mt-1 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded-full;
+}
+
+.typeIndicatorDot {
+  @apply h-2 w-2 rounded-full bg-white;
+}
+
+/* Content Section */
+.notificationContent {
+  @apply flex-1;
+}
+
+.notificationTitle {
+  @apply text-base font-medium;
+}
+
+.notificationTitleRead {
+  @apply text-dark-5;
+}
+:global(html.dark) .notificationTitleRead {
+  @apply text-dark-6;
+}
+
+.notificationTitleUnread {
+  @apply text-dark;
+}
+:global(html.dark) .notificationTitleUnread {
+  @apply text-white;
+}
+
+.notificationSummary {
+  @apply mt-1 text-sm text-dark-6;
+}
+:global(html.dark) .notificationSummary {
+  @apply text-dark-7;
+}
+
+.notificationTimestamp {
+  @apply mt-2 text-xs text-dark-6;
+}
+:global(html.dark) .notificationTimestamp {
+  @apply text-dark-7;
+}
+
+/* Unread Dot */
+.unreadDot {
+  @apply flex-shrink-0;
+}
+
+.unreadDotIndicator {
+  @apply h-2 w-2 rounded-full bg-primary;
+}
+
+/* Loading State */
+.loadingContainer {
+  @apply flex items-center justify-center py-12;
+}
+
+.loadingSpinner {
+  @apply h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent;
+}
+
+/* Error State */
+.errorContainer {
+  @apply rounded-lg border-l-4 border-red bg-red-light-6 p-4 text-red-dark;
+}
+:global(html.dark) .errorContainer {
+  @apply border-red bg-dark-2 text-red;
+}
+
+/* Empty State */
+.emptyContainer {
+  @apply flex flex-col items-center justify-center rounded-[10px] border border-stroke bg-white p-12 shadow-1;
+}
+:global(html.dark) .emptyContainer {
+  @apply border-dark-3 bg-gray-dark;
+}
+
+.emptyIcon {
+  @apply h-16 w-16 text-gray-400;
+}
+:global(html.dark) .emptyIcon {
+  @apply text-gray-600;
+}
+
+.emptyTitle {
+  @apply mt-4 text-lg font-medium text-dark;
+}
+:global(html.dark) .emptyTitle {
+  @apply text-white;
+}
+
+.emptySubtitle {
+  @apply mt-2 text-sm text-gray-600;
+}
+:global(html.dark) .emptySubtitle {
+  @apply text-gray-400;
+}
+

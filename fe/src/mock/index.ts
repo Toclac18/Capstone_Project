@@ -7,6 +7,7 @@
 
 import { setupMockContactAdmin } from "./contact-admin";
 import { setupMockAuth } from "./auth";
+import { setupMockNotification } from "./notification";
 
 export function setupMocks() {
   if (process.env.NODE_ENV !== "development") return;
@@ -14,4 +15,5 @@ export function setupMocks() {
   console.info("[MOCK] Starting mock API handlers...");
   setupMockAuth();
   setupMockContactAdmin();
+  setupMockNotification();
 }

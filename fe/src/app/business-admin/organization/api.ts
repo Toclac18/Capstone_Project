@@ -12,17 +12,27 @@ export type {
   OrganizationQueryParams,
 };
 
+// BE response wrapper
+interface SuccessResponse<T> {
+  data: T;
+  meta?: any;
+}
+
 /**
  * Get list organizations with query parameters
  */
 export async function getOrganizations(
   params?: OrganizationQueryParams,
 ): Promise<OrganizationResponse> {
-  const res = await apiClient.post<OrganizationResponse>(
+  const res = await apiClient.post<SuccessResponse<OrganizationResponse>>(
     "/organizations",
     params || {},
   );
-  return res.data;
+  // Handle SuccessResponse wrapper
+  if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+    return (res.data as SuccessResponse<OrganizationResponse>).data;
+  }
+  return res.data as OrganizationResponse;
 }
 
 /**
@@ -31,12 +41,28 @@ export async function getOrganizations(
 export async function updateOrganizationStatus(
   id: string,
   status: "ACTIVE" | "INACTIVE",
-): Promise<Organization> {
-  const res = await apiClient.patch<Organization>(
+): Promise<Organization & {
+  totalMembers?: number;
+  totalDocuments?: number;
+}> {
+  const res = await apiClient.patch<SuccessResponse<Organization & {
+    totalMembers?: number;
+    totalDocuments?: number;
+  }>>(
     `/organizations/${id}/status`,
     { status },
   );
-  return res.data;
+  // Handle SuccessResponse wrapper
+  if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+    return (res.data as SuccessResponse<Organization & {
+      totalMembers?: number;
+      totalDocuments?: number;
+    }>).data;
+  }
+  return res.data as Organization & {
+    totalMembers?: number;
+    totalDocuments?: number;
+  };
 }
 
 /**
@@ -48,11 +74,21 @@ export async function getOrganization(
   totalMembers?: number;
   totalDocuments?: number;
 }> {
-  const res = await apiClient.get<Organization & {
+  const res = await apiClient.get<SuccessResponse<Organization & {
     totalMembers?: number;
     totalDocuments?: number;
-  }>(`/organizations/${id}`);
-  return res.data;
+  }>>(`/organizations/${id}`);
+  // Handle SuccessResponse wrapper
+  if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+    return (res.data as SuccessResponse<Organization & {
+      totalMembers?: number;
+      totalDocuments?: number;
+    }>).data;
+  }
+  return res.data as Organization & {
+    totalMembers?: number;
+    totalDocuments?: number;
+  };
 }
 
 /**
@@ -61,9 +97,14 @@ export async function getOrganization(
 export async function deleteOrganization(
   id: string,
 ): Promise<{ message: string }> {
-  const res = await apiClient.delete<{ message: string }>(
+  const res = await apiClient.delete<SuccessResponse<{ message: string }>>(
     `/organizations/${id}`,
   );
-  return res.data;
+  // Handle SuccessResponse wrapper - delete might return null data
+  if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+    const data = (res.data as SuccessResponse<{ message: string } | null>).data;
+    return data || { message: "Organization deleted successfully" };
+  }
+  return res.data as { message: string } || { message: "Organization deleted successfully" };
 }
 

@@ -8,7 +8,7 @@ import styles from "../styles.module.css";
 const STATUS_OPTIONS = [
   { value: "", label: "All Status" },
   { value: "ACTIVE", label: "Active" },
-  { value: "INACTIVE", label: "Inactive" },
+  { value: "DEACTIVE", label: "Inactive" },
 ] as const;
 
 const SORT_OPTIONS = [

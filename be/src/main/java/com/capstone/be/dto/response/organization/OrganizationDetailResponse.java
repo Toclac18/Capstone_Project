@@ -1,5 +1,7 @@
 package com.capstone.be.dto.response.organization;
 
+import com.capstone.be.domain.enums.OrganizationStatus;
+import com.capstone.be.domain.enums.OrganizationType;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -13,11 +15,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class OrganizationDetailResponse {
   private UUID id;
+  private String name;
+  private OrganizationType type;
   private String email;
   private String hotline;
   private String logo;
   private String address;
-  private String status;
+  private String registrationNumber;
+  private OrganizationStatus status;
   private String adminName;
   private String adminEmail;
   private Boolean active;

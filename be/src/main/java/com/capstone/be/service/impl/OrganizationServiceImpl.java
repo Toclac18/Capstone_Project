@@ -1,6 +1,7 @@
 package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.Organization;
+import com.capstone.be.domain.enums.OrganizationStatus;
 import com.capstone.be.dto.request.organization.OrganizationQueryRequest;
 import com.capstone.be.dto.request.organization.UpdateOrganizationStatusRequest;
 import com.capstone.be.dto.response.organization.OrganizationDetailResponse;
@@ -87,24 +88,24 @@ public class OrganizationServiceImpl implements OrganizationService {
   @Override
   @Transactional
   public OrganizationDetailResponse updateStatus(UUID id, UpdateOrganizationStatusRequest request) {
-    if (request.getStatus() == null || request.getStatus().isBlank()) {
+    if (request.getStatus() == null) {
       throw new RuntimeException("Status is required");
-    }
-    String status = request.getStatus();
-    if (!"ACTIVE".equals(status) && !"INACTIVE".equals(status)) {
-      throw new RuntimeException("Status must be ACTIVE or INACTIVE");
     }
 
     Organization organization = organizationRepository.findById(id)
         .orElseThrow(() -> new RuntimeException("Organization not found"));
 
-    if ("ACTIVE".equals(status)) {
+    OrganizationStatus status = request.getStatus();
+    organization.setStatus(status);
+    
+    // Update active field based on status
+    if (status == OrganizationStatus.ACTIVE) {
       organization.setActive(true);
-      organization.setStatus("ACTIVE");
-    } else {
+    } else if (status == OrganizationStatus.DEACTIVE || status == OrganizationStatus.DELETED) {
       organization.setActive(false);
-      organization.setStatus("INACTIVE");
     }
+    // PENDING_VERIFICATION can have active = true or false depending on business logic
+    
     // updatedAt will be handled by auditing; touch entity to mark update
     organization.setUpdatedAt(LocalDateTime.now());
     Organization saved = organizationRepository.save(organization);
@@ -124,10 +125,12 @@ public class OrganizationServiceImpl implements OrganizationService {
   private boolean applySearch(Organization org, String search) {
     if (search == null || search.isBlank()) return true;
     String q = search.toLowerCase(Locale.ROOT);
-    return contains(org.getEmail(), q)
+    return contains(org.getName(), q)
+        || contains(org.getEmail(), q)
         || contains(org.getHotline(), q)
         || contains(org.getAdminEmail(), q)
-        || contains(org.getAddress(), q);
+        || contains(org.getAddress(), q)
+        || contains(org.getRegistrationNumber(), q);
   }
 
   private boolean contains(String field, String q) {
@@ -136,13 +139,19 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   private boolean applyStatus(Organization org, String status) {
     if (status == null || status.isBlank()) return true;
-    if ("ACTIVE".equals(status)) {
-      return "ACTIVE".equals(org.getStatus()) || Boolean.TRUE.equals(org.getActive());
+    try {
+      OrganizationStatus filterStatus = OrganizationStatus.valueOf(status.toUpperCase());
+      return org.getStatus() == filterStatus;
+    } catch (IllegalArgumentException e) {
+      // If status string doesn't match enum, try legacy logic
+      if ("ACTIVE".equalsIgnoreCase(status)) {
+        return org.getStatus() == OrganizationStatus.ACTIVE || Boolean.TRUE.equals(org.getActive());
+      }
+      if ("DEACTIVE".equalsIgnoreCase(status) || "INACTIVE".equalsIgnoreCase(status)) {
+        return org.getStatus() == OrganizationStatus.DEACTIVE || Boolean.FALSE.equals(org.getActive());
+      }
+      return true;
     }
-    if ("INACTIVE".equals(status)) {
-      return "INACTIVE".equals(org.getStatus()) || Boolean.FALSE.equals(org.getActive());
-    }
-    return true;
   }
 
   private boolean applyDateRange(Organization org, String dateFrom, String dateTo) {
@@ -167,12 +176,14 @@ public class OrganizationServiceImpl implements OrganizationService {
   private Comparator<Organization> buildComparator(String sortBy) {
     if (sortBy == null || sortBy.isBlank()) sortBy = "createdAt";
     switch (sortBy) {
+      case "name":
+        return Comparator.comparing(o -> nullSafeString(o.getName()));
       case "email":
         return Comparator.comparing(o -> nullSafeString(o.getEmail()));
       case "hotline":
         return Comparator.comparing(o -> nullSafeString(o.getHotline()));
       case "status":
-        return Comparator.comparing(o -> nullSafeString(o.getStatus()));
+        return Comparator.comparing(o -> o.getStatus() != null ? o.getStatus().name() : "");
       case "active":
         return Comparator.comparing(o -> Boolean.TRUE.equals(o.getActive()));
       case "createdAt":

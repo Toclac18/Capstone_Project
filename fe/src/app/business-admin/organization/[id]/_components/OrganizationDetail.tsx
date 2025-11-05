@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import type { Organization } from "../../api";
-// TODO: When backend is ready, uncomment this import:
-// import { getOrganization, updateOrganizationStatus } from "../../api";
+import { getOrganization, updateOrganizationStatus } from "../../api";
 import StatusConfirmation from "@/components/ui/status-confirmation";
 import styles from "../styles.module.css";
 
@@ -20,74 +19,18 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // TODO: Remove this fake data when backend is ready
-  // Fake data - In production, fetch from API using getOrganization()
-  const FAKE_ORGANIZATIONS: (Organization & {
-    totalMembers?: number;
-    totalDocuments?: number;
-  })[] = [
-    {
-      id: "org-001",
-      organizationName: "Tech Solutions Inc",
-      email: "tech-solutions-inc@example.com",
-      hotline: "+11234567890",
-      logo: "https://via.placeholder.com/128?text=TS",
-      address: "123 Tech Street, San Francisco, CA 94102",
-      status: "ACTIVE",
-      adminName: "John Admin",
-      adminEmail: "admin.tech.solutions.inc@example.com",
-      active: true,
-      deleted: false,
-      createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      totalMembers: 150,
-      totalDocuments: 324,
-      updatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    // Add more fake data as needed
-  ];
-
   useEffect(() => {
     fetchOrganization();
   }, [organizationId]);
 
-  // TODO: Replace this with API call when backend is ready
-  // Replace with: const data = await getOrganization(organizationId);
   const fetchOrganization = async () => {
     setLoading(true);
     setError(null);
     setSuccess(null);
 
-    // Simulate API delay - Remove when using real API
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
     try {
-      const found = FAKE_ORGANIZATIONS.find((org) => org.id === organizationId);
-      if (!found) {
-        // Fallback: generate from basic info
-        const fallback: Organization & {
-          totalMembers?: number;
-          totalDocuments?: number;
-        } = {
-          id: organizationId,
-          organizationName: `Organization ${organizationId}`,
-          email: `org-${organizationId}@example.com`,
-          hotline: "+11234567890",
-          logo: undefined,
-          address: `Address for ${organizationId}`,
-          status: "ACTIVE",
-          adminName: `Admin ${organizationId}`,
-          adminEmail: `admin.${organizationId}@example.com`,
-          active: true,
-          deleted: false,
-          createdAt: new Date().toISOString(),
-          totalMembers: Math.floor(Math.random() * 200) + 50,
-          totalDocuments: Math.floor(Math.random() * 500) + 100,
-          updatedAt: new Date().toISOString(),
-        };
-        setOrganization(fallback);
-      } else {
-        setOrganization(found);
-      }
+      const data = await getOrganization(organizationId);
+      setOrganization(data);
     } catch (e: unknown) {
       const errorMessage =
         e instanceof Error ? e.message : "Failed to fetch organization";
@@ -97,24 +40,15 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
     }
   };
 
-  // TODO: Replace this with API call when backend is ready
-  // Replace with: await updateOrganizationStatus(organization.id, newStatus);
   const handleStatusUpdate = async (newStatus: "ACTIVE" | "INACTIVE") => {
     setLoading(true);
     setError(null);
     setSuccess(null);
 
-    // Simulate API delay - Remove when using real API
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
     try {
       if (organization) {
-        setOrganization({
-          ...organization,
-          status: newStatus,
-          active: newStatus === "ACTIVE",
-          updatedAt: new Date().toISOString(),
-        });
+        const updated = await updateOrganizationStatus(organization.id, newStatus);
+        setOrganization(updated);
         setSuccess(`Organization status updated to ${newStatus} successfully`);
       }
     } catch (e: unknown) {

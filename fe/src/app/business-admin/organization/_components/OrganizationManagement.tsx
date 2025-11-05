@@ -1,90 +1,23 @@
 // src/app/business-admin/organization/_components/OrganizationManagement.tsx
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import type {
   Organization,
   OrganizationResponse,
   OrganizationQueryParams,
 } from "../api";
-// TODO: When backend is ready, uncomment these imports:
-// import {
-//   getOrganizations,
-//   updateOrganizationStatus,
-//   deleteOrganization,
-// } from "../api";
+import {
+  getOrganizations,
+  deleteOrganization,
+} from "../api";
 import { OrganizationFilters } from "./OrganizationFilters";
 import { Pagination } from "@/app/business-admin/users/_components/Pagination";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
 import { Eye } from "lucide-react";
 import styles from "../styles.module.css";
 
-// TODO: Remove this fake data when backend is ready
-// Fake data tạm thời - Remove when switching to API
-const generateFakeOrganizations = (): Organization[] => {
-  const names = [
-    "Tech Solutions Inc",
-    "Digital Innovations Ltd",
-    "Global Enterprises Corp",
-    "Smart Systems Group",
-    "Future Technologies LLC",
-    "Innovation Hub Co",
-    "Creative Minds Agency",
-    "Premium Services Ltd",
-    "Advanced Solutions Inc",
-    "Excellence Corporation",
-    "Prime Business Group",
-    "Modern Systems Ltd",
-    "Elite Technologies Co",
-    "Professional Services Inc",
-    "Strategic Solutions Corp",
-    "Dynamic Enterprises LLC",
-    "Visionary Systems Group",
-    "Prime Innovation Co",
-    "Advanced Business Ltd",
-    "Excellence Technologies Inc",
-    "Tech Corp Solutions",
-    "Digital World Inc",
-    "Global Tech Ltd",
-    "Smart Digital Co",
-    "Future Systems LLC",
-  ];
-
-  const now = Date.now();
-  const oneDayMs = 24 * 60 * 60 * 1000;
-
-  return names.map((name, i) => {
-    const email = name.toLowerCase().replace(/\s+/g, "-") + "@example.com";
-    const hotline = `+1${Math.floor(Math.random() * 9000000000) + 1000000000}`;
-    const adminEmail = `admin.${name.toLowerCase().replace(/\s+/g, ".")}@example.com`;
-    const status: string = Math.random() > 0.3 ? "ACTIVE" : "INACTIVE";
-    const active = status === "ACTIVE";
-    const daysAgo = Math.floor(Math.random() * 180);
-    const createdAt = new Date(now - daysAgo * oneDayMs).toISOString();
-
-    return {
-      id: `org-${String(i + 1).padStart(3, "0")}`,
-      organizationName: name, // For display
-      email,
-      hotline,
-      logo: i % 3 === 0 ? `https://via.placeholder.com/64?text=${name.substring(0, 2).toUpperCase()}` : undefined,
-      address: `${i + 1} ${name} Street, City, Country`,
-      status,
-      adminName: `Admin ${name}`,
-      adminEmail,
-      active,
-      deleted: false,
-      createdAt,
-      updatedAt: createdAt,
-    };
-  });
-};
-
-// Fake data store trong component
-const FAKE_ORGANIZATIONS = generateFakeOrganizations();
-
 export function OrganizationManagement() {
-  const [allOrganizations, setAllOrganizations] = useState<Organization[]>(FAKE_ORGANIZATIONS);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,91 +35,19 @@ export function OrganizationManagement() {
     sortOrder: "desc",
   });
 
-  // Filter và paginate fake data
-  const filteredAndPaginated = useMemo(() => {
-    let filtered = [...allOrganizations];
-
-    // Search
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(
-        (org) =>
-          (org.organizationName || org.email).toLowerCase().includes(searchLower) ||
-          org.email.toLowerCase().includes(searchLower) ||
-          org.hotline.toLowerCase().includes(searchLower) ||
-          org.adminEmail.toLowerCase().includes(searchLower) ||
-          (org.address && org.address.toLowerCase().includes(searchLower))
-      );
-    }
-
-    // Status filter
-    if (filters.status) {
-      filtered = filtered.filter((org) => org.status === filters.status);
-    }
-
-    // Date range filter
-    if (filters.dateFrom) {
-      const dateFrom = new Date(filters.dateFrom);
-      filtered = filtered.filter((org) => {
-        if (!org.createdAt) return false;
-        return new Date(org.createdAt) >= dateFrom;
-      });
-    }
-
-    if (filters.dateTo) {
-      const dateTo = new Date(filters.dateTo);
-      dateTo.setHours(23, 59, 59, 999);
-      filtered = filtered.filter((org) => {
-        if (!org.createdAt) return false;
-        return new Date(org.createdAt) <= dateTo;
-      });
-    }
-
-    // Sort
-    const sortBy = filters.sortBy || "createdAt";
-    const sortOrder = filters.sortOrder || "desc";
-    filtered.sort((a, b) => {
-      let aValue: any = a[sortBy as keyof Organization] || "";
-      let bValue: any = b[sortBy as keyof Organization] || "";
-
-      if (typeof aValue === "string") {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-
-      if (sortOrder === "asc") {
-        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
-      } else {
-        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
-      }
-    });
-
-    // Pagination
-    const page = filters.page || 1;
-    const limit = itemsPerPage;
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginated = filtered.slice(startIndex, endIndex);
-
-    return {
-      organizations: paginated,
-      total: filtered.length,
-      page,
-    };
-  }, [allOrganizations, filters, itemsPerPage]);
-
-  // TODO: Replace this with API call when backend is ready
-  // Fetch organizations với fake data - Replace with getOrganizations() API call
+  // Fetch organizations from API
   const fetchOrganizations = async (queryParams: OrganizationQueryParams) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
     try {
-      setFilters(queryParams);
+      const updatedFilters = { ...queryParams, limit: itemsPerPage };
+      setFilters(updatedFilters);
+      const response: OrganizationResponse = await getOrganizations(updatedFilters);
+      setOrganizations(response.organizations);
+      setTotalItems(response.total);
+      setCurrentPage(response.page);
     } catch (e: unknown) {
       const errorMessage =
         e instanceof Error
@@ -199,13 +60,6 @@ export function OrganizationManagement() {
       setLoading(false);
     }
   };
-
-  // Update organizations khi filters thay đổi
-  useEffect(() => {
-    setOrganizations(filteredAndPaginated.organizations);
-    setTotalItems(filteredAndPaginated.total);
-    setCurrentPage(filteredAndPaginated.page);
-  }, [filteredAndPaginated]);
 
   // Initial load
   useEffect(() => {
@@ -229,12 +83,8 @@ export function OrganizationManagement() {
     setError(null);
     setSuccess(null);
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
     try {
-      // Delete from fake data
-      setAllOrganizations((prev) => prev.filter((org) => org.id !== String(orgId)));
+      await deleteOrganization(String(orgId));
       setSuccess("Organization deleted successfully");
       await fetchOrganizations(filters);
     } catch (e: unknown) {

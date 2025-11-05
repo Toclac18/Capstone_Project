@@ -18,7 +18,8 @@ export const useImportDetail = () => {
 
 export function useImportEvents(
   id: string,
-  onUpdate: (u: any) => void,
+  onProgress: (data: any) => void,
+  onRow: (row: any) => void,
   onComplete?: () => void
 ) {
   useEffect(() => {
@@ -26,10 +27,11 @@ export function useImportEvents(
     const es = new EventSource(`/api/org-admin/imports/${id}/events`);
 
     es.addEventListener("progress", (ev: MessageEvent) => {
-      try {
-        const data = JSON.parse(ev.data);
-        onUpdate((prev: any) => ({ ...prev, ...data }));
-      } catch {}
+      try { onProgress(JSON.parse(ev.data)); } catch {}
+    });
+
+    es.addEventListener("row", (ev: MessageEvent) => {
+      try { onRow(JSON.parse(ev.data)); } catch {}
     });
 
     es.addEventListener("complete", () => {
@@ -37,12 +39,9 @@ export function useImportEvents(
       es.close();
     });
 
-    es.onerror = () => {
-      // optional: close or retry
-      // es.close();
-    };
+    es.onerror = () => { es.close(); };
     return () => es.close();
-  }, [id, onUpdate, onComplete]);
+  }, [id, onProgress, onRow, onComplete]);
 }
 
 export async function fetchDetail(id: string) {

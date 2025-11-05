@@ -3,198 +3,129 @@
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useImportEvents } from "../provider";
 
-// === helpers: fetch detail & SSE ===
 async function fetchImportDetail(id: string) {
   const qs = new URLSearchParams({ id });
-  const r = await fetch(`/api/org-admin/imports?${qs.toString()}`, {
-    cache: "no-store",
-  });
+  const r = await fetch(`/api/org-admin/imports?${qs.toString()}`, { cache: "no-store" });
   if (!r.ok) throw new Error(`detail ${r.status}`);
   return r.json();
 }
 
-function useImportEvents(
-  id: string,
-  onUpdate: (updater: (prev: any) => any) => void,
-  onComplete?: () => void,
-) {
-  useEffect(() => {
-    if (!id) return;
-    const es = new EventSource(`/api/org-admin/imports/${id}/events`);
-    es.addEventListener("progress", (ev: MessageEvent) => {
-      try {
-        const data = JSON.parse(ev.data);
-        onUpdate((prev) => ({ ...prev, ...data }));
-      } catch {}
-    });
-    es.addEventListener("complete", () => {
-      onComplete?.();
-      es.close();
-    });
-    es.onerror = () => {};
-    return () => es.close();
-  }, [id, onUpdate, onComplete]);
-}
-
-function computePercent(processed?: number, total?: number) {
-  if (!total || total <= 0) return 0;
-  return Math.min(100, Math.round(((processed ?? 0) * 100) / total));
-}
-
-// === optional small presentational components (nếu bạn đã có thì dùng của bạn) ===
-function LabelVal({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="font-medium">{children}</span>
-    </div>
-  );
-}
-
-function Badge({
-  color = "gray",
-  children,
-}: {
-  color?: "green" | "red" | "gray" | "blue";
-  children: React.ReactNode;
-}) {
-  const map: Record<string, string> = {
-    green: "bg-green-100 text-green-700",
-    red: "bg-red-100 text-red-700",
-    blue: "bg-blue-100 text-blue-700",
-    gray: "bg-gray-100 text-gray-700",
-  };
-  return (
-    <span className={`rounded px-2 py-0.5 text-sm ${map[color]}`}>
-      {children}
-    </span>
-  );
+function percent(p: number, t: number) {
+  if (!t || t <= 0) return 0;
+  return Math.min(100, Math.round((p * 100) / t));
 }
 
 export default function DetailClient() {
   const p = useParams<{ id: string | string[] }>();
-  const id = useMemo(
-    () => (Array.isArray(p?.id) ? p!.id[0] : p?.id) ?? "",
-    [p],
-  );
+  const id = useMemo(() => (Array.isArray(p?.id) ? p!.id[0] : p?.id) ?? "", [p]);
 
   const [state, setState] = useState<any>({
+    id: "", fileName: "", createdAt: "", createdBy: "",
     status: "WAITING",
-    processedRows: 0,
-    totalRows: 0,
-    successCount: 0,
-    failureCount: 0,
+    totalRows: 0, processedRows: 0, successCount: 0, failureCount: 0,
     percent: 0,
-    // meta:
-    id: "",
-    fileName: "",
-    createdAt: "",
-    createdBy: "",
     results: [] as any[],
   });
 
-  // 1) Load detail khi mở trang
+  // initial load
   useEffect(() => {
     if (!id) return;
     (async () => {
       try {
-        const detail = await fetchImportDetail(id);
+        const d = await fetchImportDetail(id);
         setState((prev: any) => ({
           ...prev,
-          ...detail,
-          percent: computePercent(detail.processedRows, detail.totalRows),
-          results: Array.isArray(detail.results) ? detail.results : [],
+          ...d,
+          percent: percent(d.processedRows ?? 0, d.totalRows ?? 0),
+          results: Array.isArray(d.results) ? d.results : [],
         }));
       } catch (e) {
-        console.error("load detail error", e);
+        console.error(e);
       }
     })();
   }, [id]);
 
-  // 2) Realtime SSE
-  const onSseUpdate = useCallback((updater: (prev: any) => any) => {
+  // handle progress + row updates
+  const onProgress = useCallback((u: any) => {
     setState((prev: any) => {
-      const next = updater(prev);
-      next.percent = computePercent(next.processedRows, next.totalRows);
-      return next;
+      const processed = u.processedRows ?? prev.processedRows;
+      const total = u.totalRows ?? prev.totalRows;
+      return {
+        ...prev,
+        ...u,
+        percent: percent(processed, total),
+      };
     });
   }, []);
-  useImportEvents(id, onSseUpdate);
 
-  // 3) Tải CSV
+  const onRow = useCallback((row: any) => {
+    setState((prev: any) => {
+      // replace by row number if existed, else append
+      const idx = prev.results.findIndex((r: any) => r.row === row.row);
+      const results = [...prev.results];
+      if (idx >= 0) results[idx] = row;
+      else results.push(row);
+
+      const processed = row.processedRows ?? prev.processedRows;
+      const total = row.totalRows ?? prev.totalRows;
+      return {
+        ...prev,
+        results,
+        processedRows: processed,
+        totalRows: total,
+        successCount: row.successCount ?? prev.successCount,
+        failureCount: row.failureCount ?? prev.failureCount,
+        percent: percent(processed, total),
+        status: row.status ?? prev.status,
+      };
+    });
+  }, []);
+
+  useImportEvents(id, onProgress, onRow);
+
   const csvHref = useMemo(() => {
     const qs = new URLSearchParams({ id, download: "csv" });
     return `/api/org-admin/imports?${qs.toString()}`;
   }, [id]);
 
-  const statusColor: "green" | "red" | "blue" | "gray" =
-    state.status === "COMPLETED"
-      ? "green"
-      : state.status === "FAILED"
-        ? "red"
-        : state.status === "PROCESSING"
-          ? "blue"
-          : "gray";
+  const statusColor =
+    state.status === "COMPLETED" ? "text-green-700"
+    : state.status === "FAILED" ? "text-red-700"
+    : "text-blue-700";
 
   return (
-    <div className="p-6">
+    <div className="p-6 space-y-6">
       <div>
-        <Link
-          href="/org-admin/imports"
-          className="inline-flex items-center rounded border px-3 py-1.5 text-sm hover:bg-gray-50"
-        >
-          ← Back to Imports
+        <Link href="/org-admin/imports" className="inline-flex items-center px-3 py-1.5 text-sm border rounded hover:bg-gray-50">
+          ← Back to imports
         </Link>
       </div>
+
       <h1 className="text-xl font-bold">Import #{id || "…"}</h1>
 
-      {/* Meta block */}
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <LabelVal label="File">{state.fileName || "—"}</LabelVal>
-        <LabelVal label="Created at">
-          {state.createdAt ? new Date(state.createdAt).toLocaleString() : "—"}
-        </LabelVal>
-        <LabelVal label="By">{state.createdBy || "—"}</LabelVal>
-        <LabelVal label="Status">
-          <Badge color={statusColor}>{state.status}</Badge>
-        </LabelVal>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div><div className="text-sm text-gray-500">File</div><div className="font-medium">{state.fileName || "—"}</div></div>
+        <div><div className="text-sm text-gray-500">Created at</div><div className="font-medium">{state.createdAt ? new Date(state.createdAt).toLocaleString() : "—"}</div></div>
+        <div><div className="text-sm text-gray-500">By</div><div className="font-medium">{state.createdBy || "—"}</div></div>
+        <div><div className="text-sm text-gray-500">Status</div><div className={`font-medium ${statusColor}`}>{state.status}</div></div>
       </div>
 
-      {/* Progress block */}
-      <div className="mt-6">
-        <div>
-          Progress: {state?.percent ?? 0}% ({state?.processedRows ?? 0}/
-          {state?.totalRows ?? 0})
-        </div>
-        <div>
-          Success: {state?.successCount ?? 0} — Failed:{" "}
-          {state?.failureCount ?? 0}
-        </div>
-        <div className="mt-2 h-2 w-full rounded bg-gray-200">
-          <div
-            className="h-2 rounded bg-blue-600"
-            style={{ width: `${state?.percent ?? 0}%` }}
-          />
+      <div>
+        <div>Progress: {state.percent}% ({state.processedRows}/{state.totalRows})</div>
+        <div>Success: {state.successCount} — Failed: {state.failureCount}</div>
+        <div className="w-full bg-gray-200 h-2 rounded mt-2">
+          <div className="h-2 bg-blue-600 rounded" style={{ width: `${state.percent}%` }} />
         </div>
         <div className="mt-3">
-          <a
-            className="inline-flex items-center rounded border px-3 py-1.5 text-sm hover:bg-gray-50"
-            href={csvHref}
-          >
+          <a className="inline-flex items-center rounded px-3 py-1.5 border text-sm hover:bg-gray-50" href={csvHref}>
             ⬇︎ Download result (.csv)
           </a>
         </div>
       </div>
 
-      {/* Results table */}
-      <div className="mt-8">
+      <div>
         {state.results?.length ? (
           <div className="overflow-x-auto rounded border">
             <table className="min-w-full text-sm">
@@ -225,7 +156,7 @@ export default function DetailClient() {
             </table>
           </div>
         ) : (
-          <div className="text-sm text-gray-500">No row results.</div>
+          <div className="text-sm text-gray-500">Waiting for results…</div>
         )}
       </div>
     </div>

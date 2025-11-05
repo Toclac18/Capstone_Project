@@ -3,18 +3,22 @@ package com.capstone.be.controller;
 import com.capstone.be.dto.response.importReader.ImportDetailResponse;
 import com.capstone.be.dto.response.importReader.ImportListResponse;
 import com.capstone.be.service.ImportService;
+import com.capstone.be.service.impl.ProgressBroadcaster;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/api/org-admin/imports")
 public class ImportController {
   private final ImportService service;
+  private final ProgressBroadcaster broadcaster;
 
-  public ImportController(ImportService service) {
+  public ImportController(ImportService service, ProgressBroadcaster broadcaster) {
     this.service = service;
+    this.broadcaster = broadcaster;
   }
 
   @GetMapping
@@ -62,5 +66,10 @@ public class ImportController {
             MediaType.parseMediaType(
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
         .body(data);
+  }
+
+  @GetMapping("/{id}/events")
+  public SseEmitter events(@PathVariable String id) {
+    return broadcaster.subscribe(id);
   }
 }

@@ -1,5 +1,3 @@
-// src/mock/imports.ts
-
 export type ImportStatus =
   | "PENDING"
   | "PROCESSING"
@@ -20,7 +18,7 @@ export type RowResult = {
 export type ImportJob = {
   id: string;
   fileName: string;
-  createdAt: string; // ISO
+  createdAt: string;
   createdBy: string;
   totalRows: number;
   processedRows: number;
@@ -30,15 +28,31 @@ export type ImportJob = {
   results: RowResult[];
 };
 
-function iso(d: Date) {
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString();
+// ---- helpers ----
+function isoWithOffset(d: Date) {
+  const pad = (n: number, l = 2) => String(n).padStart(l, "0");
+  const y = d.getFullYear();
+  const m = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const mm = pad(d.getMinutes());
+  const ss = pad(d.getSeconds());
+  const ms = pad(d.getMilliseconds(), 3);
+  const tzo = -d.getTimezoneOffset();
+  const sign = tzo >= 0 ? "+" : "-";
+  const oh = pad(Math.floor(Math.abs(tzo) / 60));
+  const om = pad(Math.abs(tzo) % 60);
+  return `${y}-${m}-${day}T${hh}:${mm}:${ss}.${ms}${sign}${oh}:${om}`;
 }
 
-// --- 2 job mẫu cố định ---
+function nowIso() {
+  return isoWithOffset(new Date());
+}
+
 const jobA: ImportJob = {
   id: "imp-20241015-001",
   fileName: "users_batch_oct15.xlsx",
-  createdAt: iso(new Date("2024-10-15T08:10:00")),
+  createdAt: isoWithOffset(new Date("2024-10-15T08:10:00")),
   createdBy: "alice.nguyen",
   totalRows: 5,
   processedRows: 5,
@@ -57,7 +71,7 @@ const jobA: ImportJob = {
 const jobB: ImportJob = {
   id: "imp-20241102-009",
   fileName: "readers_nov.xlsx",
-  createdAt: iso(new Date("2024-11-02T14:30:00")),
+  createdAt: isoWithOffset(new Date("2024-11-02T14:30:00")),
   createdBy: "bob.tran",
   totalRows: 3,
   processedRows: 3,
@@ -71,14 +85,14 @@ const jobB: ImportJob = {
   ],
 };
 
-// --- thêm ~20 job để có danh sách dài ---
 const extras: ImportJob[] = Array.from({ length: 20 }).map((_, i) => {
   const idx = i + 1;
-  const ok = idx % 5 !== 0; // cứ 5 job thì 1 job FAILED
+  const ok = idx % 5 !== 0;
+  const created = new Date(2025, 0, Math.min(28, (idx % 27) + 1), (idx % 23));
   return {
     id: `imp-2025${String(100 + idx).slice(1)}-${String(idx).padStart(3, "0")}`,
     fileName: `batch_${idx}.xlsx`,
-    createdAt: iso(new Date(2025, 0, Math.min(28, (idx % 27) + 1), (idx % 23))),
+    createdAt: isoWithOffset(created),
     createdBy: idx % 2 ? "system" : "charlie.le",
     totalRows: 20,
     processedRows: 20,
@@ -92,7 +106,7 @@ const extras: ImportJob[] = Array.from({ length: 20 }).map((_, i) => {
       email: `user${idx}_${r}@example.com`,
       imported: ok,
       emailSent: ok,
-      error: ok ? null : (r % 7 === 0 ? "Email invalid" : null),
+      error: ok ? null : r % 7 === 0 ? "Email invalid" : null,
     })),
   };
 });
@@ -124,9 +138,7 @@ export async function mockFetchImports(q: ImportListQuery = {}): Promise<ImportL
   const { page, pageSize, kw, status } = normalize(q);
   let data = mockImports.slice();
   if (kw) {
-    data = data.filter((x) =>
-      [x.fileName, x.createdBy, x.status].some((v) => String(v).toLowerCase().includes(kw)),
-    );
+    data = data.filter((x) => [x.fileName, x.createdBy, x.status].some((v) => String(v).toLowerCase().includes(kw)));
   }
   if (status !== "ALL") data = data.filter((x) => x.status === status);
   data.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -134,7 +146,7 @@ export async function mockFetchImports(q: ImportListQuery = {}): Promise<ImportL
   const start = (page - 1) * pageSize;
   const end = start + pageSize;
   const items = data.slice(start, end).map(({ results, ...rest }) => rest);
-  await new Promise((res) => setTimeout(res, 60)); // giả lập latency
+  await new Promise((res) => setTimeout(res, 60)); // latency
   return { items, total, page, pageSize };
 }
 
@@ -144,24 +156,50 @@ export async function mockFetchImportDetail(id: string): Promise<ImportJob | nul
 }
 
 export async function mockCreateImport(file: File, createdBy: string): Promise<ImportJob> {
-  await new Promise((r) => setTimeout(r, 120));
-  const id = `imp-${Date.now()}`;
-  const results: RowResult[] = [
-    { row: 2, fullName: "Sample A", username: "samplea", email: "a@ex.com", imported: true, emailSent: true },
-    { row: 3, fullName: "Sample B", username: "sampleb", email: "b@ex.com", imported: false, emailSent: false, error: "Duplicate email" },
-  ];
+  await new Promise((r) => setTimeout(r, 120)); // giả lập upload
+
+  const id = `imp-${cryptoRandom()}`;
   const job: ImportJob = {
     id,
     fileName: file.name,
-    createdAt: iso(new Date()),
+    createdAt: nowIso(),
     createdBy,
-    totalRows: results.length,
-    processedRows: results.length,
-    successCount: results.filter(r => r.imported).length,
-    failureCount: results.filter(r => !r.imported).length,
-    status: "COMPLETED",
-    results,
+    totalRows: 0,
+    processedRows: 0,
+    successCount: 0,
+    failureCount: 0,
+    status: "PROCESSING",
+    results: [],
   };
+
   mockImports.unshift(job);
+
+  setTimeout(() => {
+    const results: RowResult[] = [
+      { row: 2, fullName: "Sample A", username: "samplea", email: "a@ex.com", imported: true, emailSent: true },
+      { row: 3, fullName: "Sample B", username: "sampleb", email: "b@ex.com", imported: false, emailSent: false, error: "Duplicate email" },
+      { row: 4, fullName: "Sample C", username: "samplec", email: "c@ex.com", imported: true, emailSent: true },
+    ];
+    const idx = mockImports.findIndex((x) => x.id === id);
+    if (idx >= 0) {
+      const ok = results.filter((r) => r.imported).length;
+      mockImports[idx] = {
+        ...mockImports[idx],
+        totalRows: results.length,
+        processedRows: results.length,
+        successCount: ok,
+        failureCount: results.length - ok,
+        status: "COMPLETED",
+        results,
+      };
+    }
+  }, 1200);
+
   return job;
+}
+
+// simple id
+function cryptoRandom() {
+  // use milliseconds and a small random to keep it readable
+  return `${Date.now().toString(16)}-${Math.floor(Math.random() * 1e6).toString(16)}`;
 }

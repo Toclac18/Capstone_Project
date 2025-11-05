@@ -16,6 +16,44 @@ export const useImportDetail = () => {
   return ctx;
 };
 
+export function useImportEvents(
+  id: string,
+  onUpdate: (u: any) => void,
+  onComplete?: () => void
+) {
+  useEffect(() => {
+    if (!id) return;
+    const es = new EventSource(`/api/org-admin/imports/${id}/events`);
+
+    es.addEventListener("progress", (ev: MessageEvent) => {
+      try {
+        const data = JSON.parse(ev.data);
+        onUpdate((prev: any) => ({ ...prev, ...data }));
+      } catch {}
+    });
+
+    es.addEventListener("complete", () => {
+      onComplete?.();
+      es.close();
+    });
+
+    es.onerror = () => {
+      // optional: close or retry
+      // es.close();
+    };
+    return () => es.close();
+  }, [id, onUpdate, onComplete]);
+}
+
+export async function fetchDetail(id: string) {
+  const qs = new URLSearchParams({ id });
+  const res = await fetch(`/api/org-admin/imports?${qs.toString()}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`detail failed: ${res.status}`);
+  return res.json(); // trả về object { id, status, totalRows, processedRows, ... }
+}
+
 export default function ImportDetailProvider({
   id,
   children,

@@ -29,7 +29,7 @@ public class Reviewer extends BaseEntity {
   @Column(nullable = false)
   private String passwordHash;
 
-  private String ordid; //#temp
+  private String ordid; // #temp
 
   @Column(nullable = false)
   private Boolean active = true;

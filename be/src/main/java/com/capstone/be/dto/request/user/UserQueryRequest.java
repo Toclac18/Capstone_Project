@@ -14,4 +14,3 @@ public class UserQueryRequest {
   private String dateFrom;
   private String dateTo;
 }
-

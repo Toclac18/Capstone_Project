@@ -2,6 +2,14 @@ plugins {
     id 'org.springframework.boot' version '3.3.3'
     id 'io.spring.dependency-management' version '1.1.6'
     id 'java'
+    id 'com.diffplug.spotless' version '6.25.0'
+}
+
+spotless {
+    java {
+        target 'src/*/java/**/*.java'
+        googleJavaFormat()
+    }
 }
 
 group = 'com.capstone'
@@ -34,6 +42,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // Apache POI — Excel reader
+    implementation 'org.apache.poi:poi:5.2.5'        // HSSF/XSSF common
+    implementation 'org.apache.poi:poi-ooxml:5.2.5'
 
     // DB driver
     runtimeOnly 'org.postgresql:postgresql'

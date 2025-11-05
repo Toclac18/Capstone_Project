@@ -15,13 +15,9 @@ import lombok.NoArgsConstructor;
 @Builder
 public class LoginRequest {
 
-  @NotNull
-  private UserRole role;
+  @NotNull private UserRole role;
 
-  @NotBlank
-  @Email
-  private String email;
+  @NotBlank @Email private String email;
 
-  @NotBlank
-  private String password;
+  @NotBlank private String password;
 }

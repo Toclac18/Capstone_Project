@@ -7,6 +7,6 @@ import java.util.UUID;
 
 public interface UserManagementService {
   UserListResponse getUsers(UserQueryRequest request);
+
   void updateUserStatus(UUID userId, UpdateUserStatusRequest request);
 }
-

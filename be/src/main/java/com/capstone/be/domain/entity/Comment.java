@@ -16,7 +16,6 @@ import lombok.EqualsAndHashCode;
 @Data
 @Entity
 @Table(name = "comments")
-
 public class Comment extends BaseEntity {
 
   @Id

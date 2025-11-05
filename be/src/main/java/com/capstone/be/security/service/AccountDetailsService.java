@@ -23,7 +23,8 @@ public class AccountDetailsService {
   private final BusinessAdminRepository businessAdminRepository;
   private final SystemAdminRepository systemAdminRepository;
 
-  public AccountDetailsService(ReaderRepository readerRepository,
+  public AccountDetailsService(
+      ReaderRepository readerRepository,
       ReviewerRepository reviewerRepository,
       OrganizationRepository organizationRepository,
       BusinessAdminRepository businessAdminRepository,
@@ -38,26 +39,36 @@ public class AccountDetailsService {
   @Transactional(readOnly = true)
   public UserPrincipal loadPrincipal(UserRole role, UUID userId) {
     return switch (role) {
-      case READER -> readerRepository.findById(userId)
-          .map(UserPrincipal::fromReader)
-          .map(this::ensureEnabled)
-          .orElseThrow(() -> new UsernameNotFoundException("Reader not found"));
-      case REVIEWER -> reviewerRepository.findById(userId)
-          .map(UserPrincipal::fromReviewer)
-          .map(this::ensureEnabled)
-          .orElseThrow(() -> new UsernameNotFoundException("Reviewer not found"));
-      case ORGANIZATION -> organizationRepository.findById(userId)
-          .map(UserPrincipal::fromOrganization)
-          .map(this::ensureEnabled)
-          .orElseThrow(() -> new UsernameNotFoundException("Organization not found"));
-      case BUSINESS_ADMIN -> businessAdminRepository.findById(userId)
-          .map(UserPrincipal::fromBusinessAdmin)
-          .map(this::ensureEnabled)
-          .orElseThrow(() -> new UsernameNotFoundException("Business admin not found"));
-      case SYSTEM_ADMIN -> systemAdminRepository.findById(userId)
-          .map(UserPrincipal::fromSystemAdmin)
-          .map(this::ensureEnabled)
-          .orElseThrow(() -> new UsernameNotFoundException("System admin not found"));
+      case READER ->
+          readerRepository
+              .findById(userId)
+              .map(UserPrincipal::fromReader)
+              .map(this::ensureEnabled)
+              .orElseThrow(() -> new UsernameNotFoundException("Reader not found"));
+      case REVIEWER ->
+          reviewerRepository
+              .findById(userId)
+              .map(UserPrincipal::fromReviewer)
+              .map(this::ensureEnabled)
+              .orElseThrow(() -> new UsernameNotFoundException("Reviewer not found"));
+      case ORGANIZATION ->
+          organizationRepository
+              .findById(userId)
+              .map(UserPrincipal::fromOrganization)
+              .map(this::ensureEnabled)
+              .orElseThrow(() -> new UsernameNotFoundException("Organization not found"));
+      case BUSINESS_ADMIN ->
+          businessAdminRepository
+              .findById(userId)
+              .map(UserPrincipal::fromBusinessAdmin)
+              .map(this::ensureEnabled)
+              .orElseThrow(() -> new UsernameNotFoundException("Business admin not found"));
+      case SYSTEM_ADMIN ->
+          systemAdminRepository
+              .findById(userId)
+              .map(UserPrincipal::fromSystemAdmin)
+              .map(this::ensureEnabled)
+              .orElseThrow(() -> new UsernameNotFoundException("System admin not found"));
     };
   }
 

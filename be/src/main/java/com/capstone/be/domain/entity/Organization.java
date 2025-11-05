@@ -32,7 +32,7 @@ public class Organization extends BaseEntity {
   private String address;
 
   @Column(nullable = false)
-  private String status;  //#temp
+  private String status; // #temp
 
   /* ORGANIZATION ADMIN */
   private String adminName;
@@ -44,5 +44,4 @@ public class Organization extends BaseEntity {
 
   @Column(nullable = false)
   private Boolean deleted = false;
-
 }

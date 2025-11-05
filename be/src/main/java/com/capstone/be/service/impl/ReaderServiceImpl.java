@@ -20,20 +20,15 @@ import org.springframework.util.StringUtils;
 @Service
 public class ReaderServiceImpl implements ReaderService {
 
-  @Autowired
-  private ReaderRepository readerRepository;
+  @Autowired private ReaderRepository readerRepository;
 
-  @Autowired
-  private PasswordEncoder passwordEncoder;
+  @Autowired private PasswordEncoder passwordEncoder;
 
-  @Autowired
-  private JwtService jwtService;
+  @Autowired private JwtService jwtService;
 
-  @Autowired
-  private EmailService emailService;
+  @Autowired private EmailService emailService;
 
-  @Autowired
-  private ReaderMapper readerMapper;
+  @Autowired private ReaderMapper readerMapper;
 
   @Override
   @Transactional
@@ -77,8 +72,10 @@ public class ReaderServiceImpl implements ReaderService {
       throw ExceptionBuilder.badRequest("Verify token is invalid or expired");
     }
 
-    Reader reader = readerRepository.findByEmail(email)
-        .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
+    Reader reader =
+        readerRepository
+            .findByEmail(email)
+            .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
 
     if (ReaderStatus.PENDING_VERIFICATION.equals(reader.getStatus())) {
       reader.setStatus(ReaderStatus.ACTIVE);

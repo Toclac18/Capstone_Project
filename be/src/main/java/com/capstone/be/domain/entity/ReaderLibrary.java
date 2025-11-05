@@ -17,7 +17,6 @@ import lombok.EqualsAndHashCode;
 @Data
 @Entity
 @Table(name = "reader_libraries")
-
 public class ReaderLibrary extends BaseEntity {
 
   @Id

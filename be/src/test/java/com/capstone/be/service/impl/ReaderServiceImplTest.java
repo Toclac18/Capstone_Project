@@ -36,19 +36,13 @@ class ReaderServiceImplTest {
   private static final LocalDate DATE_OF_BIRTH = LocalDate.of(2000, 1, 1);
   private static final String FULL_NAME = "User Name";
 
-  @Mock
-  private ReaderRepository readerRepository;
-  @Mock
-  private PasswordEncoder passwordEncoder;
-  @Mock
-  private JwtService jwtService;
-  @Mock
-  private EmailService emailService;
-  @Mock
-  private ReaderMapper readerMapper;
+  @Mock private ReaderRepository readerRepository;
+  @Mock private PasswordEncoder passwordEncoder;
+  @Mock private JwtService jwtService;
+  @Mock private EmailService emailService;
+  @Mock private ReaderMapper readerMapper;
 
-  @InjectMocks
-  private ReaderServiceImpl readerService;
+  @InjectMocks private ReaderServiceImpl readerService;
 
   private ReaderRegisterRequest buildRequest() {
     return ReaderRegisterRequest.builder()
@@ -88,10 +82,8 @@ class ReaderServiceImplTest {
     String verifyToken = "verify-token";
     when(jwtService.generateEmailVerifyToken(EMAIL)).thenReturn(verifyToken);
 
-    ReaderRegisterResponse expectedResponse = ReaderRegisterResponse.builder()
-        .email(EMAIL)
-        .username(USERNAME)
-        .build();
+    ReaderRegisterResponse expectedResponse =
+        ReaderRegisterResponse.builder().email(EMAIL).username(USERNAME).build();
     when(readerMapper.toRegisterResponse(savedReader)).thenReturn(expectedResponse);
 
     ReaderRegisterResponse response = readerService.register(request);
@@ -112,8 +104,8 @@ class ReaderServiceImplTest {
     ReaderRegisterRequest request = buildRequest();
     when(readerRepository.existsByEmail(EMAIL)).thenReturn(true);
 
-    IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-        () -> readerService.register(request));
+    IllegalArgumentException ex =
+        assertThrows(IllegalArgumentException.class, () -> readerService.register(request));
 
     assertEquals("Email has been used", ex.getMessage());
     verify(readerRepository, never()).existsByUsername(anyString());
@@ -127,8 +119,8 @@ class ReaderServiceImplTest {
     when(readerRepository.existsByEmail(EMAIL)).thenReturn(false);
     when(readerRepository.existsByUsername(USERNAME)).thenReturn(true);
 
-    IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-        () -> readerService.register(request));
+    IllegalArgumentException ex =
+        assertThrows(IllegalArgumentException.class, () -> readerService.register(request));
 
     assertEquals("Username has been used", ex.getMessage());
     verify(readerRepository, never()).save(any(Reader.class));

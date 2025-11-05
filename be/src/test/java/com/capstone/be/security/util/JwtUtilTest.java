@@ -17,8 +17,8 @@ import org.junit.jupiter.api.Test;
 class JwtUtilTest {
 
   private static final String RAW_SECRET = "01234567890123456789012345678901";
-  private static final String BASE64_SECRET = Base64.getEncoder()
-      .encodeToString(RAW_SECRET.getBytes(StandardCharsets.UTF_8));
+  private static final String BASE64_SECRET =
+      Base64.getEncoder().encodeToString(RAW_SECRET.getBytes(StandardCharsets.UTF_8));
 
   @Test
   void generateToken_roundTrip() {
@@ -75,8 +75,8 @@ class JwtUtilTest {
     assertFalse(jwtUtil.isTokenValid("not-a-jwt"));
   }
 
-  private JwtUtil createAndInit(String secret, long expirationMs, long emailVerifyExpirationMs,
-      String issuer) {
+  private JwtUtil createAndInit(
+      String secret, long expirationMs, long emailVerifyExpirationMs, String issuer) {
     JwtUtil jwtUtil = new JwtUtil(secret, expirationMs, emailVerifyExpirationMs, issuer);
     jwtUtil.init();
     return jwtUtil;

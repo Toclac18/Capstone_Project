@@ -24,10 +24,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
   private static final String[] PUBLIC_ENDPOINTS = {
-      "/api/auth/login",
-      "/api/auth/*/register",
-      "/api/auth/reader/verify-email",
-      "/api/auth/hello"
+    "/api/auth/login", "/api/auth/*/register", "/api/auth/reader/verify-email", "/api/auth/hello"
   };
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -37,21 +34,24 @@ public class SecurityConfig {
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http
-        .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+    http.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .csrf(AbstractHttpConfigurer::disable)
-        .cors(cors -> {
-        }) //Allow API call from Browser
-        .authorizeHttpRequests(auth -> auth
-            .requestMatchers(PUBLIC_ENDPOINTS)
-            .permitAll() // Public authentication endpoints
-            .anyRequest().authenticated()            // Other endpoint require auth
-        )
-        .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
-          response.setStatus(HttpStatus.UNAUTHORIZED.value());
-          response.setContentType("application/json");
-          response.getWriter().write("{\"message\":\"Security Config: Unauthorized\"}");
-        }))
+        .cors(cors -> {}) // Allow API call from Browser
+        .authorizeHttpRequests(
+            auth ->
+                auth.requestMatchers(PUBLIC_ENDPOINTS)
+                    .permitAll() // Public authentication endpoints
+                    .anyRequest()
+                    .authenticated() // Other endpoint require auth
+            )
+        .exceptionHandling(
+            ex ->
+                ex.authenticationEntryPoint(
+                    (request, response, authException) -> {
+                      response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                      response.setContentType("application/json");
+                      response.getWriter().write("{\"message\":\"Security Config: Unauthorized\"}");
+                    }))
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();

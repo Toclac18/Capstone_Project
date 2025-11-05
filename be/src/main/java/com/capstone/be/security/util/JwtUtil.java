@@ -27,10 +27,8 @@ public class JwtUtil {
   private static final String CLAIM_ROLE = "role";
 
   private final String secret;
-  @Getter
-  private final long expirationMs;
-  @Getter
-  private final long emailVerificationExpirationMs;
+  @Getter private final long expirationMs;
+  @Getter private final long emailVerificationExpirationMs;
   private final String issuer;
 
   private SecretKey secretKey;
@@ -39,7 +37,8 @@ public class JwtUtil {
   public JwtUtil(
       @Value("${app.security.jwt.secret}") String secret,
       @Value("${app.security.jwt.expirationMs}") long expirationMs,
-      @Value("${app.security.jwt.emailVerificationExpirationMs}") long emailVerificationExpirationMs,
+      @Value("${app.security.jwt.emailVerificationExpirationMs}")
+          long emailVerificationExpirationMs,
       @Value("${app.security.jwt.issuer}") String issuer) {
     this.secret = secret;
     this.expirationMs = expirationMs;
@@ -65,10 +64,7 @@ public class JwtUtil {
     }
 
     this.secretKey = Keys.hmacShaKeyFor(keyBytes);
-    this.jwtParser = Jwts.parserBuilder()
-        .requireIssuer(issuer)
-        .setSigningKey(secretKey)
-        .build();
+    this.jwtParser = Jwts.parserBuilder().requireIssuer(issuer).setSigningKey(secretKey).build();
   }
 
   public String generateToken(UUID subjectId, UserRole role, String email) {

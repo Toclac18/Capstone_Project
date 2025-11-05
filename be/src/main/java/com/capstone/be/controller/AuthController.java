@@ -25,21 +25,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-  @Autowired
-  ReaderService readerService;
+  @Autowired ReaderService readerService;
 
-  @Autowired
-  AuthService authService;
+  @Autowired AuthService authService;
 
-  //SAMPLE API
+  // SAMPLE API
   @GetMapping("/hello")
   public String Hello() {
     return "Hello world!";
   }
 
   @PostMapping("/reader/register")
-  public ReaderRegisterResponse readerRegister(
-      @Valid @RequestBody ReaderRegisterRequest request) {
+  public ReaderRegisterResponse readerRegister(@Valid @RequestBody ReaderRegisterRequest request) {
     return readerService.register(request);
   }
 
@@ -57,9 +54,9 @@ public class AuthController {
   @PostMapping("/change-password")
   @PreAuthorize("isAuthenticated()")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void changePassword(@Valid @RequestBody ChangePasswordRequest request,
+  public void changePassword(
+      @Valid @RequestBody ChangePasswordRequest request,
       @AuthenticationPrincipal UserPrincipal principal) {
     authService.changePassword(principal.getId(), principal.getRole(), request);
   }
-
 }

@@ -1,7 +1,7 @@
 package com.capstone.be.domain.enums;
 
 public enum UserRole {
-  //GUEST,
+  // GUEST,
   READER,
   REVIEWER,
   ORGANIZATION,

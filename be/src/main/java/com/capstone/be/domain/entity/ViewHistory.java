@@ -17,7 +17,6 @@ import lombok.EqualsAndHashCode;
 @Table(name = "view_histories")
 @Data
 @EqualsAndHashCode(callSuper = true)
-
 public class ViewHistory extends BaseEntity {
 
   @Id
@@ -34,6 +33,6 @@ public class ViewHistory extends BaseEntity {
 
   private LocalDateTime viewAt;
 
-//  private LocalDateTime expiry; //#temp
+  //  private LocalDateTime expiry; //#temp
 
 }

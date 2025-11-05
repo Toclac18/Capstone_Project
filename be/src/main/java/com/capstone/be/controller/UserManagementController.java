@@ -23,17 +23,13 @@ public class UserManagementController {
   public ResponseEntity<SuccessResponse<UserListResponse>> getUsers(
       @RequestBody @Valid UserQueryRequest request) {
     UserListResponse response = userManagementService.getUsers(request);
-    return ResponseEntity.status(HttpStatus.OK)
-        .body(SuccessResponse.of(response));
+    return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.of(response));
   }
 
   @PatchMapping("/{userId}/status")
   public ResponseEntity<SuccessResponse<Void>> updateUserStatus(
-      @PathVariable UUID userId,
-      @RequestBody @Valid UpdateUserStatusRequest request) {
+      @PathVariable UUID userId, @RequestBody @Valid UpdateUserStatusRequest request) {
     userManagementService.updateUserStatus(userId, request);
-    return ResponseEntity.status(HttpStatus.OK)
-        .body(SuccessResponse.of(null));
+    return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.of(null));
   }
 }
-

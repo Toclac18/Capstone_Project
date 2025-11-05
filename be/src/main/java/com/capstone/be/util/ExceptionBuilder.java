@@ -20,4 +20,14 @@ public class ExceptionBuilder {
   public static ResponseStatusException notFound(String message) {
     return new ResponseStatusException(HttpStatus.NOT_FOUND, message);
   }
+
+  public static ResponseStatusException conflict(String message) {
+    return new ResponseStatusException(HttpStatus.CONFLICT, message);
+  }
+
+  public static ResponseStatusException internalServerError(String message) {
+    return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message);
+  }
+
+
 }

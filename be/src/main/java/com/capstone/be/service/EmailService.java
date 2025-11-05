@@ -1,9 +1,9 @@
 package com.capstone.be.service;
 
-import com.capstone.be.domain.entity.Reader;
+import com.capstone.be.domain.enums.UserRole;
 
 public interface EmailService {
 
-  void sendReaderVerificationEmail(Reader reader, String token);
+  void sendVerificationEmail(UserRole role, String toEmail, String toName);
 }
 

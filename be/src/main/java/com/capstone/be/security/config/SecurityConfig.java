@@ -24,11 +24,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
   private static final String[] PUBLIC_ENDPOINTS = {
-      "/api/auth/login",
-      "/api/auth/*/register",
-      "/api/auth/reader/verify-email",
-      "/api/auth/hello"
+      "/api/auth/*",
+      "/api/auth/*/*",
+      "/api/auth/*/*/*",
+      "/api/contact-admin"
   };
+
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
   public static String[] getPublicEndpoints() {

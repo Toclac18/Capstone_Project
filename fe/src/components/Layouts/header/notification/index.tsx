@@ -8,44 +8,74 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/utils/utils";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BellIcon } from "./icons";
+import { getNotifications, markNotificationAsRead } from "@/services/notification";
+import { NotificationDetailModal } from "./NotificationDetailModal";
+import styles from "./styles.module.css";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 
-const notificationList = [
-  {
-    title: "Piter Joined the Team!",
-    subTitle: "Congratulate him",
-  },
-  {
-    title: "New message",
-    subTitle: "Devid sent a new message",
-  },
-  {
-    title: "New Payment received",
-    subTitle: "Check your earnings",
-  },
-  {
-    title: "Jolly completed tasks",
-    subTitle: "Assign new task",
-  },
-  {
-    title: "Roman Joined the Team!",
-    subTitle: "Congratulate him",
-  },
-];
+dayjs.extend(relativeTime);
 
 export function Notification() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isDotVisible, setIsDotVisible] = useState(true);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [selectedNotification, setSelectedNotification] = useState<any | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const isMobile = useIsMobile();
+
+  const fetchNotifications = async () => {
+    try {
+      const data = await getNotifications();
+      setNotifications(data.notifications.slice(0, 5)); // Show only latest 5
+      setUnreadCount(data.unreadCount);
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    
+    // Fetch notifications every 30 seconds
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleMarkAsRead = async (id: string, isRead: boolean) => {
+    if (isRead) return; // Already read, no need to update
+    
+    try {
+      await markNotificationAsRead(id);
+      // Update local state optimistically
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (e) {
+      console.error("Failed to mark notification as read:", e);
+    }
+  };
+
+  const handleNotificationClick = (notif: any) => {
+    setSelectedNotification(notif);
+    setIsModalOpen(true);
+    handleMarkAsRead(notif.id, notif.isRead);
+    setIsOpen(false);
+  };
+
+  const isDotVisible = unreadCount > 0;
 
   return (
     <Dropdown
       isOpen={isOpen}
       setIsOpen={(open) => {
         setIsOpen(open);
-
-        if (setIsDotVisible) setIsDotVisible(false);
       }}
     >
       <DropdownTrigger
@@ -69,47 +99,89 @@ export function Notification() {
 
       <DropdownContent
         align={isMobile ? "end" : "center"}
-        className="border border-stroke bg-white px-3.5 py-3 shadow-md dark:border-dark-3 dark:bg-gray-dark min-[350px]:min-w-[20rem]"
+        className={styles.dropdownContent}
       >
-        <div className="mb-1 flex items-center justify-between px-2 py-1.5">
-          <span className="text-lg font-medium text-dark dark:text-white">
+        <div className={styles.dropdownHeader}>
+          <span className={styles.dropdownTitle}>
             Notifications
           </span>
-          <span className="rounded-md bg-primary px-[9px] py-0.5 text-xs font-medium text-white">
-            5 new
-          </span>
+          {unreadCount > 0 && (
+            <span className={styles.unreadBadge}>
+              {unreadCount} new
+            </span>
+          )}
         </div>
 
-        <ul className="mb-3 max-h-[23rem] space-y-1.5 overflow-y-auto">
-          {notificationList.map((item, index) => (
-            <li key={index} role="menuitem">
-              <Link
-                href="#"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-4 rounded-lg px-2 py-1.5 outline-none hover:bg-gray-2 focus-visible:bg-gray-2 dark:hover:bg-dark-3 dark:focus-visible:bg-dark-3"
-              >
-                <div>
-                  <strong className="block text-sm font-medium text-dark dark:text-white">
-                    {item.title}
-                  </strong>
+        {loading ? (
+          <div className={styles.loadingContainer}>
+            <div className={styles.loadingSpinner}></div>
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className={styles.emptyContainer}>
+            <BellIcon className={styles.emptyIcon} />
+            <p className={styles.emptyText}>
+              No new notifications
+            </p>
+          </div>
+        ) : (
+          <ul className={styles.notificationsList}>
+            {notifications.map((notif) => (
+              <li key={notif.id} role="menuitem">
+                <Link
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNotificationClick(notif);
+                  }}
+                  className={cn(
+                    styles.notificationItem,
+                    notif.isRead
+                      ? styles.notificationItemRead
+                      : styles.notificationItemUnread
+                  )}
+                >
+                  <div className={styles.notificationContent}>
+                    <div className={styles.notificationTitleRow}>
+                      <strong
+                        className={cn(
+                          styles.notificationTitle,
+                          notif.isRead
+                            ? styles.notificationTitleRead
+                            : styles.notificationTitleUnread
+                        )}
+                      >
+                        {notif.title}
+                      </strong>
+                      {!notif.isRead && (
+                        <span className={styles.unreadDot}></span>
+                      )}
+                    </div>
 
-                  <span className="truncate text-sm font-medium text-dark-5 dark:text-dark-6">
-                    {item.subTitle}
-                  </span>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
+                    <span className={styles.notificationTimestamp}>
+                      {dayjs(notif.timestamp).fromNow()}
+                    </span>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
 
         <Link
-          href="#"
+          href="/notifications"
           onClick={() => setIsOpen(false)}
-          className="block rounded-lg border border-primary p-2 text-center text-sm font-medium tracking-wide text-primary outline-none transition-colors hover:bg-blue-light-5 focus:bg-blue-light-5 focus:text-primary focus-visible:border-primary dark:border-dark-3 dark:text-dark-6 dark:hover:border-dark-5 dark:hover:bg-dark-3 dark:hover:text-dark-7 dark:focus-visible:border-dark-5 dark:focus-visible:bg-dark-3 dark:focus-visible:text-dark-7"
+          className={styles.seeAllLink}
         >
           See all notifications
         </Link>
       </DropdownContent>
+
+      {/* Notification Detail Modal */}
+      <NotificationDetailModal
+        notification={selectedNotification}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </Dropdown>
   );
 }

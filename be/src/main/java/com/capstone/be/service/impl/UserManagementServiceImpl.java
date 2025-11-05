@@ -132,7 +132,7 @@ public class UserManagementServiceImpl implements UserManagementService {
         matchesSearch = reader.getFullName().toLowerCase().contains(searchLower) 
             || reader.getEmail().toLowerCase().contains(searchLower);
       } else if (entity instanceof Reviewer reviewer) {
-        matchesSearch = reviewer.getName().toLowerCase().contains(searchLower) 
+        matchesSearch = reviewer.getFullName().toLowerCase().contains(searchLower) 
             || reviewer.getEmail().toLowerCase().contains(searchLower);
       } else if (entity instanceof Organization org) {
         matchesSearch = org.getEmail().toLowerCase().contains(searchLower) 

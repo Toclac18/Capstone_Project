@@ -9,11 +9,11 @@ import com.capstone.be.mapper.ImportMapper;
 import com.capstone.be.repository.ImportJobRepository;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.service.ImportService;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -211,5 +211,52 @@ public class ImportServiceImpl implements ImportService {
     if (s == null) return "";
     if (s.contains(",")) return "\"" + s.replace("\"", "\"\"") + "\"";
     return s;
+  }
+
+  @Override
+  public byte[] templateExcel() {
+    try (XSSFWorkbook wb = new XSSFWorkbook()) {
+      Sheet sheet = wb.createSheet("Template");
+
+      // Style header (đậm)
+      Font bold = wb.createFont();
+      bold.setBold(true);
+      CellStyle headerStyle = wb.createCellStyle();
+      headerStyle.setFont(bold);
+
+      // Header
+      Row h = sheet.createRow(0);
+      String[] headers = {"Full Name", "Username", "Email"};
+      for (int i = 0; i < headers.length; i++) {
+        Cell c = h.createCell(i);
+        c.setCellValue(headers[i]);
+        c.setCellStyle(headerStyle);
+      }
+
+      // 5 dòng mẫu
+      String[][] sample = {
+        {"John Doe", "jdoe", "jdoe@example.com"},
+        {"Mary Tran", "mtran", "mtran@example.com"},
+        {"Lee Wong", "lwong", "lwong@example.com"},
+        {"Ana Maria", "anam", "anam@example.com"},
+        {"David Kim", "dkim", "dkim@example.com"}
+      };
+
+      for (int r = 0; r < sample.length; r++) {
+        Row row = sheet.createRow(r + 1);
+        for (int c = 0; c < sample[r].length; c++) {
+          row.createCell(c).setCellValue(sample[r][c]);
+        }
+      }
+
+      // Auto-size cột
+      for (int i = 0; i < headers.length; i++) sheet.autoSizeColumn(i);
+
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      wb.write(out);
+      return out.toByteArray();
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to generate template: " + e.getMessage(), e);
+    }
   }
 }

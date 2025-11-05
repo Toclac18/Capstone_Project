@@ -4,6 +4,7 @@ import com.capstone.be.dto.response.importReader.ImportDetailResponse;
 import com.capstone.be.dto.response.importReader.ImportListResponse;
 import com.capstone.be.service.ImportService;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,7 +18,7 @@ public class ImportController {
   }
 
   @GetMapping
-  //    @PreAuthorize("hasAnyAuthority('ORGANIZATION')")
+  @PreAuthorize("hasAnyAuthority('ORGANIZATION')")
   public ImportListResponse list(
       @RequestParam(defaultValue = "1") int page,
       @RequestParam(defaultValue = "10") int pageSize,
@@ -27,13 +28,13 @@ public class ImportController {
   }
 
   @GetMapping("/{id}")
-  //    @PreAuthorize("hasAnyAuthority('ORGANIZATION')")
+  @PreAuthorize("hasAnyAuthority('ORGANIZATION')")
   public ImportDetailResponse detail(@PathVariable String id) {
     return service.detail(id);
   }
 
   @GetMapping("/{id}/result")
-  //    @PreAuthorize("hasAnyAuthority('ORGANIZATION')")
+  @PreAuthorize("hasAnyAuthority('ORGANIZATION')")
   public ResponseEntity<byte[]> resultCsv(@PathVariable String id) {
     String csv = service.csvResult(id);
     return ResponseEntity.ok()
@@ -44,10 +45,22 @@ public class ImportController {
   }
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  //    @PreAuthorize("hasAnyAuthority('ORGANIZATION')")
+  @PreAuthorize("hasAnyAuthority('ORGANIZATION')")
   public ImportDetailResponse create(
       @RequestPart("file") MultipartFile file,
       @RequestPart(value = "createdBy", required = false) String createdBy) {
     return service.create(file, createdBy == null ? "system" : createdBy);
+  }
+
+  @GetMapping("/template")
+  @PreAuthorize("hasAnyAuthority('ORGANIZATION')")
+  public ResponseEntity<byte[]> downloadTemplate() {
+    byte[] data = service.templateExcel();
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=import_template.xlsx")
+        .contentType(
+            MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+        .body(data);
   }
 }

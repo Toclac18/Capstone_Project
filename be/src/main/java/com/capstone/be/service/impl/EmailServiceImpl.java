@@ -72,12 +72,22 @@ public class EmailServiceImpl implements EmailService {
     try {
       SimpleMailMessage msg = new SimpleMailMessage();
       msg.setTo(toEmail);
-      msg.setSubject("[System] Welcome " + username);
-      msg.setText("Your temporary password: " + temporaryPassword);
+      msg.setSubject("[System] Welcome to our platform, " + username);
+      msg.setText(
+          "Hello "
+              + username
+              + ",\n\n"
+              + "Your account has been successfully imported.\n"
+              + "Temporary password: "
+              + temporaryPassword
+              + "\n\n"
+              + "Please login and change your password.\n\n"
+              + "Best regards,\nSupport Team");
       mailSender.send(msg);
+      System.out.println("✅ Email sent to " + toEmail);
       return true;
     } catch (Exception e) {
-      e.printStackTrace();
+      System.err.println("❌ Failed to send email: " + e.getMessage());
       return false;
     }
   }

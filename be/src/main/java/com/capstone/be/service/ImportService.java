@@ -12,4 +12,6 @@ public interface ImportService {
   ImportDetailResponse create(MultipartFile file, String createdBy);
 
   String csvResult(String id);
+
+  byte[] templateExcel();
 }

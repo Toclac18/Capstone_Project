@@ -1,12 +1,15 @@
 package com.capstone.be.config;
 
+import com.capstone.be.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import java.time.OffsetDateTime;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -18,6 +21,13 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+  @ExceptionHandler(ResourceNotFoundException.class)
+  public ResponseEntity<ProblemDetail> handleResourceNotFound(ResourceNotFoundException ex,
+      HttpServletRequest req) {
+    return buildProblemDetail(HttpStatus.BAD_REQUEST, "Resource not found",
+        ex.getMessage(), "RESOURCE_NOT_FOUND", req);
+  }
 
   @ExceptionHandler(AuthorizationDeniedException.class)
   public ResponseEntity<ProblemDetail> handleAuthDenied(AuthorizationDeniedException ex,
@@ -75,6 +85,14 @@ public class GlobalExceptionHandler {
         ex.getMessage(), "UNSUPPORTED_MEDIA_TYPE", req);
   }
 
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<ProblemDetail> handleDataViolation(DataIntegrityViolationException ex,
+      HttpServletRequest req) {
+//    ex.printStackTrace();
+    return buildProblemDetail(HttpStatus.BAD_REQUEST, "Invalid data", ex.getCause().getMessage(),
+        "DATA_VIOLATION", req);
+  }
+
   // 4xx: ResponseStatusException (throw by Services)
   @ExceptionHandler(ResponseStatusException.class)
   public ResponseEntity<ProblemDetail> handleResponseStatus(ResponseStatusException ex,
@@ -83,6 +101,13 @@ public class GlobalExceptionHandler {
     String msg = ex.getReason() != null ? ex.getReason() : "Error";
     return buildProblemDetail(status != null ? status : HttpStatus.INTERNAL_SERVER_ERROR,
         ex.getStatusCode().toString(), msg, status.name(), req);
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ProblemDetail> handleMissingBody(HttpMessageNotReadableException ex,
+      HttpServletRequest req) {
+    return buildProblemDetail(HttpStatus.BAD_REQUEST, "REQUEST BODY ERROR",
+        "Require valid request body", "BAD_REQUEST", req);
   }
 
   // 500: System error

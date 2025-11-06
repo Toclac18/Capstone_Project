@@ -73,6 +73,12 @@ export const BUSINESS_ADMIN_NAV_DATA = [
         items: [],
       },
       {
+        title: "Organization Management",
+        icon: Icons.HomeIcon,
+        url: "/business-admin/organization",
+        items: [],
+      },
+      {
         title: "Reports",
         icon: Icons.FourCircle,
         url: "/business-admin/reports",

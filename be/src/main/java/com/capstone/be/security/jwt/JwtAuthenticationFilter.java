@@ -39,7 +39,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       return true;
     }
     String path = request.getRequestURI();
-    // Sử dụng danh sách public endpoints từ SecurityConfig
     for (String pattern : SecurityConfig.getPublicEndpoints()) {
       if (pathMatcher.match(pattern, path)) {
         return true;

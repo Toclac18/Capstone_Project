@@ -9,13 +9,16 @@ import { setupMockContactAdmin } from "./contact-admin";
 import { setupMockAuth } from "./auth";
 import { setupMockProfile } from "./profile";
 import { setupMockNotification } from "./notification";
+import { setupMockOrganizations } from "./organizations";
 
 export function setupMocks() {
-  if (process.env.NODE_ENV !== "development") return;
+  const enabled = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+  if (!enabled) return;
 
   console.info("[MOCK] Starting mock API handlers...");
   setupMockAuth();
   setupMockContactAdmin();
   setupMockProfile();
   setupMockNotification();
+  setupMockOrganizations();
 }

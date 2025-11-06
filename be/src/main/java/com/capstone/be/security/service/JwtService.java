@@ -5,33 +5,35 @@ import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.security.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class JwtService {
 
   private final JwtUtil jwtUtil;
   private final AccountDetailsService accountDetailsService;
 
-  public JwtService(JwtUtil jwtUtil, AccountDetailsService accountDetailsService) {
-    this.jwtUtil = jwtUtil;
-    this.accountDetailsService = accountDetailsService;
-  }
-
   public String generateToken(UUID subjectId, UserRole role, String email) {
     return jwtUtil.generateToken(subjectId, role, email);
   }
 
-  public String generateEmailVerifyToken(String email) {
-    return jwtUtil.generateEmailVerifyToken(email);
+  public String generateEmailVerifyToken(UserRole role, String email) {
+    return jwtUtil.generateEmailVerifyToken(role, email);
   }
 
-  public String extractEmailFromEmailVerifyToken(String token) {
+  public String extractEmailFromToken(String token) {
     Claims claims = jwtUtil.parseClaims(token);
     return jwtUtil.extractEmail(claims);
+  }
+
+  public UserRole extractRoleFromToken(String token) {
+    Claims claims = jwtUtil.parseClaims(token);
+    return jwtUtil.extractRole(claims);
   }
 
   public Authentication buildAuthentication(String token) {

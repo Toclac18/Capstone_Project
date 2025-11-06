@@ -44,9 +44,6 @@ public class Document extends BaseEntity {
   @JoinColumn(name = "type_id")
   private DocumentType type;
 
-  @ManyToMany(mappedBy = "documents")
-  private Set<DocumentCategory> categories = new HashSet<>();
-
   private Boolean isPublic;
 
   private Boolean isPremium;
@@ -59,5 +56,7 @@ public class Document extends BaseEntity {
 
   private Boolean deleted;
 
+  @ManyToMany(mappedBy = "documents")
+  private Set<Specialization> specializations = new HashSet<>();
 
 }

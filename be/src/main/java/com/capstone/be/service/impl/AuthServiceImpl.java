@@ -12,6 +12,7 @@ import com.capstone.be.domain.enums.ReaderStatus;
 import com.capstone.be.domain.enums.ReviewerStatus;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.dto.request.auth.ChangePasswordRequest;
+import com.capstone.be.dto.request.auth.DeleteAccountRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
 import com.capstone.be.dto.request.auth.RegisterOrganizationInfo;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
@@ -380,15 +381,28 @@ public class AuthServiceImpl implements AuthService {
     }
   }
 
+  @Override
+  @Transactional
+  public void deleteAccount(UserRole role, UUID id, String passwordHash, DeleteAccountRequest request) {
+    assertCurrentPasswordMatches(request.getPassword(), passwordHash, "Confirm password is incorrect");
+    if (role == UserRole.READER) {
+      readerRepository.softDeleteById(id);
+    } else if (role == UserRole.REVIEWER) {
+      reviewerRepository.softDeleteById(id);
+    } else if (role == UserRole.ORGANIZATION) {
+      organizationRepository.softDeleteById(id);
+    }
+  }
+
 
   private void changeReaderPassword(UUID subjectId, ChangePasswordRequest request) {
     Reader reader = readerRepository.findById(subjectId)
         .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
 
-    assertCurrentPasswordMatches(request.getCurrentPassword(), reader.getPasswordHash());
+    assertCurrentPasswordMatches(request.getCurrentPassword(), reader.getPasswordHash(),
+        "Old password is incorrect");
 
-    String encoded = passwordEncoder.encode(request.getNewPassword());
-    reader.setPasswordHash(encoded);
+    reader.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
     readerRepository.save(reader);
   }
 
@@ -400,10 +414,10 @@ public class AuthServiceImpl implements AuthService {
       throw ExceptionBuilder.forbidden("Account is disabled");
     }
 
-    assertCurrentPasswordMatches(request.getCurrentPassword(), reviewer.getPasswordHash());
+    assertCurrentPasswordMatches(request.getCurrentPassword(), reviewer.getPasswordHash(),
+        "Old password is incorrect");
 
-    String encoded = passwordEncoder.encode(request.getNewPassword());
-    reviewer.setPasswordHash(encoded);
+    reviewer.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
     reviewerRepository.save(reviewer);
   }
 
@@ -416,10 +430,10 @@ public class AuthServiceImpl implements AuthService {
       throw ExceptionBuilder.forbidden("Account is disabled");
     }
 
-    assertCurrentPasswordMatches(request.getCurrentPassword(), organization.getAdminPassword());
+    assertCurrentPasswordMatches(request.getCurrentPassword(), organization.getAdminPassword(),
+        "Old password is incorrect");
 
-    String encoded = passwordEncoder.encode(request.getNewPassword());
-    organization.setAdminPassword(encoded);
+    organization.setAdminPassword(passwordEncoder.encode(request.getNewPassword()));
     organizationRepository.save(organization);
   }
 
@@ -431,10 +445,9 @@ public class AuthServiceImpl implements AuthService {
       throw ExceptionBuilder.unauthorized("Account is disabled");
     }
 
-    assertCurrentPasswordMatches(request.getCurrentPassword(), admin.getPasswordHash());
+    assertCurrentPasswordMatches(request.getCurrentPassword(), admin.getPasswordHash(), null);
 
-    String encoded = passwordEncoder.encode(request.getNewPassword());
-    admin.setPasswordHash(encoded);
+    admin.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
     businessAdminRepository.save(admin);
   }
 
@@ -446,16 +459,16 @@ public class AuthServiceImpl implements AuthService {
       throw ExceptionBuilder.unauthorized("Account is disabled");
     }
 
-    assertCurrentPasswordMatches(request.getCurrentPassword(), admin.getPasswordHash());
+    assertCurrentPasswordMatches(request.getCurrentPassword(), admin.getPasswordHash(), null);
 
-    String encoded = passwordEncoder.encode(request.getNewPassword());
-    admin.setPasswordHash(encoded);
+    admin.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
     systemAdminRepository.save(admin);
   }
 
-  private void assertCurrentPasswordMatches(String rawPassword, String passwordHash) {
+  private void assertCurrentPasswordMatches(String rawPassword, String passwordHash,
+      String message) {
     if (!passwordEncoder.matches(rawPassword, Optional.ofNullable(passwordHash).orElse(""))) {
-      throw ExceptionBuilder.unauthorized("Current password is incorrect");
+      throw ExceptionBuilder.unauthorized(message != null ? message : "Password is incorrect");
     }
   }
 

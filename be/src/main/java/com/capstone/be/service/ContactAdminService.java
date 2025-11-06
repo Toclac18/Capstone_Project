@@ -8,11 +8,11 @@ import com.capstone.be.dto.response.ContactAdminResponse;
  */
 public interface ContactAdminService {
 
-    /**
-     * Creates a new support ticket based on the user's contact request.
-     *
-     * @param req The request DTO containing contact details and message.
-     * @return A response DTO confirming the ticket creation.
-     */
-    ContactAdminResponse createTicket(ContactAdminRequest req);
+  /**
+   * Creates a new support ticket based on the user's contact request.
+   *
+   * @param req The request DTO containing contact details and message.
+   * @return A response DTO confirming the ticket creation.
+   */
+  ContactAdminResponse createTicket(ContactAdminRequest req);
 }

@@ -2,6 +2,7 @@ package com.capstone.be.service;
 
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.dto.request.auth.ChangePasswordRequest;
+import com.capstone.be.dto.request.auth.DeleteAccountRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
 import com.capstone.be.dto.request.auth.RegisterOrganizationInfo;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
@@ -31,4 +32,5 @@ public interface AuthService {
 
   void changePassword(UUID subjectId, UserRole role, ChangePasswordRequest request);
 
+  void deleteAccount(UserRole role, UUID id, String passwordHash, DeleteAccountRequest request);
 }

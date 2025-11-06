@@ -2,6 +2,7 @@ package com.capstone.be.controller;
 
 import com.capstone.be.dto.base.SuccessResponse;
 import com.capstone.be.dto.request.auth.ChangePasswordRequest;
+import com.capstone.be.dto.request.auth.DeleteAccountRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
 import com.capstone.be.dto.request.auth.RegisterOrganizationInfo;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
@@ -16,10 +17,12 @@ import com.capstone.be.service.AuthService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,6 +35,8 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
+@Slf4j
+
 public class AuthController {
 
   private final AuthService authService;
@@ -56,6 +61,16 @@ public class AuthController {
       @RequestPart("certificateUploads") List<MultipartFile> files
   ) {
     return authService.registerOrganization(info, files);
+  }
+
+  @PreAuthorize("hasAnyRole('READER', 'REVIEWER', 'ORGANIZATION')")
+  @DeleteMapping("/delete-account")
+  public SuccessResponse<?> deleteAccount(@Valid @RequestBody DeleteAccountRequest request,
+      @AuthenticationPrincipal UserPrincipal principal) {
+    log.info("in Controller method");
+    authService.deleteAccount(principal.getRole(), principal.getId(), principal.getPassword(),
+        request);
+    return SuccessResponse.ofMessage("Your account has been deleted");
   }
 
   @PostMapping("/verify-email")

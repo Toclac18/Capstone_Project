@@ -352,5 +352,68 @@ export const mockOrganizationAdminDB = {
   delete(): void {
     // Mark as deleted (in real scenario, this would update the database)
     _organizationInfo.deleted = true;
+// ---------------- Organizations Mock ----------------
+export type OrganizationSummary = {
+  id: string;
+  name: string;
+  type: string;
+  joinDate: string;
+  logo: string | null;
+};
+
+export type OrganizationDetail = {
+  id: string;
+  name: string;
+  type: string;
+  email: string;
+  hotline: string;
+  logo: string | null;
+  address: string;
+  joinDate: string;
+  // trimmed: no admin/active/deleted
+};
+
+const _organizations: OrganizationDetail[] = [
+  {
+    id: "org-1",
+    name: "Tech Innovation Hub",
+    type: "NON-PROFIT",
+    email: "info@innovation.example.org",
+    hotline: "+1 (555) 010-2000",
+    logo: null,
+    address: "100 Innovation Way, Metropolis",
+    joinDate: "2024-01-15T00:00:00Z",
+  },
+  {
+    id: "org-2",
+    name: "Digital Solutions Inc",
+    type: "COMPANY",
+    email: "contact@digital.example.com",
+    hotline: "+1 (555) 010-2000",
+    logo: null,
+    address: "200 Market St, Springfield",
+    joinDate: "2024-03-20T00:00:00Z",
+  },
+];
+
+export const mockOrganizationsDB = {
+  list(): { items: OrganizationSummary[]; total: number } {
+    const items: OrganizationSummary[] = _organizations.map(({ id, name, type, joinDate, logo }) => ({
+      id,
+      name,
+      type,
+      joinDate,
+      logo,
+    }));
+    return { items, total: items.length };
+  },
+  get(id: string): OrganizationDetail | undefined {
+    return _organizations.find((o) => o.id === id);
+  },
+  leave(id: string): boolean {
+    const idx = _organizations.findIndex((o) => o.id === id);
+    if (idx === -1) return false;
+    _organizations.splice(idx, 1);
+    return true;
   },
 };

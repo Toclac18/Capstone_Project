@@ -70,7 +70,7 @@ export default function Signin() {
         REVIEWER: '/reviewer/dashboard',
         ORGANIZATION: '/organization/dashboard',
         SYSTEM_ADMIN: '/admin/system/dashboard',
-        BUSINESS_ADMIN: '/admin/business/dashboard',
+        BUSINESS_ADMIN: '/business-admin',
       };
 
       setTimeout(() => {

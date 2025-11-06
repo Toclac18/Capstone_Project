@@ -10,9 +10,11 @@ import { setupMockAuth } from "./auth";
 import { setupMockProfile } from "./profile";
 import { setupMockNotification } from "./notification";
 import { setupMockManageOrganization } from "./manageOrganization";
+import { setupMockOrganizations } from "./organizations";
 
 export function setupMocks() {
-  if (process.env.NODE_ENV !== "development") return;
+  const enabled = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+  if (!enabled) return;
 
   console.info("[MOCK] Starting mock API handlers...");
   setupMockAuth();
@@ -20,4 +22,5 @@ export function setupMocks() {
   setupMockProfile();
   setupMockNotification();
   setupMockManageOrganization();
+  setupMockOrganizations();
 }

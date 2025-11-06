@@ -8,6 +8,7 @@ import com.capstone.be.repository.ReviewerRepository;
 import com.capstone.be.repository.SystemAdminRepository;
 import com.capstone.be.security.model.UserPrincipal;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 public class AccountDetailsService {
 
   private final ReaderRepository readerRepository;
@@ -62,7 +64,9 @@ public class AccountDetailsService {
   }
 
   private UserPrincipal ensureEnabled(UserPrincipal principal) {
+
     if (!principal.isEnabled()) {
+      log.info(principal.toString());
       throw new DisabledException("Account is disabled");
     }
     if (!principal.isAccountNonLocked()) {

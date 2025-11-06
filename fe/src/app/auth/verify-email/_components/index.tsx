@@ -6,7 +6,8 @@ import Link from "next/link";
 import Image from "next/image";
 import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
-import { verifyEmail } from "@/services/authService";
+import { verifyEmail } from "../api";
+import styles from "../styles.module.css";
 
 export default function VerifyEmailContent() {
   const searchParams = useSearchParams();
@@ -38,9 +39,10 @@ export default function VerifyEmailContent() {
         setTimeout(() => {
           router.push("/auth/sign-in");
         }, 3000);
-      } catch (error: any) {
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "Verification failed. Please try again.";
         setStatus("error");
-        setMessage(error?.message || "Verification failed. Please try again.");
+        setMessage(msg);
       }
     };
 
@@ -48,10 +50,10 @@ export default function VerifyEmailContent() {
   }, [searchParams, router]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-2 dark:bg-dark">
-      <div className="w-full max-w-md rounded-[10px] bg-white px-7.5 py-10 shadow-1 dark:bg-gray-dark dark:shadow-card">
+    <div className={styles["page-container"]}>
+      <div className={styles.card}>
         {/* Logo */}
-        <div className="mb-8 flex justify-center">
+        <div className={styles["logo-row"]}>
           <Link href="/" className="block">
             <Image
               width={176}
@@ -75,16 +77,16 @@ export default function VerifyEmailContent() {
         </div>
 
         {/* Content */}
-        <div className="text-center">
+        <div className={styles.center}>
           {status === "verifying" && (
             <>
               <div className="mb-6 flex justify-center">
-                <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+                <div className={styles["spinner-lg"]}></div>
               </div>
-              <h2 className="mb-3 text-2xl font-bold text-dark dark:text-white">
+              <h2 className={styles.title}>
                 Verifying Your Email
               </h2>
-              <p className="text-body-color dark:text-dark-6">
+              <p className={styles["body-text"]}>
                 Please wait while we verify your email address...
               </p>
               
@@ -93,10 +95,10 @@ export default function VerifyEmailContent() {
 
           {status === "success" && (
             <>
-              <div className="mb-6 flex justify-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+              <div className={styles["success-icon"]}>
+                <div>
                   <svg
-                    className="h-10 w-10 text-green-600 dark:text-green-400"
+                    className="h-10 w-10"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -110,18 +112,18 @@ export default function VerifyEmailContent() {
                   </svg>
                 </div>
               </div>
-              <h2 className="mb-3 text-2xl font-bold text-green-600 dark:text-green-400">
+              <h2 className={styles["title-success"]}>
                 Email Verified!
               </h2>
-              <p className="mb-6 text-body-color dark:text-dark-6">
+              <p className={styles["body-text-spaced"]}>
                 {message}
               </p>
-              <p className="text-sm text-body-color dark:text-dark-6">
+              <p className="text-sm">
                 Redirecting to login page in 3 seconds...
               </p>
               <Link
                 href="/auth/sign-in"
-                className="mt-4 inline-block text-primary hover:underline"
+                className={`${styles["link-primary"]} mt-4 inline-block`}
               >
                 Click here if not redirected
               </Link>
@@ -130,10 +132,10 @@ export default function VerifyEmailContent() {
 
           {status === "error" && (
             <>
-              <div className="mb-6 flex justify-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900">
+              <div className={styles["error-icon"]}>
+                <div>
                   <svg
-                    className="h-10 w-10 text-red-600 dark:text-red-400"
+                    className="h-10 w-10"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -147,22 +149,22 @@ export default function VerifyEmailContent() {
                   </svg>
                 </div>
               </div>
-              <h2 className="mb-3 text-2xl font-bold text-red-600 dark:text-red-400">
+              <h2 className={styles["title-error"]}>
                 Verification Failed
               </h2>
-              <p className="mb-6 text-body-color dark:text-dark-6">
+              <p className={styles["body-text-spaced"]}>
                 {message}
               </p>
-              <div className="flex flex-col gap-3">
+              <div className={styles.actions}>
                 <Link
                   href="/auth/sign-up"
-                  className="inline-flex justify-center rounded-lg bg-primary px-6 py-3 font-medium text-white transition hover:bg-opacity-90"
+                  className={styles["primary-btn"]}
                 >
                   Register Again
                 </Link>
                 <Link
                   href="/auth/sign-in"
-                  className="text-primary hover:underline"
+                  className={styles["link-primary"]}
                 >
                   Back to Login
                 </Link>

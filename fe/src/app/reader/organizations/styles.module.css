@@ -1,0 +1,308 @@
+/* Organizations Module Styles – Dark/Light Mode Support */
+
+/* Page Container */
+.page-container {
+  @apply px-4 py-8;
+}
+
+/* Page Title */
+.page-title {
+  @apply text-[26px] font-bold leading-[30px] text-dark;
+}
+:global(html.dark) .page-title {
+  @apply text-white;
+}
+
+/* Loading State */
+.loading-container {
+  @apply mt-6 rounded-xl border border-stroke bg-white p-6 shadow-lg;
+}
+:global(html.dark) .loading-container {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.loading-skeleton {
+  @apply h-6 w-48 animate-pulse rounded bg-gray-200;
+}
+:global(html.dark) .loading-skeleton {
+  @apply bg-dark-3;
+}
+
+.loading-skeleton-large {
+  @apply mt-6 h-40 animate-pulse rounded bg-gray-200;
+}
+:global(html.dark) .loading-skeleton-large {
+  @apply bg-dark-3;
+}
+
+/* Error State */
+.error-container {
+  @apply mt-6 rounded-lg border-l-4 border-red bg-red-light-6 p-4 text-red-dark;
+}
+:global(html.dark) .error-container {
+  @apply border-red bg-dark-2 text-red;
+}
+
+/* Empty State */
+.empty-container {
+  @apply mt-6 rounded-xl border border-stroke bg-white p-10 text-center text-dark shadow-lg;
+}
+:global(html.dark) .empty-container {
+  @apply border-stroke-dark bg-dark-2 text-dark-8;
+}
+
+/* Card Base */
+.card {
+  @apply rounded-xl border border-stroke bg-white p-6 shadow-sm;
+}
+:global(html.dark) .card {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+/* Header Card */
+.header-card {
+  @apply card;
+}
+
+.header-content {
+  @apply flex items-start justify-between gap-4;
+}
+
+.header-main {
+  @apply flex items-center gap-5;
+}
+
+.org-logo {
+  @apply h-20 w-20 rounded-xl object-cover border border-stroke shadow-sm;
+}
+:global(html.dark) .org-logo {
+  @apply border-stroke-dark;
+}
+
+.org-logo-fallback {
+  @apply flex h-20 w-20 items-center justify-center rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 border border-stroke;
+}
+:global(html.dark) .org-logo-fallback {
+  @apply from-dark-3 to-dark-4 border-stroke-dark;
+}
+
+.org-logo-fallback-text {
+  @apply text-3xl font-bold text-gray-500;
+}
+:global(html.dark) .org-logo-fallback-text {
+  @apply text-dark-6;
+}
+
+.org-name {
+  @apply text-2xl font-bold text-dark mb-1;
+}
+:global(html.dark) .org-name {
+  @apply text-white;
+}
+
+.org-type {
+  @apply text-sm text-dark-6;
+}
+:global(html.dark) .org-type {
+  @apply text-dark-6;
+}
+
+/* Information Card */
+.info-card {
+  @apply card;
+}
+
+.info-title {
+  @apply mb-6 text-lg font-semibold text-dark;
+}
+:global(html.dark) .info-title {
+  @apply text-white;
+}
+
+.info-grid {
+  @apply grid grid-cols-1 gap-6 md:grid-cols-2;
+}
+
+.info-field {
+  @apply space-y-1;
+}
+
+.info-field-full {
+  @apply info-field md:col-span-2;
+}
+
+.info-label {
+  @apply text-xs font-medium uppercase tracking-wide text-dark-5;
+}
+:global(html.dark) .info-label {
+  @apply text-dark-6;
+}
+
+.info-value {
+  @apply text-base text-dark;
+}
+:global(html.dark) .info-value {
+  @apply text-dark-8;
+}
+
+/* Actions Card */
+.actions-card {
+  @apply card;
+}
+
+.actions-content {
+  @apply flex items-center justify-between;
+}
+
+.actions-info-title {
+  @apply text-sm font-medium text-dark-6 mb-1;
+}
+:global(html.dark) .actions-info-title {
+  @apply text-dark-6;
+}
+
+.actions-info-text {
+  @apply text-xs text-dark-5;
+}
+:global(html.dark) .actions-info-text {
+  @apply text-dark-5;
+}
+
+/* Buttons */
+.btn-back {
+  @apply rounded-lg border border-stroke px-4 py-2 text-sm font-medium text-dark hover:bg-gray-2 transition-colors;
+}
+:global(html.dark) .btn-back {
+  @apply border-stroke-dark text-dark-8 hover:bg-dark-3;
+}
+
+.btn-leave {
+  @apply rounded-lg border border-red bg-white px-4 py-2 text-sm font-medium text-red hover:bg-red-light-6 transition-colors;
+}
+:global(html.dark) .btn-leave {
+  @apply bg-dark-2 border-red text-red hover:bg-dark-3;
+}
+
+/* Table Container */
+.table-container {
+  @apply mt-6 rounded-xl border border-stroke bg-white p-4 shadow-lg sm:p-7.5;
+}
+:global(html.dark) .table-container {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+/* Table Logo */
+.table-logo {
+  @apply h-10 w-10 rounded-lg object-cover border border-stroke;
+}
+:global(html.dark) .table-logo {
+  @apply border-stroke-dark;
+}
+
+.table-logo-fallback {
+  @apply flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 border border-stroke;
+}
+:global(html.dark) .table-logo-fallback {
+  @apply bg-dark-3 border-stroke-dark;
+}
+
+.table-logo-fallback-text {
+  @apply text-sm font-bold text-gray-400;
+}
+:global(html.dark) .table-logo-fallback-text {
+  @apply text-dark-6;
+}
+
+.table-org-name {
+  @apply font-medium text-dark;
+}
+:global(html.dark) .table-org-name {
+  @apply text-white;
+}
+
+.table-org-cell {
+  @apply flex items-center gap-3;
+}
+
+.table-text {
+  @apply text-dark-6;
+}
+:global(html.dark) .table-text {
+  @apply text-dark-7;
+}
+
+.btn-view {
+  @apply rounded-lg border border-stroke px-3 py-1.5 text-sm font-semibold text-dark hover:bg-gray-2;
+}
+:global(html.dark) .btn-view {
+  @apply border-stroke-dark text-dark-8 hover:bg-dark-3;
+}
+
+/* Modal */
+.modal-overlay {
+  @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+}
+
+.modal-backdrop {
+  @apply absolute inset-0 bg-black/40;
+}
+
+.modal-container {
+  @apply relative z-10 w-full max-w-md rounded-xl border border-stroke bg-white p-6 shadow-2;
+}
+:global(html.dark) .modal-container {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.modal-title {
+  @apply text-xl font-bold text-dark;
+}
+:global(html.dark) .modal-title {
+  @apply text-white;
+}
+
+.modal-description {
+  @apply mt-2 text-sm text-dark-6;
+}
+:global(html.dark) .modal-description {
+  @apply text-dark-6;
+}
+
+.modal-label {
+  @apply mb-2 block text-sm font-medium text-dark;
+}
+:global(html.dark) .modal-label {
+  @apply text-white;
+}
+
+.modal-input {
+  @apply w-full rounded-lg border border-stroke px-3 py-2 text-sm dark:border-stroke-dark dark:bg-dark-2 dark:text-dark-8;
+}
+:global(html.dark) .modal-input {
+  @apply border-stroke-dark bg-dark-2 text-dark-8;
+}
+
+.modal-error {
+  @apply mt-2 text-sm text-red;
+}
+
+.modal-actions {
+  @apply flex justify-end gap-3;
+}
+
+.btn-cancel {
+  @apply rounded-lg border border-stroke px-4 py-2 text-sm font-semibold text-dark hover:bg-gray-2 disabled:opacity-60;
+}
+:global(html.dark) .btn-cancel {
+  @apply border-stroke-dark text-dark-8 hover:bg-dark-3;
+}
+
+.btn-submit {
+  @apply rounded-lg bg-red px-4 py-2 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-60;
+}
+
+/* Cards Spacing */
+.cards-container {
+  @apply mt-6 space-y-6;
+}
+

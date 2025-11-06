@@ -52,18 +52,6 @@ export const NAV_DATA = [
           },
         ],
       },
-      {
-        title: "Login",
-        url: "/auth/sign-in",
-        icon: Icons.Authentication,
-        items: [],
-      },
-      {
-        title: "Sign Up",
-        url: "/auth/sign-up",
-        icon: Icons.Authentication,
-        items: [],
-      },
     ],
   },
 ];
@@ -82,6 +70,12 @@ export const BUSINESS_ADMIN_NAV_DATA = [
         title: "User Management",
         icon: Icons.User,
         url: "/business-admin/users",
+        items: [],
+      },
+      {
+        title: "Organization Management",
+        icon: Icons.HomeIcon,
+        url: "/business-admin/organization",
         items: [],
       },
       {

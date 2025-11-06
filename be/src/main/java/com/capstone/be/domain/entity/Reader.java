@@ -12,7 +12,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.util.UUID;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -48,7 +47,7 @@ public class Reader extends BaseEntity {
   private String avatarUrl;
 
   @Column(nullable = false)
-  private Integer coinBalance = 0;
+  private Integer point = 0;
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)

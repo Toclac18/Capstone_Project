@@ -2,9 +2,10 @@ package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.Reader;
 import com.capstone.be.domain.enums.ReaderStatus;
-import com.capstone.be.dto.request.auth.ReaderRegisterRequest;
+import com.capstone.be.domain.enums.UserRole;
+import com.capstone.be.dto.request.auth.RegisterReaderRequest;
 import com.capstone.be.dto.request.orgAdmin.ChangeAccessRequest;
-import com.capstone.be.dto.response.auth.ReaderRegisterResponse;
+import com.capstone.be.dto.response.auth.RegisterReaderResponse;
 import com.capstone.be.dto.response.orgAdmin.ReaderResponse;
 import com.capstone.be.mapper.ReaderMapper;
 import com.capstone.be.repository.ReaderRepository;
@@ -21,12 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
 @Service
 @RequiredArgsConstructor
+
 public class ReaderServiceImpl implements ReaderService {
 
   private final ReaderRepository readerRepository;
@@ -37,7 +35,7 @@ public class ReaderServiceImpl implements ReaderService {
 
   @Override
   @Transactional
-  public ReaderRegisterResponse register(ReaderRegisterRequest request) {
+  public RegisterReaderResponse register(RegisterReaderRequest request) {
     if (readerRepository.existsByEmail(request.getEmail())) {
       throw new IllegalArgumentException("Email has been used");
     }
@@ -48,12 +46,13 @@ public class ReaderServiceImpl implements ReaderService {
     Reader reader = readerMapper.toReader(request);
     reader.setPasswordHash(passwordEncoder.encode(request.getPassword()));
     reader.setStatus(ReaderStatus.PENDING_VERIFICATION);
-    reader.setCoinBalance(0);
+    reader.setPoint(0);
 
     Reader savedReader = readerRepository.save(reader);
 
-    String verificationToken = jwtService.generateEmailVerifyToken(savedReader.getEmail());
-    emailService.sendReaderVerificationEmail(savedReader, verificationToken);
+//    String verificationToken = jwtService.generateEmailVerifyToken(savedReader.getEmail());
+    emailService.sendVerificationEmail(UserRole.READER, savedReader.getEmail(),
+        savedReader.getFullName());
 
     return readerMapper.toRegisterResponse(savedReader);
   }
@@ -67,13 +66,13 @@ public class ReaderServiceImpl implements ReaderService {
 
     String email;
     try {
-      email = jwtService.extractEmailFromEmailVerifyToken(token);
+      email = jwtService.extractEmailFromToken(token);
     } catch (JwtException | IllegalArgumentException ex) {
       throw ExceptionBuilder.badRequest("Verify token is invalid or expired");
     }
 
     Reader reader = readerRepository.findByEmail(email)
-            .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
+        .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
 
     if (ReaderStatus.PENDING_VERIFICATION.equals(reader.getStatus())) {
       reader.setStatus(ReaderStatus.ACTIVE);
@@ -92,8 +91,8 @@ public class ReaderServiceImpl implements ReaderService {
 
     if (q != null && !q.trim().isEmpty()) {
       resultPage = readerRepository
-              .findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrUsernameContainingIgnoreCase(
-                      q, q, q, pageable);
+          .findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrUsernameContainingIgnoreCase(
+              q, q, q, pageable);
     } else if (status != null && !status.equalsIgnoreCase("ALL")) {
       ReaderStatus st = ReaderStatus.valueOf(status.toUpperCase());
       resultPage = readerRepository.findByStatus(st, pageable);
@@ -102,34 +101,35 @@ public class ReaderServiceImpl implements ReaderService {
     }
 
     return resultPage.map(r -> ReaderResponse.builder()
-            .id(r.getId())
-            .fullName(r.getFullName())
-            .username(r.getUsername())
-            .dateOfBirth(r.getDateOfBirth())
-            .email(r.getEmail())
-            .avatarUrl(r.getAvatarUrl())
-            .coinBalance(r.getCoinBalance())
-            .status(r.getStatus())
-            .build());
+        .id(r.getId())
+        .fullName(r.getFullName())
+        .username(r.getUsername())
+        .dateOfBirth(r.getDateOfBirth())
+        .email(r.getEmail())
+        .avatarUrl(r.getAvatarUrl())
+        .coinBalance(r.getPoint())
+        .status(r.getStatus())
+        .build());
   }
 
   @Override
   public ReaderResponse changeAccess(ChangeAccessRequest req) {
     Reader reader = readerRepository.findById(req.getUserId())
-            .orElseThrow(() -> ExceptionBuilder.notFound("Reader not found"));
+        .orElseThrow(() -> ExceptionBuilder.notFound("Reader not found"));
 
     reader.setStatus(req.isEnable() ? ReaderStatus.ACTIVE : ReaderStatus.DEACTIVE);
     readerRepository.save(reader);
 
     return ReaderResponse.builder()
-            .id(reader.getId())
-            .fullName(reader.getFullName())
-            .username(reader.getUsername())
-            .dateOfBirth(reader.getDateOfBirth())
-            .email(reader.getEmail())
-            .avatarUrl(reader.getAvatarUrl())
-            .coinBalance(reader.getCoinBalance())
-            .status(reader.getStatus())
-            .build();
+        .id(reader.getId())
+        .fullName(reader.getFullName())
+        .username(reader.getUsername())
+        .dateOfBirth(reader.getDateOfBirth())
+        .email(reader.getEmail())
+        .avatarUrl(reader.getAvatarUrl())
+        .coinBalance(reader.getPoint())
+        .status(reader.getStatus())
+        .build();
   }
+
 }

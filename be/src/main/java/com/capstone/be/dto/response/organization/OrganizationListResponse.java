@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrganizationListResponse {
+
   private List<OrganizationResponse> organizations;
   private Integer total;
   private Integer page;

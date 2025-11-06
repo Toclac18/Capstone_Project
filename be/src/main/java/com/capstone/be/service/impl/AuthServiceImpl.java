@@ -383,8 +383,10 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   @Transactional
-  public void deleteAccount(UserRole role, UUID id, String passwordHash, DeleteAccountRequest request) {
-    assertCurrentPasswordMatches(request.getPassword(), passwordHash, "Confirm password is incorrect");
+  public void deleteAccount(UserRole role, UUID id, String passwordHash,
+      DeleteAccountRequest request) {
+    assertCurrentPasswordMatches(request.getPassword(), passwordHash,
+        "Confirm password is incorrect");
     if (role == UserRole.READER) {
       readerRepository.softDeleteById(id);
     } else if (role == UserRole.REVIEWER) {

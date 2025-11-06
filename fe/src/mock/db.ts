@@ -314,6 +314,8 @@ export const mockProfileDB = {
   },
   clear(): void {
     Object.assign(_profileData, roleMap.READER);
+  },
+};
 // ---------------- Organizations Mock ----------------
 export type OrganizationSummary = {
   id: string;

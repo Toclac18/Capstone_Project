@@ -60,11 +60,47 @@ const jobA: ImportJob = {
   failureCount: 1,
   status: "COMPLETED",
   results: [
-    { row: 2, fullName: "Jane Roe", username: "jroe", email: "jroe@ex.com", imported: true, emailSent: true },
-    { row: 3, fullName: "Mark Li", username: "mli", email: "mli@ex.com", imported: true, emailSent: true },
-    { row: 4, fullName: "Zoë K", username: "zoek", email: "zoek@ex.com", imported: true, emailSent: true },
-    { row: 5, fullName: "Chris P", username: "chrisp", email: "chrisp@ex.com", imported: false, emailSent: false, error: "Duplicate username" },
-    { row: 6, fullName: "Ana M", username: "anam", email: "anam@ex.com", imported: true, emailSent: true },
+    {
+      row: 2,
+      fullName: "Jane Roe",
+      username: "jroe",
+      email: "jroe@ex.com",
+      imported: true,
+      emailSent: true,
+    },
+    {
+      row: 3,
+      fullName: "Mark Li",
+      username: "mli",
+      email: "mli@ex.com",
+      imported: true,
+      emailSent: true,
+    },
+    {
+      row: 4,
+      fullName: "Zoë K",
+      username: "zoek",
+      email: "zoek@ex.com",
+      imported: true,
+      emailSent: true,
+    },
+    {
+      row: 5,
+      fullName: "Chris P",
+      username: "chrisp",
+      email: "chrisp@ex.com",
+      imported: false,
+      emailSent: false,
+      error: "Duplicate username",
+    },
+    {
+      row: 6,
+      fullName: "Ana M",
+      username: "anam",
+      email: "anam@ex.com",
+      imported: true,
+      emailSent: true,
+    },
   ],
 };
 
@@ -79,16 +115,37 @@ const jobB: ImportJob = {
   failureCount: 0,
   status: "COMPLETED",
   results: [
-    { row: 2, fullName: "Hana T", username: "hanat", email: "hana@ex.com", imported: true, emailSent: true },
-    { row: 3, fullName: "Ivo N", username: "ivon", email: "ivo@ex.com", imported: true, emailSent: true },
-    { row: 4, fullName: "Quynh P", username: "quynhp", email: "quynh@ex.com", imported: true, emailSent: true },
+    {
+      row: 2,
+      fullName: "Hana T",
+      username: "hanat",
+      email: "hana@ex.com",
+      imported: true,
+      emailSent: true,
+    },
+    {
+      row: 3,
+      fullName: "Ivo N",
+      username: "ivon",
+      email: "ivo@ex.com",
+      imported: true,
+      emailSent: true,
+    },
+    {
+      row: 4,
+      fullName: "Quynh P",
+      username: "quynhp",
+      email: "quynh@ex.com",
+      imported: true,
+      emailSent: true,
+    },
   ],
 };
 
 const extras: ImportJob[] = Array.from({ length: 20 }).map((_, i) => {
   const idx = i + 1;
   const ok = idx % 5 !== 0;
-  const created = new Date(2025, 0, Math.min(28, (idx % 27) + 1), (idx % 23));
+  const created = new Date(2025, 0, Math.min(28, (idx % 27) + 1), idx % 23);
   return {
     id: `imp-2025${String(100 + idx).slice(1)}-${String(idx).padStart(3, "0")}`,
     fileName: `batch_${idx}.xlsx`,
@@ -134,28 +191,39 @@ function normalize(q: ImportListQuery = {}) {
   return { page, pageSize, kw, status };
 }
 
-export async function mockFetchImports(q: ImportListQuery = {}): Promise<ImportListResponse> {
+export async function mockFetchImports(
+  q: ImportListQuery = {},
+): Promise<ImportListResponse> {
   const { page, pageSize, kw, status } = normalize(q);
   let data = mockImports.slice();
   if (kw) {
-    data = data.filter((x) => [x.fileName, x.createdBy, x.status].some((v) => String(v).toLowerCase().includes(kw)));
+    data = data.filter((x) =>
+      [x.fileName, x.createdBy, x.status].some((v) =>
+        String(v).toLowerCase().includes(kw),
+      ),
+    );
   }
   if (status !== "ALL") data = data.filter((x) => x.status === status);
   data.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const total = data.length;
   const start = (page - 1) * pageSize;
   const end = start + pageSize;
-  const items = data.slice(start, end).map(({ results, ...rest }) => rest);
+  const items = data.slice(start, end).map(({ ...rest }) => rest);
   await new Promise((res) => setTimeout(res, 60)); // latency
   return { items, total, page, pageSize };
 }
 
-export async function mockFetchImportDetail(id: string): Promise<ImportJob | null> {
+export async function mockFetchImportDetail(
+  id: string,
+): Promise<ImportJob | null> {
   await new Promise((res) => setTimeout(res, 40));
   return mockImports.find((x) => x.id === id) ?? null;
 }
 
-export async function mockCreateImport(file: File, createdBy: string): Promise<ImportJob> {
+export async function mockCreateImport(
+  file: File,
+  createdBy: string,
+): Promise<ImportJob> {
   await new Promise((r) => setTimeout(r, 120)); // giả lập upload
 
   const id = `imp-${cryptoRandom()}`;
@@ -176,9 +244,39 @@ export async function mockCreateImport(file: File, createdBy: string): Promise<I
 
   setTimeout(() => {
     const results: RowResult[] = [
-      { row: 2, fullName: "Sample A", username: "samplea", email: "a@ex.com", imported: true, emailSent: true },
-      { row: 3, fullName: "Sample B", username: "sampleb", email: "b@ex.com", imported: false, emailSent: false, error: "Duplicate email" },
-      { row: 4, fullName: "Sample C", username: "samplec", email: "c@ex.com", imported: true, emailSent: true },
+      {
+        row: 2,
+        fullName: "Sample A",
+        username: "samplea",
+        email: "a@ex.com",
+        imported: true,
+        emailSent: true,
+      },
+      {
+        row: 3,
+        fullName: "Sample B",
+        username: "sampleb",
+        email: "b@ex.com",
+        imported: false,
+        emailSent: false,
+        error: "Duplicate email",
+      },
+      {
+        row: 4,
+        fullName: "Sample C",
+        username: "samplec",
+        email: "c@ex.com",
+        imported: true,
+        emailSent: true,
+      },
+      {
+        row: 5,
+        fullName: "Sample D",
+        username: "sampled",
+        email: "d@ex.com",
+        imported: true,
+        emailSent: true,
+      },
     ];
     const idx = mockImports.findIndex((x) => x.id === id);
     if (idx >= 0) {

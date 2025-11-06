@@ -352,6 +352,9 @@ export const mockOrganizationAdminDB = {
   delete(): void {
     // Mark as deleted (in real scenario, this would update the database)
     _organizationInfo.deleted = true;
+  },
+};
+
 // ---------------- Organizations Mock ----------------
 export type OrganizationSummary = {
   id: string;

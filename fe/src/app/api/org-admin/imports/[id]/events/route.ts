@@ -13,9 +13,9 @@ function beBase() {
 
 export async function GET(
   _req: NextRequest,
-  ctx: { params: Promise<{ id: string }> }
+  ctx: { params: { id: string } }
 ) {
-  const { id } = await ctx.params;
+  const { id } = ctx.params;
 
   const h = headers();
   const cookieStore = cookies();
@@ -24,7 +24,11 @@ export async function GET(
   const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
   const effectiveAuth = headerAuth || cookieAuth;
 
-  const fh: Record<string, string> = { accept: "text/event-stream" };
+  const fh: Record<string, string> = {
+    accept: "text/event-stream",
+    connection: "keep-alive",
+    "cache-control": "no-cache",
+  };
   if (effectiveAuth) fh["authorization"] = effectiveAuth;
 
   const cookieHeader = (await h).get("cookie");
@@ -32,12 +36,14 @@ export async function GET(
 
   const target = `${beBase()}/api/org-admin/imports/${id}/events`;
 
+  const controller = new AbortController();
   const upstream = await fetch(target, {
     method: "GET",
     headers: fh,
+    signal: controller.signal,
   });
 
-  // Bubble status và stream body SSE
+  // Stream passthrough
   return new Response(upstream.body, {
     status: upstream.status,
     headers: {

@@ -20,37 +20,37 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class ContactAdminServiceImpl implements ContactAdminService {
 
-  private final TicketRepository ticketRepository;
-  private final TicketMessageRepository ticketMessageRepository;
+    private final TicketRepository ticketRepository;
+    private final TicketMessageRepository ticketMessageRepository;
 
-  @Override
-  @Transactional
-  public ContactAdminResponse createTicket(ContactAdminRequest req) {
+    @Override
+    @Transactional
+    public ContactAdminResponse createTicket(ContactAdminRequest req) {
 
-    Ticket t = new Ticket();
-    t.setRequesterName(req.getName());
-    t.setRequesterEmail(req.getEmail());
-    t.setSubject(req.getSubject());
-    t.setCategory(req.getCategory());
-    t.setUrgency(req.getUrgency());
-    t.setStatus(TicketStatus.OPEN);
-    t.setMessage(req.getMessage());
-    t.setTicketCode(TicketCode.generate());
+        Ticket t = new Ticket();
+        t.setRequesterName(req.getName());
+        t.setRequesterEmail(req.getEmail());
+        t.setSubject(req.getSubject());
+        t.setCategory(req.getCategory());
+        t.setUrgency(req.getUrgency());
+        t.setStatus(TicketStatus.OPEN);
+        t.setMessage(req.getMessage());
+        t.setTicketCode(TicketCode.generate());
 
-    Ticket saved = ticketRepository.save(t);
+        Ticket saved = ticketRepository.save(t);
 
-    TicketMessage m = new TicketMessage();
-    m.setTicketId(saved.getTicketId());
-    m.setAuthorType(MsgAuthorType.USER);
-    m.setAuthorUserId(null);
-    m.setBody(req.getMessage());
-    ticketMessageRepository.save(m);
+        TicketMessage m = new TicketMessage();
+        m.setTicketId(saved.getTicketId());
+        m.setAuthorType(MsgAuthorType.USER);
+        m.setAuthorUserId(null);
+        m.setBody(req.getMessage());
+        ticketMessageRepository.save(m);
 
-    ContactAdminResponse res = new ContactAdminResponse();
-    res.setTicketId(String.valueOf(saved.getTicketId()));
-    res.setTicketCode(saved.getTicketCode());
-    res.setStatus(saved.getStatus().name());
-    res.setMessage("Your message has been received. We'll get back to you shortly.");
-    return res;
-  }
+        ContactAdminResponse res = new ContactAdminResponse();
+        res.setTicketId(String.valueOf(saved.getTicketId()));
+        res.setTicketCode(saved.getTicketCode());
+        res.setStatus(saved.getStatus().name());
+        res.setMessage("Your message has been received. We'll get back to you shortly.");
+        return res;
+    }
 }

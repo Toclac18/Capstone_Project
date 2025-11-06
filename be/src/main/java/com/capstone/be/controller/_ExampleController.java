@@ -9,17 +9,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/example")
 public class _ExampleController {
 
-  // Only ADMIN
-  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
-  @GetMapping("/1")
-  public String method1() {
-    return "BUSINESS_ADMIN 's route";
-  }
+    // Only ADMIN
+    @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+    @GetMapping("/1")
+    public String method1() {
+        return "BUSINESS_ADMIN 's route";
+    }
 
-  // READER and REVIEWER can access
-  @PreAuthorize("hasAnyRole('READER','REVIEWER')")
-  @GetMapping("/2")
-  public String method2() {
-    return "READER and REVIEWER's route";
-  }
+    // READER and REVIEWER can access
+    @PreAuthorize("hasAnyRole('READER','REVIEWER')")
+    @GetMapping("/2")
+    public String method2() {
+        return "READER and REVIEWER's route";
+    }
 }

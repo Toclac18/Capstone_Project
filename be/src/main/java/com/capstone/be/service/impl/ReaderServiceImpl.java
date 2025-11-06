@@ -20,65 +20,70 @@ import org.springframework.util.StringUtils;
 @Service
 public class ReaderServiceImpl implements ReaderService {
 
-  @Autowired private ReaderRepository readerRepository;
+    @Autowired
+    private ReaderRepository readerRepository;
 
-  @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
-  @Autowired private JwtService jwtService;
+    @Autowired
+    private JwtService jwtService;
 
-  @Autowired private EmailService emailService;
+    @Autowired
+    private EmailService emailService;
 
-  @Autowired private ReaderMapper readerMapper;
+    @Autowired
+    private ReaderMapper readerMapper;
 
-  @Override
-  @Transactional
-  public ReaderRegisterResponse register(ReaderRegisterRequest request) {
-    // Check email existed
-    if (readerRepository.existsByEmail(request.getEmail())) {
-      throw new IllegalArgumentException("Email has been used");
+    @Override
+    @Transactional
+    public ReaderRegisterResponse register(ReaderRegisterRequest request) {
+        // Check email existed
+        if (readerRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Email has been used");
+        }
+
+        // Check username existed
+        if (readerRepository.existsByUsername(request.getUsername())) {
+            throw new IllegalArgumentException("Username has been used");
+        }
+
+        // Create Reader Entity From Dto
+        Reader reader = readerMapper.toReader(request);
+        reader.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+
+        // Save Reader to DB
+        Reader savedReader = readerRepository.save(reader);
+
+        String verificationToken = jwtService.generateEmailVerifyToken(savedReader.getEmail());
+        System.out.println("Verify Token for " + savedReader.getEmail() + " : " + verificationToken);
+
+        emailService.sendReaderVerificationEmail(savedReader, verificationToken);
+
+        return readerMapper.toRegisterResponse(savedReader);
     }
 
-    // Check username existed
-    if (readerRepository.existsByUsername(request.getUsername())) {
-      throw new IllegalArgumentException("Username has been used");
+    @Override
+    @Transactional
+    public void verifyEmail(String token) {
+        if (!StringUtils.hasText(token)) {
+            throw ExceptionBuilder.badRequest("Verify token is required");
+        }
+
+        String email;
+        try {
+            email = jwtService.extractEmailFromEmailVerifyToken(token);
+        } catch (JwtException | IllegalArgumentException ex) {
+            throw ExceptionBuilder.badRequest("Verify token is invalid or expired");
+        }
+
+        Reader reader =
+                readerRepository
+                        .findByEmail(email)
+                        .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
+
+        if (ReaderStatus.PENDING_VERIFICATION.equals(reader.getStatus())) {
+            reader.setStatus(ReaderStatus.ACTIVE);
+        }
     }
-
-    // Create Reader Entity From Dto
-    Reader reader = readerMapper.toReader(request);
-    reader.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-
-    // Save Reader to DB
-    Reader savedReader = readerRepository.save(reader);
-
-    String verificationToken = jwtService.generateEmailVerifyToken(savedReader.getEmail());
-    System.out.println("Verify Token for " + savedReader.getEmail() + " : " + verificationToken);
-
-    emailService.sendReaderVerificationEmail(savedReader, verificationToken);
-
-    return readerMapper.toRegisterResponse(savedReader);
-  }
-
-  @Override
-  @Transactional
-  public void verifyEmail(String token) {
-    if (!StringUtils.hasText(token)) {
-      throw ExceptionBuilder.badRequest("Verify token is required");
-    }
-
-    String email;
-    try {
-      email = jwtService.extractEmailFromEmailVerifyToken(token);
-    } catch (JwtException | IllegalArgumentException ex) {
-      throw ExceptionBuilder.badRequest("Verify token is invalid or expired");
-    }
-
-    Reader reader =
-        readerRepository
-            .findByEmail(email)
-            .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
-
-    if (ReaderStatus.PENDING_VERIFICATION.equals(reader.getStatus())) {
-      reader.setStatus(ReaderStatus.ACTIVE);
-    }
-  }
 }

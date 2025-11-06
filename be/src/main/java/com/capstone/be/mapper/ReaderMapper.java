@@ -8,7 +8,7 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring")
 public interface ReaderMapper {
 
-  ReaderRegisterResponse toRegisterResponse(Reader reader);
+    ReaderRegisterResponse toRegisterResponse(Reader reader);
 
-  Reader toReader(ReaderRegisterRequest request);
+    Reader toReader(ReaderRegisterRequest request);
 }

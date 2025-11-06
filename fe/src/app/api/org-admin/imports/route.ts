@@ -41,10 +41,13 @@ export async function GET(req: NextRequest) {
 
     try {
       const { upstream, status, headers: h } = await forward(req, `/api/org-admin/imports/${id}/result`);
-      const text = await upstream.text();
-      return new Response(text, {
+      const csv = await upstream.text();
+      // Giữ nguyên content-disposition & content-type từ BE
+      const ct = h.get("content-type") ?? "text/csv; charset=utf-8";
+      const cd = h.get("content-disposition") ?? `attachment; filename=import_${id}_result.csv`;
+      return new Response(csv, {
         status,
-        headers: { "content-type": h.get("content-type") ?? "text/csv" },
+        headers: { "content-type": ct, "content-disposition": cd, "x-mode": "real" },
       });
     } catch (e: any) {
       return json({ message: "CSV download failed", error: String(e) }, 502);
@@ -119,15 +122,23 @@ export async function POST(req: NextRequest) {
 
 // ---------- Helpers ----------
 async function forward(req: NextRequest, path: string) {
-  const h = await headers();
+  const h = headers();
   const cookieStore = cookies();
-  const headerAuth = h.get("authorization") || "";
+  const headerAuth = (await h).get("authorization") || "";
   const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
   const effectiveAuth = headerAuth || cookieAuth;
 
   const upstreamUrl = beBase() + path;
+  const passHeaders: Record<string, string> = {
+    ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
+  };
+
+  // Forward Cookie cho BE nếu FE dùng session/cookie auth
+  const cookieHeader = (await h).get("cookie");
+  if (cookieHeader) passHeaders["cookie"] = cookieHeader;
+
   const upstream = await fetch(upstreamUrl, {
-    headers: { ...(effectiveAuth ? { Authorization: effectiveAuth } : {}) },
+    headers: passHeaders,
     cache: "no-store",
   });
 
@@ -135,16 +146,22 @@ async function forward(req: NextRequest, path: string) {
 }
 
 async function forwardForm(req: NextRequest, path: string, body: FormData) {
-  const h = await headers();
+  const h = headers();
   const cookieStore = cookies();
-  const headerAuth = h.get("authorization") || "";
+  const headerAuth = (await h).get("authorization") || "";
   const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
   const effectiveAuth = headerAuth || cookieAuth;
 
   const upstreamUrl = beBase() + path;
+  const passHeaders: Record<string, string> = {
+    ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
+  };
+  const cookieHeader = (await h).get("cookie");
+  if (cookieHeader) passHeaders["cookie"] = cookieHeader;
+
   const upstream = await fetch(upstreamUrl, {
     method: "POST",
-    headers: { ...(effectiveAuth ? { Authorization: effectiveAuth } : {}) },
+    headers: passHeaders,
     body,
   });
   return { upstream };

@@ -2,196 +2,195 @@ package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.ImportJob;
 import com.capstone.be.domain.entity.ImportRowResult;
+import com.capstone.be.domain.entity.Invitation;
 import com.capstone.be.domain.enums.ImportStatus;
 import com.capstone.be.dto.response.importReader.ProgressUpdate;
 import com.capstone.be.dto.response.importReader.RowUpdate;
 import com.capstone.be.repository.ImportJobRepository;
+import com.capstone.be.repository.ImportRowResultRepository;
+import com.capstone.be.repository.InvitationRepository;
+import com.capstone.be.security.util.JwtUtil;
 import com.capstone.be.service.EmailService;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 
-/**
- * ImportProcessor
- * - Read Excel (XLSX) and process each row
- * - Send per-row SSE ("row") right after each row is processed
- * - Send periodic SSE ("progress") every BATCH rows (and at the end)
- * - Save intermediate progress to repository to keep detail API in-sync
- */
-@Service
+@Component
 public class ImportProcessor {
 
-    private static final int PROGRESS_BATCH = 10; // send progress event every N rows
-
-    private final ImportJobRepository repo;
+    private static final int PROGRESS_BATCH = 10;
+    private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final String VERIFY_URL = "http://localhost:3000/verify-org-invitation";
+    private final ImportJobRepository jobRepo;
+    private final ImportRowResultRepository rowRepo;
     private final EmailService emailService;
     private final ProgressBroadcaster broadcaster;
-    private final DataFormatter fmt = new DataFormatter();
+    private final InvitationRepository invitationRepo;
+    private final JwtUtil jwtUtil;
 
-    public ImportProcessor(ImportJobRepository repo,
-                           EmailService emailService,
-                           ProgressBroadcaster broadcaster) {
-        this.repo = repo;
+    public ImportProcessor(
+            ImportJobRepository jobRepo,
+            ImportRowResultRepository rowRepo,
+            EmailService emailService,
+            ProgressBroadcaster broadcaster,
+            InvitationRepository invitationRepo,
+            JwtUtil jwtUtil) {
+        this.jobRepo = jobRepo;
+        this.rowRepo = rowRepo;
         this.emailService = emailService;
         this.broadcaster = broadcaster;
+        this.invitationRepo = invitationRepo;
+        this.jwtUtil = jwtUtil;
     }
 
-    @Async
-    public void process(String jobId, byte[] excelBytes) {
-        ImportJob job = repo.findById(jobId).orElse(null);
-        if (job == null) return;
-
-        int success = 0;
-        int fail = 0;
-
-        try (InputStream is = new ByteArrayInputStream(excelBytes);
-             XSSFWorkbook wb = new XSSFWorkbook(is)) {
-
+    @Async("taskExecutor")
+    public void process(String jobId, byte[] excelBytes, String createdBy) {
+        ImportJob job = jobRepo.findById(jobId).orElseThrow();
+        try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(excelBytes))) {
             Sheet sheet = wb.getSheetAt(0);
-            // Assume row 0 is header; lastRowNum is 0-based; totalRows excludes header
-            final int lastRow = sheet.getLastRowNum();
-            final int totalRows = Math.max(0, lastRow);
+            DataFormatter fmt = new DataFormatter();
 
-            // Initialize job counters
+            int lastRow = sheet.getLastRowNum(); // 0-based, header at 0
+            job.setTotalRows(Math.max(0, lastRow));
             job.setStatus(ImportStatus.PROCESSING);
-            job.setTotalRows(totalRows);
-            job.setProcessedRows(0);
-            job.setSuccessCount(0);
-            job.setFailureCount(0);
-            repo.save(job);
+            jobRepo.save(job);
+
+            int processed = 0, success = 0, failure = 0;
 
             for (int i = 1; i <= lastRow; i++) {
-                Row row = sheet.getRow(i);
-                if (row == null) continue;
+                Row excelRow = sheet.getRow(i);
+                if (excelRow == null) continue;
 
-                final String fullName = get(row, 0);
-                final String username = get(row, 1);
-                final String email    = get(row, 2);
+                String fullName = fmt.formatCellValue(excelRow.getCell(0)).trim();
+                String username = fmt.formatCellValue(excelRow.getCell(1)).trim();
+                String email = fmt.formatCellValue(excelRow.getCell(2)).trim();
 
                 ImportRowResult rr = new ImportRowResult();
-                rr.setRow(i + 1); // 1-based, header at 1 => data starts at 2
+                rr.setRow(i + 1);
                 rr.setFullName(fullName);
                 rr.setUsername(username);
                 rr.setEmail(email);
+                rr.setImported(false);
+                rr.setEmailSent(false);
+                rr.setError(null);
+                rr.setJob(job);
+                rowRepo.save(rr);
 
-                boolean valid = isValid(username, email);
+                boolean valid = username != null && !username.isBlank() && email != null && email.contains("@");
                 if (valid) {
                     boolean sent = false;
                     try {
-                        // You can generate / lookup the initial password from your domain
-                        sent = emailService.sendWelcomeEmail(email, username, "Temp#1234");
-                    } catch (Exception mailEx) {
-                        // Email failure should not block the import; mark imported but emailSent=false
+                        String token = jwtUtil.generateEmailVerifyToken(email);
+
+                        OffsetDateTime now = OffsetDateTime.now(VN_ZONE);
+                        OffsetDateTime expiresAt = now.plus(
+                                Duration.ofMillis(jwtUtil.getEmailVerificationExpirationMs())
+                        );
+
+                        Invitation inv = new Invitation();
+                        inv.setEmail(email);
+                        inv.setUsername(username);
+                        inv.setToken(token);
+                        inv.setCreatedAt(now);
+                        inv.setExpiresAt(expiresAt);
+                        inv.setCreatedBy(createdBy);
+                        inv.setAccepted(false);
+                        invitationRepo.save(inv);
+
+                        String verifyLink = VERIFY_URL + "?token=" + token;
+                        sent = emailService.sendInvitationEmail(email, username, verifyLink, expiresAt);
+                    } catch (Exception ex) {
                         sent = false;
                     }
                     rr.setImported(true);
                     rr.setEmailSent(sent);
+                    rowRepo.save(rr);
                     success++;
                 } else {
                     rr.setImported(false);
                     rr.setEmailSent(false);
                     rr.setError("Validation failed");
-                    fail++;
+                    rowRepo.save(rr);
+                    failure++;
                 }
 
-                // append result & update job counters
-                job.getResults().add(rr);
-                job.setProcessedRows(job.getResults().size());
+                processed++;
+                job.setProcessedRows(processed);
                 job.setSuccessCount(success);
-                job.setFailureCount(fail);
+                job.setFailureCount(failure);
 
                 RowUpdate ru = new RowUpdate();
-                ru.jobId = jobId;
+                ru.jobId = job.getId();
                 ru.row = rr.getRow();
-                ru.fullName = rr.getFullName();
-                ru.username = rr.getUsername();
-                ru.email = rr.getEmail();
+                ru.fullName = fullName;
+                ru.username = username;
+                ru.email = email;
                 ru.imported = rr.isImported();
                 ru.emailSent = rr.isEmailSent();
                 ru.error = rr.getError();
-
-                ru.processedRows = job.getProcessedRows();
-                ru.totalRows = totalRows;
+                ru.processedRows = processed;
+                ru.totalRows = job.getTotalRows();
                 ru.successCount = success;
-                ru.failureCount = fail;
-                ru.percent = computePercent(ru.processedRows, ru.totalRows);
-                broadcaster.send(jobId, "row", ru);
+                ru.failureCount = failure;
+                ru.percent = percent(processed, job.getTotalRows());
+                broadcaster.send(job.getId(), "row", ru);
 
-                // Persist & send progress periodically or at last row
-                if (i % PROGRESS_BATCH == 0 || i == lastRow) {
-                    job.setStatus(ImportStatus.PROCESSING);
-                    repo.save(job);
-
-                    ProgressUpdate up = new ProgressUpdate();
-                    up.jobId = jobId;
-                    up.totalRows = totalRows;
-                    up.processedRows = job.getProcessedRows();
-                    up.successCount = success;
-                    up.failureCount = fail;
-                    up.status = job.getStatus().name();
-                    up.percent = computePercent(up.processedRows, up.totalRows);
-                    broadcaster.send(jobId, "progress", up);
+                if (processed % PROGRESS_BATCH == 0 || i == lastRow) {
+                    jobRepo.save(job);
+                    ProgressUpdate pu = new ProgressUpdate();
+                    pu.jobId = job.getId();
+                    pu.processedRows = processed;
+                    pu.totalRows = job.getTotalRows();
+                    pu.successCount = success;
+                    pu.failureCount = failure;
+                    pu.status = job.getStatus().name();
+                    pu.percent = percent(processed, job.getTotalRows());
+                    broadcaster.send(job.getId(), "progress", pu);
                 }
             }
 
-            // Finalize status
             job.setStatus(ImportStatus.COMPLETED);
-            repo.save(job);
+            jobRepo.save(job);
 
-            // Final progress = 100
-            ProgressUpdate done = new ProgressUpdate();
-            done.jobId = jobId;
-            done.totalRows = job.getTotalRows();
-            done.processedRows = job.getProcessedRows();
-            done.successCount = job.getSuccessCount();
-            done.failureCount = job.getFailureCount();
-            done.status = job.getStatus().name();
-            done.percent = 100;
-            broadcaster.send(jobId, "progress", done);
-            broadcaster.complete(jobId);
+            ProgressUpdate end = new ProgressUpdate();
+            end.jobId = job.getId();
+            end.processedRows = processed;
+            end.totalRows = job.getTotalRows();
+            end.successCount = success;
+            end.failureCount = failure;
+            end.status = job.getStatus().name();
+            end.percent = 100;
+            broadcaster.send(job.getId(), "progress", end);
+            broadcaster.complete(job.getId());
 
         } catch (Exception e) {
-            // Mark job failed and close the stream
             job.setStatus(ImportStatus.FAILED);
-            repo.save(job);
+            jobRepo.save(job);
 
-            ProgressUpdate err = new ProgressUpdate();
-            err.jobId = jobId;
-            err.totalRows = job.getTotalRows();
-            err.processedRows = job.getProcessedRows();
-            err.successCount = job.getSuccessCount();
-            err.failureCount = job.getFailureCount();
-            err.status = "FAILED";
-            err.percent = 100;
-            broadcaster.send(jobId, "progress", err);
-            broadcaster.complete(jobId);
+            ProgressUpdate end = new ProgressUpdate();
+            end.jobId = job.getId();
+            end.processedRows = job.getProcessedRows();
+            end.totalRows = job.getTotalRows();
+            end.successCount = job.getSuccessCount();
+            end.failureCount = job.getFailureCount();
+            end.status = job.getStatus().name();
+            end.percent = 100;
+            broadcaster.send(job.getId(), "progress", end);
+            broadcaster.complete(job.getId());
         }
     }
 
-    // ===== helpers =====
-
-    private String get(Row r, int i) {
-        try {
-            Cell c = r.getCell(i);
-            return c == null ? null : fmt.formatCellValue(c).trim();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private boolean isValid(String username, String email) {
-        if (username == null || username.isBlank()) return false;
-        if (email == null || email.isBlank()) return false;
-        return email.contains("@");
-    }
-
-    private int computePercent(int processed, int total) {
+    private int percent(int processed, int total) {
         if (total <= 0) return 0;
-        int p = (int) Math.round(100.0 * processed / total);
+        int p = (int) Math.round(processed * 100.0 / total);
         return Math.max(0, Math.min(100, p));
     }
 }

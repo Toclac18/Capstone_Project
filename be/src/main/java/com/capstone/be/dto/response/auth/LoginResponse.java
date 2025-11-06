@@ -8,11 +8,11 @@ import lombok.Value;
 @Builder
 public class LoginResponse {
 
-  String accessToken;
-  String tokenType;
-  long expiresIn;
-  String subjectId;
-  UserRole role;
-  String email;
-  String displayName;
+    String accessToken;
+    String tokenType;
+    long expiresIn;
+    String subjectId;
+    UserRole role;
+    String email;
+    String displayName;
 }

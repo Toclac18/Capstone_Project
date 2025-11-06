@@ -5,7 +5,7 @@ import com.capstone.be.dto.response.auth.ReaderRegisterResponse;
 
 public interface ReaderService {
 
-  ReaderRegisterResponse register(ReaderRegisterRequest request);
+    ReaderRegisterResponse register(ReaderRegisterRequest request);
 
-  void verifyEmail(String token);
+    void verifyEmail(String token);
 }

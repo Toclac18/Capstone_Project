@@ -1,67 +1,41 @@
 package com.capstone.be.domain.entity;
 
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+@Entity
+@Table(name = "import_job_results")
+@Getter
+@Setter
 public class ImportRowResult {
-  private int row;
-  private String fullName;
-  private String username;
-  private String email;
-  private boolean imported;
-  private boolean emailSent;
-  private String error; // nullable
 
-  public int getRow() {
-    return row;
-  }
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-  public void setRow(int row) {
-    this.row = row;
-  }
+    @Column(name = "row_no", nullable = false)
+    private int row;
 
-  public String getFullName() {
-    return fullName;
-  }
+    @Column(name = "full_name", length = 255)
+    private String fullName;
 
-  public void setFullName(String fullName) {
-    this.fullName = fullName;
-  }
+    @Column(name = "username", length = 100)
+    private String username;
 
-  public String getUsername() {
-    return username;
-  }
+    @Column(name = "email", length = 255)
+    private String email;
 
-  public void setUsername(String username) {
-    this.username = username;
-  }
+    @Column(name = "imported")
+    private boolean imported;
 
-  public String getEmail() {
-    return email;
-  }
+    @Column(name = "email_sent")
+    private boolean emailSent;
 
-  public void setEmail(String email) {
-    this.email = email;
-  }
+    @Column(name = "error", length = 500)
+    private String error; // nullable
 
-  public boolean isImported() {
-    return imported;
-  }
-
-  public void setImported(boolean imported) {
-    this.imported = imported;
-  }
-
-  public boolean isEmailSent() {
-    return emailSent;
-  }
-
-  public void setEmailSent(boolean emailSent) {
-    this.emailSent = emailSent;
-  }
-
-  public String getError() {
-    return error;
-  }
-
-  public void setError(String error) {
-    this.error = error;
-  }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "job_id", nullable = false)
+    private ImportJob job;
 }

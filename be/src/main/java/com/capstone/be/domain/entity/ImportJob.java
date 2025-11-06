@@ -1,100 +1,55 @@
 package com.capstone.be.domain.entity;
 
 import com.capstone.be.domain.enums.ImportStatus;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
+@Entity
+@Table(name = "import_jobs")
+@Getter
+@Setter
 public class ImportJob {
-  private String id = "imp-" + UUID.randomUUID();
-  private String fileName;
-  private OffsetDateTime createdAt = OffsetDateTime.now();
-  private String createdBy;
 
-  private int totalRows;
-  private int processedRows;
-  private int successCount;
-  private int failureCount;
-  private ImportStatus status = ImportStatus.PENDING;
+    @Id
+    @Column(name = "id", nullable = false, length = 64)
+    private String id = "imp-" + UUID.randomUUID();
 
-  private java.util.List<ImportRowResult> results = new java.util.ArrayList<>();
+    @Column(name = "file_name", length = 255)
+    private String fileName;
 
-  public String getId() {
-    return id;
-  }
+    @Column(name = "created_at", nullable = false)
+    private OffsetDateTime createdAt = OffsetDateTime.now();
 
-  public void setId(String id) {
-    this.id = id;
-  }
+    @Column(name = "created_by", length = 100)
+    private String createdBy;
 
-  public String getFileName() {
-    return fileName;
-  }
+    @Column(name = "total_rows")
+    private int totalRows;
 
-  public void setFileName(String fileName) {
-    this.fileName = fileName;
-  }
+    @Column(name = "processed_rows")
+    private int processedRows;
 
-  public OffsetDateTime getCreatedAt() {
-    return createdAt;
-  }
+    @Column(name = "success_count")
+    private int successCount;
 
-  public void setCreatedAt(OffsetDateTime createdAt) {
-    this.createdAt = createdAt;
-  }
+    @Column(name = "failure_count")
+    private int failureCount;
 
-  public String getCreatedBy() {
-    return createdBy;
-  }
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 20, nullable = false)
+    private ImportStatus status = ImportStatus.PENDING;
 
-  public void setCreatedBy(String createdBy) {
-    this.createdBy = createdBy;
-  }
-
-  public int getTotalRows() {
-    return totalRows;
-  }
-
-  public void setTotalRows(int totalRows) {
-    this.totalRows = totalRows;
-  }
-
-  public int getProcessedRows() {
-    return processedRows;
-  }
-
-  public void setProcessedRows(int processedRows) {
-    this.processedRows = processedRows;
-  }
-
-  public int getSuccessCount() {
-    return successCount;
-  }
-
-  public void setSuccessCount(int successCount) {
-    this.successCount = successCount;
-  }
-
-  public int getFailureCount() {
-    return failureCount;
-  }
-
-  public void setFailureCount(int failureCount) {
-    this.failureCount = failureCount;
-  }
-
-  public ImportStatus getStatus() {
-    return status;
-  }
-
-  public void setStatus(ImportStatus status) {
-    this.status = status;
-  }
-
-  public java.util.List<ImportRowResult> getResults() {
-    return results;
-  }
-
-  public void setResults(java.util.List<ImportRowResult> results) {
-    this.results = results;
-  }
+    @OneToMany(
+            mappedBy = "job",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
+    @OrderBy("row ASC")
+    private List<ImportRowResult> results = new ArrayList<>();
 }

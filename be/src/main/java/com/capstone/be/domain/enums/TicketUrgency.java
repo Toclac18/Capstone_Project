@@ -1,7 +1,7 @@
 package com.capstone.be.domain.enums;
 
 public enum TicketUrgency {
-  LOW,
-  NORMAL,
-  HIGH
+    LOW,
+    NORMAL,
+    HIGH
 }

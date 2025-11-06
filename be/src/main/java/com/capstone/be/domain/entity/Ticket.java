@@ -6,8 +6,9 @@ import com.capstone.be.domain.enums.TicketStatus;
 import com.capstone.be.domain.enums.TicketUrgency;
 import com.capstone.be.util.TicketCode;
 import jakarta.persistence.*;
-import java.time.Instant;
 import lombok.*;
+
+import java.time.Instant;
 
 @EqualsAndHashCode(callSuper = true)
 @Builder
@@ -17,51 +18,51 @@ import lombok.*;
 @AllArgsConstructor
 @Table(name = "tickets")
 public class Ticket extends BaseEntity {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long ticketId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long ticketId;
 
-  @Column(name = "ticket_code", length = 20, nullable = false, unique = true)
-  private String ticketCode;
+    @Column(name = "ticket_code", length = 20, nullable = false, unique = true)
+    private String ticketCode;
 
-  @Column(name = "requester_user_id")
-  private Long requesterUserId;
+    @Column(name = "requester_user_id")
+    private Long requesterUserId;
 
-  @Column(name = "requester_name", length = 120, nullable = false)
-  private String requesterName;
+    @Column(name = "requester_name", length = 120, nullable = false)
+    private String requesterName;
 
-  @Column(name = "requester_email", nullable = false)
-  private String requesterEmail;
+    @Column(name = "requester_email", nullable = false)
+    private String requesterEmail;
 
-  @Column(length = 160, nullable = false)
-  private String subject;
+    @Column(length = 160, nullable = false)
+    private String subject;
 
-  @Lob
-  @Column(nullable = false)
-  private String message;
+    @Lob
+    @Column(nullable = false)
+    private String message;
 
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
-  private TicketCategory category = TicketCategory.OTHER;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TicketCategory category = TicketCategory.OTHER;
 
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
-  private TicketUrgency urgency = TicketUrgency.NORMAL;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TicketUrgency urgency = TicketUrgency.NORMAL;
 
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
-  private TicketStatus status = TicketStatus.OPEN;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TicketStatus status = TicketStatus.OPEN;
 
-  @Column(name = "assigned_to")
-  private Long assignedTo;
+    @Column(name = "assigned_to")
+    private Long assignedTo;
 
-  @Column(name = "closed_at")
-  private Instant closedAt;
+    @Column(name = "closed_at")
+    private Instant closedAt;
 
-  @PrePersist
-  public void prePersist() {
-    if (this.ticketCode == null || this.ticketCode.isBlank()) {
-      this.ticketCode = TicketCode.generate();
+    @PrePersist
+    public void prePersist() {
+        if (this.ticketCode == null || this.ticketCode.isBlank()) {
+            this.ticketCode = TicketCode.generate();
+        }
     }
-  }
 }

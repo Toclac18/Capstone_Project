@@ -1,15 +1,11 @@
 package com.capstone.be.domain.entity;
 
 import com.capstone.be.domain.entity.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import java.util.UUID;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.util.UUID;
 
 @Entity
 @Table(name = "organizations")
@@ -17,31 +13,31 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class Organization extends BaseEntity {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.UUID)
-  private UUID id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-  @Column(unique = true, nullable = false)
-  private String email;
+    @Column(unique = true, nullable = false)
+    private String email;
 
-  @Column(unique = true, nullable = false)
-  private String hotline;
+    @Column(unique = true, nullable = false)
+    private String hotline;
 
-  private String logo;
+    private String logo;
 
-  private String address;
+    private String address;
 
-  @Column(nullable = false)
-  private String status; // #temp
+    @Column(nullable = false)
+    private String status; // #temp
 
-  /* ORGANIZATION ADMIN */
-  private String adminName;
-  private String adminPassword;
-  private String adminEmail;
+    /* ORGANIZATION ADMIN */
+    private String adminName;
+    private String adminPassword;
+    private String adminEmail;
 
-  @Column(nullable = false)
-  private Boolean active = true;
+    @Column(nullable = false)
+    private Boolean active = true;
 
-  @Column(nullable = false)
-  private Boolean deleted = false;
+    @Column(nullable = false)
+    private Boolean deleted = false;
 }

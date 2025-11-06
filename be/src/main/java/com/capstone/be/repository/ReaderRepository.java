@@ -1,17 +1,18 @@
 package com.capstone.be.repository;
 
 import com.capstone.be.domain.entity.Reader;
-import java.util.Optional;
-import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface ReaderRepository extends JpaRepository<Reader, UUID> {
 
-  boolean existsByEmail(String email);
+    boolean existsByEmail(String email);
 
-  boolean existsByUsername(String username);
+    boolean existsByUsername(String username);
 
-  Optional<Reader> findByEmail(String email);
+    Optional<Reader> findByEmail(String email);
 }

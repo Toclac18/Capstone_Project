@@ -15,7 +15,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableJpaAuditing
 public class BeApplication {
 
-  public static void main(String[] args) {
-    SpringApplication.run(BeApplication.class, args);
-  }
+    public static void main(String[] args) {
+        SpringApplication.run(BeApplication.class, args);
+    }
 }

@@ -13,9 +13,10 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ChangePasswordRequest {
 
-  @NotBlank private String currentPassword;
+    @NotBlank
+    private String currentPassword;
 
-  @NotBlank
-  @Size(min = 8, max = 64)
-  private String newPassword;
+    @NotBlank
+    @Size(min = 8, max = 64)
+    private String newPassword;
 }

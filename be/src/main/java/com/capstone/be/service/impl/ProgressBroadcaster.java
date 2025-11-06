@@ -2,9 +2,11 @@ package com.capstone.be.service.impl;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 @Service
 public class ProgressBroadcaster {
@@ -39,9 +41,12 @@ public class ProgressBroadcaster {
         var set = emitters.remove(jobId);
         if (set == null) return;
         for (SseEmitter em : set) {
-            try { em.send(SseEmitter.event().name("complete").data(Map.of("done", true))); }
-            catch (IOException ignored) {}
-            finally { em.complete(); }
+            try {
+                em.send(SseEmitter.event().name("complete").data(Map.of("done", true)));
+            } catch (IOException ignored) {
+            } finally {
+                em.complete();
+            }
         }
     }
 

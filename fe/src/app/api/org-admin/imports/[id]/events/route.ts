@@ -11,10 +11,7 @@ function beBase() {
   );
 }
 
-export async function GET(
-  _req: NextRequest,
-  ctx: { params: { id: string } }
-) {
+async function GET(_req: NextRequest, ctx: { params: { id: string } }) {
   const { id } = ctx.params;
 
   const h = headers();

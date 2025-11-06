@@ -11,6 +11,7 @@ function beBase() {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function GET(_req: NextRequest, ctx: { params: { id: string } }) {
   const { id } = ctx.params;
 

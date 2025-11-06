@@ -24,10 +24,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
   private static final String[] PUBLIC_ENDPOINTS = {
-      "/api/auth/*",
-      "/api/auth/*/*",
-      "/api/auth/*/*/*",
-      "/api/contact-admin"
+      "/api/auth/login",
+      "/api/auth/register-reader",
+      "/api/auth/register-reviewer",
+      "/api/auth/register-organization",
+      "/api/contact-admin",
+      "/api/org-admin/imports/*/events"
   };
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -74,4 +76,6 @@ public class SecurityConfig {
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
   }
+
+
 }

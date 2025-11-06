@@ -9,6 +9,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -100,6 +101,13 @@ public class GlobalExceptionHandler {
     String msg = ex.getReason() != null ? ex.getReason() : "Error";
     return buildProblemDetail(status != null ? status : HttpStatus.INTERNAL_SERVER_ERROR,
         ex.getStatusCode().toString(), msg, status.name(), req);
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ProblemDetail> handleMissingBody(HttpMessageNotReadableException ex,
+      HttpServletRequest req) {
+    return buildProblemDetail(HttpStatus.BAD_REQUEST, "REQUEST BODY ERROR",
+        "Require valid request body", "BAD_REQUEST", req);
   }
 
   // 500: System error

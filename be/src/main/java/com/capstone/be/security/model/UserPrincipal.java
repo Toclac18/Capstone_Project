@@ -13,10 +13,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import lombok.Getter;
+import lombok.ToString;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+@ToString
 public class UserPrincipal implements UserDetails {
 
   @Getter
@@ -50,7 +52,7 @@ public class UserPrincipal implements UserDetails {
 
   public static UserPrincipal fromReader(Reader reader) {
     boolean locked = ReaderStatus.DEACTIVE.equals(reader.getStatus());
-    boolean enabled = ReaderStatus.PENDING_VERIFICATION.equals(reader.getStatus());
+    boolean enabled = ReaderStatus.ACTIVE.equals(reader.getStatus());
     return new UserPrincipal(
         reader.getId(),
         UserRole.READER,

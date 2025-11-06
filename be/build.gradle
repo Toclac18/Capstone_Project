@@ -4,14 +4,6 @@ plugins {
     id 'java'
     id 'com.diffplug.spotless' version '6.25.0'
 }
-
-spotless {
-    java {
-        target 'src/*/java/**/*.java'
-        googleJavaFormat()
-    }
-}
-
 group = 'com.capstone'
 version = '0.0.1-SNAPSHOT'
 

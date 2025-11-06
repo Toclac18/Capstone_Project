@@ -63,7 +63,7 @@ public class AuthController {
     return authService.registerOrganization(info, files);
   }
 
-  @PreAuthorize("hasAnyRole(READER, REVIEWER, ORGANIZATION)")
+  @PreAuthorize("hasAnyRole('READER', 'REVIEWER', 'ORGANIZATION')")
   @DeleteMapping("/delete-account")
   public SuccessResponse<?> deleteAccount(@Valid @RequestBody DeleteAccountRequest request,
       @AuthenticationPrincipal UserPrincipal principal) {

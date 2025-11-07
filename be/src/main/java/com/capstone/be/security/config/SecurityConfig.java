@@ -29,7 +29,11 @@ public class SecurityConfig {
       "/api/auth/register-reviewer",
       "/api/auth/register-organization",
       "/api/contact-admin",
-      "/api/org-admin/imports/*/events"
+      "/api/org-admin/imports/*/events",
+      "/swagger-ui.html", //Swagger / Open API #temp
+      "/swagger-ui/**",
+      "/v3/api-docs/**",
+      "/api-docs/**"
   };
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;

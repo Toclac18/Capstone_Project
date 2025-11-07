@@ -6,6 +6,7 @@ import {
   useMemo,
   useState,
   Suspense,
+  useTransition,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { fetchImports, ImportListResponse } from "@/services/orgAdmin-imports";
@@ -34,8 +35,10 @@ export function useImportHistory() {
 function ImportHistoryInner({ children }: { children: React.ReactNode }) {
   const sp = useSearchParams();
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+
   const [data, setData] = useState<ImportListResponse | undefined>();
+  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const filters: Filters = useMemo(
     () => ({
@@ -49,14 +52,19 @@ function ImportHistoryInner({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
+
+    startTransition(() => setLoading(true));
 
     fetchImports(filters)
       .then((d) => {
-        if (mounted) setData(d);
+        if (mounted) {
+          setData(d);
+        }
       })
       .finally(() => {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          startTransition(() => setLoading(false));
+        }
       });
 
     return () => {
@@ -78,7 +86,13 @@ function ImportHistoryInner({ children }: { children: React.ReactNode }) {
 
   return (
     <ImportHistoryCtx.Provider
-      value={{ data, loading, filters, setFilters, gotoPage }}
+      value={{
+        data,
+        loading: loading || isPending,
+        filters,
+        setFilters,
+        gotoPage,
+      }}
     >
       {children}
     </ImportHistoryCtx.Provider>

@@ -30,19 +30,19 @@ public interface TicketMapper {
     String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     StringBuilder sb = new StringBuilder("TKT-");
     java.util.Random rnd = new java.util.Random();
-      for (int i = 0; i < 8; i++) {
-          sb.append(chars.charAt(rnd.nextInt(chars.length())));
-      }
+    for (int i = 0; i < 8; i++) {
+      sb.append(chars.charAt(rnd.nextInt(chars.length())));
+    }
     return sb.toString();
   }
 
   @AfterMapping
   default void ensureTimestamps(@MappingTarget Ticket t) {
-      if (t.getCreatedAt() == null) {
-          t.setCreatedAt(LocalDateTime.now());
-      }
-      if (t.getUpdatedAt() == null) {
-          t.setUpdatedAt(LocalDateTime.now());
-      }
+    if (t.getCreatedAt() == null) {
+      t.setCreatedAt(LocalDateTime.now());
+    }
+    if (t.getUpdatedAt() == null) {
+      t.setUpdatedAt(LocalDateTime.now());
+    }
   }
 }

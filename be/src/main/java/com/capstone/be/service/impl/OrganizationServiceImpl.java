@@ -68,8 +68,12 @@ public class OrganizationServiceImpl implements OrganizationService {
     // Pagination (page starts from 1)
     int page = Optional.ofNullable(request.getPage()).orElse(1);
     int limit = Optional.ofNullable(request.getLimit()).orElse(10);
-    if (page < 1) page = 1;
-    if (limit < 1) limit = 10;
+    if (page < 1) {
+      page = 1;
+    }
+    if (limit < 1) {
+      limit = 10;
+    }
     int fromIndex = Math.min((page - 1) * limit, filtered.size());
     int toIndex = Math.min(fromIndex + limit, filtered.size());
 
@@ -97,7 +101,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     OrganizationStatus status = request.getStatus();
     organization.setStatus(status);
-    
+
     // Update active field based on status
     if (status == OrganizationStatus.ACTIVE) {
       organization.setActive(true);
@@ -105,7 +109,7 @@ public class OrganizationServiceImpl implements OrganizationService {
       organization.setActive(false);
     }
     // PENDING_VERIFICATION can have active = true or false depending on business logic
-    
+
     // updatedAt will be handled by auditing; touch entity to mark update
     organization.setUpdatedAt(LocalDateTime.now());
     Organization saved = organizationRepository.save(organization);
@@ -123,7 +127,9 @@ public class OrganizationServiceImpl implements OrganizationService {
   }
 
   private boolean applySearch(Organization org, String search) {
-    if (search == null || search.isBlank()) return true;
+    if (search == null || search.isBlank()) {
+      return true;
+    }
     String q = search.toLowerCase(Locale.ROOT);
     return contains(org.getName(), q)
         || contains(org.getEmail(), q)
@@ -138,7 +144,9 @@ public class OrganizationServiceImpl implements OrganizationService {
   }
 
   private boolean applyStatus(Organization org, String status) {
-    if (status == null || status.isBlank()) return true;
+    if (status == null || status.isBlank()) {
+      return true;
+    }
     try {
       OrganizationStatus filterStatus = OrganizationStatus.valueOf(status.toUpperCase());
       return org.getStatus() == filterStatus;
@@ -148,7 +156,8 @@ public class OrganizationServiceImpl implements OrganizationService {
         return org.getStatus() == OrganizationStatus.ACTIVE || Boolean.TRUE.equals(org.getActive());
       }
       if ("DEACTIVE".equalsIgnoreCase(status) || "INACTIVE".equalsIgnoreCase(status)) {
-        return org.getStatus() == OrganizationStatus.DEACTIVE || Boolean.FALSE.equals(org.getActive());
+        return org.getStatus() == OrganizationStatus.DEACTIVE || Boolean.FALSE.equals(
+            org.getActive());
       }
       return true;
     }
@@ -156,16 +165,20 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   private boolean applyDateRange(Organization org, String dateFrom, String dateTo) {
     LocalDateTime createdAt = org.getCreatedAt();
-    if (createdAt == null) return true;
+    if (createdAt == null) {
+      return true;
+    }
     try {
       if (dateFrom != null && !dateFrom.isBlank()) {
         LocalDate from = LocalDate.parse(dateFrom);
-        if (createdAt.isBefore(from.atStartOfDay())) return false;
+        if (createdAt.isBefore(from.atStartOfDay())) {
+          return false;
+        }
       }
       if (dateTo != null && !dateTo.isBlank()) {
         LocalDate to = LocalDate.parse(dateTo);
         LocalDateTime endOfDay = to.plusDays(1).atStartOfDay().minusNanos(1);
-        if (createdAt.isAfter(endOfDay)) return false;
+        return !createdAt.isAfter(endOfDay);
       }
       return true;
     } catch (DateTimeParseException e) {
@@ -174,7 +187,9 @@ public class OrganizationServiceImpl implements OrganizationService {
   }
 
   private Comparator<Organization> buildComparator(String sortBy) {
-    if (sortBy == null || sortBy.isBlank()) sortBy = "createdAt";
+    if (sortBy == null || sortBy.isBlank()) {
+      sortBy = "createdAt";
+    }
     switch (sortBy) {
       case "name":
         return Comparator.comparing(o -> nullSafeString(o.getName()));

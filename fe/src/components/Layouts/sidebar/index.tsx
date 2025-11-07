@@ -4,7 +4,7 @@ import { Logo } from "@/components/logo";
 import { cn } from "@/utils/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { NAV_DATA, BUSINESS_ADMIN_NAV_DATA } from "./data";
 import { ArrowLeftIcon, ChevronUp } from "./icons";
 import { MenuItem } from "./menu-item";
@@ -19,14 +19,9 @@ export function Sidebar() {
   const isBusinessAdmin = pathname?.startsWith('/business-admin');
   const navData = isBusinessAdmin ? BUSINESS_ADMIN_NAV_DATA : NAV_DATA;
 
-  const toggleExpanded = (title: string) => {
+  const toggleExpanded = useCallback((title: string) => {
     setExpandedItems((prev) => (prev.includes(title) ? [] : [title]));
-
-    // Uncomment the following line to enable multiple expanded items
-    // setExpandedItems((prev) =>
-    //   prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title],
-    // );
-  };
+  }, []);
 
   useEffect(() => {
     // Keep collapsible open, when it's subpage is active
@@ -37,14 +32,13 @@ export function Sidebar() {
             if (!expandedItems.includes(item.title)) {
               toggleExpanded(item.title);
             }
-
             // Break the loop
             return true;
           }
         });
       });
     });
-  }, [pathname]);
+  }, [pathname, navData, expandedItems, toggleExpanded]);
 
   return (
     <>

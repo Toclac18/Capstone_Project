@@ -12,17 +12,18 @@ import styles from "../styles.module.css";
 export default function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
-  const [message, setMessage] = useState("");
+  const token = searchParams.get("token");
+  
+  const [status, setStatus] = useState<"verifying" | "success" | "error">(() => {
+    return token ? "verifying" : "error";
+  });
+  
+  const [message, setMessage] = useState(() => {
+    return token ? "" : "Verification token is missing";
+  });
 
   useEffect(() => {
-    const token = searchParams.get("token");
-    
-    if (!token) {
-      setStatus("error");
-      setMessage("Verification token is missing");
-      return;
-    }
+    if (!token) return;
 
     const verify = async () => {
       try {

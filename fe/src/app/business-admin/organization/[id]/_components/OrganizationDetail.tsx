@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import type { Organization } from "../../api";
@@ -20,11 +20,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
   const [success, setSuccess] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
 
-  useEffect(() => {
-    fetchOrganization();
-  }, [organizationId]);
-
-  const fetchOrganization = async () => {
+  const fetchOrganization = useCallback(async () => {
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -39,7 +35,11 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
     } finally {
       setLoading(false);
     }
-  };
+  }, [organizationId]);
+
+  useEffect(() => {
+    fetchOrganization();
+  }, [fetchOrganization]);
 
   const handleStatusUpdate = async (newStatus: "ACTIVE" | "INACTIVE") => {
     setLoading(true);

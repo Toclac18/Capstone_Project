@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { BellIcon } from "./icons";
@@ -91,8 +91,10 @@ export function NotificationDetailModal({
 }: NotificationDetailModalProps) {
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
+  useLayoutEffect(() => {
+    queueMicrotask(() => {
+      setMounted(true);
+    });
   }, []);
 
   if (!mounted || !isOpen || !notification) return null;

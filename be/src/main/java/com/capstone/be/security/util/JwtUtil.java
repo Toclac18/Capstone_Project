@@ -25,6 +25,7 @@ public class JwtUtil {
 
   private static final String CLAIM_EMAIL = "email";
   private static final String CLAIM_ROLE = "role";
+  private static final String CLAIM_ORG_ID = "orgId";
 
   private final String secret;
   @Getter
@@ -132,5 +133,21 @@ public class JwtUtil {
         .claim(CLAIM_ROLE, role)
         .signWith(secretKey, SignatureAlgorithm.HS256)
         .compact();
+  }
+
+  public String generateUrlVerifyToken(String orgId, String readerEmail) {
+    Objects.requireNonNull(readerEmail, "Email must not be Null");
+
+    Date now = new Date();
+    Date expiry = new Date(now.getTime() + emailVerificationExpirationMs);
+
+    return Jwts.builder()
+            .setIssuer(issuer)
+            .setIssuedAt(now)
+            .setExpiration(expiry)
+            .claim(CLAIM_ORG_ID, orgId)
+            .claim(CLAIM_EMAIL, readerEmail)
+            .signWith(secretKey, SignatureAlgorithm.HS256)
+            .compact();
   }
 }

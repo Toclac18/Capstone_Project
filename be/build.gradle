@@ -36,6 +36,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 
+    // Apache POI — Excel reader
+    implementation 'org.apache.poi:poi:5.2.5'        // HSSF/XSSF common
+    implementation 'org.apache.poi:poi-ooxml:5.2.5'
+
     // DB driver
     runtimeOnly 'org.postgresql:postgresql'
 

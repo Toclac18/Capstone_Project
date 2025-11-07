@@ -1,4 +1,8 @@
-   import { mockCreateImport, mockFetchImportDetail, mockFetchImports } from "@/mock/imports";
+import {
+  mockCreateImport,
+  mockFetchImportDetail,
+  mockFetchImports,
+} from "@/mock/imports";
 import { headers, cookies } from "next/headers";
 import { NextRequest } from "next/server";
 
@@ -22,11 +26,29 @@ export async function GET(req: NextRequest) {
       const job = await mockFetchImportDetail(id);
       if (!job) return new Response("Not found", { status: 404 });
       const lines = [
-        ["Row", "Full Name", "Username", "Email", "Imported", "Email Sent", "Error"].join(","),
+        [
+          "Row",
+          "Full Name",
+          "Username",
+          "Email",
+          "Imported",
+          "Email Sent",
+          "Error",
+        ].join(","),
         ...job.results.map((r) =>
-          [r.row, r.fullName, r.username, r.email, r.imported, r.emailSent, r.error ?? ""]
-            .map((v) => (typeof v === "string" && v.includes(",") ? `"${v}"` : String(v)))
-            .join(",")
+          [
+            r.row,
+            r.fullName,
+            r.username,
+            r.email,
+            r.imported,
+            r.emailSent,
+            r.error ?? "",
+          ]
+            .map((v) =>
+              typeof v === "string" && v.includes(",") ? `"${v}"` : String(v),
+            )
+            .join(","),
         ),
       ];
       return new Response(lines.join("\n"), {
@@ -40,14 +62,23 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-      const { upstream, status, headers: h } = await forward(req, `/api/org-admin/imports/${id}/result`);
+      const {
+        upstream,
+        status,
+        headers: h,
+      } = await forward(`/api/org-admin/imports/${id}/result`);
       const csv = await upstream.text();
-      // Giữ nguyên content-disposition & content-type từ BE
       const ct = h.get("content-type") ?? "text/csv; charset=utf-8";
-      const cd = h.get("content-disposition") ?? `attachment; filename=import_${id}_result.csv`;
+      const cd =
+        h.get("content-disposition") ??
+        `attachment; filename=import_${id}_result.csv`;
       return new Response(csv, {
         status,
-        headers: { "content-type": ct, "content-disposition": cd, "x-mode": "real" },
+        headers: {
+          "content-type": ct,
+          "content-disposition": cd,
+          "x-mode": "real",
+        },
       });
     } catch (e: any) {
       return json({ message: "CSV download failed", error: String(e) }, 502);
@@ -63,7 +94,7 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-      const { upstream } = await forward(req, `/api/org-admin/imports/${id}`);
+      const { upstream } = await forward(`/api/org-admin/imports/${id}`);
       const raw = await upstream.json().catch(() => ({}));
       return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
     } catch (e: any) {
@@ -78,7 +109,12 @@ export async function GET(req: NextRequest) {
   const status = url.searchParams.get("status") ?? "ALL";
 
   if (USE_MOCK) {
-    const data = await mockFetchImports({ page, pageSize, q, status: status as any });
+    const data = await mockFetchImports({
+      page,
+      pageSize,
+      q,
+      status: status as any,
+    });
     return json(data, 200, { "x-mode": "mock" });
   }
 
@@ -91,7 +127,7 @@ export async function GET(req: NextRequest) {
   const path = `/api/org-admin/imports?${qs.toString()}`;
 
   try {
-    const { upstream } = await forward(req, path);
+    const { upstream } = await forward(path);
     const raw = await upstream.json().catch(() => ({}));
     return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
   } catch (e: any) {
@@ -105,14 +141,15 @@ export async function POST(req: NextRequest) {
     const form = await req.formData();
     const file = form.get("file");
     const createdBy = String(form.get("createdBy") ?? "system");
-    if (!(file instanceof File)) return new Response("Bad file", { status: 400 });
+    if (!(file instanceof File))
+      return new Response("Bad file", { status: 400 });
     const job = await mockCreateImport(file, createdBy);
     return json(job, 201);
   }
 
   const form = await req.formData();
   try {
-    const { upstream } = await forwardForm(req, `/api/org-admin/imports`, form);
+    const { upstream } = await forwardForm(`/api/org-admin/imports`, form);
     const raw = await upstream.json().catch(() => ({}));
     return json(raw?.data ?? raw, upstream.status);
   } catch (e: any) {
@@ -121,7 +158,7 @@ export async function POST(req: NextRequest) {
 }
 
 // ---------- Helpers ----------
-async function forward(req: NextRequest, path: string) {
+async function forward(path: string) {
   const h = headers();
   const cookieStore = cookies();
   const headerAuth = (await h).get("authorization") || "";
@@ -133,7 +170,6 @@ async function forward(req: NextRequest, path: string) {
     ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
   };
 
-  // Forward Cookie cho BE nếu FE dùng session/cookie auth
   const cookieHeader = (await h).get("cookie");
   if (cookieHeader) passHeaders["cookie"] = cookieHeader;
 
@@ -145,7 +181,7 @@ async function forward(req: NextRequest, path: string) {
   return { upstream, status: upstream.status, headers: upstream.headers };
 }
 
-async function forwardForm(req: NextRequest, path: string, body: FormData) {
+async function forwardForm(path: string, body: FormData) {
   const h = headers();
   const cookieStore = cookies();
   const headerAuth = (await h).get("authorization") || "";
@@ -167,7 +203,11 @@ async function forwardForm(req: NextRequest, path: string, body: FormData) {
   return { upstream };
 }
 
-function json(data: any, status = 200, extraHeaders: Record<string, string> = {}) {
+function json(
+  data: any,
+  status = 200,
+  extraHeaders: Record<string, string> = {},
+) {
   return new Response(JSON.stringify(data), {
     status,
     headers: { "content-type": "application/json", ...extraHeaders },

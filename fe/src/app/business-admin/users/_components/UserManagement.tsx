@@ -1,7 +1,7 @@
 // src/app/business-admin/users/_components/UserManagement.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { User, UserResponse, UserQueryParams } from "../api";
 import { getUsers, updateUserStatus } from "../api";
 import { UserFilters } from "./UserFilters";
@@ -28,7 +28,7 @@ export function UserManagement() {
   });
 
   // Fetch users with current filters
-  const fetchUsers = async (queryParams: UserQueryParams) => {
+  const fetchUsers = useCallback(async (queryParams: UserQueryParams) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -50,12 +50,11 @@ export function UserManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [itemsPerPage]);
 
-  // Initial load
   useEffect(() => {
     fetchUsers(filters);
-  }, []);
+  }, [fetchUsers, filters]);
 
   // Handle filter changes
   const handleFiltersChange = (newFilters: UserQueryParams) => {

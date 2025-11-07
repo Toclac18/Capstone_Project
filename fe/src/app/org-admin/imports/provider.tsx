@@ -1,10 +1,11 @@
 "use client";
-import React, {
+import {
   createContext,
   useContext,
   useEffect,
   useMemo,
   useState,
+  Suspense,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { fetchImports, ImportListResponse } from "@/services/orgAdmin-imports";
@@ -20,6 +21,7 @@ type Ctx = {
 };
 
 const ImportHistoryCtx = createContext<Ctx | null>(null);
+
 export function useImportHistory() {
   const ctx = useContext(ImportHistoryCtx);
   if (!ctx)
@@ -29,11 +31,7 @@ export function useImportHistory() {
   return ctx;
 }
 
-export default function ImportHistoryProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function ImportHistoryInner({ children }: { children: React.ReactNode }) {
   const sp = useSearchParams();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -51,16 +49,15 @@ export default function ImportHistoryProvider({
 
   useEffect(() => {
     let mounted = true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     setLoading(true);
 
     fetchImports(filters)
       .then((d) => {
-        if (mounted) {
-          setData(d);
-        }
+        if (mounted) setData(d);
       })
-      .finally(() => mounted && setLoading(false));
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
 
     return () => {
       mounted = false;
@@ -85,5 +82,17 @@ export default function ImportHistoryProvider({
     >
       {children}
     </ImportHistoryCtx.Provider>
+  );
+}
+
+export default function ImportHistoryProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Suspense fallback={null}>
+      <ImportHistoryInner>{children}</ImportHistoryInner>
+    </Suspense>
   );
 }

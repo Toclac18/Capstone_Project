@@ -1,26 +1,30 @@
 package com.capstone.be.repository;
 
 import com.capstone.be.domain.entity.Organization;
-import java.util.Optional;
-import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+import java.util.UUID;
+
 @Repository
 public interface OrganizationRepository extends JpaRepository<Organization, UUID> {
 
-  boolean existsByEmail(String email);
+    boolean existsByEmail(String email);
 
-  boolean existsByName(String name);
+    boolean existsByName(String name);
 
-  Optional<Organization> findByAdminEmail(String adminEmail);
+    Optional<Organization> findByAdminEmail(String adminEmail);
 
-  Optional<Organization> findByEmail(String email);
+    Optional<Organization> findByEmail(String email);
 
-  @Modifying
-  @Query("UPDATE Organization o SET o.status = DELETED WHERE o.id = :id")
-  int softDeleteById(@Param("id") UUID id);
+    @Query("select o.id from Organization o where o.adminEmail = :email")
+    UUID findIdByAdminEmail(@Param("email") String adminEmail);
+
+    @Modifying
+    @Query("UPDATE Organization o SET o.status = DELETED WHERE o.id = :id")
+    int softDeleteById(@Param("id") UUID id);
 }

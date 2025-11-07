@@ -9,6 +9,7 @@ import com.capstone.be.dto.response.importReader.RowUpdate;
 import com.capstone.be.repository.ImportJobRepository;
 import com.capstone.be.repository.ImportRowResultRepository;
 import com.capstone.be.repository.InvitationRepository;
+import com.capstone.be.repository.OrganizationRepository;
 import com.capstone.be.security.util.JwtUtil;
 import com.capstone.be.service.EmailService;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -22,6 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.UUID;
 
 @Component
 public class ImportProcessor {
@@ -29,12 +31,14 @@ public class ImportProcessor {
     private static final int PROGRESS_BATCH = 10;
     private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final String VERIFY_URL = "http://localhost:3000/verify-org-invitation";
+
     private final ImportJobRepository jobRepo;
     private final ImportRowResultRepository rowRepo;
     private final EmailService emailService;
     private final ProgressBroadcaster broadcaster;
     private final InvitationRepository invitationRepo;
     private final JwtUtil jwtUtil;
+    private final OrganizationRepository organizationRepo;
 
     public ImportProcessor(
             ImportJobRepository jobRepo,
@@ -42,20 +46,34 @@ public class ImportProcessor {
             EmailService emailService,
             ProgressBroadcaster broadcaster,
             InvitationRepository invitationRepo,
-            JwtUtil jwtUtil) {
+            JwtUtil jwtUtil,
+            OrganizationRepository organizationRepo) {
         this.jobRepo = jobRepo;
         this.rowRepo = rowRepo;
         this.emailService = emailService;
         this.broadcaster = broadcaster;
         this.invitationRepo = invitationRepo;
         this.jwtUtil = jwtUtil;
+        this.organizationRepo = organizationRepo;
     }
 
     @Async("taskExecutor")
     public void process(String jobId, byte[] excelBytes, String createdBy) {
         ImportJob job = jobRepo.findById(jobId).orElseThrow();
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(excelBytes))) {
-            Sheet sheet = wb.getSheetAt(0);
+            // Chọn sheet đầu tiên có dữ liệu (>= header + 1 dòng)
+            Sheet sheet = null;
+            for (int s = 0; s < wb.getNumberOfSheets(); s++) {
+                Sheet cand = wb.getSheetAt(s);
+                if (cand != null && cand.getPhysicalNumberOfRows() > 1) {
+                    sheet = cand;
+                    break;
+                }
+            }
+            if (sheet == null) {
+                throw new IllegalArgumentException("No data sheet found in Excel");
+            }
+
             DataFormatter fmt = new DataFormatter();
 
             int lastRow = sheet.getLastRowNum(); // 0-based, header at 0
@@ -84,37 +102,58 @@ public class ImportProcessor {
                 rr.setJob(job);
                 rowRepo.save(rr);
 
-                boolean valid = username != null && !username.isBlank() && email != null && email.contains("@");
+                boolean valid = username != null && !username.isBlank()
+                        && email != null && email.contains("@");
+
                 if (valid) {
                     boolean sent = false;
-                    String orgId = job.getCreatedBy();
+
                     try {
+                        // Lấy orgId (UUID) theo adminEmail (người tạo job)
+                        UUID orgUuid = organizationRepo.findIdByAdminEmail(job.getCreatedBy());
+                        if (orgUuid == null) {
+                            throw new IllegalStateException("Organization not found by adminEmail=" + job.getCreatedBy());
+                        }
+                        String orgId = orgUuid.toString();
+
+                        // Sinh token
                         String token = jwtUtil.generateUrlVerifyToken(orgId, email);
 
+                        // Tính thời điểm hết hạn chỉ để HIỂN THỊ email (JWT đã có exp)
                         OffsetDateTime now = OffsetDateTime.now(VN_ZONE);
                         OffsetDateTime expiresAt = now.plus(
                                 Duration.ofMillis(jwtUtil.getEmailVerificationExpirationMs())
                         );
 
+                        // Lưu invitation (yêu cầu Invitation.id dùng @GeneratedValue)
                         Invitation inv = new Invitation();
+                        inv.setOrgId(orgId);
                         inv.setEmail(email);
                         inv.setUsername(username);
                         inv.setToken(token);
                         inv.setCreatedAt(now);
-                        inv.setExpiresAt(expiresAt);
                         inv.setCreatedBy(createdBy);
                         inv.setAccepted(false);
                         invitationRepo.save(inv);
 
+                        // Gửi email
                         String verifyLink = VERIFY_URL + "?token=" + token;
                         sent = emailService.sendInvitationEmail(email, username, verifyLink, expiresAt);
+                        if (!sent) {
+                            rr.setError("Email not sent");
+                        }
+
                     } catch (Exception ex) {
                         sent = false;
+                        rr.setError("Invite failed: " + ex.getClass().getSimpleName());
+                        ex.printStackTrace(); // hoặc logger.error("...", ex)
                     }
+
                     rr.setImported(true);
                     rr.setEmailSent(sent);
                     rowRepo.save(rr);
                     success++;
+
                 } else {
                     rr.setImported(false);
                     rr.setEmailSent(false);
@@ -173,6 +212,7 @@ public class ImportProcessor {
             broadcaster.complete(job.getId());
 
         } catch (Exception e) {
+            e.printStackTrace();
             job.setStatus(ImportStatus.FAILED);
             jobRepo.save(job);
 

@@ -1,5 +1,3 @@
-import { NextRequest, NextResponse } from "next/server";
-
 const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
 
 const PUBLIC_PAGE_PATHS = [
@@ -30,26 +28,31 @@ function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC_PREFIXES.some((p) => path.startsWith(p));
 }
 
-export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+export default async function proxy(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  const pathname = url.pathname;
 
-  if (isAlwaysPublic(pathname)) return NextResponse.next();
-  if (req.method === "OPTIONS") return NextResponse.json({}, { status: 200 });
+  if (isAlwaysPublic(pathname))
+    return new Response(null, { status: 200, headers: { "x-proxy": "pass" } });
+  if (request.method === "OPTIONS") return new Response(null, { status: 200 });
 
   const isApi = pathname.startsWith("/api");
-  if (!isApi && isPublicPage(pathname)) return NextResponse.next();
-  if (isApi && isPublicApi(pathname)) return NextResponse.next();
+  if (!isApi && isPublicPage(pathname))
+    return new Response(null, { status: 200, headers: { "x-proxy": "pass" } });
+  if (isApi && isPublicApi(pathname))
+    return new Response(null, { status: 200, headers: { "x-proxy": "pass" } });
 
-  const token = req.cookies.get(COOKIE_NAME)?.value;
+  const cookieHeader = request.headers.get("cookie") || "";
+  const token = (cookieHeader.match(
+    new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`),
+  ) || [])[1];
 
   if (!isApi && !token) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/auth/sign-in";
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+    const signIn = new URL("/auth/sign-in", request.url);
+    signIn.searchParams.set("next", pathname);
+    return Response.redirect(signIn, 307);
   }
-
-  return NextResponse.next();
+  return new Response(null, { status: 200, headers: { "x-proxy": "pass" } });
 }
 
 export const config = {

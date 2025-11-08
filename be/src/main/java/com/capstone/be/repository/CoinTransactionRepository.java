@@ -1,7 +1,6 @@
 package com.capstone.be.repository;
 
-import com.capstone.be.domain.entity.Document;
-import java.util.Optional;
+import com.capstone.be.domain.entity.CoinTransaction;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -9,7 +8,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface DocumentRepository extends JpaRepository<Document, UUID> {
+public interface CoinTransactionRepository extends JpaRepository<CoinTransaction, UUID> {
 
-  // Statistics queries are handled in Service layer using repositories
+  @Query("SELECT COUNT(ct) FROM CoinTransaction ct WHERE ct.document.id = :documentId")
+  Long countByDocumentId(@Param("documentId") UUID documentId);
 }
+

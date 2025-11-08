@@ -126,6 +126,34 @@ public class OrganizationServiceImpl implements OrganizationService {
     organizationRepository.save(organization);
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public OrganizationListResponse getAll() {
+    List<Organization> all = organizationRepository.findAll();
+
+    // Only get ACTIVE organizations (exclude deleted, deactive, pending, etc.)
+    List<Organization> filtered = all.stream()
+        .filter(org -> !Boolean.TRUE.equals(org.getDeleted()))
+        .filter(org -> org.getStatus() == OrganizationStatus.ACTIVE)
+        .collect(Collectors.toList());
+
+    // Sort by name
+    filtered = filtered.stream()
+        .sorted(Comparator.comparing(o -> nullSafeString(o.getName())))
+        .collect(Collectors.toList());
+
+    List<OrganizationResponse> items = filtered.stream()
+        .map(organizationMapper::toResponse)
+        .collect(Collectors.toList());
+
+    return OrganizationListResponse.builder()
+        .organizations(items)
+        .total(filtered.size())
+        .page(1)
+        .limit(filtered.size())
+        .build();
+  }
+
   private boolean applySearch(Organization org, String search) {
     if (search == null || search.isBlank()) {
       return true;

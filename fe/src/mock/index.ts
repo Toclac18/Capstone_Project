@@ -10,6 +10,7 @@ import { setupMockAuth } from "./auth";
 import { setupMockProfile } from "./profile";
 import { setupMockNotification } from "./notification";
 import { setupMockOrganizations } from "./organizations";
+import { setupMockDocuments } from "./uploadDocuments";
 
 export function setupMocks() {
   const enabled = process.env.NEXT_PUBLIC_USE_MOCK === "true";
@@ -21,4 +22,5 @@ export function setupMocks() {
   setupMockProfile();
   setupMockNotification();
   setupMockOrganizations();
+  setupMockDocuments();
 }

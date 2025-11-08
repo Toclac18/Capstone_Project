@@ -381,3 +381,105 @@ export const mockOrganizationsDB = {
     return true;
   },
 };
+
+// ---------------- Upload Documents Mock ----------------
+export type DocumentType = {
+  id: string;
+  name: string;
+};
+
+export type Domain = {
+  id: string;
+  name: string;
+  code: number;
+};
+
+export type Tag = {
+  id: string;
+  name: string;
+};
+
+const _documentTypes: DocumentType[] = [
+  { id: "type-1", name: "Research Paper" },
+  { id: "type-2", name: "Article" },
+  { id: "type-3", name: "Book" },
+  { id: "type-4", name: "Report" },
+  { id: "type-5", name: "Thesis" },
+];
+
+const _domains: Domain[] = [
+  { id: "domain-1", name: "Computer Science", code: 1 },
+  { id: "domain-2", name: "Mathematics", code: 2 },
+  { id: "domain-3", name: "Physics", code: 3 },
+  { id: "domain-4", name: "Biology", code: 4 },
+  { id: "domain-5", name: "Chemistry", code: 5 },
+  { id: "domain-6", name: "Engineering", code: 6 },
+];
+
+const _tags: Tag[] = [
+  { id: "tag-1", name: "Machine Learning" },
+  { id: "tag-2", name: "Artificial Intelligence" },
+  { id: "tag-3", name: "Data Science" },
+  { id: "tag-4", name: "Web Development" },
+  { id: "tag-5", name: "Software Engineering" },
+  { id: "tag-6", name: "Algorithms" },
+  { id: "tag-7", name: "Database" },
+  { id: "tag-8", name: "Security" },
+];
+
+export type Specialization = {
+  id: string;
+  name: string;
+  code: number;
+  domainId: string;
+};
+
+const _specializations: Specialization[] = [
+  // Computer Science specializations
+  { id: "spec-1", name: "Machine Learning", code: 101, domainId: "domain-1" },
+  { id: "spec-2", name: "Artificial Intelligence", code: 102, domainId: "domain-1" },
+  { id: "spec-3", name: "Web Development", code: 103, domainId: "domain-1" },
+  { id: "spec-4", name: "Software Engineering", code: 104, domainId: "domain-1" },
+  { id: "spec-5", name: "Cybersecurity", code: 105, domainId: "domain-1" },
+  // Mathematics specializations
+  { id: "spec-6", name: "Algebra", code: 201, domainId: "domain-2" },
+  { id: "spec-7", name: "Calculus", code: 202, domainId: "domain-2" },
+  { id: "spec-8", name: "Statistics", code: 203, domainId: "domain-2" },
+  { id: "spec-9", name: "Geometry", code: 204, domainId: "domain-2" },
+  // Physics specializations
+  { id: "spec-10", name: "Quantum Physics", code: 301, domainId: "domain-3" },
+  { id: "spec-11", name: "Thermodynamics", code: 302, domainId: "domain-3" },
+  { id: "spec-12", name: "Mechanics", code: 303, domainId: "domain-3" },
+  // Biology specializations
+  { id: "spec-13", name: "Molecular Biology", code: 401, domainId: "domain-4" },
+  { id: "spec-14", name: "Genetics", code: 402, domainId: "domain-4" },
+  { id: "spec-15", name: "Ecology", code: 403, domainId: "domain-4" },
+  // Chemistry specializations
+  { id: "spec-16", name: "Organic Chemistry", code: 501, domainId: "domain-5" },
+  { id: "spec-17", name: "Inorganic Chemistry", code: 502, domainId: "domain-5" },
+  { id: "spec-18", name: "Physical Chemistry", code: 503, domainId: "domain-5" },
+  // Engineering specializations
+  { id: "spec-19", name: "Civil Engineering", code: 601, domainId: "domain-6" },
+  { id: "spec-20", name: "Mechanical Engineering", code: 602, domainId: "domain-6" },
+  { id: "spec-21", name: "Electrical Engineering", code: 603, domainId: "domain-6" },
+];
+
+export const mockDocumentsDB = {
+  getTypes(): DocumentType[] {
+    return [..._documentTypes];
+  },
+  getDomains(): Domain[] {
+    return [..._domains];
+  },
+  getTags(search?: string): Tag[] {
+    if (!search) return [..._tags];
+    const searchLower = search.toLowerCase();
+    return _tags.filter((tag) =>
+      tag.name.toLowerCase().includes(searchLower)
+    );
+  },
+  getSpecializations(domainIds: string[]): Specialization[] {
+    if (domainIds.length === 0) return [];
+    return _specializations.filter((spec) => domainIds.includes(spec.domainId));
+  },
+};

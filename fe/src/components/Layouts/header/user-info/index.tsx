@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown";
 import { cn } from "@/utils/utils";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 import { logout } from "@/services/authService";
 import { LogOutIcon, SettingsIcon, UserIcon } from "./icons";
@@ -16,25 +16,48 @@ import { LogOutIcon, SettingsIcon, UserIcon } from "./icons";
 export function UserInfo() {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
-  const [user, setUser] = useState({
-    name: "",
-    email: "",
-    role: "",
+  const [user, setUser] = useState(() => {
+    if (typeof window === "undefined") {
+      return {
+        name: "",
+        email: "",
+        role: "",
+      };
+    }
+    const userRole = localStorage.getItem("userRole") || "";
+    const userEmail = localStorage.getItem("userEmail") || "";
+    const userName = localStorage.getItem("userName") || "";
+
+    return {
+      name: userName || "User",
+      email: userEmail || "",
+      role: userRole,
+    };
   });
 
-  useEffect(() => {
-    // Get user info from localStorage
-    const userRole = localStorage.getItem('userRole') || '';
-    const userEmail = localStorage.getItem('userEmail') || '';
-    const userName = localStorage.getItem('userName') || '';
-    
-    setUser({
-      name: userName || 'User',
-      email: userEmail || '',
-      role: userRole,
-    });
-  }, []);
+  useLayoutEffect(() => {
+    const updateUser = () => {
+      const userRole = localStorage.getItem("userRole") || "";
+      const userEmail = localStorage.getItem("userEmail") || "";
+      const userName = localStorage.getItem("userName") || "";
 
+      setUser({
+        name: userName || "User",
+        email: userEmail || "",
+        role: userRole,
+      });
+    };
+    window.addEventListener("storage", updateUser);
+
+    queueMicrotask(() => {
+      updateUser();
+    });
+
+    return () => {
+      window.removeEventListener("storage", updateUser);
+    };
+  }, []);
+  
   async function handleLogout() {
     try {
       await logout();

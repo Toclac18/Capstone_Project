@@ -6,6 +6,7 @@ import lombok.Data;
 
 @Data
 public class UpdateOrganizationStatusRequest {
+
   @NotNull(message = "Status is required")
   private OrganizationStatus status; // PENDING_VERIFICATION | ACTIVE | DEACTIVE | DELETED
 }

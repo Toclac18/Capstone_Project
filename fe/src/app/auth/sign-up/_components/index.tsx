@@ -36,7 +36,7 @@ export default function Signup() {
         if (!val) return 'Name is required';
         if (val.length < 2) return 'Name must be at least 2 characters';
         return '';
-      case 'date_of_birth':
+      case 'date_of_birth': {
         if (!val) return 'Date of birth is required';
         const dobDate = new Date(val);
         if (isNaN(dobDate.getTime())) return 'Invalid date';
@@ -47,10 +47,11 @@ export default function Signup() {
         const actualAge = (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dobDate.getDate())) ? age - 1 : age;
         if (actualAge < 13) return 'You must be at least 13 years old';
         return '';
+      }
       case 'username':
         if (!val) return 'Username is required';
         if (val.length < 3) return 'Username must be at least 3 characters';
-        if (!/^[a-zA-Z0-9_\.\-]+$/.test(val)) return 'Only letters, numbers, underscore, dot and hyphen allowed';
+        if (!/^[a-zA-Z0-9_.-]+$/.test(val)) return 'Only letters, numbers, underscore, dot and hyphen allowed';
         return '';
       case 'email':
         if (!val) return 'Email is required';

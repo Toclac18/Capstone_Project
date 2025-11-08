@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrganizationDetailResponse {
+
   private UUID id;
   private String name;
   private OrganizationType type;

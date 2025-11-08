@@ -12,13 +12,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.util.UUID;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+
+import lombok.*;
 
 @Entity
 @Table(name = "readers")
 @EqualsAndHashCode(callSuper = true)
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Reader extends BaseEntity {
 
   @Id
@@ -49,4 +51,7 @@ public class Reader extends BaseEntity {
   @Enumerated(EnumType.STRING)
   private ReaderStatus status = ReaderStatus.PENDING_VERIFICATION;
 
+  public String getName() {
+    return fullName;
+  }
 }

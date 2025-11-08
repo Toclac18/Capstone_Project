@@ -23,7 +23,13 @@ interface FeaturedCarouselProps {
 export function FeaturedCarousel({ cards, onCardClick }: FeaturedCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-
+  
+  const handleNext = () => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setCurrentIndex((prev) => (prev === cards.length - 1 ? 0 : prev + 1));
+    setTimeout(() => setIsTransitioning(false), 300);
+  };
   // Auto-rotate every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
@@ -36,13 +42,6 @@ export function FeaturedCarousel({ cards, onCardClick }: FeaturedCarouselProps) 
     if (isTransitioning) return;
     setIsTransitioning(true);
     setCurrentIndex((prev) => (prev === 0 ? cards.length - 1 : prev - 1));
-    setTimeout(() => setIsTransitioning(false), 300);
-  };
-
-  const handleNext = () => {
-    if (isTransitioning) return;
-    setIsTransitioning(true);
-    setCurrentIndex((prev) => (prev === cards.length - 1 ? 0 : prev + 1));
     setTimeout(() => setIsTransitioning(false), 300);
   };
 

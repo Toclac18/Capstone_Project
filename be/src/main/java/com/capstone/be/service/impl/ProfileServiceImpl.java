@@ -63,7 +63,7 @@ public class ProfileServiceImpl implements ProfileService {
         .fullName(reader.getFullName())
         .dateOfBirth(reader.getDateOfBirth())
         .username(reader.getUsername())
-        .coinBalance(reader.getCoinBalance())
+        .coinBalance(reader.getPoint())
         .status(reader.getStatus())
         .build();
   }
@@ -76,7 +76,7 @@ public class ProfileServiceImpl implements ProfileService {
         .id(reviewer.getId())
         .role(UserRole.REVIEWER)
         .email(reviewer.getEmail())
-        .fullName(reviewer.getName())
+        .fullName(reviewer.getFullName())
         .dateOfBirth(reviewer.getDateOfBirth())
         .username(reviewer.getUsername())
         .ordid(reviewer.getOrdid())

@@ -1,6 +1,7 @@
 package com.capstone.be.domain.entity;
 
 import com.capstone.be.domain.entity.common.BaseEntity;
+import com.capstone.be.domain.enums.EnrollmentStatus;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -36,6 +37,7 @@ public class Enrollment extends BaseEntity {
 
   private LocalDateTime addedAt;
 
+  private EnrollmentStatus status;
 
   @PrePersist
   void setDefaultAddedAt() {

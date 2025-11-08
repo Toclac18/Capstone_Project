@@ -24,7 +24,7 @@ public class DocumentReport extends BaseEntity {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
-  @ManyToOne(fetch= FetchType.LAZY, optional = false)
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "reporter_id")
   private Reader reporter;
 

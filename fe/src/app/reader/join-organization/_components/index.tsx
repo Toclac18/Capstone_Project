@@ -19,13 +19,14 @@ export default function JoinOrganizationContent() {
   useEffect(() => {
     const token = searchParams.get("token");
     
-    if (!token) {
-      setStatus("error");
-      setMessage("Invitation token is missing");
-      return;
-    }
+    // Validate token and handle join process
+    const handleJoin = async () => {
+      if (!token) {
+        setStatus("error");
+        setMessage("Invitation token is missing");
+        return;
+      }
 
-    const join = async () => {
       try {
         // Show loading spinner for at least 1.5 seconds
         const [result] = await Promise.all([
@@ -48,7 +49,7 @@ export default function JoinOrganizationContent() {
       }
     };
 
-    join();
+    handleJoin();
   }, [searchParams, router]);
 
   return (

@@ -9,33 +9,68 @@ import { NAV_DATA, BUSINESS_ADMIN_NAV_DATA } from "./data";
 import { ArrowLeftIcon, ChevronUp } from "./icons";
 import { MenuItem } from "./menu-item";
 import { useSidebarContext } from "./sidebar-context";
+import type * as React from "react";
 
-export function Sidebar() {
+/** ====== EXPORT TYPES để component khác tái sử dụng ====== */
+export type NavLinkItem = {
+  title: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  url: string;
+  items: never[]; // luôn [] cho link item
+};
+
+export type NavGroupItem = {
+  title: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  items: Array<{ title: string; url: string }>;
+};
+
+export type NavSection = {
+  label: string;
+  items: Array<NavLinkItem | NavGroupItem>;
+};
+/** ======================================================== */
+
+export function Sidebar({
+  /** Nếu truyền vào, Sidebar sẽ dùng bộ nav này thay vì NAV_DATA/BUSINESS_ADMIN_NAV_DATA */
+  navDataOverride,
+}: {
+  navDataOverride?: NavSection[];
+}) {
   const pathname = usePathname();
   const { setIsOpen, isOpen, isMobile, toggleSidebar } = useSidebarContext();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
-    // To Do: Determine which navigation data to use based on current route, not only those role
-  const isBusinessAdmin = pathname?.startsWith('/business-admin');
-  const navData = isBusinessAdmin ? BUSINESS_ADMIN_NAV_DATA : NAV_DATA;
+  // To Do: Determine which navigation data to use based on current route, not only those role
+  const isBusinessAdmin = pathname?.startsWith("/business-admin");
+
+  // Ưu tiên navDataOverride (homepage), sau đó tới logic cũ
+  const navData: NavSection[] =
+    navDataOverride ??
+    (isBusinessAdmin
+      ? (BUSINESS_ADMIN_NAV_DATA as unknown as NavSection[])
+      : (NAV_DATA as unknown as NavSection[]));
 
   const toggleExpanded = useCallback((title: string) => {
     setExpandedItems((prev) => (prev.includes(title) ? [] : [title]));
   }, []);
 
   useEffect(() => {
-    // Keep collapsible open, when it's subpage is active
+    // Keep collapsible open when a subpage is active
     navData.some((section) => {
       return section.items.some((item) => {
-        return item.items.some((subItem) => {
-          if (subItem.url === pathname) {
-            if (!expandedItems.includes(item.title)) {
-              toggleExpanded(item.title);
+        if ("items" in item && Array.isArray(item.items) && item.items.length) {
+          return item.items.some((subItem) => {
+            if (subItem.url === pathname) {
+              if (!expandedItems.includes(item.title)) {
+                toggleExpanded(item.title);
+              }
+              return true;
             }
-            // Break the loop
-            return true;
-          }
-        });
+            return false;
+          });
+        }
+        return false;
       });
     });
   }, [pathname, navData, expandedItems, toggleExpanded]);
@@ -54,10 +89,10 @@ export function Sidebar() {
       <aside
         className={cn(
           "overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-200 ease-linear dark:border-gray-800 dark:bg-gray-dark",
-          isMobile ? "fixed bottom-0 top-0 z-50 max-w-[290px]" : "sticky top-0 h-screen",
-          isMobile 
-            ? (isOpen ? "w-full" : "w-0")
-            : (isOpen ? "w-[290px]" : "w-0")
+          isMobile
+            ? "fixed bottom-0 top-0 z-50 max-w-[290px]"
+            : "sticky top-0 h-screen",
+          isMobile ? (isOpen ? "w-full" : "w-0") : isOpen ? "w-[290px]" : "w-0",
         )}
         aria-label="Main navigation"
         aria-hidden={!isOpen}
@@ -79,7 +114,6 @@ export function Sidebar() {
                 className="absolute left-3/4 right-4.5 top-1/2 -translate-y-1/2 text-right"
               >
                 <span className="sr-only">Close Menu</span>
-
                 <ArrowLeftIcon className="ml-auto size-7" />
               </button>
             )}
@@ -97,7 +131,9 @@ export function Sidebar() {
                   <ul className="space-y-2">
                     {section.items.map((item) => (
                       <li key={item.title}>
-                        {item.items.length ? (
+                        {"items" in item &&
+                        Array.isArray(item.items) &&
+                        item.items.length ? (
                           <div>
                             <MenuItem
                               isActive={item.items.some(
@@ -105,13 +141,13 @@ export function Sidebar() {
                               )}
                               onClick={() => toggleExpanded(item.title)}
                             >
-                              <item.icon
-                                className="size-6 shrink-0"
-                                aria-hidden="true"
-                              />
-
+                              {item.icon ? (
+                                <item.icon
+                                  className="size-6 shrink-0"
+                                  aria-hidden="true"
+                                />
+                              ) : null}
                               <span>{item.title}</span>
-
                               <ChevronUp
                                 className={cn(
                                   "ml-auto rotate-180 transition-transform duration-200",
@@ -143,12 +179,7 @@ export function Sidebar() {
                           </div>
                         ) : (
                           (() => {
-                            const href =
-                              "url" in item
-                                ? item.url + ""
-                                : "/" +
-                                  item.title.toLowerCase().split(" ").join("-");
-
+                            const href = "url" in item ? item.url : "/";
                             return (
                               <MenuItem
                                 className="flex items-center gap-3 py-3"
@@ -156,11 +187,12 @@ export function Sidebar() {
                                 href={href}
                                 isActive={pathname === href}
                               >
-                                <item.icon
-                                  className="size-6 shrink-0"
-                                  aria-hidden="true"
-                                />
-
+                                {item.icon ? (
+                                  <item.icon
+                                    className="size-6 shrink-0"
+                                    aria-hidden="true"
+                                  />
+                                ) : null}
                                 <span>{item.title}</span>
                               </MenuItem>
                             );

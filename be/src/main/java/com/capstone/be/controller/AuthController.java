@@ -55,7 +55,7 @@ public class AuthController {
     return authService.registerReviewer(info, files);
   }
 
-  @PostMapping("/register-organization")
+  @PostMapping(value = "/register-organization", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public RegisterOrganizationResponse registerOrganization(
       @Valid @RequestPart("info") RegisterOrganizationInfo info,
       @RequestPart("certificateUploads") List<MultipartFile> files
@@ -67,7 +67,6 @@ public class AuthController {
   @DeleteMapping("/delete-account")
   public SuccessResponse<?> deleteAccount(@Valid @RequestBody DeleteAccountRequest request,
       @AuthenticationPrincipal UserPrincipal principal) {
-    log.info("in Controller method");
     authService.deleteAccount(principal.getRole(), principal.getId(), principal.getPassword(),
         request);
     return SuccessResponse.ofMessage("Your account has been deleted");

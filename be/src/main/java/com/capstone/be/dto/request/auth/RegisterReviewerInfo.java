@@ -11,9 +11,15 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class RegisterReviewerInfo {
 
   @NotBlank
@@ -51,6 +57,5 @@ public class RegisterReviewerInfo {
   @NotBlank
   @Email
   private String organizationEmail;
-
 
 }

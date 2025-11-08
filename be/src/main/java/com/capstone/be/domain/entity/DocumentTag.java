@@ -2,6 +2,7 @@ package com.capstone.be.domain.entity;
 
 import com.capstone.be.domain.entity.common.BaseEntity;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -25,7 +26,7 @@ public class DocumentTag extends BaseEntity {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
-  @ManyToMany
+  @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(name = "document_tag_n_n",
       joinColumns = @JoinColumn(name = "tag_id"),
       inverseJoinColumns = @JoinColumn(name = "document_id"))

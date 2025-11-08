@@ -7,6 +7,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -66,9 +67,9 @@ public class Reviewer extends BaseEntity {
   @Column(nullable = false)
   private Boolean deleted = false;
 
-  @ManyToMany(mappedBy = "reviewers")
+  @ManyToMany(mappedBy = "reviewers", fetch = FetchType.LAZY)
   private Set<Domain> domains;
 
-  @ManyToMany(mappedBy = "reviewers")
+  @ManyToMany(mappedBy = "reviewers", fetch = FetchType.LAZY)
   private Set<Specialization> reviewSpecializations;
 }

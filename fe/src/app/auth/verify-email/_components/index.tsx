@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,46 +9,51 @@ import LogoDark from "@/assets/logos/logo-icon-dark.svg";
 import { verifyEmail } from "../api";
 import styles from "../styles.module.css";
 
-export default function VerifyEmailContent() {
+function VerifyEmailInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
-  
-  const [status, setStatus] = useState<"verifying" | "success" | "error">(() => {
-    return token ? "verifying" : "error";
-  });
-  
-  const [message, setMessage] = useState(() => {
-    return token ? "" : "Verification token is missing";
-  });
+
+  const [status, setStatus] = useState<"verifying" | "success" | "error">(() =>
+    token ? "verifying" : "error",
+  );
+  const [message, setMessage] = useState<string>(() =>
+    token ? "" : "Verification token is missing",
+  );
+
+  const verifiedRef = useRef(false);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || verifiedRef.current) return;
 
-    const verify = async () => {
+    verifiedRef.current = true;
+
+    const run = async () => {
       try {
-        // Show loading spinner for at least 3 seconds
         const [result] = await Promise.all([
           verifyEmail(token),
-          new Promise(resolve => setTimeout(resolve, 1500)), // 3 second delay
+          new Promise((resolve) => setTimeout(resolve, 3000)),
         ]);
-        
+
         setStatus("success");
         setMessage(result.message || "Email has been verified successfully");
-        
-        // Redirect to login after 3 seconds
+
+        // Redirect sang login sau 3 giây
         setTimeout(() => {
           router.push("/auth/sign-in");
         }, 3000);
       } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : "Verification failed. Please try again.";
+        const msg =
+          e instanceof Error
+            ? e.message
+            : "Verification failed. Please try again.";
         setStatus("error");
         setMessage(msg);
       }
     };
 
-    verify();
-  }, [searchParams, router]);
+    run();
+  }, [token, router]);
 
   return (
     <div className={styles["page-container"]}>
@@ -84,13 +89,10 @@ export default function VerifyEmailContent() {
               <div className="mb-6 flex justify-center">
                 <div className={styles["spinner-lg"]}></div>
               </div>
-              <h2 className={styles.title}>
-                Verifying Your Email
-              </h2>
+              <h2 className={styles.title}>Verifying Your Email</h2>
               <p className={styles["body-text"]}>
                 Please wait while we verify your email address...
               </p>
-              
             </>
           )}
 
@@ -113,12 +115,8 @@ export default function VerifyEmailContent() {
                   </svg>
                 </div>
               </div>
-              <h2 className={styles["title-success"]}>
-                Email Verified!
-              </h2>
-              <p className={styles["body-text-spaced"]}>
-                {message}
-              </p>
+              <h2 className={styles["title-success"]}>Email Verified!</h2>
+              <p className={styles["body-text-spaced"]}>{message}</p>
               <p className="text-sm">
                 Redirecting to login page in 3 seconds...
               </p>
@@ -150,23 +148,13 @@ export default function VerifyEmailContent() {
                   </svg>
                 </div>
               </div>
-              <h2 className={styles["title-error"]}>
-                Verification Failed
-              </h2>
-              <p className={styles["body-text-spaced"]}>
-                {message}
-              </p>
+              <h2 className={styles["title-error"]}>Verification Failed</h2>
+              <p className={styles["body-text-spaced"]}>{message}</p>
               <div className={styles.actions}>
-                <Link
-                  href="/auth/sign-up"
-                  className={styles["primary-btn"]}
-                >
+                <Link href="/auth/sign-up" className={styles["primary-btn"]}>
                   Register Again
                 </Link>
-                <Link
-                  href="/auth/sign-in"
-                  className={styles["link-primary"]}
-                >
+                <Link href="/auth/sign-in" className={styles["link-primary"]}>
                   Back to Login
                 </Link>
               </div>
@@ -178,3 +166,10 @@ export default function VerifyEmailContent() {
   );
 }
 
+export default function VerifyEmailContent() {
+  return (
+    <Suspense fallback={null}>
+      <VerifyEmailInner />
+    </Suspense>
+  );
+}

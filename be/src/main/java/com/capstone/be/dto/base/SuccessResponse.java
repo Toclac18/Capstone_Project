@@ -5,21 +5,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record SuccessResponse<T>(
     String message,
-    T data,
-    PageMeta meta //For Paging
+    T data
 ) {
 
   public static <T> SuccessResponse<T> of(T data) {
-    return new SuccessResponse<>(null, data, null);
-  }
-
-  public static <T> SuccessResponse<T> of(T data, PageMeta meta) {
-    return new SuccessResponse<>(null, data, meta);
+    return new SuccessResponse<>(null, data);
   }
 
   public static <Void> SuccessResponse<Void> ofMessage(String message) {
-    return new SuccessResponse<>(message, null, null);
+    return new SuccessResponse<>(message, null);
   }
-
-
 }

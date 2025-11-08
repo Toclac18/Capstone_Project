@@ -14,10 +14,30 @@ import {
 import { OrganizationFilters } from "./OrganizationFilters";
 import { Pagination } from "@/app/business-admin/users/_components/Pagination";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
+import { useToast, toast } from "@/components/ui/toast";
 import { Eye } from "lucide-react";
 import styles from "../styles.module.css";
 
+// Helper function to check if logo is a valid URL
+const isValidImageUrl = (url: string | undefined | null): boolean => {
+  if (!url || typeof url !== 'string') {
+    return false;
+  }
+  const trimmedUrl = url.trim();
+  if (trimmedUrl === '') {
+    return false;
+  }
+  try {
+    const urlObj = new URL(trimmedUrl);
+    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+  } catch {
+    // If URL constructor fails, it's not a valid URL
+    return false;
+  }
+};
+
 export function OrganizationManagement() {
+  const { showToast } = useToast();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +69,12 @@ export function OrganizationManagement() {
       setTotalItems(response.total);
       setCurrentPage(response.page);
       setFilters(updatedFilters);
+      // Reset image errors when organizations change
+      setImageErrors(new Set());
+      // Debug: Log logo URLs
+      response.organizations.forEach(org => {
+        console.log(`Org ${org.id} - Logo:`, org.logo, `Valid:`, isValidImageUrl(org.logo));
+      });
     } catch (e: unknown) {
       const errorMessage =
         e instanceof Error
@@ -87,11 +113,12 @@ export function OrganizationManagement() {
 
     try {
       await deleteOrganization(String(orgId));
-      setSuccess("Organization deleted successfully");
+      showToast(toast.success("Organization Deleted", "Organization deleted successfully"));
       await fetchOrganizations(filters);
     } catch (e: unknown) {
       const errorMessage =
         e instanceof Error ? e.message : "Failed to delete organization";
+      showToast(toast.error("Delete Failed", errorMessage));
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -163,14 +190,24 @@ export function OrganizationManagement() {
                 organizations.map((org) => (
                   <tr key={org.id} className={styles["table-row"]}>
                     <td className={styles["table-cell"]}>
-                      {org.logo && !imageErrors.has(org.id) ? (
+                      {isValidImageUrl(org.logo) && !imageErrors.has(org.id) ? (
                         <img
-                          src={org.logo}
+                          src={org.logo!.trim()}
                           alt={org.name || org.email}
                           className={styles["logo"]}
-                          onError={() => {
-                            console.error(`Failed to load image for org ${org.id}:`, org.logo);
-                            setImageErrors(prev => new Set(prev).add(org.id));
+                          crossOrigin="anonymous"
+                          onError={(e) => {
+                            // If crossOrigin fails, try without it
+                            const img = e.currentTarget as HTMLImageElement;
+                            if (img.crossOrigin === 'anonymous') {
+                              // Try without crossOrigin
+                              img.crossOrigin = '';
+                              img.src = org.logo!.trim();
+                            } else {
+                              // Both attempts failed, show placeholder
+                              console.error(`Failed to load image for org ${org.id}:`, org.logo);
+                              setImageErrors(prev => new Set(prev).add(org.id));
+                            }
                           }}
                           onLoad={() => {
                             console.log(`Image loaded successfully for org ${org.id}:`, org.logo);

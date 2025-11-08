@@ -1,7 +1,6 @@
 // src/app/business-admin/users/_components/UserFilters.tsx
 "use client";
 
-import { useState } from "react";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import type { UserQueryParams } from "../api";
 import styles from "../styles.module.css";
@@ -73,7 +72,6 @@ export function UserFilters({
     },
   });
 
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const onSubmit: SubmitHandler<FilterValues> = (data: FilterValues) => {
     const filters: UserQueryParams = {
@@ -229,54 +227,33 @@ export function UserFilters({
             ))}
           </select>
         </div>
-      </div>
 
-      {/* Advanced Filters Toggle */}
-      <div className="mb-4">
-        <button
-          type="button"
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className={styles["advanced-toggle"]}
-        >
-          {showAdvanced ? "Hide" : "Show"} Advanced Filters
-        </button>
-      </div>
-
-      {/* Advanced Filters */}
-      {showAdvanced && (
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            Date Range Filter
-          </h3>
-          <div className="flex flex-wrap gap-4">
-            <div className="min-w-[150px]">
-              <label htmlFor="dateFrom" className={styles["label"]}>
-                From Date
-              </label>
-              <input
-                id="dateFrom"
-                type="date"
-                className={`${styles["input"]} ${errors.dateFrom ? styles.error : ""}`}
-                disabled={loading}
-                {...register("dateFrom")}
-              />
-            </div>
-
-            <div className="min-w-[150px]">
-              <label htmlFor="dateTo" className={styles["label"]}>
-                To Date
-              </label>
-              <input
-                id="dateTo"
-                type="date"
-                className={`${styles["input"]} ${errors.dateTo ? styles.error : ""}`}
-                disabled={loading}
-                {...register("dateTo")}
-              />
-            </div>
-          </div>
+        <div className="min-w-[150px]">
+          <label htmlFor="dateFrom" className={styles["label"]}>
+            From Date
+          </label>
+          <input
+            id="dateFrom"
+            type="date"
+            className={`${styles["input"]} ${errors.dateFrom ? styles.error : ""}`}
+            disabled={loading}
+            {...register("dateFrom")}
+          />
         </div>
-      )}
+
+        <div className="min-w-[150px]">
+          <label htmlFor="dateTo" className={styles["label"]}>
+            To Date
+          </label>
+          <input
+            id="dateTo"
+            type="date"
+            className={`${styles["input"]} ${errors.dateTo ? styles.error : ""}`}
+            disabled={loading}
+            {...register("dateTo")}
+          />
+        </div>
+      </div>
 
       {/* Active Filters Summary */}
       {hasActiveFilters && (

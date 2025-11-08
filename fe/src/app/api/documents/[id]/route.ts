@@ -11,15 +11,16 @@ async function getAuthHeader(): Promise<string | null> {
 }
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const authHeader = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (authHeader) fh.set("Authorization", authHeader);
 
-  const upstream = await fetch(`${BE_BASE}/api/documents/${params.id}`, {
+  const upstream = await fetch(`${BE_BASE}/api/documents/${id}`, {
     method: "GET",
     headers: fh,
     cache: "no-store",
@@ -45,15 +46,16 @@ export async function GET(
 }
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const authHeader = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (authHeader) fh.set("Authorization", authHeader);
 
-  const upstream = await fetch(`${BE_BASE}/api/documents/${params.id}`, {
+  const upstream = await fetch(`${BE_BASE}/api/documents/${id}`, {
     method: "DELETE",
     headers: fh,
     cache: "no-store",

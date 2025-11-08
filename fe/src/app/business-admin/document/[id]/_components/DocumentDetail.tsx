@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye, Download } from "lucide-react";
 import type { DocumentDetail } from "../../api";
 import { getDocument, deleteDocument } from "../../api";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
+import { useToast, toast } from "@/components/ui/toast";
 import styles from "../styles.module.css";
 
 interface DocumentDetailProps {
@@ -14,15 +15,14 @@ interface DocumentDetailProps {
 
 export function DocumentDetail({ documentId }: DocumentDetailProps) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [document, setDocument] = useState<DocumentDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const fetchDocument = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const data = await getDocument(documentId);
@@ -45,21 +45,31 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
     
     setLoading(true);
     setError(null);
-    setSuccess(null);
 
     try {
       await deleteDocument(document.id);
-      setSuccess("Document deleted successfully");
+      showToast(toast.success("Document Deleted", "Document deleted successfully"));
       setTimeout(() => {
         router.push("/business-admin/document");
       }, 1500);
     } catch (e: unknown) {
       const errorMessage =
         e instanceof Error ? e.message : "Failed to delete document";
+      showToast(toast.error("Delete Failed", errorMessage));
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewDocument = () => {
+    // TODO: Implement view document functionality
+    showToast(toast.info("Coming Soon", "View document feature will be available soon"));
+  };
+
+  const handleDownload = () => {
+    // TODO: Implement download functionality
+    showToast(toast.info("Coming Soon", "Download feature will be available soon"));
   };
 
   if (loading && !document) {
@@ -129,11 +139,6 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
       </div>
 
       {/* Alerts */}
-      {success && (
-        <div className={styles["alert"] + " " + styles["alert-success"]}>
-          {success}
-        </div>
-      )}
       {error && (
         <div className={styles["alert"] + " " + styles["alert-error"]}>
           {error}
@@ -263,13 +268,6 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
                   {document.uploader?.email || "N/A"}
                 </p>
               </div>
-
-              <div className={styles["field-item"]}>
-                <label className={styles["label"]}>Status</label>
-                <p className={styles["field-value"]}>
-                  {document.uploader?.status || "N/A"}
-                </p>
-              </div>
             </div>
           </div>
 
@@ -298,13 +296,6 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
                   <label className={styles["label"]}>Email</label>
                   <p className={styles["field-value"]}>
                     {document.organization.email || "N/A"}
-                  </p>
-                </div>
-
-                <div className={styles["field-item"]}>
-                  <label className={styles["label"]}>Status</label>
-                  <p className={styles["field-value"]}>
-                    {document.organization.status || "N/A"}
                   </p>
                 </div>
               </div>
@@ -368,7 +359,10 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
               </div>
             </div>
           )}
+        </div>
 
+        {/* Right Column - Sidebar */}
+        <div className={styles["right-column"]}>
           {/* Statistics */}
           <div className={styles["card"]}>
             <h2 className={styles["section-header"]}>
@@ -415,10 +409,7 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
               )}
             </div>
           </div>
-        </div>
 
-        {/* Right Column - Sidebar */}
-        <div className={styles["right-column"]}>
           {/* Reviewer Information (only for premium documents) */}
           {document.isPremium && document.reviewer && (
             <div className={styles["card"]}>
@@ -454,16 +445,34 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
               Actions
             </h2>
             <div className={styles["sidebar-section"]}>
-              <DeleteConfirmation
-                onDelete={handleDelete}
-                itemId={document.id}
-                itemName={document.title || "Document"}
-                title="Delete Document"
-                description={`Are you sure you want to delete "${document.title || "this document"}"?`}
-                size="lg"
-                variant="outline"
-                className="w-full"
-              />
+              <div className="space-y-3">
+                <button
+                  onClick={handleViewDocument}
+                  className={`${styles["action-button"]} ${styles["action-button-primary"]}`}
+                  disabled={loading}
+                >
+                  <Eye className="w-4 h-4" />
+                  <span>View Document</span>
+                </button>
+                <button
+                  onClick={handleDownload}
+                  className={`${styles["action-button"]} ${styles["action-button-secondary"]}`}
+                  disabled={loading}
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download</span>
+                </button>
+                <DeleteConfirmation
+                  onDelete={handleDelete}
+                  itemId={document.id}
+                  itemName={document.title || "Document"}
+                  title="Delete Document"
+                  description={`Are you sure you want to delete "${document.title || "this document"}"?`}
+                  size="lg"
+                  variant="outline"
+                  className="w-full"
+                />
+              </div>
             </div>
           </div>
         </div>

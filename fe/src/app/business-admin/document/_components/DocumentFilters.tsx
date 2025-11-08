@@ -6,6 +6,7 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import type { DocumentQueryParams } from "../api";
 import { apiClient } from "@/services/http";
 import type { Organization } from "@/types/organization";
+import { useClickOutside } from "@/hooks/use-click-outside";
 import styles from "../styles.module.css";
 
 const SORT_OPTIONS = [
@@ -25,7 +26,6 @@ type FilterValues = {
   typeId: string;
   isPublic: string;
   isPremium: string;
-  deleted: string;
   sortBy: string;
   sortOrder: "asc" | "desc";
   dateFrom: string;
@@ -44,6 +44,7 @@ export function DocumentFilters({
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [orgSearch, setOrgSearch] = useState("");
   const [loadingOrgs, setLoadingOrgs] = useState(false);
+  const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
 
   const {
     register,
@@ -59,7 +60,6 @@ export function DocumentFilters({
       typeId: "",
       isPublic: "",
       isPremium: "",
-      deleted: "",
       sortBy: "createdAt",
       sortOrder: "desc",
       dateFrom: "",
@@ -94,6 +94,18 @@ export function DocumentFilters({
     org.email.toLowerCase().includes(orgSearch.toLowerCase())
   );
 
+  // Close dropdown when clicking outside
+  const orgDropdownRef = useClickOutside<HTMLDivElement>(() => {
+    setIsOrgDropdownOpen(false);
+  });
+
+  // Close dropdown when orgSearch is empty
+  useEffect(() => {
+    if (!orgSearch) {
+      setIsOrgDropdownOpen(false);
+    }
+  }, [orgSearch]);
+
   const onSubmit: SubmitHandler<FilterValues> = (data: FilterValues) => {
     const filters: DocumentQueryParams = {
       ...data,
@@ -101,7 +113,6 @@ export function DocumentFilters({
       typeId: data.typeId || undefined,
       isPublic: data.isPublic === "" ? undefined : data.isPublic === "true",
       isPremium: data.isPremium === "" ? undefined : data.isPremium === "true",
-      deleted: data.deleted === "" ? undefined : data.deleted === "true",
       page: 1,
     };
     onFiltersChange(filters);
@@ -116,7 +127,6 @@ export function DocumentFilters({
       typeId: undefined,
       isPublic: undefined,
       isPremium: undefined,
-      deleted: undefined,
       sortBy: "createdAt",
       sortOrder: "desc",
       dateFrom: undefined,
@@ -133,7 +143,6 @@ export function DocumentFilters({
     watchedFilters.typeId ||
     watchedFilters.isPublic !== "" ||
     watchedFilters.isPremium !== "" ||
-    watchedFilters.deleted !== "" ||
     watchedFilters.dateFrom ||
     watchedFilters.dateTo;
 
@@ -192,18 +201,22 @@ export function DocumentFilters({
 
       {/* Quick Filters */}
       <div className="flex flex-wrap gap-4 mb-4">
-        <div className="min-w-[200px]">
+        <div className="min-w-[200px] max-w-[300px]">
           <label className={styles["label"]}>Organization</label>
-          <div className="relative">
+          <div className="relative" ref={orgDropdownRef}>
             <input
               type="text"
               placeholder="Search organization..."
               value={orgSearch}
-              onChange={(e) => setOrgSearch(e.target.value)}
+              onChange={(e) => {
+                setOrgSearch(e.target.value);
+                setIsOrgDropdownOpen(true);
+              }}
+              onFocus={() => setIsOrgDropdownOpen(true)}
               className={styles["search-input"]}
               disabled={loading || loadingOrgs}
             />
-            {orgSearch && (
+            {isOrgDropdownOpen && orgSearch && (
               <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                 {filteredOrganizations.length === 0 ? (
                   <div className="p-2 text-sm text-gray-500">No organizations found</div>
@@ -215,6 +228,7 @@ export function DocumentFilters({
                       onClick={() => {
                         setValue("organizationId", org.id);
                         setOrgSearch(org.name);
+                        setIsOrgDropdownOpen(false);
                       }}
                       className="w-full text-left p-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
                     >
@@ -226,6 +240,32 @@ export function DocumentFilters({
             )}
           </div>
           <input type="hidden" {...register("organizationId")} />
+        </div>
+
+        <div className="min-w-[150px]">
+          <label htmlFor="dateFrom" className={styles["label"]}>
+            From Date
+          </label>
+          <input
+            id="dateFrom"
+            type="date"
+            className={`${styles["input"]} ${errors.dateFrom ? styles.error : ""}`}
+            disabled={loading}
+            {...register("dateFrom")}
+          />
+        </div>
+
+        <div className="min-w-[150px]">
+          <label htmlFor="dateTo" className={styles["label"]}>
+            To Date
+          </label>
+          <input
+            id="dateTo"
+            type="date"
+            className={`${styles["input"]} ${errors.dateTo ? styles.error : ""}`}
+            disabled={loading}
+            {...register("dateTo")}
+          />
         </div>
 
         <div className="min-w-[150px]">
@@ -253,20 +293,6 @@ export function DocumentFilters({
             <option value="">All</option>
             <option value="true">Premium</option>
             <option value="false">Free</option>
-          </select>
-        </div>
-
-        <div className="min-w-[150px]">
-          <label className={styles["label"]}>Deleted</label>
-          <select
-            id="deleted"
-            className={`${styles["select"]} ${errors.deleted ? styles.error : ""}`}
-            disabled={loading}
-            {...register("deleted")}
-          >
-            <option value="">Active Only</option>
-            <option value="true">Deleted</option>
-            <option value="false">Not Deleted</option>
           </select>
         </div>
 
@@ -300,32 +326,6 @@ export function DocumentFilters({
               </option>
             ))}
           </select>
-        </div>
-
-        <div className="min-w-[150px]">
-          <label htmlFor="dateFrom" className={styles["label"]}>
-            From Date
-          </label>
-          <input
-            id="dateFrom"
-            type="date"
-            className={`${styles["input"]} ${errors.dateFrom ? styles.error : ""}`}
-            disabled={loading}
-            {...register("dateFrom")}
-          />
-        </div>
-
-        <div className="min-w-[150px]">
-          <label htmlFor="dateTo" className={styles["label"]}>
-            To Date
-          </label>
-          <input
-            id="dateTo"
-            type="date"
-            className={`${styles["input"]} ${errors.dateTo ? styles.error : ""}`}
-            disabled={loading}
-            {...register("dateTo")}
-          />
         </div>
       </div>
 
@@ -396,22 +396,6 @@ export function DocumentFilters({
                     onSubmit(updatedFilters);
                   }}
                   className="ml-1 text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-200"
-                >
-                  ×
-                </button>
-              </span>
-            )}
-            {watchedFilters.deleted !== "" && (
-              <span className={`${styles["filter-tag"]} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200`}>
-                Deleted: {watchedFilters.deleted === "true" ? "Yes" : "No"}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const updatedFilters = { ...watchedFilters, deleted: "" };
-                    reset(updatedFilters);
-                    onSubmit(updatedFilters);
-                  }}
-                  className="ml-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
                 >
                   ×
                 </button>

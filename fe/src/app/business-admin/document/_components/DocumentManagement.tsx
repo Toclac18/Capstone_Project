@@ -14,14 +14,15 @@ import {
 import { DocumentFilters } from "./DocumentFilters";
 import { Pagination } from "@/app/business-admin/users/_components/Pagination";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
+import { useToast, toast } from "@/components/ui/toast";
 import { Eye } from "lucide-react";
 import styles from "../styles.module.css";
 
 export function DocumentManagement() {
+  const { showToast } = useToast();
   const [documents, setDocuments] = useState<DocumentListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -38,7 +39,6 @@ export function DocumentManagement() {
   const fetchDocuments = useCallback(async (queryParams: DocumentQueryParams) => {
     setLoading(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const updatedFilters = { ...queryParams, limit: itemsPerPage };
@@ -81,15 +81,15 @@ export function DocumentManagement() {
   const handleDelete = async (docId: string | number) => {
     setLoading(true);
     setError(null);
-    setSuccess(null);
 
     try {
       await deleteDocument(String(docId));
-      setSuccess("Document deleted successfully");
+      showToast(toast.success("Document Deleted", "Document deleted successfully"));
       await fetchDocuments(filters);
     } catch (e: unknown) {
       const errorMessage =
         e instanceof Error ? e.message : "Failed to delete document";
+      showToast(toast.error("Delete Failed", errorMessage));
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -108,11 +108,6 @@ export function DocumentManagement() {
       </div>
 
       {/* Alerts */}
-      {success && (
-        <div className={styles["alert"] + " " + styles["alert-success"]}>
-          {success}
-        </div>
-      )}
       {error && (
         <div className={styles["alert"] + " " + styles["alert-error"]}>
           {error}

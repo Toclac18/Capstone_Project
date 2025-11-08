@@ -28,12 +28,14 @@ interface DeleteOrganizationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onDelete: () => Promise<void>;
+  organizationName: string;
 }
 
 export default function DeleteOrganizationModal({
   isOpen,
   onClose,
   onDelete,
+  organizationName,
 }: DeleteOrganizationModalProps) {
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -99,7 +101,7 @@ export default function DeleteOrganizationModal({
                 <AlertCircle className={styles["warning-icon"]} />
                 <div>
                   <p className={styles["warning-title"]}>
-                    Are you sure you want to delete this organization?
+                    Are you sure you want to delete &quot;{organizationName}&quot;?
                   </p>
                   <p className={styles["warning-text"]}>
                     Your account will be deactivated immediately. Public documents will remain. 

@@ -11,30 +11,46 @@ export default function OrganizationDetailPage() {
   const router = useRouter();
   const id = params.id as string;
 
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(() => {
+    return !!id;
+  });
+  const [error, setError] = useState<string | null>(() => {
+    return id ? null : "Organization ID is required";
+  });
   const [detail, setDetail] = useState<OrganizationDetail | null>(null);
   const [showLeaveModal, setShowLeaveModal] = useState<boolean>(false);
 
   useEffect(() => {
     if (!id) {
-      setError("Organization ID is required");
-      setLoading(false);
       return;
     }
+    let cancelled = false;
 
-    setLoading(true);
-    setError(null);
-    fetchOrganizationDetail(id)
-      .then((d) => {
-        setDetail(d);
-      })
-      .catch((e: any) => {
-        setError(e?.message || "Failed to load organization detail");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const d = await fetchOrganizationDetail(id);
+        if (!cancelled) {
+          setDetail(d);
+        }
+      } catch (e: any) {
+        if (!cancelled) {
+          setError(e?.message || "Failed to load organization detail");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const handleLeaveSuccess = () => {

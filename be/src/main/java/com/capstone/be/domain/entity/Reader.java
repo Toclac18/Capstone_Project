@@ -12,10 +12,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.util.UUID;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+
+import lombok.*;
 
 @Entity
 @Table(name = "readers")
@@ -53,4 +51,7 @@ public class Reader extends BaseEntity {
   @Enumerated(EnumType.STRING)
   private ReaderStatus status = ReaderStatus.PENDING_VERIFICATION;
 
+  public String getName() {
+    return fullName;
+  }
 }

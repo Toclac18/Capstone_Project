@@ -51,6 +51,12 @@ logging:
   level:
     org.hibernate: INFO
 
+springdoc:
+  swagger-ui:
+    url: /v3/api-docs
+  api-docs:
+    path: /v3/api-docs
+
 aws:
   accessKeyId: ${AWS_ACCESS_KEY_ID:xxxxxx}
   secretKey: ${AWS_SECRET_KEY:xxxxxx}

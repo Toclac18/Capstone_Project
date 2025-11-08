@@ -26,12 +26,12 @@ function ToastItem({ toast, onRemove }: ToastProps) {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleRemove = () => {
+  const handleRemove = useCallback(() => {
     setIsRemoving(true);
     setTimeout(() => {
       onRemove(toast.id);
     }, 300); // Match animation duration
-  };
+  }, [onRemove, toast.id]);
 
   useEffect(() => {
     if (toast.duration && toast.duration > 0) {
@@ -40,7 +40,7 @@ function ToastItem({ toast, onRemove }: ToastProps) {
       }, toast.duration);
       return () => clearTimeout(timer);
     }
-  }, [toast.duration]);
+  }, [toast.duration, handleRemove]);
 
   const getIcon = () => {
     switch (toast.type) {

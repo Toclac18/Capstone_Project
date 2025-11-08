@@ -1,51 +1,49 @@
-// src/app/business-admin/organization/_components/OrganizationManagement.tsx
+// src/app/business-admin/document/_components/DocumentManagement.tsx
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
 import type {
-  Organization,
-  OrganizationResponse,
-  OrganizationQueryParams,
+  DocumentListItem,
+  DocumentListResponse,
+  DocumentQueryParams,
 } from "../api";
 import {
-  getOrganizations,
-  deleteOrganization,
+  getDocuments,
+  deleteDocument,
 } from "../api";
-import { OrganizationFilters } from "./OrganizationFilters";
+import { DocumentFilters } from "./DocumentFilters";
 import { Pagination } from "@/app/business-admin/users/_components/Pagination";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
 import { Eye } from "lucide-react";
 import styles from "../styles.module.css";
 
-export function OrganizationManagement() {
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
+export function DocumentManagement() {
+  const [documents, setDocuments] = useState<DocumentListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
-  const [filters, setFilters] = useState<OrganizationQueryParams>({
+  const [filters, setFilters] = useState<DocumentQueryParams>({
     page: 1,
     limit: 10,
     search: "",
-    status: "",
     sortBy: "createdAt",
     sortOrder: "desc",
   });
 
-  // Fetch organizations from API
-  const fetchOrganizations = useCallback(async (queryParams: OrganizationQueryParams) => {
+  // Fetch documents from API
+  const fetchDocuments = useCallback(async (queryParams: DocumentQueryParams) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
       const updatedFilters = { ...queryParams, limit: itemsPerPage };
-      const response: OrganizationResponse = await getOrganizations(updatedFilters);
-      setOrganizations(response.organizations);
+      const response: DocumentListResponse = await getDocuments(updatedFilters);
+      setDocuments(response.documents);
       setTotalItems(response.total);
       setCurrentPage(response.page);
       setFilters(updatedFilters);
@@ -53,9 +51,9 @@ export function OrganizationManagement() {
       const errorMessage =
         e instanceof Error
           ? e.message
-          : "Failed to fetch organizations";
+          : "Failed to fetch documents";
       setError(errorMessage);
-      setOrganizations([]);
+      setDocuments([]);
       setTotalItems(0);
     } finally {
       setLoading(false);
@@ -64,49 +62,49 @@ export function OrganizationManagement() {
 
   // Initial load - only once on mount
   useEffect(() => {
-    fetchOrganizations(filters);
+    fetchDocuments(filters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle filter changes
-  const handleFiltersChange = (newFilters: OrganizationQueryParams) => {
+  const handleFiltersChange = (newFilters: DocumentQueryParams) => {
     const updatedFilters = { ...newFilters, limit: itemsPerPage };
-    fetchOrganizations(updatedFilters);
+    fetchDocuments(updatedFilters);
   };
 
   // Handle page changes
   const handlePageChange = (page: number) => {
     const updatedFilters = { ...filters, page };
-    fetchOrganizations(updatedFilters);
+    fetchDocuments(updatedFilters);
   };
 
-  const handleDelete = async (orgId: string | number) => {
+  const handleDelete = async (docId: string | number) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
-      await deleteOrganization(String(orgId));
-      setSuccess("Organization deleted successfully");
-      await fetchOrganizations(filters);
+      await deleteDocument(String(docId));
+      setSuccess("Document deleted successfully");
+      await fetchDocuments(filters);
     } catch (e: unknown) {
       const errorMessage =
-        e instanceof Error ? e.message : "Failed to delete organization";
+        e instanceof Error ? e.message : "Failed to delete document";
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDetail = (orgId: string) => {
-    window.location.href = `/business-admin/organization/${orgId}`;
+  const handleDetail = (docId: string) => {
+    window.location.href = `/business-admin/document/${docId}`;
   };
 
   return (
     <div className={styles["container"]}>
       {/* Header */}
       <div className="mb-6">
-        <h1 className={styles["page-title"]}>Organization Management</h1>
+        <h1 className={styles["page-title"]}>Document Management</h1>
       </div>
 
       {/* Alerts */}
@@ -122,23 +120,24 @@ export function OrganizationManagement() {
       )}
 
       {/* Filters */}
-      <OrganizationFilters
+      <DocumentFilters
         onFiltersChange={handleFiltersChange}
         loading={loading}
       />
 
-      {/* Organizations Table */}
+      {/* Documents Table */}
       <div className={styles["table-container"]}>
         <div className="overflow-x-auto">
           <table className={styles["table"]}>
             <thead className={styles["table-header"]}>
               <tr>
-                <th className={styles["table-header-cell"]}>Logo</th>
-                <th className={styles["table-header-cell"]}>Organization Name</th>
-                <th className={styles["table-header-cell"]}>Organization Email</th>
-                <th className={styles["table-header-cell"]}>Phone</th>
-                <th className={styles["table-header-cell"]}>Admin Email</th>
-                <th className={styles["table-header-cell"]}>Status</th>
+                <th className={styles["table-header-cell"]}>Title</th>
+                <th className={styles["table-header-cell"]}>Uploader</th>
+                <th className={styles["table-header-cell"]}>Organization</th>
+                <th className={styles["table-header-cell"]}>Type</th>
+                <th className={styles["table-header-cell"]}>Public</th>
+                <th className={styles["table-header-cell"]}>Premium</th>
+                <th className={styles["table-header-cell"]}>Views</th>
                 <th className={styles["table-header-cell"]}>Created At</th>
                 <th className={styles["table-header-cell"]}>Actions</th>
               </tr>
@@ -146,77 +145,70 @@ export function OrganizationManagement() {
             <tbody className={styles["table-body"]}>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className={styles["loading-container"]}>
+                  <td colSpan={9} className={styles["loading-container"]}>
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                      <span className="ml-2">Loading organizations...</span>
+                      <span className="ml-2">Loading documents...</span>
                     </div>
                   </td>
                 </tr>
-              ) : organizations.length === 0 ? (
+              ) : documents.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className={styles["empty-container"]}>
-                    No organizations found.
+                  <td colSpan={9} className={styles["empty-container"]}>
+                    No documents found.
                   </td>
                 </tr>
               ) : (
-                organizations.map((org) => (
-                  <tr key={org.id} className={styles["table-row"]}>
-                    <td className={styles["table-cell"]}>
-                      {org.logo && !imageErrors.has(org.id) ? (
-                        <img
-                          src={org.logo}
-                          alt={org.name || org.email}
-                          className={styles["logo"]}
-                          onError={() => {
-                            console.error(`Failed to load image for org ${org.id}:`, org.logo);
-                            setImageErrors(prev => new Set(prev).add(org.id));
-                          }}
-                          onLoad={() => {
-                            console.log(`Image loaded successfully for org ${org.id}:`, org.logo);
-                          }}
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className={styles["logo-placeholder"]}>
-                          <span className={styles["logo-text"]}>
-                            {(org.name || org.email)
-                              .substring(0, 2)
-                              .toUpperCase()}
-                          </span>
-                        </div>
-                      )}
-                    </td>
+                documents.map((doc) => (
+                  <tr key={doc.id} className={styles["table-row"]}>
                     <td className={styles["table-cell"]}>
                       <div className={styles["table-cell-main"]}>
-                        {org.name || org.email}
+                        {doc.title || "N/A"}
                       </div>
                     </td>
                     <td className={styles["table-cell"]}>
-                      {org.email}
+                      {doc.uploader?.fullName || doc.uploader?.username || "N/A"}
                     </td>
-                    <td className={styles["table-cell"]}>{org.hotline}</td>
-                    <td className={styles["table-cell"]}>{org.adminEmail}</td>
+                    <td className={styles["table-cell"]}>
+                      {doc.organization?.name || "N/A"}
+                    </td>
+                    <td className={styles["table-cell"]}>
+                      {doc.type?.name || "N/A"}
+                    </td>
                     <td className={styles["table-cell"]}>
                       <span
                         className={`${styles["status-badge"]} ${
-                          org.status === "ACTIVE" || org.active
+                          doc.isPublic
                             ? styles["status-active"]
                             : styles["status-inactive"]
                         }`}
                       >
-                        {org.status || (org.active ? "ACTIVE" : "INACTIVE")}
+                        {doc.isPublic ? "Public" : "Private"}
                       </span>
                     </td>
                     <td className={styles["table-cell"]}>
-                      {org.createdAt
-                        ? new Date(org.createdAt).toLocaleDateString()
+                      <span
+                        className={`${styles["status-badge"]} ${
+                          doc.isPremium
+                            ? styles["status-active"]
+                            : styles["status-inactive"]
+                        }`}
+                      >
+                        {doc.isPremium ? "Premium" : "Free"}
+                      </span>
+                    </td>
+                    <td className={styles["table-cell"]}>
+                      {doc.viewCount ?? 0}
+                    </td>
+                    <td className={styles["table-cell"]}>
+                      {doc.createdAt
+                        ? new Date(doc.createdAt).toLocaleDateString()
                         : "N/A"}
                     </td>
                     <td className={styles["table-cell"]}>
                       <div className={styles["action-cell"]}>
                         <button
-                          onClick={() => handleDetail(org.id)}
+                          onClick={() => handleDetail(doc.id)}
                           className={styles["action-icon-btn"]}
                           title="View Details"
                         >
@@ -224,10 +216,10 @@ export function OrganizationManagement() {
                         </button>
                         <DeleteConfirmation
                           onDelete={handleDelete}
-                          itemId={org.id}
-                          itemName={org.name || org.email}
-                          title="Delete Organization"
-                          description={`Are you sure you want to delete "${org.name || org.email}"?`}
+                          itemId={doc.id}
+                          itemName={doc.title || "Document"}
+                          title="Delete Document"
+                          description={`Are you sure you want to delete "${doc.title || "this document"}"?`}
                           size="sm"
                           variant="text"
                           className={styles["delete-btn-wrapper"]}

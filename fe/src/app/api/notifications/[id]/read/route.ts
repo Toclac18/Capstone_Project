@@ -5,7 +5,7 @@ import { mockNotificationDB } from "@/mock/db";
 const DEFAULT_BE_BASE = "http://localhost:8080";
 
 export async function POST(
-  req: Request,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const USE_MOCK = process.env.USE_MOCK === "true";

@@ -1,7 +1,25 @@
 .idea
-be/.idea/
-be/out/
 */DS_Store
 .DS_Store
 
+#BE
+be/target/
+be/build/
+be/.gradle/
+be/.idea/
+be/*.iml
+be/out/
 be/src/main/generated
+be/bin
+be/.env
+
+#FE
+fe/node_modules/
+fe/.npm/
+fe/.pnpm-store/
+fe/.next/
+fe/out/
+fe/dist/
+fe/.env
+fe/.env.*
+fe/!.env.local.example

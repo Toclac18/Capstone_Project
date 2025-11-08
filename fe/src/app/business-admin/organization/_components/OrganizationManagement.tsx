@@ -1,7 +1,7 @@
 // src/app/business-admin/organization/_components/OrganizationManagement.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type {
   Organization,
   OrganizationResponse,
@@ -37,7 +37,7 @@ export function OrganizationManagement() {
   });
 
   // Fetch organizations from API
-  const fetchOrganizations = async (queryParams: OrganizationQueryParams) => {
+  const fetchOrganizations = useCallback(async (queryParams: OrganizationQueryParams) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -60,12 +60,12 @@ export function OrganizationManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [itemsPerPage]);
 
   // Initial load
   useEffect(() => {
     fetchOrganizations(filters);
-  }, []);
+  }, [fetchOrganizations, filters]);
 
   // Handle filter changes
   const handleFiltersChange = (newFilters: OrganizationQueryParams) => {

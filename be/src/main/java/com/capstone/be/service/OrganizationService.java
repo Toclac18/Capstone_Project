@@ -15,6 +15,8 @@ public interface OrganizationService {
   OrganizationDetailResponse updateStatus(UUID id, UpdateOrganizationStatusRequest request);
 
   void delete(UUID id);
+
+  OrganizationListResponse getAll();
 }
 
 

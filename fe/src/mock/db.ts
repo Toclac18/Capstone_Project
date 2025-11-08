@@ -198,6 +198,124 @@ export const mockNotificationDB = {
   },
 };
 
+// Mock Profile Data
+export type UserRole =
+  | "READER"
+  | "REVIEWER"
+  | "ORGANIZATION"
+  | "BUSINESS_ADMIN"
+  | "SYSTEM_ADMIN";
+
+export interface ProfileData {
+  id: string;
+  dateOfBirth?: string;
+  role: UserRole;
+  email: string;
+  fullName?: string;
+  username?: string;
+  coinBalance?: number;
+  status?: string;
+  ordid?: string;
+  organizationName?: string;
+  organizationEmail?: string;
+  organizationHotline?: string;
+  organizationLogo?: string;
+  organizationAddress?: string;
+  active?: boolean;
+  deleted?: boolean;
+}
+
+const _profileData: ProfileData = {
+  id: "11111111-1111-1111-1111-111111111111",
+  role: "READER",
+  email: "reader@example.com",
+  fullName: "Reader One",
+  username: "reader1",
+  dateOfBirth: new Date(1999, 1, 1).toISOString(),
+  coinBalance: 120,
+  status: "ACTIVE",
+  active: true,
+  deleted: false,
+};
+
+const roleMap: Record<string, ProfileData> = {
+  READER: {
+    id: "11111111-1111-1111-1111-111111111111",
+    role: "READER",
+    email: "reader@example.com",
+    fullName: "Reader One",
+    username: "reader1",
+    dateOfBirth: new Date(1999, 1, 1).toISOString(),
+    coinBalance: 120,
+    status: "ACTIVE",
+    active: true,
+    deleted: false,
+  },
+  REVIEWER: {
+    id: "22222222-2222-2222-2222-222222222222",
+    role: "REVIEWER",
+    email: "reviewer@example.com",
+    fullName: "Reviewer Jane",
+    username: "reviewer_jane",
+    ordid: "RV-2025-0001",
+    dateOfBirth: new Date(1990, 6, 15).toISOString(),
+    coinBalance: 500,
+    status: "ACTIVE",
+    active: true,
+    deleted: false,
+  },
+  ORGANIZATION: {
+    id: "33333333-3333-3333-3333-333333333333",
+    role: "ORGANIZATION",
+    email: "org-admin@example.com",
+    fullName: "John OrgAdmin",
+    username: "org_admin",
+    organizationName: "Acme Org",
+    organizationEmail: "contact@acme.org",
+    organizationHotline: "+1 555-0100",
+    organizationLogo: "/images/logo/main.svg",
+    organizationAddress: "123 Market St, Springfield",
+    status: "ACTIVE",
+    active: true,
+    deleted: false,
+  },
+  BUSINESS_ADMIN: {
+    id: "44444444-4444-4444-4444-444444444444",
+    role: "BUSINESS_ADMIN",
+    email: "biz-admin@example.com",
+    fullName: "Biz Admin",
+    username: "biz_admin",
+    status: "ACTIVE",
+    active: true,
+    deleted: false,
+  },
+  SYSTEM_ADMIN: {
+    id: "55555555-5555-5555-5555-555555555555",
+    role: "SYSTEM_ADMIN",
+    email: "sys-admin@example.com",
+    fullName: "System Admin",
+    username: "sys_admin",
+    status: "ACTIVE",
+    active: true,
+    deleted: false,
+  },
+};
+
+export const mockProfileDB = {
+  get(role?: string): ProfileData {
+    const requestedRole = (role || _profileData.role).toUpperCase();
+    const baseProfile = roleMap[requestedRole] || roleMap.READER;
+    // Merge _profileData trước, rồi baseProfile sau để baseProfile override và giữ các updates
+    return { ..._profileData, ...baseProfile };
+  },
+  update(data: Partial<ProfileData>): ProfileData {
+    Object.assign(_profileData, data);
+    return { ..._profileData };
+  },
+  clear(): void {
+    Object.assign(_profileData, roleMap.READER);
+  },
+};
 // ---------------- Organizations Mock ----------------
 export type OrganizationSummary = {
   id: string;

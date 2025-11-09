@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { Trash2, X } from "lucide-react";
 
 interface DeleteConfirmationProps {
@@ -108,7 +107,7 @@ export default function DeleteConfirmation({
       </button>
 
       {/* Delete Modal */}
-      {isModalOpen && mounted && createPortal(
+      {isModalOpen && mounted && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           {/* Backdrop */}
           <div 
@@ -228,8 +227,7 @@ export default function DeleteConfirmation({
               </div>
             </div>
           </div>
-        </div>,
-        document.body
+        </div>
       )}
     </>
   );

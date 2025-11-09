@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { User, X, AlertCircle, Calendar } from "lucide-react";
 import type { ProfileResponse } from "@/services/profileService";
 import styles from "@/app/profile/styles.module.css";
@@ -97,7 +96,7 @@ export default function EditProfileModal({
     return null;
   }
 
-  return createPortal(
+  return (
     <div className={`${styles["modal-overlay"]} ${styles["with-padding"]}`}>
       <div className={styles["modal-backdrop"]} onClick={onClose} />
       <div className={`${styles["modal-container"]} ${styles["modal-container-lg"]}`}>
@@ -231,7 +230,6 @@ export default function EditProfileModal({
           </form>
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   );
 }

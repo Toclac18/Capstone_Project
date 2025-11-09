@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
 import { Building2, X, AlertCircle, Upload } from "lucide-react";
 import type { OrganizationInfo, UpdateOrganizationData } from "../api";
 import styles from "../styles.module.css";
@@ -178,7 +177,7 @@ export default function EditOrganizationModal({
 
   if (!mounted || !isOpen || !organization) return null;
 
-  return createPortal(
+  return (
     <div className={styles["modal-overlay"]}>
       <div className={styles["modal-backdrop"]} onClick={onClose} />
       <div className={`${styles["modal-container"]} ${styles["modal-container-lg"]}`}>
@@ -367,8 +366,7 @@ export default function EditOrganizationModal({
           </form>
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   );
 }
 

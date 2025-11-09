@@ -5,7 +5,6 @@ import {
   DropdownContent,
   DropdownTrigger,
 } from "@/components/ui/dropdown";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/utils/utils";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -25,7 +24,6 @@ export function Notification() {
   const [loading, setLoading] = useState(true);
   const [selectedNotification, setSelectedNotification] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const isMobile = useIsMobile();
 
   const fetchNotifications = async () => {
     try {
@@ -98,7 +96,7 @@ export function Notification() {
       </DropdownTrigger>
 
       <DropdownContent
-        align={isMobile ? "end" : "center"}
+        align="end"
         className={styles.dropdownContent}
       >
         <div className={styles.dropdownHeader}>

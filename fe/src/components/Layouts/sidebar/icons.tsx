@@ -1,4 +1,3 @@
-// src/components/sidebar/icons.tsx
 import { SVGProps } from "react";
 
 export type IconProps = SVGProps<SVGSVGElement>;
@@ -108,7 +107,6 @@ export function FourCircle(props: IconProps) {
   );
 }
 
-/** ⬇️ Thêm icon Table để HomepageSidebarAdapter sử dụng */
 export function Table(props: IconProps) {
   return (
     <svg

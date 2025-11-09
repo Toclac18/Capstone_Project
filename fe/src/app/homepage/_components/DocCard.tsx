@@ -1,39 +1,48 @@
 "use client";
 
+import Image from "next/image";
 import styles from "../styles.module.css";
-import type { DocumentLite } from "../HomepageProvider";
 
-export default function DocCard({
-  doc,
-  saved,
-  onSave,
-}: {
-  doc: DocumentLite;
-  saved: boolean;
-  onSave: () => void;
-}) {
+type Props = {
+  id: string;
+  title: string;
+  subject?: string;
+  pageCount?: number;
+  upvote_counts: number;
+  downvote_counts: number;
+  specialization: string;
+  uploader: string;
+  thumbnail: string;
+};
+
+export default function DocCard(props: Props) {
   return (
     <div className={styles.card}>
-      <div className={styles.cardThumb} />
-      <div className={styles.cardMeta}>
-        <div className={styles.cardTitle} title={doc.title}>
-          {doc.title}
-        </div>
-        <div className={styles.cardSub}>
-          {doc.subject ? <span>{doc.subject}</span> : <span>&nbsp;</span>}
-          {typeof doc.pageCount === "number" && (
-            <span className={styles.dot}>•</span>
-          )}
-          {typeof doc.pageCount === "number" && (
-            <span>{doc.pageCount} pages</span>
-          )}
-        </div>
+      <div className={styles.thumb}>
+        <Image
+          src={props.thumbnail}
+          alt={props.title}
+          fill
+          sizes="(max-width: 768px) 80vw, 260px"
+          className={styles.thumbImg}
+          priority={false}
+        />
       </div>
-      <div className={styles.cardActions}>
-        <button className={styles.saveBtn} onClick={onSave}>
-          {saved ? "Saved" : "Save"}
-        </button>
+
+      <div className={styles.cardTitle}>{props.title}</div>
+
+      <div className={styles.meta}>
+        <span>{props.subject ?? "—"}</span>
+        {props.pageCount && <span>• {props.pageCount} pages</span>}
       </div>
+
+      <div className={styles.votesRow}>
+        <span className={styles.voteUp}>▲ {props.upvote_counts}</span>
+        <span className={styles.voteDown}>▼ {props.downvote_counts}</span>
+        <span className={styles.specChip}>{props.specialization}</span>
+      </div>
+
+      <div className={styles.uploader}>Uploaded by {props.uploader}</div>
     </div>
   );
 }

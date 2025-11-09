@@ -1,115 +1,79 @@
 "use client";
-import { createContext, useContext, useState, useEffect, useMemo } from "react";
-import {
-  mockReader,
-  mockOrganizations,
-  mockSavedLists,
-  mockLibraryDocs,
-  mockContinueReading,
-  mockBestForYou,
-} from "@/mock/homepage.mock";
 
-export type ReaderLite = {
-  id: string;
-  fullName: string;
-  username: string;
-  email: string;
-  status: "ACTIVE" | "SUSPENDED" | "PENDING_VERIFICATION";
-};
+import { createContext, useContext, useEffect, useState } from "react";
 
-export type OrganizationLite = { id: string; name: string; slug?: string };
-export type SavedListLite = { id: string; name: string };
 export type DocumentLite = {
   id: string;
   title: string;
   subject?: string;
   pageCount?: number;
   owned?: boolean;
+  specialization: string;
+  upvote_counts: number;
+  downvote_counts: number;
+  vote_scores: number;
+  uploader: string;
+  thumbnail: string;
 };
 
-type Ctx = {
-  reader?: ReaderLite;
-  orgs: OrganizationLite[];
-  savedLists: SavedListLite[];
-  libraryDocs: DocumentLite[];
+type SpecGroup = { name: string; items: DocumentLite[] };
+
+type HomepageCtx = {
   continueReading: DocumentLite[];
-  bestForYou: DocumentLite[];
+  topUpvoted: DocumentLite[];
+  specGroups: SpecGroup[];
+  loading: boolean;
   q: string;
   setQ: (v: string) => void;
-  onToggleSave: (id: string) => void;
-  isSaved: (id: string) => boolean;
 };
 
-const HomepageCtx = createContext<Ctx | null>(null);
+const Ctx = createContext<HomepageCtx | null>(null);
 export const useHomepage = () => {
-  const ctx = useContext(HomepageCtx);
+  const ctx = useContext(Ctx);
   if (!ctx) throw new Error("useHomepage must be used within HomepageProvider");
   return ctx;
 };
 
 export function HomepageProvider({ children }: { children: React.ReactNode }) {
-  const [reader, setReader] = useState<ReaderLite>();
-  const [orgs, setOrgs] = useState<OrganizationLite[]>([]);
-  const [savedLists, setSavedLists] = useState<SavedListLite[]>([]);
-  const [libraryDocs, setLibraryDocs] = useState<DocumentLite[]>([]);
   const [continueReading, setContinueReading] = useState<DocumentLite[]>([]);
-  const [bestForYou, setBestForYou] = useState<DocumentLite[]>([]);
+  const [topUpvoted, setTopUpvoted] = useState<DocumentLite[]>([]);
+  const [specGroups, setSpecGroups] = useState<SpecGroup[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [q, setQ] = useState("");
-  const [saved, setSaved] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    setReader(mockReader);
-    setOrgs(mockOrganizations);
-    setSavedLists(mockSavedLists);
-    setLibraryDocs(mockLibraryDocs);
-    setContinueReading(mockContinueReading);
-    setBestForYou(mockBestForYou);
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/homepage/me", { cache: "no-store" });
+        const data = await res.json();
+        if (!alive) return;
+        setContinueReading(data.continueReading ?? []);
+        setTopUpvoted(data.topUpvoted ?? []);
+        setSpecGroups(data.specializations ?? []);
+      } catch (e) {
+        console.error("fetch /api/homepage failed", e);
+        if (alive) {
+          setContinueReading([]);
+          setTopUpvoted([]);
+          setSpecGroups([]);
+        }
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  const filteredContinue = useMemo(() => {
-    const search = q.toLowerCase();
-    return continueReading.filter(
-      (d) =>
-        d.title.toLowerCase().includes(search) ||
-        (d.subject ?? "").toLowerCase().includes(search),
-    );
-  }, [continueReading, q]);
-
-  const filteredBest = useMemo(() => {
-    const search = q.toLowerCase();
-    return bestForYou.filter(
-      (d) =>
-        d.title.toLowerCase().includes(search) ||
-        (d.subject ?? "").toLowerCase().includes(search),
-    );
-  }, [bestForYou, q]);
-
-  const onToggleSave = (id: string) => {
-    setSaved((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
-  const isSaved = (id: string) => saved.has(id);
-
   return (
-    <HomepageCtx.Provider
-      value={{
-        reader,
-        orgs,
-        savedLists,
-        libraryDocs,
-        continueReading: filteredContinue,
-        bestForYou: filteredBest,
-        q,
-        setQ,
-        onToggleSave,
-        isSaved,
-      }}
+    <Ctx.Provider
+      value={{ continueReading, topUpvoted, specGroups, loading, q, setQ }}
     >
       {children}
-    </HomepageCtx.Provider>
+    </Ctx.Provider>
   );
 }

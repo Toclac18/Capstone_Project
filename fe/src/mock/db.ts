@@ -316,6 +316,45 @@ export const mockProfileDB = {
     Object.assign(_profileData, roleMap.READER);
   },
 };
+
+// ---------------- Organization Admin Mock ----------------
+export type OrganizationInfo = {
+  id: string;
+  name: string;
+  type: string;
+  registrationNumber: string;
+  certificateUpload?: string | null;
+  email: string;
+  createdAt: string;
+  logo?: string | null;
+  deleted?: boolean;
+};
+
+const _organizationInfo: OrganizationInfo = {
+  id: "org-admin-1",
+  name: "Tech Innovation Hub",
+  type: "NON-PROFIT",
+  registrationNumber: "REG-2024-001234",
+  certificateUpload: "https://example.com/certificates/tech-innovation-hub-cert.pdf",
+  email: "admin@innovation.example.org",
+  createdAt: "2024-01-15T10:30:00Z",
+  logo: null,
+};
+
+export const mockOrganizationAdminDB = {
+  get(): OrganizationInfo {
+    return { ..._organizationInfo };
+  },
+  update(data: Partial<OrganizationInfo>): OrganizationInfo {
+    Object.assign(_organizationInfo, data);
+    return { ..._organizationInfo };
+  },
+  delete(): void {
+    // Mark as deleted (in real scenario, this would update the database)
+    _organizationInfo.deleted = true;
+  },
+};
+
 // ---------------- Organizations Mock ----------------
 export type OrganizationSummary = {
   id: string;

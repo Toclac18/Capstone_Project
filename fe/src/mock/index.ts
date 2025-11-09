@@ -9,6 +9,7 @@ import { setupMockContactAdmin } from "./contact-admin";
 import { setupMockAuth } from "./auth";
 import { setupMockProfile } from "./profile";
 import { setupMockNotification } from "./notification";
+import { setupMockManageOrganization } from "./manageOrganization";
 import { setupMockOrganizations } from "./organizations";
 import { setupMockDocuments } from "./uploadDocuments";
 
@@ -21,6 +22,7 @@ export function setupMocks() {
   setupMockContactAdmin();
   setupMockProfile();
   setupMockNotification();
+  setupMockManageOrganization();
   setupMockOrganizations();
   setupMockDocuments();
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { Mail, X, AlertCircle } from "lucide-react";
 import styles from "@/app/profile/styles.module.css";
 
@@ -80,7 +79,7 @@ export default function ChangeEmailModal({
 
   if (!mounted || !isOpen) return null;
 
-  return createPortal(
+  return (
     <div className={styles["modal-overlay"]}>
       <div className={styles["modal-backdrop"]} onClick={onClose} />
       <div className={`${styles["modal-container"]} ${styles["modal-container-md"]}`}>
@@ -232,8 +231,7 @@ export default function ChangeEmailModal({
           </form>
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   );
 }
 

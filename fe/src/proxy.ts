@@ -1,12 +1,13 @@
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
+const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
 const PUBLIC_PAGE_PATHS = [
   "/",
   "/auth/sign-in",
   "/auth/sign-up",
   "/auth/verify-email",
 ];
-const PUBLIC_API_PREFIXES = ["/api/auth", "/api/health"];
 const ALWAYS_PUBLIC_PREFIXES = [
   "/_next/",
   "/favicon.ico",
@@ -16,43 +17,35 @@ const ALWAYS_PUBLIC_PREFIXES = [
   "/assets/",
 ];
 
-function isPublicPage(path: string) {
-  return PUBLIC_PAGE_PATHS.some((p) =>
-    p === "/" ? path === "/" : path.startsWith(p),
-  );
-}
-function isPublicApi(path: string) {
-  return PUBLIC_API_PREFIXES.some((p) => path.startsWith(p));
-}
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC_PREFIXES.some((p) => path.startsWith(p));
 }
+function isPublicPage(path: string) {
+  return PUBLIC_PAGE_PATHS.includes(path);
+}
 
-export default async function proxy(request: Request): Promise<Response> {
-  const url = new URL(request.url);
-  const pathname = url.pathname;
+export default function proxy(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-  if (isAlwaysPublic(pathname))
-    return new Response(null, { status: 200, headers: { "x-proxy": "pass" } });
-  if (request.method === "OPTIONS") return new Response(null, { status: 200 });
-
-  const isApi = pathname.startsWith("/api");
-  if (!isApi && isPublicPage(pathname))
-    return new Response(null, { status: 200, headers: { "x-proxy": "pass" } });
-  if (isApi && isPublicApi(pathname))
-    return new Response(null, { status: 200, headers: { "x-proxy": "pass" } });
-
-  const cookieHeader = request.headers.get("cookie") || "";
-  const token = (cookieHeader.match(
-    new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`),
-  ) || [])[1];
-
-  if (!isApi && !token) {
-    const signIn = new URL("/auth/sign-in", request.url);
-    signIn.searchParams.set("next", pathname);
-    return Response.redirect(signIn, 307);
+  if (isAlwaysPublic(pathname) || req.method === "OPTIONS") {
+    return NextResponse.next();
   }
-  return new Response(null, { status: 200, headers: { "x-proxy": "pass" } });
+
+  if (isPublicPage(pathname) || pathname.startsWith("/api/health")) {
+    return NextResponse.next();
+  }
+
+  if (!pathname.startsWith("/api")) {
+    const token = req.cookies.get(COOKIE_NAME)?.value;
+    if (!token) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/auth/sign-in";
+      url.searchParams.set("next", pathname);
+      return NextResponse.redirect(url, 307);
+    }
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {

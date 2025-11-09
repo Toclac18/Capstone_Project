@@ -42,4 +42,15 @@ export async function leaveOrganization(id: string, password: string): Promise<{
   return res.data;
 }
 
+export type JoinOrganizationResponse = {
+  message: string;
+  organizationName?: string;
+};
+
+export async function joinOrganization(token: string): Promise<JoinOrganizationResponse> {
+  const res = await apiClient.get<JoinOrganizationResponse>(
+    `/organizations/join?token=${encodeURIComponent(token)}`
+  );
+  return res.data;
+}
 

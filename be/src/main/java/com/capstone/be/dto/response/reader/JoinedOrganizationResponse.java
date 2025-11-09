@@ -10,12 +10,7 @@ import lombok.Value;
 public class JoinedOrganizationResponse {
 
   UUID organizationId;
-  String organizationEmail;
-  String hotline;
-  String logo;
-  String address;
-  String status;
-  Boolean active;
+  String organizationName;
   LocalDateTime joinedAt;
 }
 

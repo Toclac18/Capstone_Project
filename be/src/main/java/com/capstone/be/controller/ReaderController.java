@@ -49,14 +49,7 @@ public class ReaderController {
     Page<JoinedOrganizationResponse> result =
         readerService.getJoinedOrganizations(principal.getId(), pageable);
 
-    PageMeta meta =
-        new PageMeta(
-            result.getTotalElements(),
-            result.getTotalPages(),
-            result.getNumber(),
-            result.getSize(),
-            result.isFirst(),
-            result.isLast());
+    PageMeta meta = PageMeta.from(result);
 
     return SuccessResponse.of(result.getContent(), meta);
   }

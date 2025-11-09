@@ -9,11 +9,7 @@ import org.mapstruct.Mapping;
 public interface ReaderOrganizationMapper {
 
   @Mapping(source = "organization.id", target = "organizationId")
-  @Mapping(source = "organization.email", target = "organizationEmail")
-  @Mapping(source = "organization.hotline", target = "hotline")
-  @Mapping(source = "organization.logo", target = "logo")
-  @Mapping(source = "organization.address", target = "address")
-  @Mapping(source = "organization.status", target = "status")
+  @Mapping(source = "organization.name", target = "organizationName")
   @Mapping(source = "addedAt", target = "joinedAt")
   JoinedOrganizationResponse toJoinedOrganizationResponse(Enrollment enrollment);
 }

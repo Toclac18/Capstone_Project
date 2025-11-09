@@ -16,8 +16,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
         SELECT e FROM Enrollment e
         JOIN FETCH e.organization o
         WHERE e.reader.id = :readerId
-          AND o.deleted = false
-          AND o.active = true
+          AND o.status = ACTIVE
       """)
   Page<Enrollment> findJoinedOrganizationByReaderId(
       @Param("readerId") UUID readerId, Pageable pageable);

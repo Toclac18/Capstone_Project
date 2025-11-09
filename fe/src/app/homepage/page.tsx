@@ -29,6 +29,7 @@ export default function HomepagePage() {
   );
 
   // Filter theo q trước rồi mới phân trang toàn cục
+  // (Mới) mở rộng filter: title/uploader/specialization + orgName + subject + points
   const filteredGroups = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return specGroups;
@@ -39,7 +40,17 @@ export default function HomepagePage() {
           const t = d.title?.toLowerCase() ?? "";
           const u = d.uploader?.toLowerCase() ?? "";
           const spz = d.specialization?.toLowerCase() ?? "";
-          return t.includes(s) || u.includes(s) || spz.includes(s);
+          const org = (d as any).orgName?.toLowerCase?.() ?? ""; // DocumentLite
+          const sub = d.subject?.toLowerCase() ?? "";
+          const pts = (d as any).points?.toString?.().toLowerCase?.() ?? "";
+          return (
+            t.includes(s) ||
+            u.includes(s) ||
+            spz.includes(s) ||
+            org.includes(s) ||
+            sub.includes(s) ||
+            pts.includes(s)
+          );
         }),
       }))
       .filter((g) => g.items.length > 0);

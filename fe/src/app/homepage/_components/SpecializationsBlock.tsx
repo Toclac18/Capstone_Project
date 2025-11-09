@@ -6,18 +6,9 @@ import styles from "../styles.module.css";
 import DocCard from "./DocCard";
 import { useHomepage } from "../HomepageProvider";
 
-type Doc = {
-  id: string;
-  title: string;
-  subject?: string;
-  pageCount?: number;
-  specialization: string;
-  upvote_counts: number;
-  downvote_counts: number;
-  uploader: string;
-  thumbnail: string;
-};
-type Group = { name: string; items: Doc[] };
+// Flexible shapes from provider
+type AnyDoc = Record<string, any>;
+type AnyGroup = { name: string; items: AnyDoc[] };
 
 function readInt(sp: URLSearchParams, key: string, fallback: number) {
   const v = parseInt(sp.get(key) || "", 10);
@@ -28,24 +19,20 @@ export default function SpecializationsBlock({
   groups,
   defaultGroupsPerPage = 2,
   maxItemsPerGroup = 8,
-  /** khi true: chỉ render list, KHÔNG có pager nội bộ */
   disablePager = false,
 }: {
-  groups: Group[];
+  groups: AnyGroup[]; // NOTE: flexible to match SpecGroup from provider
   defaultGroupsPerPage?: number;
   maxItemsPerGroup?: number;
   disablePager?: boolean;
 }) {
   const { q } = useHomepage();
 
-  // 🚫 KHÔNG đặt hook trong if/else. Gọi tất cả hook ở top-level.
   const sp = useSearchParams();
   const router = useRouter();
 
-  // ép size tối thiểu 1 để tránh chia cho 0
   const safeDefault = Math.max(1, defaultGroupsPerPage || 1);
 
-  // Nếu disablePager, vẫn khởi tạo state nhưng sẽ không dùng (an toàn về thứ tự hook)
   const initSize = disablePager
     ? safeDefault
     : readInt(new URLSearchParams(sp.toString()), "specSize", safeDefault);
@@ -56,7 +43,7 @@ export default function SpecializationsBlock({
   const [size, setSize] = useState(initSize);
   const [page, setPage] = useState(initPage);
 
-  // Filter theo q cho cả 2 chế độ
+  // filter by q (title/uploader/specialization/orgName/subject/points)
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return groups;
@@ -64,16 +51,26 @@ export default function SpecializationsBlock({
       .map((g) => ({
         ...g,
         items: g.items.filter((d) => {
-          const t = d.title?.toLowerCase() ?? "";
-          const u = d.uploader?.toLowerCase() ?? "";
-          const spz = d.specialization?.toLowerCase() ?? "";
-          return t.includes(s) || u.includes(s) || spz.includes(s);
+          const t = d.title?.toLowerCase?.() ?? "";
+          const u = d.uploader?.toLowerCase?.() ?? "";
+          const spz = d.specialization?.toLowerCase?.() ?? "";
+          const org = (d.orgName ?? d.org_name ?? "").toLowerCase?.() ?? "";
+          const sub = d.subject?.toLowerCase?.() ?? "";
+          const pts = d.points?.toString?.().toLowerCase?.() ?? "";
+          return (
+            t.includes(s) ||
+            u.includes(s) ||
+            spz.includes(s) ||
+            org.includes(s) ||
+            sub.includes(s) ||
+            pts.includes(s)
+          );
         }),
       }))
       .filter((g) => g.items.length > 0);
   }, [q, groups]);
 
-  // ======= RENDER KHÔNG PAGER (dùng cho phân trang toàn trang) =======
+  // ===== NO INTERNAL PAGER =====
   if (disablePager) {
     if (!filtered.length) return null;
     return (
@@ -89,7 +86,28 @@ export default function SpecializationsBlock({
                 ? g.items.slice(0, maxItemsPerGroup)
                 : g.items
               ).map((d) => (
-                <DocCard key={d.id} {...d} />
+                <DocCard
+                  key={d.id}
+                  id={d.id}
+                  title={d.title}
+                  subject={d.subject}
+                  pageCount={d.pageCount}
+                  specialization={d.specialization}
+                  upvote_counts={d.upvote_counts ?? d.upvotes ?? 0}
+                  downvote_counts={d.downvote_counts ?? d.downvotes ?? 0}
+                  uploader={d.uploader}
+                  thumbnail={d.thumbnail}
+                  orgName={d.orgName ?? d.org_name ?? "—"}
+                  viewCount={
+                    typeof d.viewCount === "number"
+                      ? d.viewCount
+                      : typeof d.views === "number"
+                        ? d.views
+                        : 0
+                  }
+                  isPremium={!!d.isPremium}
+                  points={d.points}
+                />
               ))}
             </div>
           </div>
@@ -98,7 +116,7 @@ export default function SpecializationsBlock({
     );
   }
 
-  // ======= RENDER CÓ PAGER NỘI BỘ (khi dùng độc lập) =======
+  // ===== WITH INTERNAL PAGER =====
   const totalPages = Math.max(
     1,
     Math.ceil(filtered.length / Math.max(1, size)),
@@ -116,14 +134,12 @@ export default function SpecializationsBlock({
     router.replace(`?${next.toString()}`, { scroll: false });
   };
 
-  // khi q/groups đổi → về trang 1
   useEffect(() => {
     setPage(1);
     updateQuery({ specPage: 1 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, groups]);
 
-  // đồng bộ page/size -> URL
   useEffect(() => {
     updateQuery({ specPage: clampedPage, specSize: Math.max(1, size) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -143,10 +159,7 @@ export default function SpecializationsBlock({
               className={styles.pageSizeSelect}
               value={size}
               onChange={(e) => {
-                const next = Math.max(
-                  1,
-                  parseInt(e.target.value, 10) || safeDefault,
-                );
+                const next = Math.max(1, parseInt(e.target.value, 10) || 1);
                 setSize(next);
                 setPage(1);
               }}
@@ -191,7 +204,28 @@ export default function SpecializationsBlock({
               ? g.items.slice(0, maxItemsPerGroup)
               : g.items
             ).map((d) => (
-              <DocCard key={d.id} {...d} />
+              <DocCard
+                key={d.id}
+                id={d.id}
+                title={d.title}
+                subject={d.subject}
+                pageCount={d.pageCount}
+                specialization={d.specialization}
+                upvote_counts={d.upvote_counts ?? d.upvotes ?? 0}
+                downvote_counts={d.downvote_counts ?? d.downvotes ?? 0}
+                uploader={d.uploader}
+                thumbnail={d.thumbnail}
+                orgName={d.orgName ?? d.org_name ?? "—"}
+                viewCount={
+                  typeof d.viewCount === "number"
+                    ? d.viewCount
+                    : typeof d.views === "number"
+                      ? d.views
+                      : 0
+                }
+                isPremium={!!d.isPremium}
+                points={d.points}
+              />
             ))}
           </div>
         </div>

@@ -54,6 +54,13 @@ public class OrganizationController {
     organizationService.delete(id);
     return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.of(null));
   }
+
+  @GetMapping("/all")
+  public ResponseEntity<SuccessResponse<OrganizationListResponse>> getAll() {
+    // Get all organizations (no pagination, no filters) for dropdown
+    OrganizationListResponse response = organizationService.getAll();
+    return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.of(response));
+  }
 }
 
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { AlertCircle, X } from "lucide-react";
 
 interface StatusConfirmationProps {
@@ -26,6 +27,11 @@ export default function StatusConfirmation({
 }: StatusConfirmationProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const newStatus: "ACTIVE" | "INACTIVE" = currentStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
   const statusLabel = newStatus === "ACTIVE" ? "Active" : "Inactive";
@@ -85,14 +91,14 @@ export default function StatusConfirmation({
         {statusLabel}
       </button>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {isModalOpen && mounted && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center" style={{ zIndex: 99999 }}>
           <div 
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={handleCloseModal}
           />
           
-          <div className="relative z-10 w-full max-w-md mx-4">
+          <div className="relative z-[100000] w-full max-w-md mx-4" style={{ zIndex: 100000 }}>
             <div className="bg-white dark:bg-gray-dark rounded-lg shadow-xl border border-stroke dark:border-dark-3">
               <div className="flex items-center justify-between p-4 border-b border-stroke dark:border-dark-3">
                 <div className="flex items-center gap-3">
@@ -206,7 +212,8 @@ export default function StatusConfirmation({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

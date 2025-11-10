@@ -1,7 +1,7 @@
 // src/app/business-admin/organization/_components/OrganizationFilters.tsx
 "use client";
 
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import type { OrganizationQueryParams } from "../api";
 import styles from "../styles.module.css";
 
@@ -46,7 +46,8 @@ export function OrganizationFilters({
     register,
     handleSubmit,
     reset,
-    watch,
+    getValues,
+    control,
     formState: { errors },
   } = useForm<FilterValues>({
     defaultValues: {
@@ -81,12 +82,16 @@ export function OrganizationFilters({
     onFiltersChange(clearedFilters);
   };
 
-  const watchedFilters = watch();
+  // Watch specific fields instead of entire form to avoid React Compiler warning
+  const searchValue = useWatch({ control, name: "search" });
+  const statusValue = useWatch({ control, name: "status" });
+  const dateFromValue = useWatch({ control, name: "dateFrom" });
+  const dateToValue = useWatch({ control, name: "dateTo" });
   const hasActiveFilters =
-    watchedFilters.search ||
-    watchedFilters.status ||
-    watchedFilters.dateFrom ||
-    watchedFilters.dateTo;
+    searchValue ||
+    statusValue ||
+    dateFromValue ||
+    dateToValue;
 
   return (
     <form
@@ -225,13 +230,14 @@ export function OrganizationFilters({
             <span className="text-sm text-gray-600 dark:text-gray-400">
               Active filters:
             </span>
-            {watchedFilters.search && (
+            {searchValue && (
               <span className={`${styles["filter-tag"]} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}>
-                Search: {watchedFilters.search}
+                Search: {searchValue}
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters = { ...watchedFilters, search: "" };
+                    const currentValues = getValues();
+                    const updatedFilters = { ...currentValues, search: "" };
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
@@ -241,13 +247,14 @@ export function OrganizationFilters({
                 </button>
               </span>
             )}
-            {watchedFilters.status && (
+            {statusValue && (
               <span className={`${styles["filter-tag"]} bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200`}>
-                Status: {STATUS_OPTIONS.find((s) => s.value === watchedFilters.status)?.label}
+                Status: {STATUS_OPTIONS.find((s) => s.value === statusValue)?.label}
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters = { ...watchedFilters, status: "" };
+                    const currentValues = getValues();
+                    const updatedFilters = { ...currentValues, status: "" };
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
@@ -257,13 +264,14 @@ export function OrganizationFilters({
                 </button>
               </span>
             )}
-            {(watchedFilters.dateFrom || watchedFilters.dateTo) && (
+            {(dateFromValue || dateToValue) && (
               <span className={`${styles["filter-tag"]} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`}>
-                Date: {watchedFilters.dateFrom || "Start"} - {watchedFilters.dateTo || "End"}
+                Date: {dateFromValue || "Start"} - {dateToValue || "End"}
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters = { ...watchedFilters, dateFrom: "", dateTo: "" };
+                    const currentValues = getValues();
+                    const updatedFilters = { ...currentValues, dateFrom: "", dateTo: "" };
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}

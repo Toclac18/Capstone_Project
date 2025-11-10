@@ -1,4 +1,4 @@
-/* Business Admin Organization Management Styles – theo phong cách contact admin */
+/* Business Admin Document Management Styles – theo phong cách organization */
 
 /* Container */
 .container {
@@ -218,39 +218,6 @@
   @apply disabled:hover:border-red-700 disabled:hover:bg-gray-800;
 }
 
-/* Action Buttons (deprecated - keep for backward compatibility) */
-.action-btn {
-  @apply px-3 py-1 text-xs font-medium rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed;
-}
-
-.action-btn-primary {
-  @apply bg-blue-100 text-blue-700 hover:bg-blue-200;
-}
-:global(html.dark) .action-btn-primary {
-  @apply bg-blue-900 text-blue-300 hover:bg-blue-800;
-}
-
-.action-btn-success {
-  @apply bg-green-100 text-green-700 hover:bg-green-200;
-}
-:global(html.dark) .action-btn-success {
-  @apply bg-green-900 text-green-300 hover:bg-green-800;
-}
-
-.action-btn-warning {
-  @apply bg-yellow-100 text-yellow-700 hover:bg-yellow-200;
-}
-:global(html.dark) .action-btn-warning {
-  @apply bg-yellow-900 text-yellow-300 hover:bg-yellow-800;
-}
-
-.action-btn-danger {
-  @apply bg-red-100 text-red-700 hover:bg-red-200;
-}
-:global(html.dark) .action-btn-danger {
-  @apply bg-red-900 text-red-300 hover:bg-red-800;
-}
-
 /* Loading & Empty States */
 .loading-container,
 .empty-container {
@@ -308,37 +275,5 @@
 
 .filter-tag {
   @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium;
-}
-
-/* Advanced Filters Toggle */
-.advanced-toggle {
-  @apply px-4 py-2 text-sm font-medium rounded-lg transition;
-  @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
-}
-:global(html.dark) .advanced-toggle {
-  @apply bg-gray-700 text-gray-300 hover:bg-gray-600;
-}
-
-/* Logo */
-.logo {
-  @apply rounded-full object-cover;
-  display: block;
-  width: 40px;
-  height: 40px;
-  object-fit: cover;
-}
-
-.logo-placeholder {
-  @apply h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center;
-}
-:global(html.dark) .logo-placeholder {
-  @apply bg-gray-600;
-}
-
-.logo-text {
-  @apply text-xs font-medium text-gray-700;
-}
-:global(html.dark) .logo-text {
-  @apply text-gray-300;
 }
 

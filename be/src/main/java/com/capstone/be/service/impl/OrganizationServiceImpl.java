@@ -24,6 +24,10 @@ import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
 public class OrganizationServiceImpl implements OrganizationService {
@@ -76,9 +80,12 @@ public class OrganizationServiceImpl implements OrganizationService {
         // Pagination (page starts from 1)
         int page = Optional.ofNullable(request.getPage()).orElse(1);
         int limit = Optional.ofNullable(request.getLimit()).orElse(10);
-        if (page < 1) page = 1;
-        if (limit < 1) limit = 10;
-
+        if (page < 1) {
+            page = 1;
+        }
+        if (limit < 1) {
+            limit = 10;
+        }
         int fromIndex = Math.min((page - 1) * limit, filtered.size());
         int toIndex = Math.min(fromIndex + limit, filtered.size());
 
@@ -232,6 +239,34 @@ public class OrganizationServiceImpl implements OrganizationService {
                 || contains(org.getRegistrationNumber(), q);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public OrganizationListResponse getAll() {
+        List<Organization> all = organizationRepository.findAll();
+
+        // Only get ACTIVE organizations (exclude deleted, deactive, pending, etc.)
+        List<Organization> filtered = all.stream()
+                .filter(org -> !Boolean.TRUE.equals(org.getDeleted()))
+                .filter(org -> org.getStatus() == OrganizationStatus.ACTIVE)
+                .collect(Collectors.toList());
+
+        // Sort by name
+        filtered = filtered.stream()
+                .sorted(Comparator.comparing(o -> nullSafeString(o.getName())))
+                .collect(Collectors.toList());
+
+        List<OrganizationResponse> items = filtered.stream()
+                .map(organizationMapper::toResponse)
+                .collect(Collectors.toList());
+
+        return OrganizationListResponse.builder()
+                .organizations(items)
+                .total(filtered.size())
+                .page(1)
+                .limit(filtered.size())
+                .build();
+    }
+
     private boolean contains(String field, String q) {
         return field != null && field.toLowerCase(Locale.ROOT).contains(q);
     }
@@ -249,7 +284,8 @@ public class OrganizationServiceImpl implements OrganizationService {
                 return org.getStatus() == OrganizationStatus.ACTIVE || Boolean.TRUE.equals(org.getActive());
             }
             if ("DEACTIVE".equalsIgnoreCase(status) || "INACTIVE".equalsIgnoreCase(status)) {
-                return org.getStatus() == OrganizationStatus.DEACTIVE || Boolean.FALSE.equals(org.getActive());
+                return org.getStatus() == OrganizationStatus.DEACTIVE || Boolean.FALSE.equals(
+                        org.getActive());
             }
             return true;
         }
@@ -304,3 +340,5 @@ public class OrganizationServiceImpl implements OrganizationService {
         return v == null ? "" : v;
     }
 }
+
+

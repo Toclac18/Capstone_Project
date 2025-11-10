@@ -74,8 +74,14 @@ export const BUSINESS_ADMIN_NAV_DATA = [
       },
       {
         title: "Organization Management",
-        icon: Icons.HomeIcon,
+        icon: Icons.BuildingIcon,
         url: "/business-admin/organization",
+        items: [],
+      },
+      {
+        title: "Documents Management",
+        icon: Icons.FileTextIcon,
+        url: "/business-admin/document",
         items: [],
       },
       {

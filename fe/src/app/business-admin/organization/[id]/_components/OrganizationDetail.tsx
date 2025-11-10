@@ -6,14 +6,34 @@ import { ArrowLeft } from "lucide-react";
 import type { Organization } from "../../api";
 import { getOrganization, updateOrganizationStatus } from "../../api";
 import StatusConfirmation from "@/components/ui/status-confirmation";
+import { useToast, toast } from "@/components/ui/toast";
 import styles from "../styles.module.css";
 
 interface OrganizationDetailProps {
   organizationId: string;
 }
 
+// Helper function to check if logo is a valid URL
+const isValidImageUrl = (url: string | undefined | null): boolean => {
+  if (!url || typeof url !== 'string') {
+    return false;
+  }
+  const trimmedUrl = url.trim();
+  if (trimmedUrl === '') {
+    return false;
+  }
+  try {
+    const urlObj = new URL(trimmedUrl);
+    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+  } catch {
+    // If URL constructor fails, it's not a valid URL
+    return false;
+  }
+};
+
 export function OrganizationDetail({ organizationId }: OrganizationDetailProps) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,10 +44,16 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
     setLoading(true);
     setError(null);
     setSuccess(null);
+    // Reset imageError before fetching
+    setImageError(false);
 
     try {
       const data = await getOrganization(organizationId);
       setOrganization(data);
+      // Reset imageError again after setting organization to ensure fresh state
+      setImageError(false);
+      // Debug: Log logo URL
+      console.log("Organization logo:", data.logo, "Valid:", isValidImageUrl(data.logo));
     } catch (e: unknown) {
       const errorMessage =
         e instanceof Error ? e.message : "Failed to fetch organization";
@@ -41,6 +67,13 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
     fetchOrganization();
   }, [fetchOrganization]);
 
+  // Reset imageError when organization changes
+  useEffect(() => {
+    if (organization) {
+      setImageError(false);
+    }
+  }, [organization]);
+
   const handleStatusUpdate = async (newStatus: "ACTIVE" | "INACTIVE") => {
     setLoading(true);
     setError(null);
@@ -50,11 +83,12 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
       if (organization) {
         const updated = await updateOrganizationStatus(organization.id, newStatus);
         setOrganization(updated);
-        setSuccess(`Organization status updated to ${newStatus} successfully`);
+        showToast(toast.success("Status Updated", `Organization status updated to ${newStatus} successfully`));
       }
     } catch (e: unknown) {
       const errorMessage =
         e instanceof Error ? e.message : "Failed to update organization status";
+      showToast(toast.error("Update Failed", errorMessage));
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -116,14 +150,33 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
           <span>Back to Organization List</span>
         </button>
         <div className={styles["header-content"]}>
-          {organization.logo && !imageError ? (
+          {(() => {
+            const isValid = isValidImageUrl(organization.logo);
+            console.log("Image render check:", {
+              logo: organization.logo,
+              isValid,
+              imageError,
+              willRender: isValid && !imageError,
+            });
+            return isValid && !imageError;
+          })() ? (
             <img
-              src={organization.logo}
+              src={organization.logo!.trim()}
               alt={organization.name || organization.email}
               className={styles["logo"]}
+              crossOrigin="anonymous"
               onError={(e) => {
-                console.error("Failed to load organization logo:", organization.logo, e);
-                setImageError(true);
+                // If crossOrigin fails, try without it
+                const img = e.currentTarget as HTMLImageElement;
+                if (img.crossOrigin === 'anonymous') {
+                  // Try without crossOrigin
+                  img.crossOrigin = '';
+                  img.src = organization.logo!.trim();
+                } else {
+                  // Both attempts failed, show placeholder
+                  console.error("Failed to load organization logo:", organization.logo);
+                  setImageError(true);
+                }
               }}
               onLoad={() => {
                 console.log("Organization logo loaded successfully:", organization.logo);

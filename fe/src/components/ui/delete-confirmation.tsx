@@ -40,7 +40,7 @@ export default function DeleteConfirmation({
   };
 
   const variantClasses = {
-    text: 'text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20',
+    text: 'text-red-600 border border-red-300 hover:text-red-700 hover:border-red-400 hover:bg-red-50 dark:border-red-700 dark:hover:bg-red-900/20',
     outline: 'text-red-600 border border-red-300 hover:bg-red-50 dark:border-red-700 dark:hover:bg-red-900/20',
     solid: 'text-white bg-red-600 hover:bg-red-700',
   };
@@ -73,7 +73,7 @@ export default function DeleteConfirmation({
         onClick={handleDeleteClick}
         disabled={isLoading}
         className={`
-          inline-flex items-center gap-2 rounded-lg font-medium transition-colors
+          inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors h-9
           disabled:opacity-50 disabled:cursor-not-allowed
           ${sizeClasses[size]}
           ${variantClasses[variant]}

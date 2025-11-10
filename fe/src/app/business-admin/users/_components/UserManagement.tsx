@@ -6,9 +6,14 @@ import type { User, UserResponse, UserQueryParams } from "../api";
 import { getUsers, updateUserStatus } from "../api";
 import { UserFilters } from "./UserFilters";
 import { Pagination } from "./Pagination";
+import DeleteConfirmation from "@/components/ui/delete-confirmation";
+import StatusConfirmation from "@/components/ui/status-confirmation";
+import { useToast, toast } from "@/components/ui/toast";
+import { Eye } from "lucide-react";
 import styles from "../styles.module.css";
 
 export function UserManagement() {
+  const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,9 +57,11 @@ export function UserManagement() {
     }
   }, [itemsPerPage]);
 
+  // Initial load - only once on mount
   useEffect(() => {
     fetchUsers(filters);
-  }, [fetchUsers, filters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle filter changes
   const handleFiltersChange = (newFilters: UserQueryParams) => {
@@ -70,22 +77,47 @@ export function UserManagement() {
     fetchUsers(updatedFilters);
   };
 
-  const handleUpdateStatus = async (userId: string, newStatus: string) => {
+  const handleUpdateStatus = async (newStatus: "ACTIVE" | "INACTIVE", userId: string) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
       await updateUserStatus(userId, newStatus);
-      setSuccess("User status updated successfully");
+      showToast(toast.success("Status Updated", `User status updated to ${newStatus} successfully`));
       await fetchUsers(filters);
     } catch (e: unknown) {
       const errorMessage =
         e instanceof Error ? e.message : "Failed to update user status";
+      showToast(toast.error("Update Failed", errorMessage));
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDelete = async (userId: string | number) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await updateUserStatus(String(userId), "DELETED");
+      showToast(toast.success("User Deleted", "User deleted successfully"));
+      await fetchUsers(filters);
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Failed to delete user";
+      showToast(toast.error("Delete Failed", errorMessage));
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDetail = (_userId: string) => {
+    // TODO: Navigate to user detail page when implemented
+    showToast(toast.info("Coming Soon", "User detail page will be available soon"));
   };
 
   const getStatusBadgeClass = (status?: string) => {
@@ -191,30 +223,43 @@ export function UserManagement() {
                         : "N/A"}
                     </td>
                     <td className={styles["table-cell"]}>
-                      <div className="flex gap-2">
+                      <div className={styles["action-cell"]}>
                         <button
-                          onClick={() => handleUpdateStatus(user.id, "ACTIVE")}
-                          disabled={loading || user.status === "ACTIVE"}
-                          className={`${styles["action-btn"]} ${styles["action-btn-success"]}`}
+                          onClick={() => handleDetail(user.id)}
+                          className={styles["action-icon-btn"]}
+                          title="View Details"
                         >
-                          Active
+                          <Eye className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() =>
-                            handleUpdateStatus(user.id, "INACTIVE")
-                          }
-                          disabled={loading || user.status === "INACTIVE"}
-                          className={`${styles["action-btn"]} ${styles["action-btn-warning"]}`}
-                        >
-                          Inactive
-                        </button>
-                        <button
-                          onClick={() => handleUpdateStatus(user.id, "DELETED")}
-                          disabled={loading || user.status === "DELETED"}
-                          className={`${styles["action-btn"]} ${styles["action-btn-danger"]}`}
-                        >
-                          Delete
-                        </button>
+                        <div className={styles["status-btn-wrapper"]}>
+                          <StatusConfirmation
+                            onConfirm={(status) => handleUpdateStatus(status, user.id)}
+                            currentStatus={(user.status === "ACTIVE") ? "ACTIVE" : "INACTIVE"}
+                            itemName={user.name || user.email}
+                            title={
+                              user.status === "ACTIVE"
+                                ? "Confirm Inactive Status"
+                                : "Confirm Active Status"
+                            }
+                            description={
+                              user.status === "ACTIVE"
+                                ? `Are you sure you want to set "${user.name || user.email}" to Inactive?`
+                                : `Are you sure you want to set "${user.name || user.email}" to Active?`
+                            }
+                            size="sm"
+                            variant="outline"
+                          />
+                        </div>
+                        <DeleteConfirmation
+                          onDelete={handleDelete}
+                          itemId={user.id}
+                          itemName={user.name || user.email}
+                          title="Delete User"
+                          description={`Are you sure you want to delete "${user.name || user.email}"?`}
+                          size="sm"
+                          variant="text"
+                          className={styles["delete-btn-wrapper"]}
+                        />
                       </div>
                     </td>
                   </tr>

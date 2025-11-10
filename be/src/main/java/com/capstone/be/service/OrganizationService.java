@@ -23,4 +23,8 @@ public interface OrganizationService {
     void addMemberByEmail(String orgId, String email);
 
     void delete(UUID id);
+
+    OrganizationListResponse getAll();
 }
+
+

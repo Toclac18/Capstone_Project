@@ -122,7 +122,7 @@ export function Table(props: IconProps) {
   );
 }
 
-export function BuildingIcon(props: PropsType) {
+export function BuildingIcon(props: IconProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -144,7 +144,7 @@ export function BuildingIcon(props: PropsType) {
   );
 }
 
-export function FileTextIcon(props: PropsType) {
+export function FileTextIcon(props: IconProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

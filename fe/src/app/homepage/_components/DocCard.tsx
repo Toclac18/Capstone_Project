@@ -16,12 +16,10 @@ type Props = {
   orgName: string;
   viewCount: number;
   isPremium: boolean;
-  points?: string; // present only if isPremium === true
+  points?: string;
 };
 
 export default function DocCard(props: Props) {
-  const score = props.upvote_counts - props.downvote_counts;
-
   return (
     <div className={styles.card}>
       <div className={styles.thumb}>

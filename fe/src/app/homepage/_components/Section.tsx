@@ -32,7 +32,7 @@ export default function Section({
   const pageKey = `${sectionKey}Page`;
   const sizeKey = `${sectionKey}Size`;
 
-  const [size, setSize] = useState(() =>
+  const [size] = useState(() =>
     readInt(new URLSearchParams(sp.toString()), sizeKey, defaultPageSize),
   );
   const [page, setPage] = useState(() =>

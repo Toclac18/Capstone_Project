@@ -389,7 +389,7 @@ export const mockLibraryDocs: DocumentLite[] = [
 ];
 
 // Add points for premium docs
-mockLibraryDocs.forEach((d, i) => {
+mockLibraryDocs.forEach((d) => {
   if (d.isPremium) d.points = assignPoints(true);
 });
 

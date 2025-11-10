@@ -2,19 +2,32 @@
 
 /* Dropdown Container */
 .dropdownContent {
-  @apply border border-stroke bg-white px-4 py-4 shadow-lg w-[400px];
+  @apply border border-stroke bg-white px-3 py-3 shadow-lg w-[350px];  
+  position: fixed !important;
 }
 :global(html.dark) .dropdownContent {
   @apply border-dark-3 bg-gray-dark;
 }
 
+@media (min-width: 640px) {
+  .dropdownContent {
+    right: 1.25rem !important;
+  }
+}
+
+@media (min-width: 1536px) {
+  .dropdownContent {
+    right: 1rem !important;
+  }
+}
+
 /* Header Section */
 .dropdownHeader {
-  @apply mb-3 flex items-center justify-between px-1;
+  @apply mb-2 flex items-center justify-between px-1;
 }
 
 .dropdownTitle {
-  @apply text-xl font-bold text-dark;
+  @apply text-lg font-bold text-dark;
 }
 :global(html.dark) .dropdownTitle {
   @apply text-white;
@@ -22,17 +35,17 @@
 
 /* Badge */
 .unreadBadge {
-  @apply rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white;
+  @apply rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-white;
 }
 
 /* List Container */
 .notificationsList {
-  @apply mb-3 max-h-[23rem] space-y-3 overflow-y-auto;
+  @apply mb-2 max-h-[20rem] space-y-2 overflow-y-auto;
 }
 
 /* Notification Item */
 .notificationItem {
-  @apply w-full flex items-start gap-3 rounded-lg px-3 py-3 outline-none transition-colors;
+  @apply w-full flex items-start gap-2.5 rounded-lg px-2.5 py-2.5 outline-none transition-colors;
 }
 
 .notificationItemRead {

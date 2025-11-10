@@ -1,12 +1,11 @@
 "use client";
 
-import { Calendar } from "@/components/Layouts/sidebar/icons";
 import flatpickr from "flatpickr";
+import { Calendar } from "lucide-react";
 import { useEffect } from "react";
 
 const DatePickerOne = () => {
   useEffect(() => {
-    // Init flatpickr
     flatpickr(".form-datepicker", {
       mode: "single",
       static: true,

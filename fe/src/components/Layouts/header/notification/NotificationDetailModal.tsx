@@ -1,7 +1,6 @@
 "use client";
 
 import { useLayoutEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { BellIcon } from "./icons";
 import { cn } from "@/utils/utils";
@@ -99,7 +98,7 @@ export function NotificationDetailModal({
 
   if (!mounted || !isOpen || !notification) return null;
 
-  return createPortal(
+  return (
     <div className={styles.modalContainer}>
       {/* Backdrop */}
       <div
@@ -174,8 +173,7 @@ export function NotificationDetailModal({
           </button>
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   );
 }
 

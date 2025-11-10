@@ -1,0 +1,293 @@
+// searchMock.ts
+
+export type DocumentItem = {
+  id: string;
+  title: string;
+  orgName: string;
+  domain: string;
+  specialization: string;
+  uploader: string;
+  publicYear: number;
+  isPremium: boolean;
+  points?: number; // Ví dụ: điểm thưởng, hoặc giá tiền nếu là tài liệu premium
+};
+
+/** Helper function để tạo document nhanh chóng */
+function doc(
+  id: number,
+  title: string,
+  orgName: string,
+  domain: string,
+  specialization: string,
+  uploader: string,
+  publicYear: number,
+  isPremium: boolean = false,
+  points?: number,
+): DocumentItem {
+  return {
+    id: String(id),
+    title,
+    orgName,
+    domain,
+    specialization,
+    uploader,
+    publicYear,
+    isPremium,
+    points: isPremium ? (points ?? 15000) : undefined,
+  };
+}
+
+export const MOCK_DOCUMENTS: DocumentItem[] = [
+  // ===================== DOMAIN: COMPUTER SCIENCE (CNTT) =====================
+  doc(
+    1,
+    "Advanced Algorithms and Data Structures",
+    "Hanoi University of Science and Technology",
+    "Computer Science",
+    "Algorithms",
+    "quang.minh",
+    2023,
+    true,
+    25000,
+  ),
+  doc(
+    2,
+    "Web Development - React & Next.js Cheatsheet",
+    "FPT University",
+    "Computer Science",
+    "Frontend",
+    "thu.ha",
+    2024,
+  ),
+  doc(
+    3,
+    "Database System Design & Normalization",
+    "Posts and Telecommunications Institute of Technology",
+    "Computer Science",
+    "Database",
+    "long.nguyen",
+    2022,
+    true,
+    18000,
+  ),
+  doc(
+    4,
+    "Cybersecurity: Penetration Testing Basics",
+    "VNU UET",
+    "Computer Science",
+    "Security",
+    "minh.phuong",
+    2021,
+  ),
+  doc(
+    5,
+    "Mobile App Development with Flutter",
+    "HCMC University of Technology",
+    "Computer Science",
+    "Mobile",
+    "bao.ngoc",
+    2023,
+  ),
+
+  // ===================== DOMAIN: ENGINEERING (Kỹ thuật) =====================
+  doc(
+    6,
+    "Strength of Materials - Formulas and Examples",
+    "HCMC University of Technology",
+    "Engineering",
+    "Civil Engineering",
+    "viet.hung",
+    2022,
+    true,
+    12000,
+  ),
+  doc(
+    7,
+    "Digital Signal Processing Lab Manual",
+    "Danang University of Technology",
+    "Engineering",
+    "Electronics",
+    "linh.chi",
+    2024,
+  ),
+  doc(
+    8,
+    "Thermodynamics - Heat Transfer Principles",
+    "Hanoi University of Science and Technology",
+    "Engineering",
+    "Mechanical Engineering",
+    "an.khoa",
+    2023,
+  ),
+  doc(
+    9,
+    "Automated Control Systems - PID Controllers",
+    "HCMC University of Technology",
+    "Engineering",
+    "Control Systems",
+    "duy.tan",
+    2021,
+    true,
+    30000,
+  ),
+  doc(
+    10,
+    "Renewable Energy Sources - Solar Power",
+    "Hanoi University of Science and Technology",
+    "Engineering",
+    "Energy",
+    "mai.anh",
+    2022,
+  ),
+
+  // ===================== DOMAIN: BUSINESS & ECONOMICS (Kinh tế) =====================
+  doc(
+    11,
+    "Microeconomics - Supply and Demand Analysis",
+    "National Economics University",
+    "Business",
+    "Economics",
+    "phuong.thao",
+    2024,
+  ),
+  doc(
+    12,
+    "Financial Statement Analysis Techniques",
+    "University of Economics HCMC",
+    "Business",
+    "Accounting",
+    "hoang.tuan",
+    2023,
+    true,
+    20000,
+  ),
+  doc(
+    13,
+    "Digital Marketing Strategies in 2024",
+    "Foreign Trade University",
+    "Business",
+    "Marketing",
+    "uyen.linh",
+    2024,
+  ),
+  doc(
+    14,
+    "Investment Management and Portfolio Theory",
+    "National Economics University",
+    "Business",
+    "Finance",
+    "trung.hieu",
+    2022,
+    true,
+    15000,
+  ),
+  doc(
+    15,
+    "Strategic Management - SWOT & PESTEL",
+    "Foreign Trade University",
+    "Business",
+    "Management",
+    "van.anh",
+    2021,
+  ),
+
+  // ===================== DOMAIN: LAW & SOCIAL SCIENCE (Luật & KHXH) =====================
+  doc(
+    16,
+    "Constitutional Law - Rights and Liberties",
+    "Hanoi Law University",
+    "Law",
+    "Constitutional Law",
+    "kim.ngan",
+    2023,
+  ),
+  doc(
+    17,
+    "Philosophy: Introduction to Ethics",
+    "University of Social Sciences and Humanities",
+    "Social Science",
+    "Philosophy",
+    "dao.hieu",
+    2022,
+    true,
+    10000,
+  ),
+  doc(
+    18,
+    "Sociology of Education",
+    "University of Social Sciences and Humanities",
+    "Social Science",
+    "Sociology",
+    "thanh.mai",
+    2024,
+  ),
+  doc(
+    19,
+    "Administrative Law Overview",
+    "Hanoi Law University",
+    "Law",
+    "Administrative Law",
+    "tuan.anh",
+    2021,
+  ),
+  doc(
+    20,
+    "International Relations: ASEAN Studies",
+    "Diplomatic Academy of Vietnam",
+    "Social Science",
+    "International Relations",
+    "duc.minh",
+    2023,
+  ),
+
+  // ===================== DOMAIN: MEDICINE & BIOLOGY (Y học & Sinh học) =====================
+  doc(
+    21,
+    "Anatomy: Digestive System",
+    "Hanoi Medical University",
+    "Medicine",
+    "Anatomy",
+    "hoang.long",
+    2022,
+    true,
+    22000,
+  ),
+  doc(
+    22,
+    "Molecular Biology: DNA Replication",
+    "Vietnam National University, School of Medicine",
+    "Biology",
+    "Molecular Biology",
+    "yen.vi",
+    2024,
+  ),
+  doc(
+    23,
+    "Clinical Pathology Diagnosis Guide",
+    "Ho Chi Minh City University of Medicine",
+    "Medicine",
+    "Pathology",
+    "phuong.uyen",
+    2023,
+  ),
+  doc(
+    24,
+    "Ecology: Ecosystem Dynamics",
+    "University of Science, VNU-HCMC",
+    "Biology",
+    "Ecology",
+    "quoc.anh",
+    2021,
+    true,
+    15000,
+  ),
+  doc(
+    25,
+    "Pediatrics Quick Reference",
+    "Hanoi Medical University",
+    "Medicine",
+    "Pediatrics",
+    "thuy.linh",
+    2024,
+  ),
+];

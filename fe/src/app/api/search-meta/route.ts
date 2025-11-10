@@ -38,20 +38,24 @@ export async function GET() {
   const USE_MOCK = process.env.USE_MOCK === "true";
 
   if (USE_MOCK) {
+    // Organizations, domains, specializations, years
     const organizations = Array.from(
       new Set(MOCK_DOCUMENTS.map((d) => d.orgName)),
     ).sort();
+
     const domains = Array.from(
       new Set(MOCK_DOCUMENTS.map((d) => d.domain)),
     ).sort();
+
     const specializations = Array.from(
       new Set(MOCK_DOCUMENTS.map((d) => d.specialization)),
     ).sort();
+
     const years = Array.from(
       new Set(MOCK_DOCUMENTS.map((d) => d.publicYear)),
     ).sort((a, b) => b - a);
 
-    // map domain -> specialization[]
+    // Mapping domain -> specialization[]
     const map: Record<string, Set<string>> = {};
     for (const d of MOCK_DOCUMENTS) {
       map[d.domain] ??= new Set<string>();
@@ -62,6 +66,16 @@ export async function GET() {
       specializationsByDomain[k] = Array.from(v).sort();
     }
 
+    // Range điểm cho slider Points
+    const pointsValues = MOCK_DOCUMENTS.filter(
+      (d) => typeof d.points === "number",
+    ).map((d) => d.points as number);
+
+    const pointsRange =
+      pointsValues.length > 0
+        ? { min: Math.min(...pointsValues), max: Math.max(...pointsValues) }
+        : { min: 1, max: 250 };
+
     return NextResponse.json(
       {
         organizations,
@@ -69,12 +83,13 @@ export async function GET() {
         specializations,
         years,
         specializationsByDomain,
+        pointsRange,
       },
       { headers: { "x-mode": "mock" } },
     );
   }
 
-  // Real mode: forward — nếu BE chưa trả mapping, FE sẽ fallback dùng full list
+  // Real mode: forward tới BE thật
   const UPSTREAM_PATH = `/api/search/meta`;
   try {
     const upstream = await forward(UPSTREAM_PATH);

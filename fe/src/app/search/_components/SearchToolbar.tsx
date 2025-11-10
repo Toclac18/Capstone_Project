@@ -3,21 +3,27 @@ import { useEffect, useState } from "react";
 import { useSearch } from "../SearchProvider";
 import styles from "../styles.module.css";
 
+function getHashQ() {
+  if (typeof window === "undefined") return "";
+  const raw = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : window.location.hash;
+  const params = new URLSearchParams(raw);
+  return params.get("q") ?? "";
+}
+
 export default function SearchToolbar({
   onOpenFilter,
 }: {
   onOpenFilter: () => void;
 }) {
+  const [q, setQ] = useState<string>(getHashQ);
   const { perPage, setPerPage, page } = useSearch();
-  const [q, setQ] = useState("");
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    const hq = hash.get("q") ?? "";
-    if (hq !== q) {
-      setQ(hq);
-    }
+    const onHashChange = () => setQ(getHashQ());
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
   useEffect(() => {

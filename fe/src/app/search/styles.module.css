@@ -1,29 +1,95 @@
-/* Root layout */
+/* ============================================================
+   SEARCH PAGE (7e4a3942) — Full CSS
+   - Dark mode synced to homepage
+   - Smooth hover effects
+   - No JSX changes required
+   ============================================================ */
+
+/* ---------- Global smooth transitions ---------- */
+/* * {
+  transition-property: background-color, color, border-color, box-shadow,
+    transform;
+  transition-duration: 0.25s;
+  transition-timing-function: ease;
+} */
+
+/* ---------- Page shell ---------- */
+.page,
+.root,
 .container {
   @apply mx-auto max-w-6xl px-4 py-8;
+  @apply bg-gray-50;
+}
+:global(html.dark) .page,
+:global(html.dark) .root,
+:global(html.dark) .container {
+  background-color: #0b1220; /* same as homepage */
 }
 
+/* ---------- Header ---------- */
 .header {
   @apply mb-6;
 }
-
 .title {
   @apply text-3xl font-extrabold text-gray-900 dark:text-white;
 }
-
 .subtitle {
   @apply text-gray-500 dark:text-gray-400;
 }
 
-/* Toolbar */
+:global(html.dark) .title {
+  color: #f9fafb !important;
+} /* bright in dark */
+
+/* ---------- Toolbar (search row) ---------- */
 .toolbar {
-  @apply mb-5 flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 md:flex-row md:items-center md:justify-between;
+  @apply mb-6 flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-0 shadow-sm md:flex-row md:items-center md:justify-between;
+}
+:global(html.dark) .toolbar {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  padding-left: 0;
+  padding-right: 0;
 }
 
+/* Search wrapper (big rounded) */
+.searchWrap,
+.searchWrapper,
+.searchBox,
+.inputGroup {
+  @apply rounded-2xl border border-gray-200 bg-white p-1;
+}
+:global(html.dark)
+  .toolbar
+  :is(.searchWrap, .searchWrapper, .searchBox, .inputGroup) {
+  background-color: #0f1a2a !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* Search input */
 .searchInput {
-  @apply w-full rounded-lg border border-gray-200 px-4 py-2 outline-none focus:ring-2 focus:ring-blue-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500;
+  @apply w-full rounded-2xl border border-gray-200 bg-white px-5 py-3.5 text-gray-900 outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-300/60;
+}
+:global(html.dark) .searchInput {
+  background-color: #111827 !important; /* gray-900 */
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #e5e7eb !important;
+}
+:global(html.dark) .searchInput::placeholder {
+  color: #9ca3af !important;
 }
 
+/* Search icon button */
+.searchIconBtn {
+  @apply shrink-0 rounded-xl p-3 text-gray-500 hover:bg-gray-100;
+}
+:global(html.dark) .searchIconBtn {
+  color: #9ca3af !important;
+}
+
+/* Right zone: per-page + Filters */
 .toolbarRight {
   @apply flex items-center gap-3;
 }
@@ -31,20 +97,36 @@
   @apply flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400;
 }
 
-.select {
-  @apply rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100;
+.select,
+.numberInput {
+  @apply rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-300/60;
+}
+:global(html.dark) .toolbar :is(.select, .numberInput) {
+  background-color: #0f1a2a !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #e5e7eb !important;
+}
+:global(html.dark) .toolbar :is(.select, .numberInput):focus {
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3); /* indigo ring */
 }
 
+/* Filters button */
 .filterBtn {
-  @apply inline-flex items-center gap-2 rounded-lg border border-blue-600 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-600/10 active:scale-95 dark:border-gray-200 dark:text-gray-100 dark:hover:bg-gray-100/10;
+  @apply inline-flex items-center gap-2 rounded-xl border border-indigo-500/70 px-4 py-3 text-sm font-semibold text-indigo-600 transition hover:bg-indigo-600/10 active:scale-95;
 }
-.filterIcon {
-  @apply text-lg;
+:global(html.dark) .filterBtn {
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  color: #f3f4f6 !important;
+  background-color: transparent !important;
 }
 
-/* List */
+/* ---------- List / cards ---------- */
 .listWrapper {
-  @apply rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800;
+  @apply rounded-xl border border-gray-200 bg-white p-4 shadow-sm;
+}
+:global(html.dark) .listWrapper {
+  background-color: transparent !important;
+  border-color: transparent !important;
 }
 
 .cardGrid {
@@ -52,71 +134,108 @@
 }
 
 .card {
-  @apply rounded-xl border border-gray-200 p-4 transition-transform hover:scale-[1.01] dark:border-gray-700 dark:bg-gray-900;
+  @apply rounded-2xl border border-gray-200 bg-white p-5 transition-transform hover:scale-[1.01];
+}
+:global(html.dark) .card {
+  background-color: #111827 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
 }
 
+/* Card header + title */
 .cardHeader {
   @apply mb-2 flex items-start justify-between gap-3;
 }
 .cardTitle {
-  @apply text-lg font-bold leading-snug text-gray-900 dark:text-white;
+  @apply text-lg font-bold leading-snug text-gray-900;
 }
+:global(html.dark) .cardTitle {
+  color: #f9fafb !important;
+} /* bright in dark */
+:global(html.dark) .cardTitle a {
+  color: #f9fafb !important;
+} /* if wrapped by <a> */
+
 .badge {
-  @apply shrink-0 rounded-md bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white;
+  @apply shrink-0 rounded-md bg-indigo-600 px-2 py-0.5 text-xs font-semibold text-white;
+}
+.tag {
+  @apply rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700;
+}
+:global(html.dark) .tag {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
 }
 
 .cardMeta {
-  @apply grid gap-1 text-sm text-gray-500 dark:text-gray-400;
+  @apply grid gap-1 text-sm text-gray-600 dark:text-gray-400;
 }
 .metaLabel {
   @apply font-medium text-gray-700 dark:text-gray-300;
 }
 
 .empty {
-  @apply py-10 text-center text-gray-500 dark:text-gray-400;
+  @apply py-12 text-center text-gray-500 dark:text-gray-400;
 }
-
 .skeleton {
-  @apply animate-pulse rounded-lg border border-gray-200 bg-white p-6 text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400;
+  @apply animate-pulse rounded-xl border border-gray-200 bg-white p-6 text-gray-500;
+}
+:global(html.dark) .skeleton {
+  background-color: #111827;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #9ca3af;
 }
 
-/* Pagination */
+/* ---------- Pagination ---------- */
 .paginationBar {
-  @apply mt-4 flex items-center justify-center gap-3;
+  @apply mt-6 flex items-center justify-between;
 }
 .paginationNav {
   @apply mt-4 flex flex-wrap items-center justify-center gap-2;
 }
 
 .pageBtn {
-  @apply rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-900 hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800;
+  @apply rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-900 hover:bg-gray-100 disabled:opacity-50;
+}
+:global(html.dark) .pageBtn {
+  background-color: #0f1a2a;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
 }
 .pageBtnActive {
-  @apply rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white;
+  @apply rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white;
 }
-
 .pageInfo {
   @apply text-sm text-gray-500 dark:text-gray-400;
 }
 
-/* Modal */
+/* ---------- Filters Modal ---------- */
 .modalBackdrop {
   @apply fixed inset-0 z-50 grid place-items-center bg-black/40 p-4;
 }
+
 .modal {
-  @apply w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800;
+  @apply w-full max-w-2xl rounded-2xl border border-gray-200 bg-white shadow-xl;
+}
+:global(html.dark) .modal {
+  background-color: #111827 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 .modalHeader {
-  @apply flex items-center justify-between border-b border-gray-200 p-4 dark:border-gray-700;
+  @apply flex items-center justify-between border-b border-gray-200 p-4;
 }
 .modalTitle {
   @apply text-xl font-bold text-gray-900 dark:text-white;
 }
 .modalBody {
-  @apply grid gap-4 p-4;
+  @apply grid gap-5 p-4;
 }
 .modalFooter {
-  @apply flex items-center gap-3 border-t border-gray-200 p-4 dark:border-gray-700;
+  @apply flex items-center gap-3 border-t border-gray-200 p-4;
+}
+:global(html.dark) .modalHeader,
+:global(html.dark) .modalFooter {
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 .field {
@@ -129,13 +248,262 @@
 .iconBtn {
   @apply rounded-md p-2 hover:bg-gray-100 dark:text-white dark:hover:bg-white/10;
 }
-
 .primaryBtn {
-  @apply rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 active:scale-95;
+  @apply rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 active:scale-95;
 }
 .ghostBtn {
-  @apply rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-white/10;
+  @apply rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-100;
 }
-.spacer {
-  @apply flex-1;
+:global(html.dark) .ghostBtn {
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #f3f4f6;
+  background-color: transparent;
+}
+
+.modal :where(.select, .numberInput, .textInput) {
+  @apply rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-300/60;
+}
+:global(html.dark) .modal :where(.select, .numberInput, .textInput) {
+  background-color: #0f1a2a !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #e5e7eb !important;
+}
+:global(html.dark) .modal :where(.select, .numberInput, .textInput):focus {
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+
+/* Checkbox chips (Domain / Specialization) */
+.checkboxGrid {
+  @apply grid grid-cols-3 gap-2;
+}
+.checkbox {
+  @apply inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50;
+}
+:global(html.dark) .checkbox {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e5e7eb;
+  background-color: transparent;
+}
+
+/* Tick color */
+.checkbox input[type="checkbox"] {
+  accent-color: #4f46e5;
+} /* indigo-600 */
+:global(html.dark) .checkbox input[type="checkbox"] {
+  accent-color: #6366f1;
+} /* indigo-500 */
+
+/* Range year & points */
+.rangeGroup {
+  @apply flex items-center gap-2;
+}
+.rangeSep {
+  @apply text-sm text-gray-500 dark:text-gray-400;
+}
+.inlineHelp {
+  @apply text-xs text-gray-500 dark:text-gray-400;
+}
+
+/* Dual range slider look (points) */
+.pointsSliderBlock {
+  @apply grid gap-2;
+}
+.pointsHeader {
+  @apply flex items-center justify-between;
+}
+.pointsLabel {
+  @apply text-sm font-medium text-gray-700 dark:text-gray-300;
+}
+.pointsCurrent {
+  @apply mt-1 flex items-center justify-between;
+}
+.pointsPill {
+  @apply rounded-xl border border-gray-200 bg-white px-4 py-1 text-sm font-semibold text-gray-800 shadow-sm;
+}
+:global(html.dark) .pointsPill {
+  background-color: #111827;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f3f4f6;
+}
+
+.dualSlider {
+  position: relative;
+  height: 28px;
+  display: grid;
+  align-items: center;
+}
+.dualSliderTrack {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.08) 0%,
+    rgba(0, 0, 0, 0.08)
+      calc((var(--from) - var(--min)) / (var(--max) - var(--min)) * 100%),
+    #4f86ff calc((var(--from) - var(--min)) / (var(--max) - var(--min)) * 100%),
+    #4f86ff calc((var(--to) - var(--min)) / (var(--max) - var(--min)) * 100%),
+    rgba(0, 0, 0, 0.08)
+      calc((var(--to) - var(--min)) / (var(--max) - var(--min)) * 100%),
+    rgba(0, 0, 0, 0.08) 100%
+  );
+}
+:global(html.dark) .dualSliderTrack {
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0.15)
+      calc((var(--from) - var(--min)) / (var(--max) - var(--min)) * 100%),
+    #467cff calc((var(--from) - var(--min)) / (var(--max) - var(--min)) * 100%),
+    #467cff calc((var(--to) - var(--min)) / (var(--max) - var(--min)) * 100%),
+    rgba(255, 255, 255, 0.15)
+      calc((var(--to) - var(--min)) / (var(--max) - var(--min)) * 100%),
+    rgba(255, 255, 255, 0.15) 100%
+  );
+}
+.range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  background: transparent;
+  position: absolute;
+  height: 28px;
+  margin: 0;
+  pointer-events: none;
+}
+.range::-webkit-slider-runnable-track {
+  -webkit-appearance: none;
+  height: 6px;
+  background: transparent;
+}
+.range::-moz-range-track {
+  height: 6px;
+  background: transparent;
+}
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #4f86ff;
+  border: 3px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  pointer-events: auto;
+  margin-top: -8px;
+}
+:global(html.dark) .range::-webkit-slider-thumb {
+  border-color: #111827;
+  background: #467cff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+.range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #4f86ff;
+  border: 3px solid white;
+  cursor: pointer;
+  pointer-events: auto;
+}
+:global(html.dark) .range::-moz-range-thumb {
+  border-color: #111827;
+  background: #467cff;
+}
+
+/* ---------- Hover Effects (dark-focused) ---------- */
+
+/* Card hover */
+.card {
+  transition: all 0.25s ease;
+}
+:global(html.dark) .card:hover {
+  background-color: #162135;
+  border-color: rgba(99, 102, 241, 0.25);
+  transform: translateY(-3px) scale(1.01);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(99, 102, 241, 0.2);
+}
+
+/* Title hover glow */
+:global(html.dark) .cardTitle,
+:global(html.dark) .cardTitle a {
+  transition:
+    color 0.2s ease,
+    text-shadow 0.2s ease;
+}
+:global(html.dark) .cardTitle:hover,
+:global(html.dark) .cardTitle a:hover {
+  color: #a5b4fc;
+  text-shadow: 0 0 6px rgba(99, 102, 241, 0.5);
+}
+
+/* Filter button hover */
+.filterBtn {
+  transition: all 0.2s ease;
+}
+:global(html.dark) .filterBtn:hover {
+  background-color: rgba(99, 102, 241, 0.15) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.25);
+}
+
+/* Inputs/selects hover */
+:global(html.dark) .searchInput,
+:global(html.dark) .toolbar :is(.select, .numberInput) {
+  transition: all 0.2s ease;
+}
+:global(html.dark) .searchInput:hover,
+:global(html.dark) .toolbar :is(.select:hover, .numberInput:hover) {
+  border-color: rgba(99, 102, 241, 0.25) !important;
+  background-color: #1b2740 !important;
+}
+
+/* Icon hover */
+:global(html.dark) .searchIconBtn {
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+:global(html.dark) .searchIconBtn:hover {
+  color: #a5b4fc !important;
+  transform: scale(1.1);
+}
+
+/* Modal buttons hover */
+.primaryBtn,
+.ghostBtn {
+  transition: all 0.2s ease;
+}
+:global(html.dark) .primaryBtn:hover {
+  background-color: #6366f1 !important;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.35);
+}
+:global(html.dark) .ghostBtn:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  transform: translateY(-1px);
+}
+
+/* Checkbox hover */
+:global(html.dark) .checkbox {
+  transition: all 0.2s ease;
+}
+:global(html.dark) .checkbox:hover {
+  background-color: rgba(99, 102, 241, 0.1) !important;
+  border-color: rgba(99, 102, 241, 0.25) !important;
+}
+
+/* Pagination hover */
+:global(html.dark) .pageBtn {
+  transition: all 0.2s ease;
+}
+:global(html.dark) .pageBtn:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1px);
 }

@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchUploadHistory, requestReReview, type DocumentHistory, type UploadHistoryQueryParams } from "./api";
 import { Pagination } from "@/components/ui/pagination";
 import { UploadHistoryFilters } from "./_components/UploadHistoryFilters";
@@ -39,41 +39,45 @@ export default function UploadHistoryPage() {
   const [selectedDocument, setSelectedDocument] = useState<DocumentHistory | null>(null);
   const isLoading = state === "loading";
 
-  const fetchData = async (params: UploadHistoryQueryParams) => {
-    setState("loading");
-    setError(null);
-    try {
-      const result = await fetchUploadHistory({
-        ...params,
-        page: params.page || 1,
-        limit: params.limit || ITEMS_PER_PAGE,
-      });
-      setDocuments(result.documents);
-      setTotal(result.total);
-      setTotalPages(result.totalPages);
-      setCurrentPage(result.page);
-      setState(result.documents.length ? "success" : "empty");
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Unable to load upload history. Please try again later.";
-      setError(msg);
-      setState("error");
-      showToast({
-        type: "error",
-        title: "Error",
-        message: msg,
-        duration: 5000,
-      });
-    }
-  };
+  const fetchData = useCallback(
+    async (params: UploadHistoryQueryParams) => {
+      setState("loading");
+      setError(null);
+      try {
+        const result = await fetchUploadHistory({
+          ...params,
+          page: params.page || 1,
+          limit: params.limit || ITEMS_PER_PAGE,
+        });
+        setDocuments(result.documents);
+        setTotal(result.total);
+        setTotalPages(result.totalPages);
+        setCurrentPage(result.page);
+        setState(result.documents.length ? "success" : "empty");
+      } catch (e: unknown) {
+        const msg =
+          e instanceof Error ? e.message : "Unable to load upload history. Please try again later.";
+        setError(msg);
+        setState("error");
+        showToast({
+          type: "error",
+          title: "Error",
+          message: msg,
+          duration: 5000,
+        });
+      }
+    },
+    [showToast]
+  );
 
   useEffect(() => {
     fetchData(filters);
-  }, [filters]);
+  }, [filters, fetchData]);
 
   const handleFiltersChange = (newFilters: UploadHistoryQueryParams) => {
     setFilters({
       ...newFilters,
-      page: 1, // Reset to first page when filters change
+      page: 1,
       limit: ITEMS_PER_PAGE,
     });
   };
@@ -94,34 +98,27 @@ export default function UploadHistoryPage() {
   const handleReReviewSubmit = async (reason: string) => {
     if (!selectedDocument) return;
 
+    setReReviewingId(selectedDocument.id);
     try {
-      setReReviewingId(selectedDocument.id);
-      const result = await requestReReview(selectedDocument.id, reason);
-      
-      // Show success toast
+      await requestReReview(selectedDocument.id, reason);
+
       showToast({
         type: "success",
         title: "Re-review Requested",
-        message: result.message || "Your request has been submitted and is under review.",
+        message: "Your request has been submitted and is under review.",
         duration: 5000,
       });
-      
-      // Refresh data to update status to PENDING
+
       await fetchData(filters);
-      
-      // Close modal after data is refreshed
       setIsReReviewModalOpen(false);
       setSelectedDocument(null);
-    } catch (e: unknown) {
-      // Error message will be shown in modal
-      throw e;
     } finally {
       setReReviewingId(null);
     }
   };
 
   const handleReReviewModalClose = () => {
-    if (reReviewingId) return; // Prevent closing while submitting
+    if (reReviewingId) return;
     setIsReReviewModalOpen(false);
     setSelectedDocument(null);
   };
@@ -131,7 +128,7 @@ export default function UploadHistoryPage() {
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + " " + sizes[i];
+    return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
   };
 
   const formatDate = (dateString: string): string => {
@@ -158,7 +155,6 @@ export default function UploadHistoryPage() {
     }
   };
 
-  // Get unique types and domains for filters
   const documentTypes = useMemo(() => {
     const types = new Set<string>();
     documents.forEach((doc) => types.add(doc.type));
@@ -175,7 +171,6 @@ export default function UploadHistoryPage() {
     <main className={styles["page-container"]}>
       <Breadcrumb pageName="Upload History" />
 
-      {/* Filters */}
       <div className={styles["filters-section"]}>
         <UploadHistoryFilters
           onFiltersChange={handleFiltersChange}
@@ -261,8 +256,7 @@ export default function UploadHistoryPage() {
               ))}
             </TableBody>
           </Table>
-          
-          {/* Pagination - Component có sẵn từ @/components/ui/pagination */}
+
           {totalPages > 1 && (
             <Pagination
               currentPage={currentPage}
@@ -276,9 +270,9 @@ export default function UploadHistoryPage() {
         </div>
       )}
 
-      {/* Re-review Modal */}
       {selectedDocument && (
         <ReReviewModal
+          key={selectedDocument.id}
           isOpen={isReReviewModalOpen}
           onClose={handleReReviewModalClose}
           onSubmit={handleReReviewSubmit}

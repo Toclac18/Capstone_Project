@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { RefreshCw, X, AlertCircle } from "lucide-react";
 import styles from "../styles.module.css";
 
@@ -20,13 +20,6 @@ export default function ReReviewModal({
   const [isLoading, setIsLoading] = useState(false);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setReason("");
-      setError(null);
-    }
-  }, [isOpen]);
 
   const validateForm = (): boolean => {
     if (!reason.trim()) {

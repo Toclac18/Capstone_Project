@@ -7,10 +7,17 @@ export type DocumentItem = {
   uploader: string;
   publicYear: number;
   isPremium: boolean;
-  points?: number;
+  points?: number | null;
+  description: string;
+  summarizations: {
+    short: string;
+    medium: string;
+    detailed: string;
+  };
 };
 
 export type SearchFilters = {
+  q?: string | null;
   organization?: string | null;
   domain?: string | null;
   domains?: string[] | null;
@@ -30,4 +37,12 @@ export type SearchMeta = {
   years: number[];
   specializationsByDomain?: Record<string, string[]>;
   pointsRange?: { min: number; max: number };
+};
+
+export type Paged<T> = {
+  items: T[];
+  total: number;
+  page: number;
+  perPage: number;
+  pageCount: number;
 };

@@ -1,73 +1,79 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSearch } from "../SearchProvider";
+import { useDebounce } from "@/hooks/useDebounce";
+import { Filter } from "lucide-react";
 import styles from "../styles.module.css";
-
-function getHashQ() {
-  if (typeof window === "undefined") return "";
-  const raw = window.location.hash.startsWith("#")
-    ? window.location.hash.slice(1)
-    : window.location.hash;
-  const params = new URLSearchParams(raw);
-  return params.get("q") ?? "";
-}
 
 export default function SearchToolbar({
   onOpenFilter,
 }: {
   onOpenFilter: () => void;
 }) {
+  const { filters, setFilters, perPage, setPerPage } = useSearch();
+
+  function getHashQ() {
+    if (typeof window === "undefined") return "";
+    const raw = window.location.hash.startsWith("#")
+      ? window.location.hash.slice(1)
+      : window.location.hash;
+    const params = new URLSearchParams(raw);
+    return params.get("q") ?? "";
+  }
+
   const [q, setQ] = useState<string>(getHashQ);
-  const { perPage, setPerPage, page } = useSearch();
+  const debouncedQ = useDebounce(q, 1000);
 
   useEffect(() => {
-    const onHashChange = () => setQ(getHashQ());
-    window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    if (q) hash.set("q", q);
-    else hash.delete("q");
-    window.location.hash = hash.toString();
-  }, [q]);
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(
+        window.location.hash.replace(/^#/, ""),
+      );
+      if (debouncedQ) params.set("q", debouncedQ);
+      else params.delete("q");
+      window.location.hash = params.toString();
+    }
+    setFilters({ ...filters, q: debouncedQ || null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedQ]);
 
   return (
-    <div className={styles.toolbar}>
+    <div className={styles.toolbar} data-testid="search-toolbar">
       <input
-        aria-label="Search"
         className={styles.searchInput}
-        placeholder="Search title / organization / specialization / uploader (current page)"
+        type="text"
+        placeholder="Search title / organization / specialization / uploader / description"
         value={q}
         onChange={(e) => setQ(e.target.value)}
+        aria-label="Search library documents"
       />
 
-      <div className={styles.toolbarRight}>
-        <label className={styles.perPageLabel}>
+      <div className={styles.right}>
+        <label htmlFor="perPage" className={styles.perPageLabel}>
           Per page
-          <select
-            className={styles.select}
-            value={perPage}
-            onChange={(e) => setPerPage(Number(e.target.value) as any)}
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-          </select>
         </label>
+        <select
+          id="perPage"
+          className={styles.perPageSelect}
+          value={perPage}
+          onChange={(e) => setPerPage(Number(e.target.value) as any)}
+          aria-label="Results per page"
+        >
+          <option value={10}>10</option>
+          <option value={20}>20</option>
+          <option value={50}>50</option>
+        </select>
 
-        <button className={styles.filterBtn} onClick={onOpenFilter}>
-          <span className={styles.filterIcon} aria-hidden>
-            ⚙️
-          </span>
-          Filters
+        <button
+          type="button"
+          className={styles.filterButton}
+          onClick={onOpenFilter}
+          aria-label="Open filters"
+        >
+          <Filter size={16} />
+          <span>Filters</span>
         </button>
       </div>
-
-      {/* Expose current query string to parent via a custom event */}
-      <input type="hidden" value={q} data-page={page} id="__search_q" />
     </div>
   );
 }

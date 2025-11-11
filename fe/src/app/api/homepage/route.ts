@@ -1,14 +1,12 @@
 // src/app/api/homepage/route.ts
+import {
+  mockContinueReading,
+  mockLibraryDocs,
+  mockSpecializationGroups,
+  mockTopUpvoted,
+} from "@/mock/documents";
 import { headers, cookies } from "next/headers";
 import { NextRequest } from "next/server";
-import {
-  mockLibraryDocs,
-  mockTopUpvoted,
-  mockContinueReading,
-  // make sure this exists/was exported from your mock file
-  mockSpecializationGroups,
-} from "@/mock/documents";
-
 function beBase() {
   return (
     process.env.BE_BASE_URL?.replace(/\/$/, "") ||

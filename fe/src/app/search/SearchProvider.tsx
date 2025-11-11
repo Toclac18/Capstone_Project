@@ -7,7 +7,11 @@ import {
   useMemo,
   useState,
 } from "react";
-import type { DocumentItem, SearchFilters, Paged } from "@/types/search";
+import type {
+  DocumentItem,
+  SearchFilters,
+  Paged,
+} from "@/types/documentResponse";
 import { fetchDocuments } from "@/services/searchDocumentService";
 
 export type PerPage = 10 | 20 | 50;

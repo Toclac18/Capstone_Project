@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { headers, cookies } from "next/headers";
-import { MOCK_DOCUMENTS } from "@/mock/searchMock";
+import { mockLibraryDocs } from "@/mock/documents";
 
 function beBase() {
   return (
@@ -103,7 +103,7 @@ export async function GET(req: NextRequest) {
 
   if (USE_MOCK) {
     // Ensure every mock has fields used in matching
-    let rows = [...MOCK_DOCUMENTS].map((d) => ({
+    let rows = [...mockLibraryDocs].map((d) => ({
       ...d,
       description:
         d.description ??

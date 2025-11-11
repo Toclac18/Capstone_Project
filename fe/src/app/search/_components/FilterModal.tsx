@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { fetchMeta } from "@/services/searchDocumentService";
-import type { SearchFilters, SearchMeta } from "@/types/search";
+import type { SearchFilters, SearchMeta } from "@/types/documentResponse";
 import { useSearch } from "../SearchProvider";
 import styles from "../styles.module.css";
 

@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { headers, cookies } from "next/headers";
-import { MOCK_DOCUMENTS } from "@/mock/searchMock";
+import { mockLibraryDocs } from "@/mock/documents";
 
 function beBase() {
   return (
@@ -40,24 +40,24 @@ export async function GET() {
   if (USE_MOCK) {
     // Organizations, domains, specializations, years
     const organizations = Array.from(
-      new Set(MOCK_DOCUMENTS.map((d) => d.orgName)),
+      new Set(mockLibraryDocs.map((d) => d.orgName)),
     ).sort();
 
     const domains = Array.from(
-      new Set(MOCK_DOCUMENTS.map((d) => d.domain)),
+      new Set(mockLibraryDocs.map((d) => d.domain)),
     ).sort();
 
     const specializations = Array.from(
-      new Set(MOCK_DOCUMENTS.map((d) => d.specialization)),
+      new Set(mockLibraryDocs.map((d) => d.specialization)),
     ).sort();
 
     const years = Array.from(
-      new Set(MOCK_DOCUMENTS.map((d) => d.publicYear)),
+      new Set(mockLibraryDocs.map((d) => d.publicYear)),
     ).sort((a, b) => b - a);
 
     // Mapping domain -> specialization[]
     const map: Record<string, Set<string>> = {};
-    for (const d of MOCK_DOCUMENTS) {
+    for (const d of mockLibraryDocs) {
       map[d.domain] ??= new Set<string>();
       map[d.domain].add(d.specialization);
     }
@@ -67,9 +67,9 @@ export async function GET() {
     }
 
     // Range điểm cho slider Points
-    const pointsValues = MOCK_DOCUMENTS.filter(
-      (d) => typeof d.points === "number",
-    ).map((d) => d.points as number);
+    const pointsValues = mockLibraryDocs
+      .filter((d) => typeof d.points === "number")
+      .map((d) => d.points as number);
 
     const pointsRange =
       pointsValues.length > 0

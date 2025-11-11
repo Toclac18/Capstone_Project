@@ -14,6 +14,9 @@ export type DocumentItem = {
     medium: string;
     detailed: string;
   };
+  upvote_counts: number;
+  downvote_counts: number;
+  thumbnail: string;
 };
 
 export type SearchFilters = {

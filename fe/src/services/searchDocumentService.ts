@@ -3,7 +3,7 @@ import type {
   DocumentItem,
   SearchMeta,
   Paged,
-} from "@/types/search";
+} from "@/types/documentResponse";
 
 const BASE = "/api";
 

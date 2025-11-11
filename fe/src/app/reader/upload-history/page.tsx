@@ -253,7 +253,7 @@ export default function UploadHistoryPage() {
                         disabled={reReviewingId === doc.id || isReReviewModalOpen}
                         className={styles["btn-request-review"]}
                       >
-                        Request Re-review
+                        Re-review
                       </button>
                     )}
                   </TableCell>

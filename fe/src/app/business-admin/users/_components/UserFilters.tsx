@@ -1,8 +1,7 @@
 // src/app/business-admin/users/_components/UserFilters.tsx
 "use client";
 
-import { useState } from "react";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import type { UserQueryParams } from "../api";
 import styles from "../styles.module.css";
 
@@ -58,7 +57,8 @@ export function UserFilters({
     register,
     handleSubmit,
     reset,
-    watch,
+    getValues,
+    control,
     formState: { errors },
   } = useForm<FilterValues>({
     defaultValues: {
@@ -72,7 +72,6 @@ export function UserFilters({
     },
   });
 
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const onSubmit: SubmitHandler<FilterValues> = (data: FilterValues) => {
     const filters: UserQueryParams = {
@@ -97,13 +96,18 @@ export function UserFilters({
     onFiltersChange(clearedFilters);
   };
 
-  const watchedFilters = watch();
+  // Watch specific fields instead of entire form to avoid React Compiler warning
+  const searchValue = useWatch({ control, name: "search" });
+  const roleValue = useWatch({ control, name: "role" });
+  const statusValue = useWatch({ control, name: "status" });
+  const dateFromValue = useWatch({ control, name: "dateFrom" });
+  const dateToValue = useWatch({ control, name: "dateTo" });
   const hasActiveFilters =
-    watchedFilters.search ||
-    watchedFilters.role ||
-    watchedFilters.status ||
-    watchedFilters.dateFrom ||
-    watchedFilters.dateTo;
+    searchValue ||
+    roleValue ||
+    statusValue ||
+    dateFromValue ||
+    dateToValue;
 
   return (
     <form
@@ -223,54 +227,33 @@ export function UserFilters({
             ))}
           </select>
         </div>
-      </div>
 
-      {/* Advanced Filters Toggle */}
-      <div className="mb-4">
-        <button
-          type="button"
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className={styles["advanced-toggle"]}
-        >
-          {showAdvanced ? "Hide" : "Show"} Advanced Filters
-        </button>
-      </div>
-
-      {/* Advanced Filters */}
-      {showAdvanced && (
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            Date Range Filter
-          </h3>
-          <div className="flex flex-wrap gap-4">
-            <div className="min-w-[150px]">
-              <label htmlFor="dateFrom" className={styles["label"]}>
-                From Date
-              </label>
-              <input
-                id="dateFrom"
-                type="date"
-                className={`${styles["input"]} ${errors.dateFrom ? styles.error : ""}`}
-                disabled={loading}
-                {...register("dateFrom")}
-              />
-            </div>
-
-            <div className="min-w-[150px]">
-              <label htmlFor="dateTo" className={styles["label"]}>
-                To Date
-              </label>
-              <input
-                id="dateTo"
-                type="date"
-                className={`${styles["input"]} ${errors.dateTo ? styles.error : ""}`}
-                disabled={loading}
-                {...register("dateTo")}
-              />
-            </div>
-          </div>
+        <div className="min-w-[150px]">
+          <label htmlFor="dateFrom" className={styles["label"]}>
+            From Date
+          </label>
+          <input
+            id="dateFrom"
+            type="date"
+            className={`${styles["input"]} ${errors.dateFrom ? styles.error : ""}`}
+            disabled={loading}
+            {...register("dateFrom")}
+          />
         </div>
-      )}
+
+        <div className="min-w-[150px]">
+          <label htmlFor="dateTo" className={styles["label"]}>
+            To Date
+          </label>
+          <input
+            id="dateTo"
+            type="date"
+            className={`${styles["input"]} ${errors.dateTo ? styles.error : ""}`}
+            disabled={loading}
+            {...register("dateTo")}
+          />
+        </div>
+      </div>
 
       {/* Active Filters Summary */}
       {hasActiveFilters && (
@@ -279,13 +262,14 @@ export function UserFilters({
             <span className="text-sm text-gray-600 dark:text-gray-400">
               Active filters:
             </span>
-          {watchedFilters.search && (
+          {searchValue && (
             <span className={`${styles["filter-tag"]} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}>
-              Search: {watchedFilters.search}
+              Search: {searchValue}
               <button
                 type="button"
                 onClick={() => {
-                  const updatedFilters = { ...watchedFilters, search: "" };
+                  const currentValues = getValues();
+                  const updatedFilters = { ...currentValues, search: "" };
                   reset(updatedFilters);
                   onSubmit(updatedFilters);
                 }}
@@ -295,13 +279,14 @@ export function UserFilters({
               </button>
             </span>
           )}
-          {watchedFilters.role && (
+          {roleValue && (
             <span className={`${styles["filter-tag"]} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`}>
-              Role: {ROLE_OPTIONS.find((r) => r.value === watchedFilters.role)?.label}
+              Role: {ROLE_OPTIONS.find((r) => r.value === roleValue)?.label}
               <button
                 type="button"
                 onClick={() => {
-                  const updatedFilters = { ...watchedFilters, role: "" };
+                  const currentValues = getValues();
+                  const updatedFilters = { ...currentValues, role: "" };
                   reset(updatedFilters);
                   onSubmit(updatedFilters);
                 }}
@@ -311,13 +296,14 @@ export function UserFilters({
               </button>
             </span>
           )}
-          {watchedFilters.status && (
+          {statusValue && (
             <span className={`${styles["filter-tag"]} bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200`}>
-              Status: {STATUS_OPTIONS.find((s) => s.value === watchedFilters.status)?.label}
+              Status: {STATUS_OPTIONS.find((s) => s.value === statusValue)?.label}
               <button
                 type="button"
                 onClick={() => {
-                  const updatedFilters = { ...watchedFilters, status: "" };
+                  const currentValues = getValues();
+                  const updatedFilters = { ...currentValues, status: "" };
                   reset(updatedFilters);
                   onSubmit(updatedFilters);
                 }}
@@ -327,13 +313,14 @@ export function UserFilters({
               </button>
             </span>
           )}
-          {(watchedFilters.dateFrom || watchedFilters.dateTo) && (
+          {(dateFromValue || dateToValue) && (
             <span className={`${styles["filter-tag"]} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`}>
-              Date: {watchedFilters.dateFrom || "Start"} - {watchedFilters.dateTo || "End"}
+              Date: {dateFromValue || "Start"} - {dateToValue || "End"}
               <button
                 type="button"
                 onClick={() => {
-                  const updatedFilters = { ...watchedFilters, dateFrom: "", dateTo: "" };
+                  const currentValues = getValues();
+                  const updatedFilters = { ...currentValues, dateFrom: "", dateTo: "" };
                   reset(updatedFilters);
                   onSubmit(updatedFilters);
                 }}

@@ -1,0 +1,708 @@
+/* Profile Page Styles – stable dark-mode with :global(html.dark) */
+
+/* ============================================
+   PROFILE PAGE
+   ============================================ */
+
+/* Container */
+.profile-container {
+  @apply mx-auto w-full max-w-[970px];
+}
+
+/* Loading state */
+.profile-loading {
+  @apply rounded-[10px] border p-8 shadow-1;
+  @apply border-stroke bg-white;
+}
+:global(html.dark) .profile-loading {
+  @apply border-dark-3 bg-gray-dark;
+}
+
+.profile-loading-skeleton {
+  @apply h-6 w-40 animate-pulse rounded;
+  @apply bg-gray-200;
+}
+:global(html.dark) .profile-loading-skeleton {
+  @apply bg-dark-3;
+}
+
+.profile-loading-skeleton-large {
+  @apply mt-6 h-40 animate-pulse rounded;
+  @apply bg-gray-200;
+}
+:global(html.dark) .profile-loading-skeleton-large {
+  @apply bg-dark-3;
+}
+
+/* Error state */
+.profile-error {
+  @apply rounded-lg border-l-4 p-4;
+  @apply border-red bg-red-light-6 text-red-dark;
+}
+:global(html.dark) .profile-error {
+  @apply border-red bg-dark-2 text-red;
+}
+
+/* Profile Card */
+.profile-card {
+  @apply overflow-hidden rounded-[10px] shadow-1;
+  @apply bg-white;
+}
+:global(html.dark) .profile-card {
+  @apply bg-gray-dark shadow-card;
+}
+
+/* Cover Photo */
+.profile-cover {
+  @apply relative z-20 h-35 md:h-65 overflow-hidden;
+}
+
+.profile-cover-image {
+  @apply h-full w-full rounded-tl-[10px] rounded-tr-[10px] object-cover object-center;
+}
+
+.profile-role-badge {
+  @apply absolute left-4 top-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold backdrop-blur-sm;
+}
+
+/* Profile Content */
+.profile-content {
+  @apply px-4 pb-6 text-center lg:pb-8 xl:pb-11.5;
+}
+
+/* Profile Photo */
+.profile-photo-wrapper {
+  @apply relative z-30 mx-auto -mt-22 h-30 w-full max-w-30 rounded-full bg-white/20 p-1 backdrop-blur sm:h-44 sm:max-w-[176px] sm:p-3;
+}
+
+.profile-photo-container {
+  @apply relative drop-shadow-2;
+}
+
+.profile-photo-image {
+  @apply overflow-hidden rounded-full ring-4;
+  @apply ring-white;
+}
+:global(html.dark) .profile-photo-image {
+  @apply ring-gray-dark;
+}
+
+.profile-photo-label {
+  @apply absolute bottom-0 right-0 flex size-9 cursor-pointer items-center justify-center rounded-full shadow-lg transition-all hover:scale-110;
+  @apply bg-primary text-white hover:bg-primary/90 sm:bottom-2 sm:right-2;
+}
+
+.profile-photo-input {
+  @apply sr-only;
+}
+
+/* User Info */
+.profile-user-info {
+  @apply mt-4;
+}
+
+.profile-display-name {
+  @apply mb-2 text-heading-6 font-bold;
+  @apply text-dark;
+}
+:global(html.dark) .profile-display-name {
+  @apply text-white;
+}
+
+/* Action Buttons */
+.profile-actions {
+  @apply mx-auto mt-8 flex flex-wrap items-center justify-center gap-3;
+}
+
+.btn-edit-profile {
+  @apply inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium shadow-md hover:shadow-lg transition-all;
+  @apply bg-primary text-white hover:bg-primary/90;
+}
+
+.btn-change-email,
+.btn-change-password {
+  @apply inline-flex items-center gap-2 rounded-lg border px-5 py-2.5 text-sm font-medium transition-all;
+  @apply border-stroke bg-white text-dark hover:border-primary hover:bg-primary/5;
+}
+:global(html.dark) .btn-change-email,
+:global(html.dark) .btn-change-password {
+  @apply border-dark-3 bg-gray-700 text-white hover:bg-gray-600;
+}
+
+.btn-delete-account {
+  @apply inline-flex items-center gap-2 rounded-lg border px-5 py-2.5 text-sm font-medium transition-all;
+  @apply border-red-300 bg-white text-red-600 hover:border-red-400 hover:bg-red-50;
+}
+:global(html.dark) .btn-delete-account {
+  @apply border-red-700 bg-gray-700 text-red-400 hover:bg-red-900/20;
+}
+
+.btn-icon {
+  @apply h-4 w-4;
+}
+
+/* Profile Details Card */
+.profile-details-card {
+  @apply mx-auto mb-5.5 mt-8 grid max-w-[720px] grid-cols-1 gap-4 rounded-[10px] border p-6 text-left shadow-1;
+  @apply border-stroke bg-gray-1;
+}
+:global(html.dark) .profile-details-card {
+  @apply border-dark-3 bg-dark-2 shadow-card;
+}
+.profile-details-card.sm-cols-2 {
+  @apply sm:grid-cols-2;
+}
+
+.profile-detail-item {
+  @apply flex items-center gap-3 rounded-lg p-3 transition-colors;
+  @apply hover:bg-white/50;
+}
+:global(html.dark) .profile-detail-item {
+  @apply hover:bg-dark-3;
+}
+
+.profile-detail-icon-wrapper {
+  @apply flex h-12 w-12 items-center justify-center rounded-xl;
+}
+
+.profile-detail-icon-wrapper.primary {
+  @apply bg-primary/10;
+}
+:global(html.dark) .profile-detail-icon-wrapper.primary {
+  @apply bg-primary/20;
+}
+
+.profile-detail-icon-wrapper.blue {
+  @apply bg-blue-500/10;
+}
+:global(html.dark) .profile-detail-icon-wrapper.blue {
+  @apply bg-blue-500/20;
+}
+
+.profile-detail-icon-wrapper.yellow {
+  @apply bg-yellow-500/10;
+}
+:global(html.dark) .profile-detail-icon-wrapper.yellow {
+  @apply bg-yellow-500/20;
+}
+
+.profile-detail-icon-wrapper.purple {
+  @apply bg-purple-500/10;
+}
+:global(html.dark) .profile-detail-icon-wrapper.purple {
+  @apply bg-purple-500/20;
+}
+
+.profile-detail-icon-wrapper.green {
+  @apply bg-green-500/10;
+}
+:global(html.dark) .profile-detail-icon-wrapper.green {
+  @apply bg-green-500/20;
+}
+
+.profile-detail-icon-wrapper.orange {
+  @apply bg-orange-500/10;
+}
+:global(html.dark) .profile-detail-icon-wrapper.orange {
+  @apply bg-orange-500/20;
+}
+
+.profile-detail-icon {
+  @apply h-5 w-5;
+}
+
+.profile-detail-icon.primary {
+  @apply text-primary;
+}
+
+.profile-detail-icon.blue {
+  @apply text-blue-600;
+}
+:global(html.dark) .profile-detail-icon.blue {
+  @apply text-blue-400;
+}
+
+.profile-detail-icon.yellow {
+  @apply text-yellow-600;
+}
+:global(html.dark) .profile-detail-icon.yellow {
+  @apply text-yellow-400;
+}
+
+.profile-detail-icon.purple {
+  @apply text-purple-600;
+}
+:global(html.dark) .profile-detail-icon.purple {
+  @apply text-purple-400;
+}
+
+.profile-detail-icon.green {
+  @apply text-green-600;
+}
+:global(html.dark) .profile-detail-icon.green {
+  @apply text-green-400;
+}
+
+.profile-detail-icon.orange {
+  @apply text-orange-600;
+}
+:global(html.dark) .profile-detail-icon.orange {
+  @apply text-orange-400;
+}
+
+.profile-detail-label {
+  @apply text-xs font-medium;
+  @apply text-dark-6;
+}
+:global(html.dark) .profile-detail-label {
+  @apply text-dark-7;
+}
+
+.profile-detail-value {
+  @apply font-semibold;
+  @apply text-dark;
+}
+:global(html.dark) .profile-detail-value {
+  @apply text-white;
+}
+
+.profile-detail-item-full-width {
+  @apply sm:col-span-2;
+}
+
+/* ============================================
+   MODAL COMPONENTS (Shared)
+   ============================================ */
+
+/* Modal overlay */
+.modal-overlay {
+  @apply fixed inset-0 z-50 flex items-center justify-center;
+}
+
+.modal-overlay.with-padding {
+  @apply p-4;
+}
+
+.modal-backdrop {
+  @apply absolute inset-0 bg-black/50 backdrop-blur-sm;
+}
+
+.modal-container {
+  @apply relative z-10 w-full mx-4;
+}
+
+.modal-container-md {
+  @apply max-w-md;
+}
+
+.modal-container-lg {
+  @apply max-w-2xl max-h-[90vh] flex flex-col;
+}
+
+/* Modal card */
+.modal-card {
+  @apply rounded-lg shadow-xl border;
+  @apply bg-white border-stroke;
+}
+:global(html.dark) .modal-card {
+  @apply bg-gray-dark border-dark-3;
+}
+
+.modal-card.red-border {
+  @apply border-red-200;
+}
+:global(html.dark) .modal-card.red-border {
+  @apply border-red-800;
+}
+
+.modal-card-flex {
+  @apply overflow-hidden flex flex-col;
+}
+
+/* Modal header */
+.modal-header {
+  @apply flex items-center justify-between p-4 border-b;
+  @apply border-stroke;
+}
+:global(html.dark) .modal-header {
+  @apply border-dark-3;
+}
+
+.modal-header.red-border {
+  @apply border-red-200;
+}
+:global(html.dark) .modal-header.red-border {
+  @apply border-red-800;
+}
+
+.modal-header-left {
+  @apply flex items-center gap-3;
+}
+
+.modal-icon-wrapper {
+  @apply flex items-center justify-center w-10 h-10 rounded-full;
+}
+
+.modal-icon-wrapper.primary {
+  @apply bg-primary/10;
+}
+:global(html.dark) .modal-icon-wrapper.primary {
+  @apply bg-primary/20;
+}
+
+.modal-icon-wrapper.blue {
+  @apply bg-blue-100;
+}
+:global(html.dark) .modal-icon-wrapper.blue {
+  @apply bg-blue-900/20;
+}
+
+.modal-icon-wrapper.green {
+  @apply bg-green-100;
+}
+:global(html.dark) .modal-icon-wrapper.green {
+  @apply bg-green-900/20;
+}
+
+.modal-icon-wrapper.red {
+  @apply bg-red-100;
+}
+:global(html.dark) .modal-icon-wrapper.red {
+  @apply bg-red-900/20;
+}
+
+.modal-icon {
+  @apply w-5 h-5;
+}
+
+.modal-icon.primary {
+  @apply text-primary;
+}
+
+.modal-icon.blue {
+  @apply text-blue-600;
+}
+:global(html.dark) .modal-icon.blue {
+  @apply text-blue-400;
+}
+
+.modal-icon.green {
+  @apply text-green-600;
+}
+:global(html.dark) .modal-icon.green {
+  @apply text-green-400;
+}
+
+.modal-icon.red {
+  @apply text-red-600;
+}
+:global(html.dark) .modal-icon.red {
+  @apply text-red-400;
+}
+
+.modal-title {
+  @apply text-lg font-semibold;
+  @apply text-gray-900;
+}
+:global(html.dark) .modal-title {
+  @apply text-white;
+}
+
+.modal-title.red {
+  @apply text-red-600;
+}
+:global(html.dark) .modal-title.red {
+  @apply text-red-400;
+}
+
+.modal-subtitle {
+  @apply text-sm;
+  @apply text-gray-500;
+}
+:global(html.dark) .modal-subtitle {
+  @apply text-gray-400;
+}
+
+.modal-close-btn {
+  @apply transition-colors;
+  @apply text-gray-400;
+}
+.modal-close-btn:hover {
+  @apply text-gray-600;
+}
+:global(html.dark) .modal-close-btn:hover {
+  @apply text-gray-300;
+}
+
+/* Form */
+.modal-form {
+  @apply p-6;
+}
+
+.modal-form.with-scroll {
+  @apply overflow-y-auto flex-1;
+}
+
+.form-fields {
+  @apply space-y-4;
+}
+
+/* Field group */
+.field-group {
+  @apply mb-5.5;
+}
+
+.field-group.space-y {
+  @apply block;
+}
+
+.field-label {
+  @apply mb-2 block text-body-sm font-medium;
+  @apply text-dark;
+}
+:global(html.dark) .field-label {
+  @apply text-white;
+}
+
+.field-label-sm {
+  @apply text-sm;
+  @apply text-gray-700;
+}
+:global(html.dark) .field-label-sm {
+  @apply text-gray-300;
+}
+
+.field-label-required {
+  @apply text-red;
+}
+
+.field-label-required-sm {
+  @apply text-red-500;
+}
+
+.field-label-confirm {
+  @apply font-mono text-red-600;
+}
+:global(html.dark) .field-label-confirm {
+  @apply text-red-400;
+}
+
+/* Input */
+.field-input {
+  @apply w-full rounded-lg border-[1.5px] bg-transparent px-5.5 py-2.5;
+  @apply text-dark placeholder:text-dark-6 outline-none transition;
+  @apply border-stroke focus:border-primary;
+}
+:global(html.dark) .field-input {
+  @apply bg-dark-2 text-white placeholder:text-dark-7;
+  @apply border-dark-3 focus:border-primary;
+}
+
+.field-input-sm {
+  @apply px-3 py-2 border rounded-lg;
+  @apply border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+  @apply bg-white text-dark;
+}
+:global(html.dark) .field-input-sm {
+  @apply bg-gray-700 border-gray-600 text-white;
+}
+
+.field-input.error {
+  @apply border-red focus:border-red;
+}
+
+.field-input.date-input {
+  @apply pl-13 pr-5;
+}
+
+.field-input.with-toggle {
+  @apply pr-10;
+}
+
+.field-input.disabled {
+  @apply bg-gray-50 cursor-not-allowed;
+  @apply text-gray-500;
+}
+:global(html.dark) .field-input.disabled {
+  @apply bg-gray-700 text-gray-400;
+}
+
+.field-input-mono {
+  @apply font-mono;
+}
+
+.field-icon-wrapper {
+  @apply relative;
+}
+
+.field-icon {
+  @apply absolute left-5.5 top-1/2 -translate-y-1/2 pointer-events-none;
+}
+
+.field-input-wrapper {
+  @apply relative;
+}
+
+.field-toggle-btn {
+  @apply absolute right-3 top-1/2 -translate-y-1/2;
+  @apply text-gray-400;
+}
+.field-toggle-btn:hover {
+  @apply text-gray-600;
+}
+:global(html.dark) .field-toggle-btn:hover {
+  @apply text-gray-300;
+}
+
+.field-toggle-icon {
+  @apply w-4 h-4;
+}
+
+/* Error message */
+.field-error {
+  @apply mt-1.5 text-xs;
+  @apply text-red-600;
+}
+:global(html.dark) .field-error {
+  @apply text-red-400;
+}
+
+.field-error-inline {
+  @apply flex items-center gap-2 mt-1 text-sm;
+}
+
+.error-icon {
+  @apply w-4 h-4;
+}
+
+/* Alert */
+.alert-error {
+  @apply mb-4 rounded-lg p-3 border;
+  @apply bg-red-50 border-red-200;
+}
+:global(html.dark) .alert-error {
+  @apply bg-red-900/10 border-red-800;
+}
+
+.alert-error-content {
+  @apply flex items-center gap-2 text-sm;
+  @apply text-red-600;
+}
+:global(html.dark) .alert-error-content {
+  @apply text-red-400;
+}
+
+.alert-icon {
+  @apply w-4 h-4;
+}
+
+/* Warning alert (Delete Account) */
+.warning-alert {
+  @apply rounded-lg p-4 border;
+  @apply bg-red-50 border-red-200;
+}
+:global(html.dark) .warning-alert {
+  @apply bg-red-900/10 border-red-800;
+}
+
+.warning-content {
+  @apply flex items-start gap-3;
+}
+
+.warning-icon {
+  @apply w-5 h-5 mt-0.5 flex-shrink-0;
+  @apply text-red-600;
+}
+:global(html.dark) .warning-icon {
+  @apply text-red-400;
+}
+
+.warning-title {
+  @apply text-sm font-medium mb-2;
+  @apply text-red-800;
+}
+:global(html.dark) .warning-title {
+  @apply text-red-200;
+}
+
+.warning-list {
+  @apply text-sm space-y-1 list-disc list-inside;
+  @apply text-red-600;
+}
+:global(html.dark) .warning-list {
+  @apply text-red-300;
+}
+
+/* Actions */
+.modal-actions {
+  @apply flex justify-end gap-3 pt-3 border-t;
+  @apply border-stroke;
+}
+:global(html.dark) .modal-actions {
+  @apply border-dark-3;
+}
+
+.modal-actions-end {
+  @apply flex items-center justify-end mt-6;
+}
+
+.modal-actions.red-border {
+  @apply border-red-200;
+}
+:global(html.dark) .modal-actions.red-border {
+  @apply border-red-800;
+}
+
+.btn-cancel {
+  @apply rounded-lg border px-6 py-[7px] font-medium transition-colors;
+  @apply border-stroke text-dark hover:shadow-1;
+}
+:global(html.dark) .btn-cancel {
+  @apply border-dark-3 text-white;
+}
+
+.btn-cancel-sm {
+  @apply px-4 py-2 text-sm rounded-lg;
+  @apply text-gray-700 bg-white border-gray-300 hover:bg-gray-50;
+}
+:global(html.dark) .btn-cancel-sm {
+  @apply text-gray-300 bg-gray-700 border-gray-600 hover:bg-gray-600;
+}
+
+.btn-submit {
+  @apply rounded-lg px-6 py-[7px] font-medium transition-colors flex items-center gap-2;
+  @apply bg-primary text-gray-2 hover:bg-opacity-90;
+}
+.btn-submit:disabled {
+  @apply bg-primary/50;
+}
+
+.btn-submit.blue {
+  @apply bg-blue-600 hover:bg-blue-700;
+}
+.btn-submit.blue:disabled {
+  @apply bg-blue-400;
+}
+
+.btn-submit.green {
+  @apply bg-green-600 hover:bg-green-700;
+}
+.btn-submit.green:disabled {
+  @apply bg-green-400;
+}
+
+.btn-submit.red {
+  @apply bg-red-600 hover:bg-red-700 text-white;
+}
+.btn-submit.red:disabled {
+  @apply bg-red-400;
+}
+
+.btn-submit-sm {
+  @apply px-4 py-2 text-sm;
+}
+
+.spinner {
+  @apply w-4 h-4 animate-spin;
+}
+

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { Edit3, X, Save, AlertCircle } from "lucide-react";
 
 interface FormField {
@@ -240,7 +239,7 @@ export default function EditConfirmation({
       </button>
 
       {/* Edit Modal */}
-      {isModalOpen && mounted && createPortal(
+      {isModalOpen && mounted && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           {/* Backdrop */}
           <div 
@@ -341,8 +340,7 @@ export default function EditConfirmation({
               </div>
             </div>
           </div>
-        </div>,
-        document.body
+        </div>
       )}
     </>
   );

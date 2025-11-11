@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useMemo,
   useState,
+  useCallback,
 } from "react";
 import { toast, useToast } from "@/components/ui/toast";
 import { changeReaderAccess, ReaderResponse } from "@/services/orgAdmin-reader";
@@ -86,7 +87,7 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
   };
 
   /** Load list of readers via Next route (supports mock or real BE) */
-  const reload = async () => {
+  const reload = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -106,10 +107,10 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, pageSize, q, status, showToast]);
 
   /** Toggle access with optimistic UI; uses service API for the action */
-  const toggleAccess = async (id: string, enable: boolean) => {
+  const toggleAccess = useCallback(async (id: string, enable: boolean) => {
     const snapshot = readers;
 
     setError(null);
@@ -147,12 +148,11 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
       showToast(toast.error("Action failed", msg));
       throw e;
     }
-  };
+  }, [readers, showToast]);
 
   useEffect(() => {
     reload();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, q, status]);
+  }, [reload]);
 
   const value = useMemo(
     () => ({
@@ -174,7 +174,7 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
       setError,
       setInfo,
     }),
-    [readers, loading, error, info, page, pageSize, total, q, status],
+    [readers, loading, error, info, page, pageSize, total, q, status, reload, toggleAccess],
   );
 
   return (

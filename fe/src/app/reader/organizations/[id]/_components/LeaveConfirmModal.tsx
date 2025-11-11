@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import { leaveOrganization } from "../../api";
 import { useToast } from "@/components/ui/toast";
 import styles from "../../styles.module.css";
@@ -64,7 +63,7 @@ export default function LeaveConfirmModal({
 
   if (!open) return null;
 
-  return createPortal(
+  return (
     <div className={styles["modal-overlay"]}>
       <div className={styles["modal-backdrop"]} onClick={handleClose} />
       <div className={styles["modal-container"]}>
@@ -119,8 +118,7 @@ export default function LeaveConfirmModal({
           </button>
         </div>
       </div>
-    </div>,
-    document.body,
+    </div>
   );
 }
 

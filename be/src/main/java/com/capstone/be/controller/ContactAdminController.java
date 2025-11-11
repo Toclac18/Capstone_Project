@@ -4,6 +4,7 @@ import com.capstone.be.dto.request.contactAdmin.ContactAdminRequest;
 import com.capstone.be.dto.response.ContactAdminResponse;
 import com.capstone.be.service.ContactAdminService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,13 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("api/contact-admin")
+@RequiredArgsConstructor
 public class ContactAdminController {
 
   private final ContactAdminService contactAdminService;
-
-  public ContactAdminController(ContactAdminService contactAdminService) {
-    this.contactAdminService = contactAdminService;
-  }
 
   /**
    * Creates a new Ticket resource from a contact request. RESTful standard: Use HTTP 201 CREATED

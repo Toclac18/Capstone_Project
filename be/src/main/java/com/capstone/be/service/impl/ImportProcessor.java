@@ -12,6 +12,7 @@ import com.capstone.be.repository.InvitationRepository;
 import com.capstone.be.repository.OrganizationRepository;
 import com.capstone.be.security.util.JwtUtil;
 import com.capstone.be.service.EmailService;
+import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -26,6 +27,7 @@ import java.time.ZoneId;
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class ImportProcessor {
 
     private static final int PROGRESS_BATCH = 10;
@@ -39,23 +41,6 @@ public class ImportProcessor {
     private final InvitationRepository invitationRepo;
     private final JwtUtil jwtUtil;
     private final OrganizationRepository organizationRepo;
-
-    public ImportProcessor(
-            ImportJobRepository jobRepo,
-            ImportRowResultRepository rowRepo,
-            EmailService emailService,
-            ProgressBroadcaster broadcaster,
-            InvitationRepository invitationRepo,
-            JwtUtil jwtUtil,
-            OrganizationRepository organizationRepo) {
-        this.jobRepo = jobRepo;
-        this.rowRepo = rowRepo;
-        this.emailService = emailService;
-        this.broadcaster = broadcaster;
-        this.invitationRepo = invitationRepo;
-        this.jwtUtil = jwtUtil;
-        this.organizationRepo = organizationRepo;
-    }
 
     @Async("taskExecutor")
     public void process(String jobId, byte[] excelBytes, String createdBy) {

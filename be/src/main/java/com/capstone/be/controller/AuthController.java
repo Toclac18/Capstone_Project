@@ -91,9 +91,4 @@ public class AuthController {
     authService.changePassword(principal.getId(), principal.getRole(), request);
   }
 
-  @GetMapping("/hello")
-  public SuccessResponse<?> test() {
-    return SuccessResponse.ofMessage("Hello World");
-  }
-
 }

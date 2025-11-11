@@ -14,6 +14,7 @@ import com.capstone.be.security.util.JwtUtil;
 import com.capstone.be.service.ImportService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
@@ -29,24 +30,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ImportServiceImpl implements ImportService {
 
     private final ImportJobRepository repo;
     private final ImportProcessor processor;
     private final OrganizationRepository orgRepo;
     private final JwtUtil jwtUtil;
-
-    public ImportServiceImpl(
-            ImportJobRepository repo,
-            ImportProcessor processor,
-            OrganizationRepository orgRepo,
-            JwtUtil jwtUtil
-    ) {
-        this.repo = repo;
-        this.processor = processor;
-        this.orgRepo = orgRepo;
-        this.jwtUtil = jwtUtil;
-    }
 
     @Override
     public ImportListResponse list(int page, int pageSize, String q, String status) {

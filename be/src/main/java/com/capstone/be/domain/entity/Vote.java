@@ -30,6 +30,4 @@ public class Vote extends BaseEntity {
   @ManyToOne
   @JoinColumn(name = "document_id")
   private Document document;
-
-  private Boolean isUpvote;
 }

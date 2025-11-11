@@ -4,6 +4,7 @@ import com.capstone.be.dto.response.importReader.ImportDetailResponse;
 import com.capstone.be.dto.response.importReader.ImportListResponse;
 import com.capstone.be.service.ImportService;
 import com.capstone.be.service.impl.ProgressBroadcaster;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,14 +15,11 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/api/org-admin/imports")
+@RequiredArgsConstructor
+
 public class ImportController {
     private final ImportService service;
     private final ProgressBroadcaster broadcaster;
-
-    public ImportController(ImportService service, ProgressBroadcaster broadcaster) {
-        this.service = service;
-        this.broadcaster = broadcaster;
-    }
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ORGANIZATION')")

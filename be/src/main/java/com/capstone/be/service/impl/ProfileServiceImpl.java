@@ -14,12 +14,14 @@ import com.capstone.be.repository.ReviewerRepository;
 import com.capstone.be.repository.SystemAdminRepository;
 import com.capstone.be.service.ProfileService;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
+@RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
 
   private final ReaderRepository readerRepository;
@@ -27,18 +29,6 @@ public class ProfileServiceImpl implements ProfileService {
   private final OrganizationRepository organizationRepository;
   private final BusinessAdminRepository businessAdminRepository;
   private final SystemAdminRepository systemAdminRepository;
-
-  public ProfileServiceImpl(ReaderRepository readerRepository,
-      ReviewerRepository reviewerRepository,
-      OrganizationRepository organizationRepository,
-      BusinessAdminRepository businessAdminRepository,
-      SystemAdminRepository systemAdminRepository) {
-    this.readerRepository = readerRepository;
-    this.reviewerRepository = reviewerRepository;
-    this.organizationRepository = organizationRepository;
-    this.businessAdminRepository = businessAdminRepository;
-    this.systemAdminRepository = systemAdminRepository;
-  }
 
   @Override
   @Transactional(readOnly = true)

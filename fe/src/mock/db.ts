@@ -503,6 +503,103 @@ const _specializations: Specialization[] = [
   { id: "spec-21", name: "Electrical Engineering", code: 603, domainId: "domain-6" },
 ];
 
+export type DocumentHistoryStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type DocumentHistory = {
+  id: string;
+  documentName: string;
+  uploadDate: string;
+  type: string;
+  domain: string;
+  specialization: string;
+  fileSize: number; // in bytes
+  status: DocumentHistoryStatus;
+  canRequestReview: boolean; // true if rejected and first time (can request re-review)
+};
+
+const _uploadHistory: DocumentHistory[] = [
+  {
+    id: "doc-1",
+    documentName: "Introduction to Machine Learning.pdf",
+    uploadDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+    type: "Research Paper",
+    domain: "Computer Science",
+    specialization: "Machine Learning",
+    fileSize: 2.5 * 1024 * 1024, // 2.5 MB
+    status: "APPROVED",
+    canRequestReview: false,
+  },
+  {
+    id: "doc-2",
+    documentName: "Web Development Best Practices.pdf",
+    uploadDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+    type: "Article",
+    domain: "Computer Science",
+    specialization: "Web Development",
+    fileSize: 1.8 * 1024 * 1024, // 1.8 MB
+    status: "PENDING",
+    canRequestReview: false,
+  },
+  {
+    id: "doc-3",
+    documentName: "Quantum Physics Fundamentals.docx",
+    uploadDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
+    type: "Research Paper",
+    domain: "Physics",
+    specialization: "Quantum Physics",
+    fileSize: 3.2 * 1024 * 1024, // 3.2 MB
+    status: "REJECTED",
+    canRequestReview: true, // First time rejected, can request re-review
+  },
+  {
+    id: "doc-4",
+    documentName: "Algebra Basics.pdf",
+    uploadDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days ago
+    type: "Book",
+    domain: "Mathematics",
+    specialization: "Algebra",
+    fileSize: 5.1 * 1024 * 1024, // 5.1 MB
+    status: "APPROVED",
+    canRequestReview: false,
+  },
+  {
+    id: "doc-5",
+    documentName: "Molecular Biology Research.docx",
+    uploadDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days ago
+    type: "Research Paper",
+    domain: "Biology",
+    specialization: "Molecular Biology",
+    fileSize: 4.7 * 1024 * 1024, // 4.7 MB
+    status: "REJECTED",
+    canRequestReview: false, // Already reviewed before
+  },
+  {
+    id: "doc-6",
+    documentName: "Software Engineering Principles.pdf",
+    uploadDate: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), // 20 days ago
+    type: "Article",
+    domain: "Computer Science",
+    specialization: "Software Engineering",
+    fileSize: 2.9 * 1024 * 1024, // 2.9 MB
+    status: "PENDING",
+    canRequestReview: false,
+  },
+  {
+    id: "doc-7",
+    documentName: "Organic Chemistry Guide.pdf",
+    uploadDate: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(), // 25 days ago
+    type: "Book",
+    domain: "Chemistry",
+    specialization: "Organic Chemistry",
+    fileSize: 6.3 * 1024 * 1024, // 6.3 MB
+    status: "APPROVED",
+    canRequestReview: false,
+  },
+];
+
+// Track re-review requests - in a real app, this would be in a database
+const _reReviewRequests = new Set<string>();
+
 export const mockDocumentsDB = {
   getTypes(): DocumentType[] {
     return [..._documentTypes];
@@ -520,5 +617,113 @@ export const mockDocumentsDB = {
   getSpecializations(domainIds: string[]): Specialization[] {
     if (domainIds.length === 0) return [];
     return _specializations.filter((spec) => domainIds.includes(spec.domainId));
+  },
+  getUploadHistory(params?: {
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    type?: string;
+    domain?: string;
+    status?: DocumentHistoryStatus;
+    page?: number;
+    limit?: number;
+  }): { documents: DocumentHistory[]; total: number; page: number; limit: number; totalPages: number } {
+    let filtered = [..._uploadHistory];
+
+    // Filter by search (document name)
+    if (params?.search) {
+      const searchLower = params.search.toLowerCase();
+      filtered = filtered.filter((doc) =>
+        doc.documentName.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Filter by date
+    if (params?.dateFrom) {
+      const dateFrom = new Date(params.dateFrom);
+      filtered = filtered.filter((doc) => new Date(doc.uploadDate) >= dateFrom);
+    }
+    if (params?.dateTo) {
+      const dateTo = new Date(params.dateTo);
+      dateTo.setHours(23, 59, 59, 999); // End of day
+      filtered = filtered.filter((doc) => new Date(doc.uploadDate) <= dateTo);
+    }
+
+    // Filter by type
+    if (params?.type) {
+      filtered = filtered.filter((doc) => doc.type === params.type);
+    }
+
+    // Filter by domain
+    if (params?.domain) {
+      filtered = filtered.filter((doc) => doc.domain === params.domain);
+    }
+
+    // Filter by status
+    if (params?.status) {
+      filtered = filtered.filter((doc) => doc.status === params.status);
+    }
+
+    // Pagination
+    const page = params?.page || 1;
+    const limit = params?.limit || 10;
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const documents = filtered.slice(startIndex, endIndex);
+
+    return {
+      documents,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  },
+  requestReReview(documentId: string, reason: string): { error?: string; status?: number; message?: string } {
+    // Check if document exists and is rejected
+    const document = _uploadHistory.find((doc) => doc.id === documentId);
+    if (!document) {
+      return {
+        error: "Document not found",
+        status: 404,
+      };
+    }
+
+    if (document.status !== "REJECTED") {
+      return {
+        error: "Only rejected documents can be requested for re-review",
+        status: 400,
+      };
+    }
+
+    // Check if already requested re-review (41A2)
+    if (_reReviewRequests.has(documentId)) {
+      return {
+        error: "You have already submitted an request for this document.",
+        status: 400,
+      };
+    }
+
+    // Check if canRequestReview is false (already reviewed before)
+    if (!document.canRequestReview) {
+      return {
+        error: "You have already submitted an request for this document.",
+        status: 400,
+      };
+    }
+
+    // Add re-review request
+    _reReviewRequests.add(documentId);
+    
+    // Update document status to PENDING (as per use case: "document status is updated to 'Pending Re-Review'")
+    // Note: In a real app, you might want a separate status like "PENDING_RE_REVIEW"
+    document.status = "PENDING";
+    document.canRequestReview = false;
+
+    return {
+      message: "Your request has been submitted and is under review.",
+    };
   },
 };

@@ -1,0 +1,762 @@
+/* Library Module Styles – Dark/Light Mode Support */
+
+/* Page Container */
+.page-container {
+  @apply px-4 py-8;
+}
+
+/* Filters Section */
+.filters-section {
+  @apply mt-6;
+}
+
+.filters-container {
+  @apply rounded-lg border border-gray-200 bg-white p-6 shadow-sm;
+}
+:global(html.dark) .filters-container {
+  @apply border-gray-700 bg-dark-2;
+}
+
+.filters-form {
+  @apply space-y-4;
+}
+
+/* Search and Actions Row */
+.search-actions-row {
+  @apply flex flex-col sm:flex-row gap-3 mb-4;
+}
+
+.search-wrapper {
+  @apply relative flex items-center flex-1;
+}
+
+.search-icon {
+  @apply absolute left-3.5 h-4 w-4 text-gray-400 z-10 pointer-events-none;
+}
+:global(html.dark) .search-icon {
+  @apply text-gray-500;
+}
+
+.search-input {
+  @apply w-full rounded-lg border border-gray-300 bg-white px-10 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all;
+}
+:global(html.dark) .search-input {
+  @apply border-gray-600 bg-dark-2 text-gray-100 placeholder:text-gray-500 focus:border-primary focus:ring-primary/30;
+}
+
+/* Filters Grid */
+.filters-grid {
+  @apply grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5;
+}
+
+.filter-group {
+  @apply space-y-1.5;
+}
+
+.filter-label {
+  @apply block text-xs font-medium text-gray-700 mb-1.5;
+}
+:global(html.dark) .filter-label {
+  @apply text-gray-300;
+}
+
+.filter-select,
+.filter-input {
+  @apply w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all;
+}
+:global(html.dark) .filter-select,
+:global(html.dark) .filter-input {
+  @apply border-gray-600 bg-dark-2 text-gray-100 placeholder:text-gray-500 focus:border-primary focus:ring-primary/30;
+}
+
+/* Checkbox Group */
+.checkbox-group {
+  @apply flex flex-col gap-2;
+}
+
+.checkbox-label {
+  @apply flex items-center gap-2 cursor-pointer;
+}
+
+.checkbox-input {
+  @apply h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary/20 focus:ring-offset-0 cursor-pointer transition-colors;
+  @apply checked:bg-primary checked:border-primary;
+}
+:global(html.dark) .checkbox-input {
+  @apply border-gray-600 checked:bg-primary checked:border-primary;
+}
+
+.checkbox-text {
+  @apply text-sm font-normal text-gray-700 select-none;
+}
+:global(html.dark) .checkbox-text {
+  @apply text-gray-300;
+}
+
+/* Filters Actions */
+.filters-actions {
+  @apply flex items-center gap-2 flex-shrink-0;
+}
+
+.btn-clear-filters {
+  @apply rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white whitespace-nowrap;
+}
+:global(html.dark) .btn-clear-filters {
+  @apply border-gray-600 bg-dark-2 text-gray-300 hover:bg-dark-3 disabled:hover:bg-dark-2;
+}
+
+.btn-apply-filters {
+  @apply rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap;
+}
+
+/* Active Filters */
+.active-filters {
+  @apply mt-3 pt-3 border-t border-gray-200;
+}
+:global(html.dark) .active-filters {
+  @apply border-gray-700;
+}
+
+.active-filters-header {
+  @apply mb-2;
+}
+
+.active-filters-title {
+  @apply text-xs font-medium text-gray-600;
+}
+:global(html.dark) .active-filters-title {
+  @apply text-gray-400;
+}
+
+.active-filters-tags {
+  @apply flex items-center gap-2 overflow-x-auto pb-1;
+  display: flex;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  scrollbar-width: thin;
+  -ms-overflow-style: none;
+}
+
+.active-filters-tags::-webkit-scrollbar {
+  height: 4px;
+}
+
+.active-filters-tags::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.active-filters-tags::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+:global(html.dark) .active-filters-tags::-webkit-scrollbar-thumb {
+  @apply bg-gray-600;
+}
+
+.filter-tag {
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium border flex-shrink-0;
+  white-space: nowrap;
+}
+
+.filter-tag-search {
+  @apply bg-purple-50 text-purple-700 border-purple-200;
+}
+:global(html.dark) .filter-tag-search {
+  @apply bg-purple-900/30 text-purple-400 border-purple-800;
+}
+
+.filter-tag-source {
+  @apply bg-blue-50 text-blue-700 border-blue-200;
+}
+:global(html.dark) .filter-tag-source {
+  @apply bg-blue-900/30 text-blue-400 border-blue-800;
+}
+
+.filter-tag-date {
+  @apply bg-green-50 text-green-700 border-green-200;
+}
+:global(html.dark) .filter-tag-date {
+  @apply bg-green-900/30 text-green-400 border-green-800;
+}
+
+.filter-tag-type {
+  @apply bg-orange-50 text-orange-700 border-orange-200;
+}
+:global(html.dark) .filter-tag-type {
+  @apply bg-orange-900/30 text-orange-400 border-orange-800;
+}
+
+.filter-tag-domain {
+  @apply bg-pink-50 text-pink-700 border-pink-200;
+}
+:global(html.dark) .filter-tag-domain {
+  @apply bg-pink-900/30 text-pink-400 border-pink-800;
+}
+
+.filter-tag-remove {
+  @apply ml-0.5 rounded-full p-0.5 transition-colors cursor-pointer flex items-center justify-center opacity-70 hover:opacity-100;
+}
+
+.filter-tag-remove-search:hover {
+  @apply bg-purple-100;
+}
+:global(html.dark) .filter-tag-remove-search:hover {
+  @apply bg-purple-900/50;
+}
+
+.filter-tag-remove-source:hover {
+  @apply bg-blue-100;
+}
+:global(html.dark) .filter-tag-remove-source:hover {
+  @apply bg-blue-900/50;
+}
+
+.filter-tag-remove-date:hover {
+  @apply bg-green-100;
+}
+:global(html.dark) .filter-tag-remove-date:hover {
+  @apply bg-green-900/50;
+}
+
+.filter-tag-remove-type:hover {
+  @apply bg-orange-100;
+}
+:global(html.dark) .filter-tag-remove-type:hover {
+  @apply bg-orange-900/50;
+}
+
+.filter-tag-remove-domain:hover {
+  @apply bg-pink-100;
+}
+:global(html.dark) .filter-tag-remove-domain:hover {
+  @apply bg-pink-900/50;
+}
+
+.filter-tag-icon {
+  @apply h-3 w-3;
+}
+
+/* Loading State */
+.loading-container {
+  @apply mt-6 rounded-xl border border-stroke bg-white p-6 shadow-lg;
+}
+:global(html.dark) .loading-container {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.loading-skeleton {
+  @apply h-6 w-48 animate-pulse rounded bg-gray-200;
+}
+:global(html.dark) .loading-skeleton {
+  @apply bg-dark-3;
+}
+
+.loading-skeleton-large {
+  @apply mt-6 h-40 animate-pulse rounded bg-gray-200;
+}
+:global(html.dark) .loading-skeleton-large {
+  @apply bg-dark-3;
+}
+
+/* Error State */
+.error-container {
+  @apply mt-6 flex items-center gap-3 rounded-lg border-l-4 border-red bg-red-light-6 p-4 text-red-dark;
+}
+:global(html.dark) .error-container {
+  @apply border-red bg-dark-2 text-red;
+}
+
+.error-icon {
+  @apply h-5 w-5 flex-shrink-0;
+}
+
+/* Empty State */
+.empty-container {
+  @apply mt-6 flex flex-col items-center justify-center rounded-xl border border-stroke bg-white p-10 text-center text-dark shadow-lg;
+}
+:global(html.dark) .empty-container {
+  @apply border-stroke-dark bg-dark-2 text-dark-8;
+}
+
+.empty-icon {
+  @apply h-16 w-16 mx-auto text-gray-400 mb-4;
+}
+:global(html.dark) .empty-icon {
+  @apply text-gray-600;
+}
+
+.empty-text {
+  @apply text-lg text-gray-600;
+}
+:global(html.dark) .empty-text {
+  @apply text-gray-400;
+}
+
+/* Documents Container */
+.documents-container {
+  @apply mt-6;
+}
+
+.documents-grid {
+  @apply grid grid-cols-1 gap-4;
+}
+
+/* Document Card */
+.document-card {
+  @apply flex gap-3 rounded-xl border border-stroke bg-white p-3 shadow-sm hover:shadow-md transition-shadow;
+}
+:global(html.dark) .document-card {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+/* Card Thumbnail */
+.card-thumbnail-container {
+  @apply flex-shrink-0 relative;
+}
+
+.card-thumbnail {
+  @apply flex items-center justify-center w-48 h-64 bg-gray-50 border border-stroke rounded-lg overflow-hidden;
+}
+:global(html.dark) .card-thumbnail {
+  @apply bg-dark-3 border-stroke-dark;
+}
+
+.thumbnail-image {
+  @apply w-full h-full object-contain;
+}
+
+.thumbnail-placeholder {
+  @apply flex flex-col items-center justify-center h-full w-full p-2;
+}
+
+.thumbnail-icon {
+  @apply h-10 w-10 text-gray-400 mb-1;
+}
+:global(html.dark) .thumbnail-icon {
+  @apply text-gray-600;
+}
+
+.thumbnail-text {
+  @apply text-xs font-semibold text-gray-500 uppercase;
+}
+:global(html.dark) .thumbnail-text {
+  @apply text-gray-400;
+}
+
+/* Card Body */
+.card-body {
+  @apply flex-1 flex flex-col min-w-0;
+}
+
+.card-header {
+  @apply flex items-center justify-between gap-2 mb-1.5;
+}
+
+.card-title {
+  @apply text-2xl font-semibold text-dark line-clamp-2 flex-1;
+}
+:global(html.dark) .card-title {
+  @apply text-white;
+}
+
+.card-source-badge {
+  @apply absolute top-1.5 left-1.5 z-10 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-tight shadow-md backdrop-blur-sm;
+}
+
+.source-uploaded {
+  @apply bg-blue-500/90 text-white;
+}
+:global(html.dark) .source-uploaded {
+  @apply bg-blue-600/90 text-white;
+}
+
+.source-purchased {
+  @apply bg-purple-500/90 text-white;
+}
+:global(html.dark) .source-purchased {
+  @apply bg-purple-600/90 text-white;
+}
+
+.card-actions {
+  @apply flex items-center gap-2 flex-shrink-0;
+}
+
+.card-action-btn {
+  @apply p-3 rounded-lg hover:bg-gray-100 text-dark-6 hover:text-dark transition-colors;
+}
+:global(html.dark) .card-action-btn {
+  @apply hover:bg-dark-3 text-dark-7 hover:text-dark-8;
+}
+
+.card-action-icon {
+  @apply h-5 w-5;
+}
+
+.card-description {
+  @apply text-sm text-dark-6;
+}
+:global(html.dark) .card-description {
+  @apply text-dark-7;
+}
+
+.card-interest {
+  @apply text-sm text-dark-6;
+}
+:global(html.dark) .card-interest {
+  @apply text-dark-7;
+}
+
+/* Card Metadata */
+.card-metadata {
+  @apply flex flex-col gap-1.5;
+}
+
+.metadata-item {
+  @apply flex items-start gap-2.5 py-1 px-2 rounded-md hover:bg-gray-50 transition-colors;
+}
+:global(html.dark) .metadata-item {
+  @apply hover:bg-dark-3/50;
+}
+
+.metadata-icon {
+  @apply h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0;
+}
+:global(html.dark) .metadata-icon {
+  @apply text-gray-500;
+}
+
+.metadata-content {
+  @apply flex flex-col gap-0.5 flex-1 min-w-0;
+}
+
+.metadata-label {
+  @apply text-xs font-semibold text-gray-500 uppercase tracking-wider;
+}
+:global(html.dark) .metadata-label {
+  @apply text-gray-500;
+}
+
+.metadata-value {
+  @apply text-sm font-medium text-dark leading-snug;
+}
+:global(html.dark) .metadata-value {
+  @apply text-gray-100;
+}
+
+/* Status Badge */
+.status-badge {
+  @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold;
+}
+
+.status-success {
+  @apply bg-green-100 text-green-800;
+}
+:global(html.dark) .status-success {
+  @apply bg-green-900/30 text-green-400;
+}
+
+.status-pending {
+  @apply bg-yellow-100 text-yellow-800;
+}
+:global(html.dark) .status-pending {
+  @apply bg-yellow-900/30 text-yellow-400;
+}
+
+.status-failed {
+  @apply bg-red-100 text-red-800;
+}
+:global(html.dark) .status-failed {
+  @apply bg-red-900/30 text-red-400;
+}
+
+/* Pagination Wrapper */
+.pagination-wrapper {
+  @apply mt-6;
+}
+
+/* Delete Modal Styles */
+.delete-modal-overlay {
+  @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+}
+
+.delete-modal-backdrop {
+  @apply absolute inset-0 bg-black/40;
+}
+
+.delete-modal-container {
+  @apply relative z-10 w-full max-w-md rounded-xl border border-stroke bg-white p-6 shadow-2xl;
+}
+:global(html.dark) .delete-modal-container {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.delete-modal-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.delete-modal-title {
+  @apply text-xl font-bold text-dark;
+}
+:global(html.dark) .delete-modal-title {
+  @apply text-white;
+}
+
+.delete-modal-close-btn {
+  @apply p-1 rounded-lg hover:bg-gray-100 text-dark-6 hover:text-dark transition-colors;
+}
+:global(html.dark) .delete-modal-close-btn {
+  @apply hover:bg-dark-3 text-dark-7 hover:text-dark-8;
+}
+
+.delete-modal-close-icon {
+  @apply h-5 w-5;
+}
+
+.delete-modal-body {
+  @apply mb-6 space-y-4;
+}
+
+.delete-warning-alert {
+  @apply flex items-start gap-3 p-4 rounded-lg bg-yellow-50 border border-yellow-200;
+}
+:global(html.dark) .delete-warning-alert {
+  @apply bg-yellow-900/20 border-yellow-800;
+}
+
+.delete-warning-icon {
+  @apply h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5;
+}
+:global(html.dark) .delete-warning-icon {
+  @apply text-yellow-500;
+}
+
+.delete-warning-message {
+  @apply text-sm text-yellow-800 leading-relaxed;
+}
+:global(html.dark) .delete-warning-message {
+  @apply text-yellow-300;
+}
+
+.delete-error-alert {
+  @apply flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm;
+}
+:global(html.dark) .delete-error-alert {
+  @apply bg-red-900/20 border-red-800 text-red-300;
+}
+
+.delete-error-icon {
+  @apply h-4 w-4 flex-shrink-0 mt-0.5;
+}
+
+.delete-modal-actions {
+  @apply flex justify-end gap-3;
+}
+
+.delete-btn-cancel {
+  @apply rounded-lg border border-stroke px-4 py-2 text-sm font-semibold text-dark hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+:global(html.dark) .delete-btn-cancel {
+  @apply border-stroke-dark text-dark-8 hover:bg-dark-3 disabled:hover:bg-transparent;
+}
+
+.delete-btn-delete {
+  @apply flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.delete-btn-icon {
+  @apply h-4 w-4;
+}
+
+/* Edit Modal Styles */
+.edit-modal-overlay {
+  @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+  overflow-y: auto;
+}
+
+.edit-modal-backdrop {
+  @apply absolute inset-0 bg-black/40;
+}
+
+.edit-modal-container {
+  @apply relative z-10 w-full max-w-2xl rounded-xl border border-stroke bg-white p-6 shadow-2xl my-8;
+}
+:global(html.dark) .edit-modal-container {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.edit-modal-header {
+  @apply flex items-center justify-between mb-6;
+}
+
+.edit-modal-title {
+  @apply text-xl font-bold text-dark;
+}
+:global(html.dark) .edit-modal-title {
+  @apply text-white;
+}
+
+.edit-modal-close-btn {
+  @apply p-1 rounded-lg hover:bg-gray-100 text-dark-6 hover:text-dark transition-colors;
+}
+:global(html.dark) .edit-modal-close-btn {
+  @apply hover:bg-dark-3 text-dark-7 hover:text-dark-8;
+}
+
+.edit-modal-close-icon {
+  @apply h-5 w-5;
+}
+
+.edit-modal-body {
+  @apply mb-6 space-y-4 max-h-[60vh] overflow-y-auto pr-2;
+}
+
+.edit-error-alert {
+  @apply flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm;
+}
+:global(html.dark) .edit-error-alert {
+  @apply bg-red-900/20 border-red-800 text-red-300;
+}
+
+.edit-error-icon {
+  @apply h-4 w-4 flex-shrink-0 mt-0.5;
+}
+
+.edit-form-group {
+  @apply space-y-2;
+}
+
+.edit-form-label {
+  @apply block text-sm font-medium text-dark;
+}
+:global(html.dark) .edit-form-label {
+  @apply text-white;
+}
+
+.edit-required {
+  @apply text-red-500;
+}
+
+.edit-form-input,
+.edit-form-textarea,
+.edit-form-select {
+  @apply w-full rounded-lg border border-stroke px-3 py-2 text-sm text-dark placeholder:text-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all;
+}
+:global(html.dark) .edit-form-input,
+:global(html.dark) .edit-form-textarea,
+:global(html.dark) .edit-form-select {
+  @apply border-stroke-dark bg-dark-3 text-white placeholder:text-gray-500 focus:border-primary focus:ring-primary/30;
+}
+
+.edit-form-textarea {
+  @apply resize-none;
+}
+
+.edit-form-select {
+  @apply cursor-pointer;
+}
+
+.edit-input-error {
+  @apply border-red-500 focus:border-red-500 focus:ring-red-500/20;
+}
+:global(html.dark) .edit-input-error {
+  @apply border-red-500 focus:border-red-500 focus:ring-red-500/30;
+}
+
+.edit-error-message {
+  @apply text-sm text-red-600;
+}
+:global(html.dark) .edit-error-message {
+  @apply text-red-400;
+}
+
+.edit-radio-group {
+  @apply flex gap-4;
+}
+
+.edit-radio-label {
+  @apply flex items-center gap-2 cursor-pointer;
+}
+
+.edit-radio-input {
+  @apply h-4 w-4 text-primary focus:ring-2 focus:ring-primary/20 cursor-pointer;
+}
+
+.edit-tags-container {
+  @apply space-y-3;
+}
+
+.edit-tags-input-wrapper {
+  @apply relative;
+}
+
+.edit-tags-dropdown {
+  @apply absolute z-10 w-full mt-1 max-h-48 overflow-y-auto rounded-lg border border-stroke bg-white shadow-lg;
+}
+:global(html.dark) .edit-tags-dropdown {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.edit-tag-option {
+  @apply w-full px-3 py-2 text-left text-sm text-dark hover:bg-gray-50 transition-colors;
+}
+:global(html.dark) .edit-tag-option {
+  @apply text-white hover:bg-dark-3;
+}
+
+.edit-tag-option-selected {
+  @apply bg-primary/10 text-primary;
+}
+:global(html.dark) .edit-tag-option-selected {
+  @apply bg-primary/20 text-primary;
+}
+
+.edit-selected-tags {
+  @apply flex flex-wrap gap-2;
+}
+
+.edit-tag-chip {
+  @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium border border-blue-200;
+}
+:global(html.dark) .edit-tag-chip {
+  @apply bg-blue-900/30 text-blue-400 border-blue-800;
+}
+
+.edit-tag-chip-new {
+  @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 text-sm font-medium border border-purple-200;
+}
+:global(html.dark) .edit-tag-chip-new {
+  @apply bg-purple-900/30 text-purple-400 border-purple-800;
+}
+
+.edit-tag-remove {
+  @apply ml-0.5 hover:opacity-70 cursor-pointer text-lg leading-none;
+}
+
+.edit-new-tag-input {
+  @apply flex gap-2;
+}
+
+.edit-btn-add-tag {
+  @apply flex items-center justify-center px-3 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.edit-btn-icon {
+  @apply h-4 w-4;
+}
+
+.edit-modal-actions {
+  @apply flex justify-end gap-3 pt-4 border-t border-stroke;
+}
+:global(html.dark) .edit-modal-actions {
+  @apply border-stroke-dark;
+}
+
+.edit-btn-cancel {
+  @apply rounded-lg border border-stroke px-4 py-2 text-sm font-semibold text-dark hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+:global(html.dark) .edit-btn-cancel {
+  @apply border-stroke-dark text-dark-8 hover:bg-dark-3 disabled:hover:bg-transparent;
+}
+
+.edit-btn-save {
+  @apply rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}

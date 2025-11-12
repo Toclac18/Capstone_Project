@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.Data;
@@ -19,9 +20,11 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
-@Table(name = "enrollments")
+@Table(name = "enrollments", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_org_reader", columnNames = {"reader_id", "organization_id"})
+})
 
-public class Enrollment extends BaseEntity {
+public class OrganizationEnrollment extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -36,6 +39,8 @@ public class Enrollment extends BaseEntity {
   private Organization organization;
 
   private LocalDateTime addedAt;
+
+  private LocalDateTime expiry;
 
   private EnrollmentStatus status;
 

@@ -1,8 +1,8 @@
 package com.capstone.be.config.seed;
 
 
-import com.capstone.be.domain.entity.Enrollment;
 import com.capstone.be.domain.entity.Organization;
+import com.capstone.be.domain.entity.OrganizationEnrollment;
 import com.capstone.be.domain.entity.Reader;
 import com.capstone.be.domain.enums.EnrollmentStatus;
 import com.capstone.be.domain.enums.OrganizationStatus;
@@ -82,7 +82,7 @@ public class ReaderSeeder implements CommandLineRunner {
 
     //Enrollment
     for (Organization o : savedOrgs) {
-      Enrollment enrollment = new Enrollment();
+      OrganizationEnrollment enrollment = new OrganizationEnrollment();
       enrollment.setReader(savedReader);
       enrollment.setOrganization(o);
       enrollment.setAddedAt(LocalDateTime.of(2025, 11, 2, 12, 0));

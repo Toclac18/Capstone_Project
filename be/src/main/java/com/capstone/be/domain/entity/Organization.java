@@ -33,9 +33,6 @@ public class Organization extends BaseEntity {
   private OrganizationType type;
 
   @Column(unique = true, nullable = false)
-  private String Name;
-
-  @Column(unique = true, nullable = false)
   private String email;
 
   @Column(nullable = false)

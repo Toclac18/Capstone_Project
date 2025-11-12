@@ -1,6 +1,6 @@
 package com.capstone.be.repository;
 
-import com.capstone.be.domain.entity.Enrollment;
+import com.capstone.be.domain.entity.OrganizationEnrollment;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
+public interface EnrollmentRepository extends JpaRepository<OrganizationEnrollment, UUID> {
 
   @Query("""
         SELECT e FROM Enrollment e
@@ -18,6 +18,6 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
         WHERE e.reader.id = :readerId
           AND o.status = ACTIVE
       """)
-  Page<Enrollment> findJoinedOrganizationByReaderId(
+  Page<OrganizationEnrollment> findJoinedOrganizationByReaderId(
       @Param("readerId") UUID readerId, Pageable pageable);
 }

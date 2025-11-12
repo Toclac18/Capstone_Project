@@ -1,6 +1,6 @@
 package com.capstone.be.service.impl;
 
-import com.capstone.be.domain.entity.Enrollment;
+import com.capstone.be.domain.entity.OrganizationEnrollment;
 import com.capstone.be.domain.entity.Reader;
 import com.capstone.be.domain.enums.ReaderStatus;
 import com.capstone.be.domain.enums.UserRole;
@@ -156,7 +156,8 @@ public class ReaderServiceImpl implements ReaderService {
       throw ExceptionBuilder.notFound("Reader not found");
     }
 
-    Page<Enrollment> enrollments = enrollmentRepository.findJoinedOrganizationByReaderId(readerId,
+    Page<OrganizationEnrollment> enrollments = enrollmentRepository.findJoinedOrganizationByReaderId(
+        readerId,
         pageable);
 
     return enrollments.map(readerOrganizationMapper::toJoinedOrganizationResponse);

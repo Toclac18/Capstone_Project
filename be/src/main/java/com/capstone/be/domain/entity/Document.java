@@ -52,9 +52,16 @@ public class Document extends BaseEntity {
 
   private Integer price;
 
-  private Integer viewCount;
+  // -- Denormalized fields
+  private Integer viewCount = 0;
+  private Integer upvoteCount = 0;
+  private Integer voteScore = 0; //can calculate downvoteCount
 
-  private String file_name;
+  // Denormalized fields --
+  
+  private String fileName;
+
+  private String pageCount;
 
   private Boolean deleted;
 

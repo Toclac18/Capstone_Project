@@ -1,3 +1,19 @@
+// Import library functions and types from separate file
+import {
+  getLibrary as getLibraryFromMock,
+  updateDocument as updateLibraryDoc,
+  deleteDocument as deleteLibraryDoc,
+  mockLibraryDocuments,
+  type LibraryDocument,
+  type LibraryQueryParams,
+  type LibraryResponse,
+  type UpdateDocumentRequest,
+} from "./library";
+
+// Re-export library types and data for backward compatibility
+export type { LibraryDocument, LibraryQueryParams, LibraryResponse, UpdateDocumentRequest };
+export { mockLibraryDocuments };
+
 export type TicketCategory =
   | "PAYMENT"
   | "ACCESS"
@@ -520,5 +536,50 @@ export const mockDocumentsDB = {
   getSpecializations(domainIds: string[]): Specialization[] {
     if (domainIds.length === 0) return [];
     return _specializations.filter((spec) => domainIds.includes(spec.domainId));
+  },
+};
+
+// ---------------- Library Mock ----------------
+// Library types and data are now in ./library.ts and re-imported above
+
+export const mockLibraryDB = {
+  getLibrary(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    source?: "UPLOADED" | "PURCHASED";
+    type?: string;
+    domain?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): { documents: LibraryDocument[]; total: number } {
+    return getLibraryFromMock(params);
+  },
+
+  updateDocument(
+    documentId: string,
+    data: {
+      title: string;
+      description: string;
+      visibility: "PUBLIC" | "INTERNAL";
+      typeId: string;
+      domainId: string;
+      tagIds: string[];
+      newTags?: string[];
+      organizationId?: string;
+    }
+  ): { message: string } {
+    return updateLibraryDoc(
+      documentId,
+      data,
+      _documentTypes,
+      _domains,
+      _tags,
+      _organizations
+    );
+  },
+
+  deleteDocument(documentId: string): { message: string } {
+    return deleteLibraryDoc(documentId);
   },
 };

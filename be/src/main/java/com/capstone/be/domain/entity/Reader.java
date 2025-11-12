@@ -51,7 +51,7 @@ public class Reader extends BaseEntity {
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  private ReaderStatus status = ReaderStatus.PENDING_VERIFICATION;
+  private ReaderStatus status = ReaderStatus.PENDING_EMAIL_VERIFICATION;
 
   public String getName() {
     return fullName;

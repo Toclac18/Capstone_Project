@@ -221,7 +221,7 @@ public class AuthServiceImpl implements AuthService {
   private void findAndVerifyEmail(UserRole role, String email) {
     switch (role) {
       case READER -> activate(readerRepository.findByEmail(email),
-          r -> ReaderStatus.PENDING_VERIFICATION.equals(r.getStatus()),
+          r -> ReaderStatus.PENDING_EMAIL_VERIFICATION.equals(r.getStatus()),
           r -> r.setStatus(ReaderStatus.ACTIVE));
 
       case REVIEWER -> activate(reviewerRepository.findByEmail(email),

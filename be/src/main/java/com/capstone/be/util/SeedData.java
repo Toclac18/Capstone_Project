@@ -79,7 +79,7 @@ public class SeedData implements CommandLineRunner {
         "$2a$10$hashDavidXYZ99999",
         "https://i.pravatar.cc/150?img=4",
         340,
-        ReaderStatus.PENDING_VERIFICATION
+        ReaderStatus.PENDING_EMAIL_VERIFICATION
     ));
 
     // Sinh thêm ~100 bản ghi để test phân trang / lọc
@@ -96,7 +96,7 @@ public class SeedData implements CommandLineRunner {
           switch (i % 4) {
             case 0 -> ReaderStatus.ACTIVE;
             case 1 -> ReaderStatus.DEACTIVE;
-            case 2 -> ReaderStatus.PENDING_VERIFICATION;
+            case 2 -> ReaderStatus.PENDING_EMAIL_VERIFICATION;
             default -> ReaderStatus.DELETED;
           }
       ));

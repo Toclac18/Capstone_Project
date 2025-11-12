@@ -53,7 +53,7 @@ public class ReaderServiceImpl implements ReaderService {
 
     Reader reader = readerMapper.toReader(request);
     reader.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-    reader.setStatus(ReaderStatus.PENDING_VERIFICATION);
+    reader.setStatus(ReaderStatus.PENDING_EMAIL_VERIFICATION);
     reader.setPoint(0);
 
     Reader savedReader = readerRepository.save(reader);
@@ -82,7 +82,7 @@ public class ReaderServiceImpl implements ReaderService {
     Reader reader = readerRepository.findByEmail(email)
         .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
 
-    if (ReaderStatus.PENDING_VERIFICATION.equals(reader.getStatus())) {
+    if (ReaderStatus.PENDING_EMAIL_VERIFICATION.equals(reader.getStatus())) {
       reader.setStatus(ReaderStatus.ACTIVE);
       readerRepository.save(reader);
     }

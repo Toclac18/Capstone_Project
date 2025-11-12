@@ -1,11 +1,16 @@
 package com.capstone.be.domain.entity;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "invitations")
@@ -13,39 +18,39 @@ import java.util.UUID;
 @Setter
 public class Invitation {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id", nullable = false, updatable = false)
-    private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  @Column(name = "id", nullable = false, updatable = false)
+  private UUID id;
 
-    @Column(name = "organization_id", length = 64, nullable = false)
-    private String orgId;
+  @Column(name = "organization_id", length = 64, nullable = false)
+  private String orgId;
 
-    @Column(name = "email", length = 255, nullable = false)
-    private String email;
+  @Column(name = "email", length = 255, nullable = false)
+  private String email;
 
-    @Column(name = "username", length = 100)
-    private String username;
+  @Column(name = "username", length = 100)
+  private String username;
 
-    @Column(name = "token", length = 2048, nullable = false, unique = true)
-    private String token;
+  @Column(name = "token", length = 2048, nullable = false, unique = true)
+  private String token;
 
-    @Column(name = "created_at", nullable = false)
-    private OffsetDateTime createdAt;
+  @Column(name = "created_at", nullable = false)
+  private OffsetDateTime createdAt;
 
-    @Column(name = "created_by", length = 100)
-    private String createdBy;
+  @Column(name = "created_by", length = 100)
+  private String createdBy;
 
-    @Column(name = "accepted")
-    private boolean accepted;
+  @Column(name = "accepted")
+  private boolean accepted;
 
-    @Column(name = "verified_at")
-    private OffsetDateTime verifiedAt;
+  @Column(name = "verified_at")
+  private OffsetDateTime verifiedAt;
 
-    @PrePersist
-    protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = OffsetDateTime.now();
-        }
+  @PrePersist
+  protected void onCreate() {
+    if (createdAt == null) {
+      createdAt = OffsetDateTime.now();
     }
+  }
 }

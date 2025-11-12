@@ -3,6 +3,8 @@ server:
   shutdown: graceful
 
 spring:
+  profiles:
+    active: dev
   datasource:
     url: ${DB_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/testlocaldb}}
     username: ${DB_USERNAME:${SPRING_DATASOURCE_USERNAME:postgres}}

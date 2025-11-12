@@ -2,6 +2,7 @@ package com.capstone.be.domain.entity;
 
 import com.capstone.be.domain.entity.common.BaseEntity;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -11,11 +12,13 @@ import jakarta.persistence.Table;
 import java.util.UUID;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.Check;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
 @Table(name = "votes")
+@Check(constraints = "value IN (-1, 0, 1)")
 
 public class Vote extends BaseEntity {
 
@@ -23,11 +26,13 @@ public class Vote extends BaseEntity {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "reader_id")
   private Reader reader;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "document_id")
   private Document document;
+
+  private int value;
 }

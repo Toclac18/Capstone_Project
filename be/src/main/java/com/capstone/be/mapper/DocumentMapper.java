@@ -78,7 +78,9 @@ public interface DocumentMapper {
         .username(document.getUploader().getUsername())
         .avatarUrl(document.getUploader().getAvatarUrl())
         .email(document.getUploader().getEmail())
-        .status(document.getUploader().getStatus() != null ? document.getUploader().getStatus().name() : null)
+        .status(
+            document.getUploader().getStatus() != null ? document.getUploader().getStatus().name()
+                : null)
         .build();
   }
 
@@ -104,9 +106,12 @@ public interface DocumentMapper {
         .id(document.getOrganization().getId())
         .name(document.getOrganization().getName())
         .logo(document.getOrganization().getLogo())
-        .type(document.getOrganization().getType() != null ? document.getOrganization().getType().name() : null)
+        .type(document.getOrganization().getType() != null ? document.getOrganization().getType()
+            .name() : null)
         .email(document.getOrganization().getEmail())
-        .status(document.getOrganization().getStatus() != null ? document.getOrganization().getStatus().name() : null)
+        .status(
+            document.getOrganization().getStatus() != null ? document.getOrganization().getStatus()
+                .name() : null)
         .build();
   }
 

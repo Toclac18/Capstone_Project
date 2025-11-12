@@ -188,8 +188,11 @@ public class AuthServiceImpl implements AuthService {
       throw ExceptionBuilder.conflict("Organization name is already exist: " + info.getName());
     }
 
+    Organization newOrg = organizationMapper.toOrganization(info);
+    newOrg.setAdminPassword(passwordEncoder.encode(newOrg.getAdminPassword()));
+
     Organization savedOrg =
-        organizationRepository.save(organizationMapper.toOrganization(info));
+        organizationRepository.save(newOrg);
 
     //Send verification email
     emailService.sendVerificationEmail(UserRole.ORGANIZATION, savedOrg.getEmail(),
@@ -263,7 +266,6 @@ public class AuthServiceImpl implements AuthService {
 
     if (!ReaderStatus.ACTIVE.equals(reader.getStatus())) {
       throw ExceptionBuilder.unauthorized("Account is disable or not verified");
-
     }
 
     String token = jwtService.generateToken(reader.getId(), UserRole.READER,
@@ -279,9 +281,8 @@ public class AuthServiceImpl implements AuthService {
 
     verifyPassword(rawPassword, reviewer.getPasswordHash());
 
-    if (!Boolean.TRUE.equals(reviewer.getActive())
-        || Boolean.TRUE.equals(reviewer.getDeleted())) {
-      throw ExceptionBuilder.unauthorized("Account is disabled");
+    if (!ReviewerStatus.ACTIVE.equals(reviewer.getStatus())) {
+      throw ExceptionBuilder.unauthorized("Account is disable or not verified");
     }
 
     String token = jwtService.generateToken(reviewer.getId(), UserRole.REVIEWER,
@@ -295,12 +296,11 @@ public class AuthServiceImpl implements AuthService {
     Organization organization = organizationRepository.findByAdminEmail(adminEmail)
         .orElseThrow(() -> ExceptionBuilder.unauthorized("Invalid email or password"));
 
-    verifyPassword(rawPassword, organization.getAdminPassword());
-
-    if (!Boolean.TRUE.equals(organization.getActive()) || Boolean.TRUE.equals(
-        organization.getDeleted())) {
-      throw ExceptionBuilder.unauthorized("Account is disabled");
+    if (!OrganizationStatus.ACTIVE.equals(organization.getStatus())) {
+      throw ExceptionBuilder.unauthorized("Account is disable or not verified");
     }
+
+    verifyPassword(rawPassword, organization.getAdminPassword());
 
     String token = jwtService.generateToken(organization.getId(), UserRole.ORGANIZATION,
         organization.getAdminEmail());
@@ -412,10 +412,6 @@ public class AuthServiceImpl implements AuthService {
     Reviewer reviewer = reviewerRepository.findById(subjectId)
         .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
 
-    if (!Boolean.TRUE.equals(reviewer.getActive()) || Boolean.TRUE.equals(reviewer.getDeleted())) {
-      throw ExceptionBuilder.forbidden("Account is disabled");
-    }
-
     assertCurrentPasswordMatches(request.getCurrentPassword(), reviewer.getPasswordHash(),
         "Old password is incorrect");
 
@@ -426,11 +422,6 @@ public class AuthServiceImpl implements AuthService {
   private void changeOrganizationPassword(UUID subjectId, ChangePasswordRequest request) {
     Organization organization = organizationRepository.findById(subjectId)
         .orElseThrow(() -> ExceptionBuilder.notFound("Account not found"));
-
-    if (!Boolean.TRUE.equals(organization.getActive())
-        || Boolean.TRUE.equals(organization.getDeleted())) {
-      throw ExceptionBuilder.forbidden("Account is disabled");
-    }
 
     assertCurrentPasswordMatches(request.getCurrentPassword(), organization.getAdminPassword(),
         "Old password is incorrect");

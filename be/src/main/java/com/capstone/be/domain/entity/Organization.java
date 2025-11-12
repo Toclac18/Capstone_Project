@@ -47,12 +47,14 @@ public class Organization extends BaseEntity {
   private String registrationNumber;
 
   @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
   private OrganizationStatus status = OrganizationStatus.PENDING_VERIFICATION;
 
   /* ORGANIZATION ADMIN */
   private String adminName;
   private String adminPassword;
   private String adminEmail;
+  /* ORGANIZATION ADMIN --*/
 
   @Column(nullable = false)
   private Boolean active = true;

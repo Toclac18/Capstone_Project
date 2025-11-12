@@ -1,5 +1,6 @@
 package com.capstone.be.service.impl;
 
+import com.capstone.be.domain.entity.OrganizationEnrollment;
 import com.capstone.be.domain.entity.Reader;
 import com.capstone.be.domain.enums.ReaderStatus;
 import com.capstone.be.domain.enums.UserRole;
@@ -7,16 +8,21 @@ import com.capstone.be.dto.request.auth.RegisterReaderRequest;
 import com.capstone.be.dto.request.orgAdmin.ChangeAccessRequest;
 import com.capstone.be.dto.response.auth.RegisterReaderResponse;
 import com.capstone.be.dto.response.orgAdmin.ReaderResponse;
+import com.capstone.be.dto.response.reader.JoinedOrganizationResponse;
 import com.capstone.be.mapper.ReaderMapper;
+import com.capstone.be.mapper.ReaderOrganizationMapper;
+import com.capstone.be.repository.EnrollmentRepository;
 import com.capstone.be.repository.ReaderRepository;
 import com.capstone.be.security.service.JwtService;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.service.ReaderService;
 import com.capstone.be.util.ExceptionBuilder;
 import io.jsonwebtoken.JwtException;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,10 +34,12 @@ import org.springframework.util.StringUtils;
 public class ReaderServiceImpl implements ReaderService {
 
   private final ReaderRepository readerRepository;
+  private final EnrollmentRepository enrollmentRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final EmailService emailService;
   private final ReaderMapper readerMapper;
+  private final ReaderOrganizationMapper readerOrganizationMapper;
 
   @Override
   @Transactional
@@ -130,6 +138,29 @@ public class ReaderServiceImpl implements ReaderService {
         .coinBalance(reader.getPoint())
         .status(reader.getStatus())
         .build();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<JoinedOrganizationResponse> getJoinedOrganizations(
+      UUID readerId, Pageable pageable) {
+    if (readerId == null) {
+      throw ExceptionBuilder.badRequest("Reader ID is required");
+    }
+    if (pageable == null) {
+      throw ExceptionBuilder.badRequest("Pagination info is required");
+    }
+
+    boolean readerExists = readerRepository.existsById(readerId);
+    if (!readerExists) {
+      throw ExceptionBuilder.notFound("Reader not found");
+    }
+
+    Page<OrganizationEnrollment> enrollments = enrollmentRepository.findJoinedOrganizationByReaderId(
+        readerId,
+        pageable);
+
+    return enrollments.map(readerOrganizationMapper::toJoinedOrganizationResponse);
   }
 
 }

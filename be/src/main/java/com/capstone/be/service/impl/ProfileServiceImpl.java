@@ -77,7 +77,8 @@ public class ProfileServiceImpl implements ProfileService {
 
   private ProfileResponse getOrganizationProfile(UUID subjectId) {
     Organization organization = organizationRepository.findById(subjectId)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Organization not found"));
+        .orElseThrow(
+            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Organization not found"));
 
     return ProfileResponse.builder()
         .id(organization.getId())
@@ -96,7 +97,8 @@ public class ProfileServiceImpl implements ProfileService {
 
   private ProfileResponse getBusinessAdminProfile(UUID subjectId) {
     BusinessAdmin admin = businessAdminRepository.findById(subjectId)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Business Admin not found"));
+        .orElseThrow(
+            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Business Admin not found"));
 
     return ProfileResponse.builder()
         .id(admin.getId())
@@ -110,7 +112,8 @@ public class ProfileServiceImpl implements ProfileService {
 
   private ProfileResponse getSystemAdminProfile(UUID subjectId) {
     SystemAdmin admin = systemAdminRepository.findById(subjectId)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "System Admin not found"));
+        .orElseThrow(
+            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "System Admin not found"));
 
     return ProfileResponse.builder()
         .id(admin.getId())

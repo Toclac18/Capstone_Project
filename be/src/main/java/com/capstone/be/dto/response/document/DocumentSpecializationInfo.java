@@ -22,6 +22,7 @@ public class DocumentSpecializationInfo {
   @NoArgsConstructor
   @AllArgsConstructor
   public static class DomainInfo {
+
     private UUID id;
     private Integer code;
     private String name;

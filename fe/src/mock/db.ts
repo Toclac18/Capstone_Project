@@ -681,7 +681,7 @@ export const mockDocumentsDB = {
       totalPages,
     };
   },
-  requestReReview(documentId: string, reason: string): { error?: string; status?: number; message?: string } {
+  requestReReview(documentId: string, _reason: string): { error?: string; status?: number; message?: string } {
     // Check if document exists and is rejected
     const document = _uploadHistory.find((doc) => doc.id === documentId);
     if (!document) {

@@ -35,15 +35,15 @@ export default function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // if (!pathname.startsWith("/api")) {
-  //   const token = req.cookies.get(COOKIE_NAME)?.value;
-  //   if (!token) {
-  //     const url = req.nextUrl.clone();
-  //     url.pathname = "/auth/sign-in";
-  //     url.searchParams.set("next", pathname);
-  //     return NextResponse.redirect(url, 307);
-  //   }
-  // }
+  if (!pathname.startsWith("/api")) {
+    const token = req.cookies.get(COOKIE_NAME)?.value;
+    if (!token) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/auth/sign-in";
+      url.searchParams.set("next", pathname);
+      return NextResponse.redirect(url, 307);
+    }
+  }
 
   return NextResponse.next();
 }

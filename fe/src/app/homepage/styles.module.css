@@ -208,7 +208,7 @@
   @apply text-indigo-300;
 }
 .meta {
-  @apply mt-1 flex flex-wrap items-center gap-2 text-xs leading-loose text-gray-500;
+  @apply mt-1 items-center gap-2 text-xs leading-loose text-gray-500;
 }
 :global(html.dark) .meta {
   @apply text-gray-400;
@@ -224,6 +224,9 @@
 .voteDown {
   @apply rounded-full bg-red-50 px-2 py-0.5 text-red-700 transition;
 }
+.specRow {
+  @apply mt-1 items-center gap-2 text-xs font-medium leading-relaxed;
+}
 .card:hover .voteUp {
   @apply bg-green-100;
 }
@@ -231,7 +234,7 @@
   @apply bg-red-100;
 }
 .specChip {
-  @apply ml-auto rounded-full bg-gray-100 px-2 py-0.5 text-gray-700;
+  @apply ml-auto rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-900;
 }
 :global(html.dark) .specChip {
   @apply bg-gray-700 text-gray-100;
@@ -239,7 +242,7 @@
 
 /* Uploader + Premium stacked (aligned left) */
 .uploaderRow {
-  @apply mt-3 flex flex-col gap-2 leading-loose;
+  @apply mt-3 flex flex-col items-end gap-2 leading-loose;
 }
 .uploader {
   @apply text-xs italic leading-relaxed text-gray-500 transition-colors duration-200;

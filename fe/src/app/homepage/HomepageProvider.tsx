@@ -1,34 +1,13 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import type { DocumentItem } from "@/types/documentResponse";
 
-export type DocumentLite = {
-  id: string;
-  title: string;
-  subject?: string;
-  pageCount?: number;
-  owned?: boolean;
-
-  // NEW fields (aligns with DocCard & mock data)
-  orgId?: string;
-  orgName?: string;
-  viewCount: number;
-  isPremium: boolean;
-  points?: string;
-
-  specialization: string;
-  upvote_counts: number;
-  downvote_counts: number;
-  vote_scores: number;
-  uploader: string;
-  thumbnail: string;
-};
-
-type SpecGroup = { name: string; items: DocumentLite[] };
+type SpecGroup = { name: string; items: DocumentItem[] };
 
 type HomepageCtx = {
-  continueReading: DocumentLite[];
-  topUpvoted: DocumentLite[];
+  continueReading: DocumentItem[];
+  topUpvoted: DocumentItem[];
   specGroups: SpecGroup[];
   loading: boolean;
   q: string;
@@ -42,51 +21,116 @@ export const useHomepage = () => {
   return ctx;
 };
 
-// Normalize any backend shape into our DocumentLite
-function normalizeDoc(d: any): DocumentLite {
-  const up = d?.upvote_counts ?? d?.upvotes ?? 0;
-  const down = d?.downvote_counts ?? d?.downvotes ?? 0;
+const THIS_YEAR = new Date().getFullYear();
 
-  const isPremium = !!d?.isPremium;
-  const rawPoints =
-    d?.points !== undefined && d?.points !== null
-      ? String(d.points)
-      : undefined;
+const num = (v: any, fb = 0) =>
+  typeof v === "number" && Number.isFinite(v)
+    ? v
+    : typeof v === "string" && v.trim() !== "" && !Number.isNaN(+v)
+      ? +v
+      : fb;
+
+const str = (v: any, fb = "") => (typeof v === "string" ? v : fb);
+
+const coalesce = <T,>(...vals: T[]) =>
+  vals.find((x) => x !== undefined && x !== null);
+
+function toDocumentItem(raw: any): DocumentItem {
+  const isPremium = !!coalesce(raw?.isPremium, raw?.premium, false);
+
+  const ptsRaw = isPremium
+    ? coalesce(raw?.points, raw?.price, raw?.credits)
+    : null;
+  const pts = typeof ptsRaw === "number" ? ptsRaw : null;
 
   return {
-    id: String(d?.id ?? ""),
-    title: String(d?.title ?? ""),
-    subject: d?.subject,
-    pageCount: typeof d?.pageCount === "number" ? d.pageCount : undefined,
-    owned: !!d?.owned,
-
-    orgId: d?.orgId ?? d?.org_id,
-    orgName: d?.orgName ?? d?.org_name ?? "—",
-    viewCount:
-      typeof d?.viewCount === "number"
-        ? d.viewCount
-        : typeof d?.views === "number"
-          ? d.views
-          : 0,
+    id: String(coalesce(raw?.id, raw?.docId, raw?._id, "")),
+    title: str(coalesce(raw?.title, raw?.name), "Untitled"),
+    orgName: str(coalesce(raw?.orgName, raw?.org_name, raw?.organization), "—"),
+    domain: str(
+      coalesce(raw?.domain, raw?.subjectDomain, raw?.topic),
+      "General",
+    ),
+    specialization: str(
+      coalesce(raw?.specialization, raw?.spec, raw?.category),
+      "General",
+    ),
+    uploader: str(
+      coalesce(raw?.uploader, raw?.author, raw?.owner, raw?.createdBy),
+      "unknown",
+    ),
+    publicYear: num(coalesce(raw?.publicYear, raw?.year), THIS_YEAR),
     isPremium,
-    // only expose points when premium
-    points: isPremium ? rawPoints : undefined,
+    points: pts,
 
-    specialization: String(d?.specialization ?? ""),
-    upvote_counts: up,
-    downvote_counts: down,
-    vote_scores: typeof d?.vote_scores === "number" ? d.vote_scores : up - down,
-    uploader: String(d?.uploader ?? ""),
-    thumbnail: String(d?.thumbnail ?? ""),
+    description: str(
+      coalesce(
+        raw?.description,
+        raw?.desc,
+        raw?.overview,
+        raw?.abstract,
+        raw?.summary_text,
+        "",
+      ),
+      "",
+    ),
+    summarizations: {
+      short: str(
+        coalesce(
+          raw?.summarizations?.short,
+          raw?.summaries?.short,
+          raw?.summary?.short,
+          raw?.shortSummary,
+          raw?.summary_short,
+          "",
+        ),
+        "",
+      ),
+      medium: str(
+        coalesce(
+          raw?.summarizations?.medium,
+          raw?.summaries?.medium,
+          raw?.summary?.medium,
+          raw?.summary,
+          raw?.summaryContent,
+          raw?.summary_content,
+          "",
+        ),
+        "",
+      ),
+      detailed: str(
+        coalesce(
+          raw?.summarizations?.detailed,
+          raw?.summaries?.detailed,
+          raw?.summary?.detailed,
+          raw?.longSummary,
+          raw?.summary_long,
+          "",
+        ),
+        "",
+      ),
+    },
+
+    upvote_counts: num(
+      coalesce(raw?.upvote_counts, raw?.upvotes, raw?.likes),
+      0,
+    ),
+    downvote_counts: num(
+      coalesce(raw?.downvote_counts, raw?.downvotes, raw?.dislikes),
+      0,
+    ),
+    thumbnail: str(
+      coalesce(raw?.thumbnail, raw?.thumb, raw?.cover, raw?.image),
+      "data:image/svg+xml,",
+    ),
   };
 }
 
 export function HomepageProvider({ children }: { children: React.ReactNode }) {
-  const [continueReading, setContinueReading] = useState<DocumentLite[]>([]);
-  const [topUpvoted, setTopUpvoted] = useState<DocumentLite[]>([]);
+  const [continueReading, setContinueReading] = useState<DocumentItem[]>([]);
+  const [topUpvoted, setTopUpvoted] = useState<DocumentItem[]>([]);
   const [specGroups, setSpecGroups] = useState<SpecGroup[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [q, setQ] = useState("");
 
   useEffect(() => {
@@ -94,24 +138,30 @@ export function HomepageProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       setLoading(true);
       try {
-        // If you merged APIs but kept this endpoint path, no change needed here.
         const res = await fetch("/api/homepage", { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
         if (!alive) return;
 
-        const cr = Array.isArray(data?.continueReading)
-          ? data.continueReading.map(normalizeDoc)
+        const cr: DocumentItem[] = Array.isArray(data?.continueReading)
+          ? data.continueReading.map(toDocumentItem)
           : [];
-        const tu = Array.isArray(data?.topUpvoted)
-          ? data.topUpvoted.map(normalizeDoc)
+
+        const tu: DocumentItem[] = Array.isArray(data?.topUpvoted)
+          ? data.topUpvoted.map(toDocumentItem)
           : [];
-        const groups = Array.isArray(data?.specializations)
-          ? data.specializations.map((g: any) => ({
-              name: String(g?.name ?? ""),
-              items: Array.isArray(g?.items) ? g.items.map(normalizeDoc) : [],
-            }))
-          : [];
+
+        const rawGroups = Array.isArray(data?.specGroups)
+          ? data.specGroups
+          : Array.isArray(data?.specializations)
+            ? data.specializations
+            : [];
+
+        const groups: SpecGroup[] = rawGroups.map((g: any) => ({
+          name: String(g?.name ?? ""),
+          items: Array.isArray(g?.items) ? g.items.map(toDocumentItem) : [],
+        }));
 
         setContinueReading(cr);
         setTopUpvoted(tu);

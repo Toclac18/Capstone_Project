@@ -34,12 +34,13 @@ export default function Homepage() {
       .map((g) => ({
         ...g,
         items: g.items.filter((d) => {
-          const t = d.title?.toLowerCase() ?? "";
-          const u = d.uploader?.toLowerCase() ?? "";
-          const spz = d.specialization?.toLowerCase() ?? "";
+          const t = d.title?.toLowerCase?.() ?? "";
+          const u = d.uploader?.toLowerCase?.() ?? "";
+          const spz = d.specialization?.toLowerCase?.() ?? "";
           const org = (d as any).orgName?.toLowerCase?.() ?? "";
-          const sub = d.subject?.toLowerCase() ?? "";
-          const pts = (d as any).points?.toString?.().toLowerCase?.() ?? "";
+          const sub = (d as any).subject?.toLowerCase?.() ?? "";
+          const pts =
+            (d as any).points != null ? String((d as any).points) : "";
           return (
             t.includes(s) ||
             u.includes(s) ||
@@ -60,6 +61,7 @@ export default function Homepage() {
   }, [filteredGroups.length, groupsPerPage]);
 
   const currentPage = Math.min(pageFromUrl, totalPages);
+
   const visibleGroups = useMemo(() => {
     if (currentPage <= 1) return filteredGroups.slice(0, groupsPerPage);
     const start = groupsPerPage + (currentPage - 2) * groupsPerPage;
@@ -81,6 +83,7 @@ export default function Homepage() {
       <div className={styles.topRow}>
         <SearchBar />
       </div>
+
       <ActionButtons />
 
       {currentPage === 1 && (
@@ -88,13 +91,13 @@ export default function Homepage() {
           <Section
             title="Continue Reading"
             items={continueReading}
-            sectionKey="cr"
+            sectionKey="continue"
             defaultPageSize={8}
           />
           <Section
             title="Top Upvoted"
             items={topUpvoted}
-            sectionKey="tu"
+            sectionKey="top"
             defaultPageSize={8}
           />
         </>

@@ -139,9 +139,9 @@ export function UploadHistoryFilters({
       onSubmit={handleSubmit(onSubmit)}
       className={styles["filters-container"]}
     >
-      {/* Search Bar */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-4">
-        <div className="w-full lg:w-auto lg:min-w-[500px] lg:max-w-[800px]">
+      {/* Search Bar and Action Buttons */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 mb-6">
+        <div className="flex-1 relative">
           <div className={styles["search-container"]}>
             <svg
               className={styles["search-icon"]}
@@ -167,30 +167,32 @@ export function UploadHistoryFilters({
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            disabled={loading}
-            className={`${styles["btn"]} ${styles["btn-primary"]}`}
-          >
-            {loading ? "Searching..." : "Search"}
-          </button>
-
+        <div className="flex gap-2 flex-shrink-0">
           <button
             type="button"
             onClick={handleClearFilters}
-            disabled={loading}
-            className={`${styles["btn"]} ${styles["btn-secondary"]}`}
+            disabled={loading || !hasActiveFilters}
+            className={`${styles["btn"]} ${styles["btn-secondary"]} min-w-[100px]`}
           >
             Clear All
+          </button>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className={`${styles["btn"]} ${styles["btn-primary"]} min-w-[100px]`}
+          >
+            {loading ? "Searching..." : "Search"}
           </button>
         </div>
       </div>
 
-      {/* Quick Filters */}
-      <div className="flex flex-wrap gap-4 mb-4">
-        <div className="min-w-[150px]">
-          <label className={styles["label"]}>Date From</label>
+      {/* Filter Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+        <div>
+          <label htmlFor="dateFrom" className={styles["label"]}>
+            Date From
+          </label>
           <input
             id="dateFrom"
             type="date"
@@ -200,8 +202,10 @@ export function UploadHistoryFilters({
           />
         </div>
 
-        <div className="min-w-[150px]">
-          <label className={styles["label"]}>Date To</label>
+        <div>
+          <label htmlFor="dateTo" className={styles["label"]}>
+            Date To
+          </label>
           <input
             id="dateTo"
             type="date"
@@ -211,8 +215,10 @@ export function UploadHistoryFilters({
           />
         </div>
 
-        <div className="min-w-[150px]">
-          <label className={styles["label"]}>Type</label>
+        <div>
+          <label htmlFor="type" className={styles["label"]}>
+            Type
+          </label>
           <select
             id="type"
             className={`${styles["select"]} ${errors.type ? styles.error : ""}`}
@@ -227,8 +233,10 @@ export function UploadHistoryFilters({
           </select>
         </div>
 
-        <div className="min-w-[150px]">
-          <label className={styles["label"]}>Domain</label>
+        <div>
+          <label htmlFor="domain" className={styles["label"]}>
+            Domain
+          </label>
           <select
             id="domain"
             className={`${styles["select"]} ${errors.domain ? styles.error : ""}`}
@@ -243,8 +251,10 @@ export function UploadHistoryFilters({
           </select>
         </div>
 
-        <div className="min-w-[150px]">
-          <label className={styles["label"]}>Status</label>
+        <div>
+          <label htmlFor="status" className={styles["label"]}>
+            Status
+          </label>
           <select
             id="status"
             className={`${styles["select"]} ${errors.status ? styles.error : ""}`}

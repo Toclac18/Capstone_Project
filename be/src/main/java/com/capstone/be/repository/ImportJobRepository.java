@@ -1,18 +1,18 @@
 package com.capstone.be.repository;
 
 import com.capstone.be.domain.entity.ImportJob;
-
 import java.util.List;
 import java.util.Optional;
 
 public interface ImportJobRepository {
-    ImportJob save(ImportJob job);
 
-    Optional<ImportJob> findById(String id);
+  ImportJob save(ImportJob job);
 
-    List<ImportJob> findAll();
+  Optional<ImportJob> findById(String id);
 
-    Optional<ImportJob> findByIdWithResults(String id);
+  List<ImportJob> findAll();
 
-    void deleteAll();
+  Optional<ImportJob> findByIdWithResults(String id);
+
+  void deleteAll();
 }

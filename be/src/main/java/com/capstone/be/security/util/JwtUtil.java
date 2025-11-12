@@ -142,12 +142,12 @@ public class JwtUtil {
     Date expiry = new Date(now.getTime() + emailVerificationExpirationMs);
 
     return Jwts.builder()
-            .setIssuer(issuer)
-            .setIssuedAt(now)
-            .setExpiration(expiry)
-            .claim(CLAIM_ORG_ID, orgId)
-            .claim(CLAIM_EMAIL, readerEmail)
-            .signWith(secretKey, SignatureAlgorithm.HS256)
-            .compact();
+        .setIssuer(issuer)
+        .setIssuedAt(now)
+        .setExpiration(expiry)
+        .claim(CLAIM_ORG_ID, orgId)
+        .claim(CLAIM_EMAIL, readerEmail)
+        .signWith(secretKey, SignatureAlgorithm.HS256)
+        .compact();
   }
 }

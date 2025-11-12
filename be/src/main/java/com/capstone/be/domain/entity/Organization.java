@@ -33,9 +33,6 @@ public class Organization extends BaseEntity {
   private OrganizationType type;
 
   @Column(unique = true, nullable = false)
-  private String Name;
-
-  @Column(unique = true, nullable = false)
   private String email;
 
   @Column(nullable = false)
@@ -50,12 +47,14 @@ public class Organization extends BaseEntity {
   private String registrationNumber;
 
   @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
   private OrganizationStatus status = OrganizationStatus.PENDING_VERIFICATION;
 
   /* ORGANIZATION ADMIN */
   private String adminName;
   private String adminPassword;
   private String adminEmail;
+  /* ORGANIZATION ADMIN --*/
 
   @Column(nullable = false)
   private Boolean active = true;

@@ -16,7 +16,7 @@ public class DocumentUploaderInfo {
   private String fullName;
   private String username;
   private String avatarUrl;
-  
+
   // Optional fields for Detail view
   private String email;      // null for List, set for Detail
   private String status;      // null for List, set for Detail

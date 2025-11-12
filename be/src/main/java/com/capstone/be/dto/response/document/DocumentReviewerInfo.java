@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DocumentReviewerInfo {
+
   private UUID id;
   private String fullName;
   private String username;

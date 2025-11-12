@@ -9,11 +9,13 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
  * SeedData: chèn dữ liệu mẫu vào DB khi ứng dụng khởi động. Dành cho môi trường dev / test.
  */
+@Profile("dev")
 @Component
 @RequiredArgsConstructor
 public class SeedData implements CommandLineRunner {

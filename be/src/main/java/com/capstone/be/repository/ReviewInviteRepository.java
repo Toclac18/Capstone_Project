@@ -12,9 +12,9 @@ import org.springframework.stereotype.Repository;
 public interface ReviewInviteRepository extends JpaRepository<ReviewInvite, UUID> {
 
   @Query("SELECT ri FROM ReviewInvite ri " +
-         "WHERE ri.document.id = :documentId " +
-         "AND ri.status = 'SUCCESS' " +
-         "ORDER BY ri.createdAt DESC")
+      "WHERE ri.document.id = :documentId " +
+      "AND ri.status = 'SUCCESS' " +
+      "ORDER BY ri.createdAt DESC")
   Optional<ReviewInvite> findSuccessfulReviewByDocumentId(@Param("documentId") UUID documentId);
 }
 

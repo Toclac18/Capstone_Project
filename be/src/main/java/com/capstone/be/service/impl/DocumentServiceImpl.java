@@ -6,15 +6,14 @@ import com.capstone.be.domain.entity.ReviewInvite;
 import com.capstone.be.domain.entity.Reviewer;
 import com.capstone.be.dto.request.document.DocumentQueryRequest;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
-import com.capstone.be.dto.response.document.DocumentListResponse;
 import com.capstone.be.dto.response.document.DocumentListItemResponse;
+import com.capstone.be.dto.response.document.DocumentListResponse;
 import com.capstone.be.dto.response.document.DocumentReviewerInfo;
 import com.capstone.be.dto.response.document.DocumentTagInfo;
 import com.capstone.be.mapper.DocumentMapper;
 import com.capstone.be.repository.CommentRepository;
-import com.capstone.be.repository.CoinTransactionRepository;
-import com.capstone.be.repository.DocumentRepository;
 import com.capstone.be.repository.DocumentReportRepository;
+import com.capstone.be.repository.DocumentRepository;
 import com.capstone.be.repository.DocumentTagRepository;
 import com.capstone.be.repository.ReviewInviteRepository;
 import com.capstone.be.repository.SavedDocumentRepository;
@@ -43,7 +42,7 @@ public class DocumentServiceImpl implements DocumentService {
   private final SavedDocumentRepository savedDocumentRepository;
   private final VoteRepository voteRepository;
   private final DocumentReportRepository documentReportRepository;
-  private final CoinTransactionRepository coinTransactionRepository;
+  //  private final CoinTransactionRepository coinTransactionRepository;
   private final DocumentTagRepository documentTagRepository;
   private final ReviewInviteRepository reviewInviteRepository;
 
@@ -83,10 +82,11 @@ public class DocumentServiceImpl implements DocumentService {
 
     // Load purchaseCount and reviewer info only if premium
     if (Boolean.TRUE.equals(document.getIsPremium())) {
-      detail.setPurchaseCount(coinTransactionRepository.countByDocumentId(id));
+//      detail.setPurchaseCount(coinTransactionRepository.countByDocumentId(id));
 
       // Load reviewer info if document is premium and has successful review
-      Optional<ReviewInvite> successfulReview = reviewInviteRepository.findSuccessfulReviewByDocumentId(id);
+      Optional<ReviewInvite> successfulReview = reviewInviteRepository.findSuccessfulReviewByDocumentId(
+          id);
       if (successfulReview.isPresent()) {
         ReviewInvite reviewInvite = successfulReview.get();
         Reviewer reviewer = reviewInvite.getReviewer();
@@ -209,7 +209,7 @@ public class DocumentServiceImpl implements DocumentService {
     String q = search.toLowerCase(Locale.ROOT);
     return contains(doc.getTitle(), q)
         || contains(doc.getDescription(), q)
-        || contains(doc.getFile_name(), q);
+        || contains(doc.getFileName(), q);
   }
 
   private boolean contains(String field, String q) {

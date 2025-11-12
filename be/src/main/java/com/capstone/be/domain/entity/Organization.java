@@ -54,6 +54,7 @@ public class Organization extends BaseEntity {
   private String adminName;
   private String adminPassword;
   private String adminEmail;
+  /* ORGANIZATION ADMIN --*/
 
   @Column(nullable = false)
   private Boolean active = true;

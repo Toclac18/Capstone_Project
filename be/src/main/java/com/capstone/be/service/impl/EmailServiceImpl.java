@@ -3,7 +3,6 @@ package com.capstone.be.service.impl;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.security.service.JwtService;
 import com.capstone.be.service.EmailService;
-
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -25,7 +24,7 @@ public class EmailServiceImpl implements EmailService {
 
   private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
   private static final DateTimeFormatter VN_FMT =
-          DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm (O)").withZone(VN_ZONE);
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm (O)").withZone(VN_ZONE);
   private final JavaMailSender mailSender;
   private final JwtService jwtService;
 
@@ -68,7 +67,7 @@ public class EmailServiceImpl implements EmailService {
 
   @Override
   public boolean sendInvitationEmail(
-          String toEmail, String username, String verifyUrl, OffsetDateTime expiresAt) {
+      String toEmail, String username, String verifyUrl, OffsetDateTime expiresAt) {
     try {
       if (!StringUtils.hasText(toEmail)) {
         throw new IllegalArgumentException("Recipient email must not be blank");
@@ -79,10 +78,10 @@ public class EmailServiceImpl implements EmailService {
       }
 
       String expiresDisplay =
-              (expiresAt == null ? "" : VN_FMT.format(expiresAt.atZoneSameInstant(VN_ZONE)));
+          (expiresAt == null ? "" : VN_FMT.format(expiresAt.atZoneSameInstant(VN_ZONE)));
 
       String body =
-              buildInvitationBody(username, verifyUrl, expiresDisplay);
+          buildInvitationBody(username, verifyUrl, expiresDisplay);
 
       SimpleMailMessage msg = new SimpleMailMessage();
       msg.setFrom(fromAddress);
@@ -103,16 +102,17 @@ public class EmailServiceImpl implements EmailService {
     String greeting = StringUtils.hasText(username) ? "Hello " + username + "," : "Hello,";
     StringBuilder sb = new StringBuilder();
     sb.append(greeting)
-            .append("\n\n")
-            .append("You’ve been invited to join our organization.\n")
-            .append("Please verify your invitation using the link below:\n\n")
-            .append(verifyUrl)
-            .append("\n\n")
-            .append("If you cannot access link, please login and go to profile and click button `Join` ")
-            .append("\n\n");
+        .append("\n\n")
+        .append("You’ve been invited to join our organization.\n")
+        .append("Please verify your invitation using the link below:\n\n")
+        .append(verifyUrl)
+        .append("\n\n")
+        .append(
+            "If you cannot access link, please login and go to profile and click button `Join` ")
+        .append("\n\n");
     if (StringUtils.hasText(expiresDisplay)) {
       sb.append("This link will expire at ").append(expiresDisplay).append(" (Asia/Ho_Chi_Minh).")
-              .append("\n\n");
+          .append("\n\n");
     }
     sb.append("If you didn’t request this, please ignore this email.");
     return sb.toString();

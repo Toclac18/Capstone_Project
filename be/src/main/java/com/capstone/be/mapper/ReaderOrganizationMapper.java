@@ -11,6 +11,6 @@ public interface ReaderOrganizationMapper {
   @Mapping(source = "organization.id", target = "organizationId")
   @Mapping(source = "organization.name", target = "organizationName")
   @Mapping(source = "addedAt", target = "joinedAt")
-  JoinedOrganizationResponse toJoinedOrganizationResponse(Enrollment enrollment);
+  JoinedOrganizationResponse toJoinedOrganizationResponse(OrganizationEnrollment enrollment);
 }
 

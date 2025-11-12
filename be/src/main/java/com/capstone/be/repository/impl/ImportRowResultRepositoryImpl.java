@@ -11,16 +11,16 @@ import org.springframework.stereotype.Repository;
 @Transactional
 public class ImportRowResultRepositoryImpl implements ImportRowResultRepository {
 
-    @PersistenceContext
-    private EntityManager em;
+  @PersistenceContext
+  private EntityManager em;
 
-    @Override
-    public ImportRowResult save(ImportRowResult row) {
-        if (row.getId() == null) {
-            em.persist(row);
-            return row;
-        } else {
-            return em.merge(row);
-        }
+  @Override
+  public ImportRowResult save(ImportRowResult row) {
+    if (row.getId() == null) {
+      em.persist(row);
+      return row;
+    } else {
+      return em.merge(row);
     }
+  }
 }

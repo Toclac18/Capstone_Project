@@ -5,13 +5,14 @@ import com.capstone.be.dto.response.importReader.ImportListResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface ImportService {
-    ImportListResponse list(int page, int pageSize, String q, String status);
 
-    ImportDetailResponse detail(String id);
+  ImportListResponse list(int page, int pageSize, String q, String status);
 
-    ImportDetailResponse create(MultipartFile file);
+  ImportDetailResponse detail(String id);
 
-    String csvResult(String id);
+  ImportDetailResponse create(MultipartFile file);
 
-    byte[] templateExcel();
+  String csvResult(String id);
+
+  byte[] templateExcel();
 }

@@ -49,3 +49,14 @@ export async function fetchDocDetail(id: string) {
     };
   };
 }
+
+export async function redeemDoc(id: string) {
+  const res = await apiClient.post(
+    `/docs-view/${encodeURIComponent(id)}/redeem`,
+  );
+  return res.data as {
+    success: boolean;
+    redeemed: boolean;
+    pointsLeft?: number;
+  };
+}

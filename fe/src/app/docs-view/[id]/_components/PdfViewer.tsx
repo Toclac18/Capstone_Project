@@ -1,33 +1,39 @@
 // src/app/docs-view/[id]/_components/PdfViewer.tsx
 "use client";
+
 import dynamic from "next/dynamic";
-import { useEffect } from "react";
 import { useDocsView } from "../DocsViewProvider";
 import styles from "../styles.module.css";
 import { pdfjs } from "react-pdf";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-const DocumentComponent = dynamic(
-  () => import("react-pdf").then((mod) => mod.Document),
-  {
-    ssr: false,
-    loading: () => <div className={styles.loading}>Loading PDF…</div>,
-  },
-);
-
-const PageComponent = dynamic(
-  () => import("react-pdf").then((mod) => mod.Page),
-  {
-    ssr: false,
-  },
-);
-
 export default function PdfViewer() {
-  const { detail, page, setNumPages, scale, onPageText, redeemed, redeem } =
-    useDocsView();
-
+  const {
+    detail,
+    page,
+    setNumPages,
+    scale,
+    onPageText,
+    redeemed,
+    openRedeemModal,
+  } = useDocsView();
   if (!detail) return null;
+
+  const DocumentComponent = dynamic(
+    () => import("react-pdf").then((mod) => mod.Document),
+    {
+      ssr: false,
+      loading: () => <div className={styles.loading}>Loading PDF…</div>,
+    },
+  );
+
+  const PageComponent = dynamic(
+    () => import("react-pdf").then((mod) => mod.Page),
+    {
+      ssr: false,
+    },
+  );
 
   const onRenderSuccess = async (pageObj: any) => {
     try {
@@ -37,8 +43,6 @@ export default function PdfViewer() {
     } catch {}
   };
 
-  useEffect(() => {}, [page]);
-
   const blurred = detail.isPremium && !redeemed;
 
   return (
@@ -47,6 +51,8 @@ export default function PdfViewer() {
         <DocumentComponent
           file={detail.fileUrl}
           onLoadSuccess={({ numPages }: any) => setNumPages(numPages)}
+          onLoadError={() => {}}
+          loading={<div className={styles.loading}>Loading PDF…</div>}
         >
           <PageComponent
             pageNumber={page}
@@ -67,7 +73,7 @@ export default function PdfViewer() {
               Redeem to read this document.
             </div>
             <div className={styles.overlayCTA}>
-              <button className={styles.btnRedeem} onClick={redeem}>
+              <button className={styles.btnRedeem} onClick={openRedeemModal}>
                 Redeem
               </button>
             </div>

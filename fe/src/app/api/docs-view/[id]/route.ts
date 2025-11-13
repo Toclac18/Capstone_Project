@@ -1,6 +1,4 @@
 // src/app/api/docs/[id]/route.ts
-import { NextRequest } from "next/server";
-
 type DocDetail = {
   id: string;
   title: string;
@@ -17,7 +15,7 @@ type DocDetail = {
   pageCount: number;
   thumbnail?: string;
   description?: string;
-  fileUrl: string; // giả lập pre-signed URL
+  fileUrl: string;
 };
 
 const mockDocs: DocDetail[] = [
@@ -74,9 +72,9 @@ function json(data: any, status = 200, extra: Record<string, string> = {}) {
 
 export async function GET(
   _req: Request,
-  context: { params: Promise<{ id: string }> }, // 👈 params là Promise
+  context: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await context.params; // 👈 phải await
+  const { id } = await context.params;
   if (!id) return json({ message: "Missing id" }, 400);
 
   const doc = mockDocs.find((d) => d.id === id);

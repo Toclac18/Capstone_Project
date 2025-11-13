@@ -1,23 +1,20 @@
 // src/app/docs-view/[id]/DocsViewProvider.tsx
 "use client";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import type { DocDetail, RelatedLite } from "@/services/docsService";
-import { fetchDocDetail } from "@/services/docsService";
 
-type Ctx = {
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import {
+  fetchDocDetail,
+  redeemDoc,
+  type DocDetail,
+  type RelatedLite,
+} from "@/services/docsService";
+
+type DocsContextValue = {
   loading: boolean;
-  error?: string | null;
+  error: string | null;
   detail?: DocDetail;
   related: RelatedLite[];
 
-  // viewer state
   page: number;
   setPage: (p: number) => void;
   numPages: number;
@@ -26,7 +23,6 @@ type Ctx = {
   zoomIn: () => void;
   zoomOut: () => void;
 
-  // search
   query: string;
   setQuery: (q: string) => void;
   hits: number[];
@@ -35,17 +31,21 @@ type Ctx = {
 
   // premium flow
   redeemed: boolean;
-  redeem: () => void;
+  isRedeemModalOpen: boolean;
+  redeemLoading: boolean;
+  openRedeemModal: () => void;
+  closeRedeemModal: () => void;
+  redeem: () => Promise<void>;
 
-  // text cache
   onPageText: (pageNumber: number, text: string) => void;
 };
 
-const DocsCtx = createContext<Ctx | null>(null);
+const DocsCtx = createContext<DocsContextValue | null>(null);
+
 export const useDocsView = () => {
-  const v = useContext(DocsCtx);
-  if (!v) throw new Error("useDocsView must be inside DocsViewProvider");
-  return v;
+  const ctx = useContext(DocsCtx);
+  if (!ctx) throw new Error("useDocsView must be used inside DocsViewProvider");
+  return ctx;
 };
 
 export function DocsViewProvider({
@@ -56,7 +56,7 @@ export function DocsViewProvider({
   children: React.ReactNode;
 }) {
   const [loading, setLoading] = useState(true);
-  const [detail, setDetail] = useState<DocDetail | undefined>();
+  const [detail, setDetail] = useState<DocDetail>();
   const [related, setRelated] = useState<RelatedLite[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,28 +70,36 @@ export function DocsViewProvider({
   const [hitIndex, setHitIndex] = useState(0);
 
   const [redeemed, setRedeemed] = useState(false);
+  const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
+  const [redeemLoading, setRedeemLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         setLoading(true);
+        setError(null);
         const data = await fetchDocDetail(id);
         if (!mounted) return;
+
         setDetail(data.detail);
         setRelated(data.related);
-        setNumPages(data.detail.pageCount); // sẽ được cập nhật lại bởi react-pdf khi loadSuccess
+        setNumPages(data.detail.pageCount);
         setPage(1);
         setQuery("");
         setHits([]);
         setHitIndex(0);
-        setRedeemed(!data.detail.isPremium); // free → xem ngay; premium → cần redeem
+        setRedeemed(!data.detail.isPremium);
+        setIsRedeemModalOpen(false);
+        setRedeemLoading(false);
       } catch (e: any) {
-        setError(e?.message || "Failed to load");
+        if (!mounted) return;
+        setError(e?.message || "Failed to load document");
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     })();
+
     return () => {
       mounted = false;
     };
@@ -120,10 +128,10 @@ export function DocsViewProvider({
     }
     setHits(all);
     if (all.length) {
-      // chọn gần current page
       const idx = all.findIndex((p) => p >= page);
+      const target = all[idx >= 0 ? idx : 0];
       setHitIndex(idx >= 0 ? idx : 0);
-      if (all[0] !== page) setPage(all[idx >= 0 ? idx : 0]);
+      if (target !== page) setPage(target);
     } else {
       setHitIndex(0);
     }
@@ -131,6 +139,7 @@ export function DocsViewProvider({
 
   useEffect(() => {
     recomputeHits(query);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, numPages]);
 
   const goNextHit = () => {
@@ -139,6 +148,7 @@ export function DocsViewProvider({
     setHitIndex(ni);
     setPage(hits[ni]);
   };
+
   const goPrevHit = () => {
     if (!hits.length) return;
     const ni = (hitIndex - 1 + hits.length) % hits.length;
@@ -146,9 +156,28 @@ export function DocsViewProvider({
     setPage(hits[ni]);
   };
 
-  const redeem = () => setRedeemed(true);
+  const openRedeemModal = () => setIsRedeemModalOpen(true);
 
-  const value: Ctx = {
+  const closeRedeemModal = () => {
+    if (!redeemLoading) setIsRedeemModalOpen(false);
+  };
+
+  const redeem = async () => {
+    if (!detail || redeemed) return;
+    try {
+      setRedeemLoading(true);
+      const res = await redeemDoc(detail.id);
+      if (!res.success) throw new Error("Redeem failed");
+      setRedeemed(true);
+      setIsRedeemModalOpen(false);
+    } catch (e: any) {
+      setError(e?.message || "Redeem failed");
+    } finally {
+      setRedeemLoading(false);
+    }
+  };
+
+  const value: DocsContextValue = {
     loading,
     error,
     detail,
@@ -166,6 +195,10 @@ export function DocsViewProvider({
     goNextHit,
     goPrevHit,
     redeemed,
+    isRedeemModalOpen,
+    redeemLoading,
+    openRedeemModal,
+    closeRedeemModal,
     redeem,
     onPageText,
   };

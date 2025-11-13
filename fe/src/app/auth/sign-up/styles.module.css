@@ -90,3 +90,169 @@
   @apply mt-6 text-center;
 }
 
+/* User Type Selection */
+.user-type-container {
+  @apply mb-6 mt-6 p-4 border border-gray-300 rounded-lg bg-gray-50;
+}
+:global(html.dark) .user-type-container {
+  @apply border-gray-600 bg-gray-800/50;
+}
+
+.user-type-label {
+  @apply block text-sm font-medium text-gray-700 mb-3;
+}
+:global(html.dark) .user-type-label {
+  @apply text-gray-300;
+}
+
+.user-type-options {
+  @apply flex flex-col space-y-3;
+}
+
+.user-type-option {
+  @apply flex items-center cursor-pointer;
+}
+
+.user-type-radio {
+  @apply h-4 w-4 text-primary border-gray-300;
+}
+:global(html.dark) .user-type-radio {
+  @apply border-gray-600;
+}
+
+.user-type-text {
+  @apply ml-3 text-sm text-gray-700;
+}
+:global(html.dark) .user-type-text {
+  @apply text-gray-300;
+}
+
+.user-type-option:hover .user-type-text {
+  @apply text-gray-900;
+}
+:global(html.dark) .user-type-option:hover .user-type-text {
+  @apply text-gray-100;
+}
+
+/* Role-specific Sections */
+.role-section {
+  @apply mb-6 p-4 border border-gray-300 rounded-lg bg-white;
+}
+:global(html.dark) .role-section {
+  @apply border-gray-600 bg-gray-800;
+}
+
+.role-section-title {
+  @apply text-base font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2;
+}
+:global(html.dark) .role-section-title {
+  @apply text-gray-200 border-gray-700;
+}
+
+/* Form Controls */
+.form-label {
+  @apply block text-sm font-medium text-gray-700 mb-2;
+}
+:global(html.dark) .form-label {
+  @apply text-gray-300;
+}
+
+.form-label-required {
+  @apply text-red-500;
+}
+
+.form-label-hint {
+  @apply text-xs text-gray-500 ml-2 font-normal;
+}
+:global(html.dark) .form-label-hint {
+  @apply text-gray-400;
+}
+
+.form-select {
+  @apply w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+}
+:global(html.dark) .form-select {
+  @apply border-gray-600 bg-gray-900 text-gray-100;
+}
+
+.form-select-error {
+  @apply border-red-500;
+}
+
+.form-error {
+  @apply text-xs text-red-500 mt-1;
+}
+
+/* Checkbox List */
+.checkbox-list-container {
+  @apply max-h-40 overflow-y-auto border border-gray-300 rounded p-3 bg-gray-50;
+}
+:global(html.dark) .checkbox-list-container {
+  @apply border-gray-600 bg-gray-900;
+}
+
+.checkbox-list {
+  @apply space-y-2;
+}
+
+.checkbox-item {
+  @apply flex items-center cursor-pointer hover:bg-gray-100 p-1.5 rounded transition;
+}
+:global(html.dark) .checkbox-item {
+  @apply hover:bg-gray-700;
+}
+
+.checkbox-input {
+  @apply h-4 w-4 text-primary border-gray-300 rounded;
+}
+:global(html.dark) .checkbox-input {
+  @apply border-gray-600;
+}
+
+.checkbox-label {
+  @apply ml-2 text-sm text-gray-700;
+}
+:global(html.dark) .checkbox-label {
+  @apply text-gray-300;
+}
+
+.checkbox-list-empty {
+  @apply text-xs text-gray-500 text-center py-2;
+}
+:global(html.dark) .checkbox-list-empty {
+  @apply text-gray-400;
+}
+
+/* File Upload */
+.file-upload {
+  @apply block w-full text-sm text-gray-600;
+  @apply file:mr-4 file:py-2 file:px-4 file:rounded file:border file:border-gray-300;
+  @apply file:text-sm file:font-medium file:bg-white file:text-gray-700;
+  @apply hover:file:bg-gray-50 file:cursor-pointer cursor-pointer;
+}
+:global(html.dark) .file-upload {
+  @apply text-gray-400;
+  @apply file:border-gray-600 file:bg-gray-800 file:text-gray-300;
+  @apply hover:file:bg-gray-700;
+}
+
+.file-list {
+  @apply mt-2 space-y-1;
+}
+
+.file-item {
+  @apply text-xs text-gray-600;
+}
+:global(html.dark) .file-item {
+  @apply text-gray-400;
+}
+
+/* Terms of Use */
+.terms-text {
+  @apply text-xs text-center text-gray-600 mb-3;
+}
+:global(html.dark) .terms-text {
+  @apply text-gray-400;
+}
+

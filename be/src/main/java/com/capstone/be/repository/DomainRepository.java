@@ -11,6 +11,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface DomainRepository extends JpaRepository<Domain, UUID> {
 
+  boolean existsByCode(int code);
+
   @Query("select d.id from Domain d where d.id in :ids")
   Set<UUID> findExistingIds(@Param("ids") Set<UUID> ids);
 

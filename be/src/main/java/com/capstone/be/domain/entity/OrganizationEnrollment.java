@@ -20,7 +20,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
-@Table(name = "enrollments", uniqueConstraints = {
+@Table(name = "organization_enrollments", uniqueConstraints = {
     @UniqueConstraint(name = "uk_org_reader", columnNames = {"reader_id", "organization_id"})
 })
 

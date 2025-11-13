@@ -66,7 +66,7 @@ public class UserPrincipal implements UserDetails {
 
   public static UserPrincipal fromReviewer(Reviewer reviewer) {
     boolean locked = ReviewerStatus.DEACTIVE.equals(reviewer.getStatus());
-    boolean enabled = ReviewerStatus.PENDING_VERIFICATION.equals(reviewer.getStatus());
+    boolean enabled = ReviewerStatus.ACTIVE.equals(reviewer.getStatus());
     return new UserPrincipal(
         reviewer.getId(),
         UserRole.REVIEWER,
@@ -80,7 +80,7 @@ public class UserPrincipal implements UserDetails {
 
   public static UserPrincipal fromOrganization(Organization org) {
     boolean locked = OrganizationStatus.DEACTIVE.equals(org.getStatus());
-    boolean enabled = OrganizationStatus.PENDING_VERIFICATION.equals(org.getStatus());
+    boolean enabled = OrganizationStatus.ACTIVE.equals(org.getStatus());
     return new UserPrincipal(
         org.getId(),
         UserRole.ORGANIZATION,

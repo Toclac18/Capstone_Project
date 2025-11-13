@@ -59,7 +59,7 @@ public class Reviewer extends BaseEntity {
 
   @NotNull
   @Enumerated(EnumType.STRING)
-  ReviewerStatus status = ReviewerStatus.PENDING_VERIFICATION;
+  ReviewerStatus status = ReviewerStatus.PENDING_EMAIL_VERIFICATION;
 
   @Column(nullable = false)
   private Boolean active = true;

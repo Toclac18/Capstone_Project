@@ -4,14 +4,11 @@ import com.capstone.be.dto.request.orgAdmin.ChangeAccessRequest;
 import com.capstone.be.dto.response.orgAdmin.ReaderResponse;
 import com.capstone.be.service.ReaderService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -20,23 +17,23 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrgAdminReaderController {
 
   private final ReaderService readerService;
-
-  /**
-   * Lấy danh sách Reader (phân trang + tìm kiếm + filter trạng thái) Chỉ cho phép admin có
-   * ORGANIZATION
-   */
-  @GetMapping("/readers")
-  @PreAuthorize("hasAuthority('ORGANIZATION')")
-  public ResponseEntity<Page<ReaderResponse>> getReaders(
-      @RequestParam(required = false) Integer page,
-      @RequestParam(required = false) Integer pageSize,
-      @RequestParam(required = false) String q,
-      @RequestParam(required = false, defaultValue = "ALL") String status
-  ) {
-    Page<ReaderResponse> readers = readerService.getReaders(page, pageSize,
-        q, status);
-    return ResponseEntity.ok(readers);
-  }
+//
+//  /**
+//   * Lấy danh sách Reader (phân trang + tìm kiếm + filter trạng thái) Chỉ cho phép admin có
+//   * ORGANIZATION
+//   */
+//  @GetMapping("/readers")
+//  @PreAuthorize("hasAuthority('ORGANIZATION')")
+//  public ResponseEntity<Page<ReaderResponse>> getReaders(
+//      @RequestParam(required = false) Integer page,
+//      @RequestParam(required = false) Integer pageSize,
+//      @RequestParam(required = false) String q,
+//      @RequestParam(required = false, defaultValue = "ALL") String status
+//  ) {
+//    Page<ReaderResponse> readers = readerService.getReaders(page, pageSize,
+//        q, status);
+//    return ResponseEntity.ok(readers);
+//  }
 
   /**
    * Thay đổi quyền truy cập của Reader (Active / Deactive)

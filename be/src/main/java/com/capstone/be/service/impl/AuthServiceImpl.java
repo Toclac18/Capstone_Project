@@ -225,12 +225,12 @@ public class AuthServiceImpl implements AuthService {
           r -> r.setStatus(ReaderStatus.ACTIVE));
 
       case REVIEWER -> activate(reviewerRepository.findByEmail(email),
-          r -> ReviewerStatus.PENDING_VERIFICATION.equals(r.getStatus()),
-          r -> r.setStatus(ReviewerStatus.ACTIVE));
+          r -> ReviewerStatus.PENDING_EMAIL_VERIFICATION.equals(r.getStatus()),
+          r -> r.setStatus(ReviewerStatus.WAITING_FOR_APROVAL));
 
       case ORGANIZATION -> activate(organizationRepository.findByEmail(email),
-          o -> OrganizationStatus.PENDING_VERIFICATION.equals(o.getStatus()),
-          o -> o.setStatus(OrganizationStatus.ACTIVE));
+          o -> OrganizationStatus.PENDING_EMAIL_VERIFICATION.equals(o.getStatus()),
+          o -> o.setStatus(OrganizationStatus.WAITING_FOR_APROVAL));
 
       default -> throw ExceptionBuilder.badRequest("Invalid role: " + role);
     }

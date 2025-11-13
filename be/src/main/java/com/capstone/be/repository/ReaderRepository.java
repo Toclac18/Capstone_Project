@@ -33,4 +33,13 @@ public interface ReaderRepository extends JpaRepository<Reader, UUID> {
   @Query("UPDATE Reader r SET r.status = DELETED WHERE r.id = :id")
   int softDeleteById(@Param("id") UUID id);
 
+  @Query("""
+        SELECT r FROM Reader r
+        WHERE (:q IS NULL OR :q = '' OR LOWER(r.fullName) LIKE LOWER(CONCAT('%', :q, '%')))
+          AND (:status IS NULL OR r.status = :status)
+      """)
+  Page<Reader> search(@Param("q") String q,
+      @Param("status") ReaderStatus status,
+      Pageable pageable);
+
 }

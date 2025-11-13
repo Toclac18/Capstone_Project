@@ -17,24 +17,27 @@ import java.util.List;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.context.event.EventListener;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Profile("dev")
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class ReaderSeeder implements CommandLineRunner {
+public class ReaderSeeder {
 
   private final ReaderRepository readerRepository;
   private final OrganizationRepository organizationRepository;
   private final EnrollmentRepository enrollmentRepository;
   private final PasswordEncoder passwordEncoder;
 
-  @Override
-  public void run(String... args) throws Exception {
+  @Transactional
+  @EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
+
+  public void run() throws Exception {
     log.info("Start ReaderSeeder");
     if (readerRepository.existsByUsername("nguyentathung01")) {
       return;

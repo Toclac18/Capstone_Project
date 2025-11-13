@@ -13,10 +13,10 @@ import org.springframework.stereotype.Repository;
 public interface EnrollmentRepository extends JpaRepository<OrganizationEnrollment, UUID> {
 
   @Query("""
-        SELECT e FROM Enrollment e
+        SELECT e FROM OrganizationEnrollment e
         JOIN FETCH e.organization o
         WHERE e.reader.id = :readerId
-          AND o.status = ACTIVE
+        AND o.status = ACTIVE
       """)
   Page<OrganizationEnrollment> findJoinedOrganizationByReaderId(
       @Param("readerId") UUID readerId, Pageable pageable);

@@ -32,11 +32,11 @@ public interface ReaderMapper {
     return ReaderResponse.builder()
         .id(r.getId())
         .fullName(r.getFullName())
-        .username(r.getUsername())
-        .dateOfBirth(r.getDateOfBirth())
+//        .username(r.getUsername())
+//        .dateOfBirth(r.getDateOfBirth())
         .email(r.getEmail())
         .avatarUrl(r.getAvatarUrl())
-        .coinBalance(r.getPoint())
+//        .coinBalance(r.getPoint())
         .status(r.getStatus())
         .build();
   }

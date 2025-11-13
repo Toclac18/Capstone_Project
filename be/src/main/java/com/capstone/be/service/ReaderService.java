@@ -1,5 +1,6 @@
 package com.capstone.be.service;
 
+import com.capstone.be.domain.enums.ReaderStatus;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
 import com.capstone.be.dto.request.orgAdmin.ChangeAccessRequest;
 import com.capstone.be.dto.response.auth.RegisterReaderResponse;
@@ -15,7 +16,9 @@ public interface ReaderService {
 
   void verifyEmail(String token);
 
-  Page<ReaderResponse> getReaders(Integer page, Integer pageSize, String q, String status);
+//  Page<ReaderResponse> getReaders(Integer page, Integer pageSize, String q, String status);
+
+  Page<ReaderResponse> getReaders(String q, ReaderStatus status, Pageable pageable);
 
   ReaderResponse changeAccess(ChangeAccessRequest req);
 

@@ -28,7 +28,7 @@ public class RegisterReviewerResponse {
 
   private String organizationEmail;
 
-  ReviewerStatus status = ReviewerStatus.PENDING_VERIFICATION;
+  ReviewerStatus status = ReviewerStatus.PENDING_EMAIL_VERIFICATION;
 
   private Set<String> domainNames;
 

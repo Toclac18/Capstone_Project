@@ -21,7 +21,6 @@ import io.jsonwebtoken.JwtException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -89,36 +88,52 @@ public class ReaderServiceImpl implements ReaderService {
   }
 
   @Override
-  public Page<ReaderResponse> getReaders(Integer page, Integer pageSize, String q, String status) {
-    int pageIndex = (page == null || page < 1) ? 0 : page - 1;
-    int size = (pageSize == null || pageSize < 1) ? 10 : pageSize;
+  public Page<ReaderResponse> getReaders(String q, ReaderStatus status, Pageable pageable) {
+    Page<Reader> pageOfReader = readerRepository.search(q, status, pageable);
 
-    PageRequest pageable = PageRequest.of(pageIndex, size);
-
-    Page<Reader> resultPage;
-
-    if (q != null && !q.trim().isEmpty()) {
-      resultPage = readerRepository
-          .findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrUsernameContainingIgnoreCase(
-              q, q, q, pageable);
-    } else if (status != null && !status.equalsIgnoreCase("ALL")) {
-      ReaderStatus st = ReaderStatus.valueOf(status.toUpperCase());
-      resultPage = readerRepository.findByStatus(st, pageable);
-    } else {
-      resultPage = readerRepository.findAll(pageable);
-    }
-
-    return resultPage.map(r -> ReaderResponse.builder()
+    return pageOfReader.map(r -> ReaderResponse.builder()
         .id(r.getId())
         .fullName(r.getFullName())
-        .username(r.getUsername())
-        .dateOfBirth(r.getDateOfBirth())
+//        .username(r.getUsername())
+//        .dateOfBirth(r.getDateOfBirth())
         .email(r.getEmail())
         .avatarUrl(r.getAvatarUrl())
-        .coinBalance(r.getPoint())
+//        .coinBalance(r.getPoint())
         .status(r.getStatus())
         .build());
   }
+
+//  @Override
+//  public Page<ReaderResponse> getReaders(Integer page, Integer pageSize, String q, String status) {
+//    int pageIndex = (page == null || page < 1) ? 0 : page - 1;
+//    int size = (pageSize == null || pageSize < 1) ? 10 : pageSize;
+//
+//    PageRequest pageable = PageRequest.of(pageIndex, size);
+//
+//    Page<Reader> resultPage;
+//
+//    if (q != null && !q.trim().isEmpty()) {
+//      resultPage = readerRepository
+//          .findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrUsernameContainingIgnoreCase(
+//              q, q, q, pageable);
+//    } else if (status != null && !status.equalsIgnoreCase("ALL")) {
+//      ReaderStatus st = ReaderStatus.valueOf(status.toUpperCase());
+//      resultPage = readerRepository.findByStatus(st, pageable);
+//    } else {
+//      resultPage = readerRepository.findAll(pageable);
+//    }
+//
+//    return resultPage.map(r -> ReaderResponse.builder()
+//        .id(r.getId())
+//        .fullName(r.getFullName())
+//        .username(r.getUsername())
+//        .dateOfBirth(r.getDateOfBirth())
+//        .email(r.getEmail())
+//        .avatarUrl(r.getAvatarUrl())
+//        .coinBalance(r.getPoint())
+//        .status(r.getStatus())
+//        .build());
+//  }
 
   @Override
   public ReaderResponse changeAccess(ChangeAccessRequest req) {
@@ -131,11 +146,11 @@ public class ReaderServiceImpl implements ReaderService {
     return ReaderResponse.builder()
         .id(reader.getId())
         .fullName(reader.getFullName())
-        .username(reader.getUsername())
-        .dateOfBirth(reader.getDateOfBirth())
+//        .username(reader.getUsername())
+//        .dateOfBirth(reader.getDateOfBirth())
         .email(reader.getEmail())
         .avatarUrl(reader.getAvatarUrl())
-        .coinBalance(reader.getPoint())
+//        .coinBalance(reader.getPoint())
         .status(reader.getStatus())
         .build();
   }

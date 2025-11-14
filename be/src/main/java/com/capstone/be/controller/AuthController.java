@@ -2,6 +2,7 @@ package com.capstone.be.controller;
 
 import com.capstone.be.dto.request.auth.LoginRequest;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
+import com.capstone.be.dto.request.auth.VerifyEmailRequest;
 import com.capstone.be.dto.response.auth.AuthResponse;
 import com.capstone.be.service.AuthService;
 import jakarta.validation.Valid;
@@ -28,6 +29,14 @@ public class AuthController {
     log.info("Register reader request for email: {}", request.getEmail());
     AuthResponse response = authService.registerReader(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
+  }
+
+  @PostMapping("/verify-email")
+  public ResponseEntity<AuthResponse> verifyEmail(
+      @Valid @RequestBody VerifyEmailRequest request) {
+    log.info("Email verification request");
+    AuthResponse response = authService.verifyEmail(request.getToken());
+    return ResponseEntity.ok(response);
   }
 
   @PostMapping("/login")

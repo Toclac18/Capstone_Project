@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") || undefined;
-  const source = searchParams.get("source") as "UPLOADED" | "PURCHASED" | undefined;
+  const source = searchParams.get("source") as "UPLOADED" | "REDEEMED" | undefined;
   const type = searchParams.get("type") || undefined;
   const domain = searchParams.get("domain") || undefined;
   const dateFrom = searchParams.get("dateFrom") || undefined;

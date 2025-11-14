@@ -369,10 +369,10 @@
   @apply bg-blue-600/90 text-white;
 }
 
-.source-purchased {
+.source-redeemed {
   @apply bg-purple-500/90 text-white;
 }
-:global(html.dark) .source-purchased {
+:global(html.dark) .source-redeemed {
   @apply bg-purple-600/90 text-white;
 }
 

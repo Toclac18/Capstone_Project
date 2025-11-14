@@ -5,11 +5,11 @@ import { X, AlertCircle, Plus } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import {
   fetchDocumentTypes,
-  fetchDomains,
   fetchTags,
+  fetchSpecializations,
   type DocumentType,
-  type Domain,
   type Tag,
+  type Specialization,
 } from "@/app/reader/upload-document/api";
 import { fetchOrganizations } from "@/app/reader/organizations/api";
 import type { OrganizationSummary } from "@/app/reader/organizations/api";
@@ -29,6 +29,7 @@ export type UpdateDocumentData = {
   visibility: "PUBLIC" | "INTERNAL";
   typeId: string;
   domainId: string;
+  specializationId: string;
   tagIds: string[];
   newTags?: string[];
   organizationId?: string;
@@ -54,13 +55,14 @@ export default function EditDocumentModal({
   const [organizationId, setOrganizationId] = useState<string>("");
   const [typeId, setTypeId] = useState("");
   const [domainId, setDomainId] = useState("");
+  const [specializationId, setSpecializationId] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [newTagInput, setNewTagInput] = useState("");
   const [newTags, setNewTags] = useState<string[]>([]);
 
   // Options
   const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
-  const [domains, setDomains] = useState<Domain[]>([]);
+  const [specializations, setSpecializations] = useState<Specialization[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [organizations, setOrganizations] = useState<OrganizationSummary[]>([]);
   const [tagSearch, setTagSearch] = useState("");
@@ -112,24 +114,24 @@ export default function EditDocumentModal({
       setErrors({});
       setTypeId("");
       setDomainId("");
+      setSpecializationId("");
+      setSpecializations([]);
       loadOptions();
     }
   }, [isOpen, document]);
 
   const loadOptions = async () => {
     try {
-      const [types, domainsData, tagsData, orgsData] = await Promise.all([
+      const [types, tagsData, orgsData] = await Promise.all([
         fetchDocumentTypes(),
-        fetchDomains(),
         fetchTags(),
         fetchOrganizations(),
       ]);
       setDocumentTypes(types);
-      setDomains(domainsData);
       setTags(tagsData);
       setOrganizations(orgsData.items);
 
-      // Find matching type and domain by name
+      // Find matching type by name
       const matchedType = types.find((t) => t.name === document.type);
       if (matchedType) {
         setTypeId(matchedType.id);
@@ -140,14 +142,37 @@ export default function EditDocumentModal({
         }
       }
 
-      const matchedDomain = domainsData.find((d) => d.name === document.domain);
+      // Find domain ID from document.domain by fetching domains once
+      // We need domain ID to load specializations
+      const domainsResponse = await fetch("/api/reader/documents/domains");
+      const domainsData = await domainsResponse.json();
+      const matchedDomain = domainsData.find((d: { name: string; id: string }) => d.name === document.domain);
+      
       if (matchedDomain) {
         setDomainId(matchedDomain.id);
-      } else {
-        // If domain not found, set to first domain as fallback
-        if (domainsData.length > 0) {
-          setDomainId(domainsData[0].id);
+        
+        // Load specializations based on matched domain
+        const specs = await fetchSpecializations([matchedDomain.id]);
+        setSpecializations(specs);
+        
+        // Pre-select specialization from document if exists
+        if (document.specializationId) {
+          const matchedSpec = specs.find((s) => s.id === document.specializationId);
+          if (matchedSpec) {
+            setSpecializationId(document.specializationId);
+          } else {
+            // If specialization not found in list, reset to empty
+            setSpecializationId("");
+          }
+        } else {
+          // If document has no specializationId, reset to empty
+          setSpecializationId("");
         }
+      } else {
+        // If domain not found, reset everything
+        setDomainId("");
+        setSpecializations([]);
+        setSpecializationId("");
       }
 
       // Set selected tags from document (after tags are loaded)
@@ -240,6 +265,10 @@ export default function EditDocumentModal({
       newErrors.domainId = "Domain is required";
     }
 
+    if (!specializationId) {
+      newErrors.specializationId = "Specialization is required";
+    }
+
     if (visibility === "INTERNAL") {
       if (!organizationId) {
         newErrors.organizationId = "Organization is required when visibility is Internal";
@@ -276,6 +305,7 @@ export default function EditDocumentModal({
         visibility,
         typeId,
         domainId,
+        specializationId,
         tagIds: selectedTagIds,
         newTags: newTags.length > 0 ? newTags : undefined,
         organizationId: visibility === "INTERNAL" && organizationId ? organizationId : undefined,
@@ -488,28 +518,44 @@ export default function EditDocumentModal({
 
           <div className={styles["edit-form-group"]}>
             <label className={styles["edit-form-label"]}>
-              Domain <span className={styles["edit-required"]}>*</span>
+              Domain
+            </label>
+            <input
+              type="text"
+              value={document.domain}
+              className={`${styles["edit-form-input"]} bg-gray-100 dark:bg-gray-700 cursor-not-allowed`}
+              disabled
+              readOnly
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Domain cannot be changed. Please select a specialization within this domain.
+            </p>
+          </div>
+
+          <div className={styles["edit-form-group"]}>
+            <label className={styles["edit-form-label"]}>
+              Specialization <span className={styles["edit-required"]}>*</span>
             </label>
             <select
-              value={domainId}
+              value={specializationId}
               onChange={(e) => {
-                setDomainId(e.target.value);
-                if (errors.domainId) {
-                  setErrors({ ...errors, domainId: "" });
+                setSpecializationId(e.target.value);
+                if (errors.specializationId) {
+                  setErrors({ ...errors, specializationId: "" });
                 }
               }}
-              className={`${styles["edit-form-select"]} ${errors.domainId ? styles["edit-input-error"] : ""}`}
-              disabled={isLoading}
+              className={`${styles["edit-form-select"]} ${errors.specializationId ? styles["edit-input-error"] : ""}`}
+              disabled={isLoading || specializations.length === 0}
             >
-              <option value="">Select domain</option>
-              {domains.map((domain) => (
-                <option key={domain.id} value={domain.id}>
-                  {domain.name}
+              <option value="">Select specialization</option>
+              {specializations.map((spec) => (
+                <option key={spec.id} value={spec.id}>
+                  {spec.name}
                 </option>
               ))}
             </select>
-            {errors.domainId && (
-              <span className={styles["edit-error-message"]}>{errors.domainId}</span>
+            {errors.specializationId && (
+              <span className={styles["edit-error-message"]}>{errors.specializationId}</span>
             )}
           </div>
 

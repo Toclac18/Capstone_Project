@@ -276,10 +276,10 @@ export default function LibraryPage() {
                     className={`${styles["card-source-badge"]} ${
                       doc.source === "UPLOADED"
                         ? styles["source-uploaded"]
-                        : styles["source-purchased"]
+                        : styles["source-redeemed"]
                     }`}
                   >
-                    {doc.source === "UPLOADED" ? "Uploaded" : "Purchased"}
+                    {doc.source === "UPLOADED" ? "Uploaded" : "Redeemed"}
                   </span>
                 </div>
 

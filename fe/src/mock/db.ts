@@ -547,7 +547,7 @@ export const mockLibraryDB = {
     page?: number;
     limit?: number;
     search?: string;
-    source?: "UPLOADED" | "PURCHASED";
+    source?: "UPLOADED" | "REDEEMED";
     type?: string;
     domain?: string;
     dateFrom?: string;
@@ -564,6 +564,7 @@ export const mockLibraryDB = {
       visibility: "PUBLIC" | "INTERNAL";
       typeId: string;
       domainId: string;
+      specializationId: string;
       tagIds: string[];
       newTags?: string[];
       organizationId?: string;
@@ -574,6 +575,7 @@ export const mockLibraryDB = {
       data,
       _documentTypes,
       _domains,
+      _specializations,
       _tags,
       _organizations
     );

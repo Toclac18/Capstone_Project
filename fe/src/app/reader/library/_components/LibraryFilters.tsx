@@ -15,7 +15,7 @@ interface LibraryFiltersProps {
 type FilterValues = {
   search: string;
   uploaded: boolean;
-  purchased: boolean;
+  redeemed: boolean;
   dateFrom: string;
   dateTo: string;
   type: string;
@@ -37,7 +37,7 @@ export function LibraryFilters({
     defaultValues: {
       search: "",
       uploaded: false,
-      purchased: false,
+      redeemed: false,
       dateFrom: "",
       dateTo: "",
       type: "",
@@ -49,11 +49,11 @@ export function LibraryFilters({
 
   const onSubmit: SubmitHandler<FilterValues> = (data: FilterValues) => {
     // Determine source: if both checked, no filter (show all). If only one checked, use that.
-    let source: "UPLOADED" | "PURCHASED" | undefined = undefined;
-    if (data.uploaded && !data.purchased) {
+    let source: "UPLOADED" | "REDEEMED" | undefined = undefined;
+    if (data.uploaded && !data.redeemed) {
       source = "UPLOADED";
-    } else if (!data.uploaded && data.purchased) {
-      source = "PURCHASED";
+    } else if (!data.uploaded && data.redeemed) {
+      source = "REDEEMED";
     }
     // If both are checked or both are unchecked, source remains undefined (show all)
 
@@ -86,7 +86,7 @@ export function LibraryFilters({
   const hasActiveFilters =
     watchedFilters.search?.trim() ||
     watchedFilters.uploaded ||
-    watchedFilters.purchased ||
+    watchedFilters.redeemed ||
     watchedFilters.dateFrom ||
     watchedFilters.dateTo ||
     watchedFilters.type ||
@@ -159,11 +159,11 @@ export function LibraryFilters({
               <label className={styles["checkbox-label"]}>
                 <input
                   type="checkbox"
-                  {...register("purchased")}
+                  {...register("redeemed")}
                   className={styles["checkbox-input"]}
                   disabled={loading}
                 />
-                <span className={styles["checkbox-text"]}>Purchased</span>
+                <span className={styles["checkbox-text"]}>Redeemed</span>
               </label>
             </div>
           </div>
@@ -244,18 +244,18 @@ export function LibraryFilters({
                   </button>
                 </span>
               )}
-              {(watchedFilters.uploaded || watchedFilters.purchased) && (
+              {(watchedFilters.uploaded || watchedFilters.redeemed) && (
                 <span className={`${styles["filter-tag"]} ${styles["filter-tag-source"]}`}>
                   Source: {[
                     watchedFilters.uploaded && "Uploaded",
-                    watchedFilters.purchased && "Purchased",
+                    watchedFilters.redeemed && "Redeemed",
                   ]
                     .filter(Boolean)
                     .join(", ")}
                   <button
                     type="button"
                     onClick={() => {
-                      reset({ ...watchedFilters, uploaded: false, purchased: false });
+                      reset({ ...watchedFilters, uploaded: false, redeemed: false });
                     }}
                     className={`${styles["filter-tag-remove"]} ${styles["filter-tag-remove-source"]}`}
                   >

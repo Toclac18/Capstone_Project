@@ -9,8 +9,9 @@ export type LibraryDocument = {
   uploadDate: string;
   type: string;
   domain: string;
+  specializationId?: string;
   fileSize: number;
-  source: "UPLOADED" | "PURCHASED";
+  source: "UPLOADED" | "REDEEMED";
   pages: number;
   reads: number;
   visibility: "PUBLIC" | "PRIVATE" | "INTERNAL";
@@ -25,7 +26,7 @@ export type LibraryQueryParams = {
   page?: number;
   limit?: number;
   search?: string;
-  source?: "UPLOADED" | "PURCHASED";
+  source?: "UPLOADED" | "REDEEMED";
   type?: string;
   domain?: string;
   dateFrom?: string;
@@ -43,6 +44,7 @@ export type UpdateDocumentRequest = {
   visibility: "PUBLIC" | "INTERNAL";
   typeId: string;
   domainId: string;
+  specializationId: string;
   tagIds: string[];
   newTags?: string[];
   organizationId?: string;
@@ -93,10 +95,11 @@ function createDoc(
   type: string,
   domain: string,
   fileSize: number,
-  source: "UPLOADED" | "PURCHASED",
+  source: "UPLOADED" | "REDEEMED",
   visibility: "PUBLIC" | "PRIVATE" | "INTERNAL" = "PUBLIC",
   tagIds: string[] = [],
-  organizationId?: string
+  organizationId?: string,
+  specializationId?: string
 ): LibraryDocument {
   const seed = Number(id.replace(/\D/g, "")) || 0;
   return {
@@ -106,6 +109,7 @@ function createDoc(
     uploadDate: uploadDate.toISOString(),
     type,
     domain,
+    specializationId,
     fileSize,
     source,
     pages: 10 + (seed % 50),
@@ -131,7 +135,9 @@ const seedLibraryDocuments: LibraryDocument[] = [
     2048576, // 2MB
     "UPLOADED",
     "PUBLIC",
-    ["tag-1", "tag-3"]
+    ["tag-1", "tag-3"],
+    undefined,
+    "spec-1" // Machine Learning
   ),
   createDoc(
     "lib-2",
@@ -139,11 +145,13 @@ const seedLibraryDocuments: LibraryDocument[] = [
     "Detailed SRS document",
     new Date("2025-10-15"),
     "Technical Report",
-    "Software Engineering",
+    "Computer Science",
     3145728, // 3MB
     "UPLOADED",
     "PUBLIC",
-    ["tag-2"]
+    ["tag-2"],
+    undefined,
+    "spec-4" // Software Engineering
   ),
   createDoc(
     "lib-3",
@@ -151,11 +159,13 @@ const seedLibraryDocuments: LibraryDocument[] = [
     "Introduction to ML concepts",
     new Date("2025-11-20"),
     "Tutorial",
-    "Artificial Intelligence",
+    "Computer Science",
     5242880, // 5MB
-    "PURCHASED",
+    "REDEEMED",
     "PUBLIC",
-    ["tag-1", "tag-4"]
+    ["tag-1", "tag-4"],
+    undefined,
+    "spec-2" // Artificial Intelligence
   ),
   createDoc(
     "lib-4",
@@ -163,12 +173,13 @@ const seedLibraryDocuments: LibraryDocument[] = [
     "Common patterns in DB design",
     new Date("2025-08-05"),
     "Reference Guide",
-    "Database Systems",
+    "Computer Science",
     1572864, // 1.5MB
     "UPLOADED",
     "INTERNAL",
     ["tag-2", "tag-5"],
-    "org-1"
+    "org-1",
+    "spec-3" // Web Development (closest match, or could be a new spec)
   ),
   createDoc(
     "lib-5",
@@ -176,11 +187,13 @@ const seedLibraryDocuments: LibraryDocument[] = [
     "Modern React development guide",
     new Date("2025-12-01"),
     "Tutorial",
-    "Web Development",
+    "Computer Science",
     4194304, // 4MB
-    "PURCHASED",
+    "REDEEMED",
     "PUBLIC",
-    ["tag-3", "tag-4"]
+    ["tag-3", "tag-4"],
+    undefined,
+    "spec-3" // Web Development
   ),
   createDoc(
     "lib-6",
@@ -192,7 +205,9 @@ const seedLibraryDocuments: LibraryDocument[] = [
     8388608, // 8MB
     "UPLOADED",
     "PUBLIC",
-    ["tag-1"]
+    ["tag-1"],
+    undefined,
+    "spec-4" // Software Engineering
   ),
   createDoc(
     "lib-7",
@@ -200,11 +215,13 @@ const seedLibraryDocuments: LibraryDocument[] = [
     "AWS and Azure best practices",
     new Date("2025-09-30"),
     "Technical Report",
-    "Cloud Computing",
+    "Computer Science",
     6291456, // 6MB
-    "PURCHASED",
+    "REDEEMED",
     "PUBLIC",
-    ["tag-5"]
+    ["tag-5"],
+    undefined,
+    "spec-4" // Software Engineering (closest match)
   ),
   createDoc(
     "lib-8",
@@ -212,11 +229,13 @@ const seedLibraryDocuments: LibraryDocument[] = [
     "Comprehensive Python guide",
     new Date("2025-11-05"),
     "Tutorial",
-    "Data Science",
+    "Computer Science",
     7340032, // 7MB
     "UPLOADED",
     "PRIVATE",
-    ["tag-2", "tag-4"]
+    ["tag-2", "tag-4"],
+    undefined,
+    "spec-1" // Machine Learning (closest match for Data Science)
   ),
 ];
 
@@ -307,6 +326,7 @@ export function updateDocument(
   data: UpdateDocumentRequest,
   documentTypes: Array<{ id: string; name: string }>,
   domains: Array<{ id: string; name: string }>,
+  specializations: Array<{ id: string; name: string }>,
   tags: Array<{ id: string; name: string }>,
   organizations: Array<{ id: string; name: string }>
 ): { message: string } {
@@ -317,17 +337,22 @@ export function updateDocument(
 
   // Only allow updating UPLOADED documents
   if (mockLibraryDocuments[docIndex].source !== "UPLOADED") {
-    throw new Error("Cannot update purchased documents");
+    throw new Error("Cannot update redeemed documents");
   }
 
   const doc = mockLibraryDocuments[docIndex];
 
-  // Find type and domain by ID
+  // Find type, domain, and specialization by ID
   const type = documentTypes.find((t) => t.id === data.typeId);
   const domain = domains.find((d) => d.id === data.domainId);
+  const specialization = specializations.find((s) => s.id === data.specializationId);
 
   if (!type || !domain) {
     throw new Error("Invalid type or domain");
+  }
+
+  if (!specialization) {
+    throw new Error("Invalid specialization");
   }
 
   // Validate tag IDs
@@ -370,6 +395,7 @@ export function updateDocument(
   doc.visibility = data.visibility;
   doc.type = type.name;
   doc.domain = domain.name;
+  doc.specializationId = data.specializationId;
 
   // Update tags - combine existing tagIds with new tag IDs
   const allTagIds = [...(data.tagIds || []), ...newTagIds];
@@ -405,7 +431,7 @@ export function deleteDocument(documentId: string): { message: string } {
 
   // Only allow deleting UPLOADED documents
   if (mockLibraryDocuments[docIndex].source !== "UPLOADED") {
-    throw new Error("Cannot delete purchased documents");
+    throw new Error("Cannot delete redeemed documents");
   }
 
   // Remove document

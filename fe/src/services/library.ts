@@ -7,8 +7,9 @@ export type LibraryDocument = {
   uploadDate: string;
   type: string;
   domain: string;
+  specializationId?: string;
   fileSize: number;
-  source: "UPLOADED" | "PURCHASED";
+  source: "UPLOADED" | "REDEEMED";
   pages: number;
   reads: number;
   visibility: "PUBLIC" | "PRIVATE" | "INTERNAL";
@@ -28,7 +29,7 @@ export type LibraryQueryParams = {
   page?: number;
   limit?: number;
   search?: string;
-  source?: "UPLOADED" | "PURCHASED";
+  source?: "UPLOADED" | "REDEEMED";
   type?: string;
   domain?: string;
   dateFrom?: string;
@@ -41,6 +42,7 @@ export type UpdateDocumentRequest = {
   visibility: "PUBLIC" | "INTERNAL";
   typeId: string;
   domainId: string;
+  specializationId: string;
   tagIds: string[];
   newTags?: string[];
   organizationId?: string;
@@ -55,7 +57,7 @@ export type DeleteDocumentResponse = {
 };
 
 /**
- * Get reader's library (approved uploaded documents + purchased premium documents)
+ * Get reader's library (approved uploaded documents + redeemed premium documents)
  */
 export async function getLibrary(
   params?: LibraryQueryParams

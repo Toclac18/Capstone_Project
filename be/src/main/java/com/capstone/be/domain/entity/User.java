@@ -31,6 +31,7 @@ public class User extends TimestampEntity {
   @Column(columnDefinition = "UUID")
   private UUID id;
 
+  @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private UserRole role;
 
@@ -45,6 +46,7 @@ public class User extends TimestampEntity {
 
   private String avatarUrl;
 
+  @Builder.Default
   private Integer point = 0;
 
   @Enumerated(EnumType.STRING)

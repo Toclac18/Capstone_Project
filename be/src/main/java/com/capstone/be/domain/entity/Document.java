@@ -5,6 +5,8 @@ import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.DocType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -59,11 +61,18 @@ public class Document extends TimestampEntity {
 
   private String pageCount;
 
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
   private DocStatus status;
 
   // -- Denormalized fields
+  @Builder.Default
   private Integer viewCount = 0;
+
+  @Builder.Default
   private Integer upvoteCount = 0;
+
+  @Builder.Default
   private Integer voteScore = 0; //can calculate downvoteCount
   // Denormalized fields --
 

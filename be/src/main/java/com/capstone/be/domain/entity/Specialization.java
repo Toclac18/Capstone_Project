@@ -1,55 +1,39 @@
 package com.capstone.be.domain.entity;
 
-import com.capstone.be.domain.entity.common.BaseEntity;
+import com.capstone.be.domain.entity.common.TimestampEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.UuidGenerator;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
-@Table(name = "specializations")
-public class Specialization extends BaseEntity {
+public class Specialization extends TimestampEntity {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.UUID)
+  @UuidGenerator
+  @Column(columnDefinition = "UUID")
   private UUID id;
 
   private int code;
 
-  @Column(nullable = false, unique = true)
   private String name;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "domain_id")
   private Domain domain;
-
-  @Column(name = "domain_id", insertable = false, updatable = false, nullable = false)
-  private UUID domainId;
-
-  @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(name = "document_specialization_n_n",
-      joinColumns = @JoinColumn(name = "specialization_id"),
-      inverseJoinColumns = @JoinColumn(name = "document_id"))
-  private Set<Document> documents = new HashSet<>();
-
-  @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(name = "reviewer_specialization_n_n",
-      joinColumns = @JoinColumn(name = "specialization_id"),
-      inverseJoinColumns = @JoinColumn(name = "reviewer_id"))
-  private Set<Reviewer> reviewers = new HashSet<>();
 
 }

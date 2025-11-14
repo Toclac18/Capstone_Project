@@ -12,13 +12,14 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
+
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Entity
-public class Domain extends TimestampEntity {
+public class Tag extends TimestampEntity {
 
   @Id
   @UuidGenerator
@@ -28,5 +29,4 @@ public class Domain extends TimestampEntity {
   private int code;
 
   private String name;
-
 }

@@ -13,10 +13,10 @@ export default function ModalPreview() {
   const [level, setLevel] = useState<Level>("short");
 
   useEffect(() => {
-    if (isOpen && level !== "short") {
+    if (isOpen) {
       setLevel("short");
     }
-  }, [isOpen, doc?.id, level]);
+  }, [isOpen]);
 
   const summaryForLevel = useMemo(() => {
     if (!doc?.summarizations) return "";

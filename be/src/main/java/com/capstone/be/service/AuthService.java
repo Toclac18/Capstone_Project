@@ -2,7 +2,10 @@ package com.capstone.be.service;
 
 import com.capstone.be.dto.request.auth.LoginRequest;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
+import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
 import com.capstone.be.dto.response.auth.AuthResponse;
+import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface AuthService {
 
@@ -16,10 +19,21 @@ public interface AuthService {
   AuthResponse registerReader(RegisterReaderRequest request);
 
   /**
+   * Register a new reviewer account Status will be PENDING_EMAIL_VERIFY -> PENDING_APPROVE ->
+   * ACTIVE
+   *
+   * @param request         Registration request
+   * @param credentialFiles List of credential files (max 10 files)
+   * @return Auth response with user info (no token until email verified)
+   */
+  AuthResponse registerReviewer(RegisterReviewerRequest request,
+      List<MultipartFile> credentialFiles);
+
+  /**
    * Verify email using token sent to user's email
    *
    * @param token Verification token
-   * @return Auth response with access token
+   * @return Auth response with access token (or pending approve status for reviewers)
    */
   AuthResponse verifyEmail(String token);
 

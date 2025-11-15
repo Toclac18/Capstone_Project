@@ -1,0 +1,43 @@
+package com.capstone.be.service;
+
+import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
+
+/**
+ * Service for file storage operations (AWS S3)
+ */
+public interface FileStorageService {
+
+  /**
+   * Upload a file to S3
+   *
+   * @param file     The file to upload
+   * @param folder   The folder/prefix in S3 bucket
+   * @param filename Custom filename (optional, will use original if null)
+   * @return The URL of the uploaded file
+   */
+  String uploadFile(MultipartFile file, String folder, String filename);
+
+  /**
+   * Upload multiple files to S3
+   *
+   * @param files  List of files to upload
+   * @param folder The folder/prefix in S3 bucket
+   * @return List of URLs of uploaded files
+   */
+  List<String> uploadFiles(List<MultipartFile> files, String folder);
+
+  /**
+   * Delete a file from S3
+   *
+   * @param fileUrl The URL of the file to delete
+   */
+  void deleteFile(String fileUrl);
+
+  /**
+   * Delete multiple files from S3
+   *
+   * @param fileUrls List of file URLs to delete
+   */
+  void deleteFiles(List<String> fileUrls);
+}

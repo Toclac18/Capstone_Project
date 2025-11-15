@@ -26,6 +26,7 @@ public enum ErrorCode {
   ACCOUNT_DISABLED("2005", "Account is disabled"),
   ACCOUNT_LOCKED("2006", "Account is locked"),
   EMAIL_NOT_VERIFIED("2007", "Email not verified"),
+  ACCOUNT_PENDING_APPROVAL("2008", "Account is pending approval"),
 
   // Resource errors (3xxx)
   RESOURCE_NOT_FOUND("3000", "Resource not found"),

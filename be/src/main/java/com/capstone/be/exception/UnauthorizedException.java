@@ -58,4 +58,11 @@ public class UnauthorizedException extends BusinessException {
         ErrorCode.EMAIL_NOT_VERIFIED.getCode()
     );
   }
+
+  public static UnauthorizedException accountPendingApproval() {
+    return new UnauthorizedException(
+        "Your account is pending admin approval",
+        ErrorCode.ACCOUNT_PENDING_APPROVAL.getCode()
+    );
+  }
 }

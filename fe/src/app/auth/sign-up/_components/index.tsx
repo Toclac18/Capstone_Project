@@ -1,143 +1,361 @@
 "use client";
 import Link from "next/link";
 import { EmailIcon, GoogleIcon, PasswordIcon, UserIcon } from "@/assets/icons";
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import InputGroup from "@/components/(template)/FormElements/InputGroup";
 import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
 import Image from "next/image";
 import { useToast } from "@/components/ui/toast";
 import { 
-  register, 
-  type RegisterPayload
+  registerReader,
+  registerReviewer,
+  registerOrgAdmin,
+  type RegisterReaderPayload,
+  type RegisterReviewerPayload,
+  type RegisterOrgAdminPayload,
 } from "../api";
 import styles from "../styles.module.css";
+import { getDomains, getSpecializations } from "@/services/uploadDocuments";
+import { 
+  validateField as validateFieldHelper, 
+  getFieldsToValidate,
+  validateFileSize,
+  validateFileUploadRequired,
+} from "./validation";
 
+type UserType = "reader" | "reviewer" | "org-admin";
+
+// Constants
+const EDUCATION_LEVELS = [
+  { value: "", label: "Select education level" },
+  { value: "BACHELOR", label: "Bachelor's Degree" },
+  { value: "MASTER", label: "Master's Degree" },
+  { value: "PHD", label: "Ph.D." },
+  { value: "PROFESSOR", label: "Professor" },
+] as const;
+
+const ORGANIZATION_TYPES = [
+  { value: "", label: "Select organization type" },
+  { value: "COMPANY", label: "Company" },
+  { value: "NON-PROFIT", label: "Non-Profit" },
+  { value: "EDUCATIONAL", label: "Educational Institution" },
+  { value: "GOVERNMENT", label: "Government Agency" },
+] as const;
+
+const SUCCESS_MESSAGES = {
+  reader: "Please check your email to verify your account.",
+  reviewer: "Please check your email to verify your account.",
+  "org-admin": "Admin will verify your information.",
+} as const;
+
+const VALIDATION_MESSAGES = {
+  error: {
+    title: "Validation Error",
+    message: "Please correct the highlighted fields",
+  },
+  success: {
+    title: "Registration Successful",
+  },
+  failed: {
+    title: "Registration Failed",
+    message: "Registration failed",
+  },
+  loadFailed: {
+    title: "Error",
+    message: "Failed to load options",
+  },
+} as const;
+
+type BaseFormData = {
+  name: string;
+  date_of_birth: string;
+  username: string;
+  email: string;
+  password: string;
+  repassword: string;
+};
+
+type ReviewerFormData = BaseFormData & {
+  educationLevel: string;
+  domains: string[];
+  specializations: string[];
+  referenceOrgName: string;
+  referenceOrgEmail: string;
+};
+
+type OrgAdminFormData = BaseFormData & {
+  organizationName: string;
+  organizationType: string;
+  registrationNumber: string;
+  organizationEmail: string;
+};
+
+type FormData = ReviewerFormData & OrgAdminFormData;
+
+const INITIAL_FORM_DATA: Partial<FormData> = {
+  name: "",
+  date_of_birth: "",
+  username: "",
+  email: "",
+  password: "",
+  repassword: "",
+  educationLevel: "",
+  domains: [],
+  specializations: [],
+  referenceOrgName: "",
+  referenceOrgEmail: "",
+  organizationName: "",
+  organizationType: "",
+  registrationNumber: "",
+  organizationEmail: "",
+};
 
 export default function Signup() {
   const { showToast } = useToast();
-  const [data, setData] = useState({
-    name: "",
-    date_of_birth: "",
-    username: "",
-    email: "",
-    password: "",
-    repassword: "",
-  });
+  const [userType, setUserType] = useState<UserType>("reader");
+  const [data, setData] = useState<Partial<FormData>>(INITIAL_FORM_DATA);
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ [k: string]: string }>({});
   const refs = React.useRef<{ [k: string]: HTMLDivElement | null }>({});
 
-  const validateField = (name: string, value: string, ctx?: typeof data) => {
-    const val = value?.trim?.() ?? value;
-    switch (name) {
-      case 'name':
-        if (!val) return 'Name is required';
-        if (val.length < 2) return 'Name must be at least 2 characters';
-        return '';
-      case 'date_of_birth': {
-        if (!val) return 'Date of birth is required';
-        const dobDate = new Date(val);
-        if (isNaN(dobDate.getTime())) return 'Invalid date';
-        if (dobDate > new Date()) return 'Date of birth must be in the past';
-        const now = new Date();
-        const age = now.getFullYear() - dobDate.getFullYear();
-        const monthDiff = now.getMonth() - dobDate.getMonth();
-        const actualAge = (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dobDate.getDate())) ? age - 1 : age;
-        if (actualAge < 13) return 'You must be at least 13 years old';
-        return '';
-      }
-      case 'username':
-        if (!val) return 'Username is required';
-        if (val.length < 3) return 'Username must be at least 3 characters';
-        if (!/^[a-zA-Z0-9_.-]+$/.test(val)) return 'Only letters, numbers, underscore, dot and hyphen allowed';
-        return '';
-      case 'email':
-        if (!val) return 'Email is required';
-        if (!/^\S+@\S+\.\S+$/.test(val)) return 'Email is invalid';
-        return '';
-      case 'password':
-        if (!val) return 'Password is required';
-        if (val.length < 8) return 'Password must be at least 8 characters';
-        if (!/[A-Za-z]/.test(val) || !/[0-9]/.test(val)) return 'Password must include letters and numbers';
-        return '';
-      case 'repassword':
-        if (!val) return 'Please confirm your password';
-        if (val !== (ctx?.password ?? '')) return 'Passwords do not match';
-        return '';
-      default:
-        return '';
-    }
-  };
+  // File uploads
+  const [backgroundFiles, setBackgroundFiles] = useState<File[]>([]);
+  const [certificateFiles, setCertificateFiles] = useState<File[]>([]);
 
-  const validateAll = (form: typeof data) => {
+  // Options for reviewer
+  const [domainOptions, setDomainOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [specializationOptions, setSpecializationOptions] = useState<Array<{ id: string; name: string }>>([]);
+
+  const loadReviewerOptions = useCallback(async () => {
+    try {
+      const domains = await getDomains();
+      setDomainOptions(domains);
+    } catch (error) {
+      showToast({
+        type: "error",
+        title: VALIDATION_MESSAGES.loadFailed.title,
+        message: VALIDATION_MESSAGES.loadFailed.message,
+        duration: 5000,
+      });
+    }
+  }, [showToast]);
+
+  const loadSpecializations = useCallback(async (domainIds: string[]) => {
+    try {
+      const specs = await getSpecializations(domainIds);
+      setSpecializationOptions(specs);
+    } catch (error) {
+      showToast({
+        type: "error",
+        title: VALIDATION_MESSAGES.loadFailed.title,
+        message: "Failed to load specializations",
+        duration: 5000,
+      });
+    }
+  }, [showToast]);
+
+  React.useEffect(() => {
+    if (userType === "reviewer") {
+      loadReviewerOptions();
+    }
+  }, [userType, loadReviewerOptions]);
+
+  React.useEffect(() => {
+    if (userType === "reviewer" && data.domains && data.domains.length > 0) {
+      loadSpecializations(data.domains);
+    } else {
+      setSpecializationOptions([]);
+    }
+  }, [data.domains, userType, loadSpecializations]);
+
+  const validateAll = useCallback((form: Partial<FormData>) => {
     const nextErrors: { [k: string]: string } = {};
-    (Object.keys(form) as Array<keyof typeof form>).forEach((key) => {
-      const msg = validateField(String(key), String(form[key] ?? ''), form);
-      if (msg) nextErrors[String(key)] = msg;
+    const fieldsToValidate = getFieldsToValidate(userType);
+
+    fieldsToValidate.forEach((key) => {
+      const msg = validateFieldHelper(
+        key, 
+        form[key as keyof FormData] as string | string[], 
+        userType,
+        form as Record<string, string | string[] | undefined>
+      );
+      if (msg) nextErrors[key] = msg;
     });
+
     setErrors(nextErrors);
     return nextErrors;
-  };
+  }, [userType]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setData({
-      ...data,
-      [e.target.name]: e.target.value,
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setData((prev) => ({ ...prev, [name]: value }));
+    const msg = validateFieldHelper(name, value, userType, { ...data, [name]: value });
+    setErrors((prev) => ({ ...prev, [name]: msg }));
+  }, [data, userType]);
+
+  const handleMultiSelectChange = useCallback((name: string, value: string, checked: boolean) => {
+    setData((prev) => {
+      const currentValues = (prev[name as keyof FormData] as string[]) || [];
+      const newValues = checked
+        ? [...currentValues, value]
+        : currentValues.filter((v) => v !== value);
+      
+      const msg = validateFieldHelper(name, newValues, userType, { ...prev, [name]: newValues });
+      setErrors((prevErrors) => ({ ...prevErrors, [name]: msg }));
+      
+      return { ...prev, [name]: newValues };
     });
-    const msg = validateField(e.target.name, e.target.value, { ...data, [e.target.name]: e.target.value });
-    setErrors((prev) => ({ ...prev, [e.target.name]: msg }));
-  };
+  }, [userType]);
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, fieldType: "background" | "certificate") => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // Validate file size
+    const sizeError = validateFileSize(files);
+    if (sizeError) {
+      showToast({
+        type: "error",
+        title: "File Too Large",
+        message: sizeError,
+        duration: 5000,
+      });
+      // Clear the input
+      e.target.value = "";
+      return;
+    }
+    
+    if (fieldType === "background") {
+      setBackgroundFiles(files);
+      // Clear error when file is uploaded
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.backgroundFiles;
+        return newErrors;
+      });
+    } else {
+      setCertificateFiles(files);
+      // Clear error when file is uploaded
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.certificateFiles;
+        return newErrors;
+      });
+    }
+  }, [showToast]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     try {
       const errs = validateAll(data);
+      
+      // Validate file uploads for reviewer and org-admin
+      const fileErrors = validateFileUploadRequired(userType, backgroundFiles, certificateFiles);
+      Object.assign(errs, fileErrors);
+      
       if (Object.keys(errs).length > 0) {
-        // focus the first error field (focus input inside group)
         const firstKey = Object.keys(errs)[0];
         const group = refs.current[firstKey];
-        const input = group?.querySelector('input') as HTMLInputElement | undefined;
+        const input = group?.querySelector("input, select") as HTMLInputElement | undefined;
         input?.focus();
         showToast({
-          type: 'error',
-          title: 'Validation Error',
-          message: 'Please correct the highlighted fields',
+          type: "error",
+          title: VALIDATION_MESSAGES.error.title,
+          message: Object.values(errs)[0] || VALIDATION_MESSAGES.error.message,
+          duration: 5000,
         });
         return;
       }
 
-      // Use service layer
-      const payload: RegisterPayload = {
-        fullName: data.name,
-        dateOfBirth: data.date_of_birth,
-        username: data.username,
-        email: data.email,
-        password: data.password,
-      };
-      await register(payload);
+      // Submit based on user type
+      if (userType === "reader") {
+        const payload: RegisterReaderPayload = {
+          fullName: data.name!,
+          dateOfBirth: data.date_of_birth!,
+          username: data.username!,
+          email: data.email!,
+          password: data.password!,
+        };
+        await registerReader(payload);
+      } else if (userType === "reviewer") {
+        const payload: RegisterReviewerPayload = {
+          fullName: data.name!,
+          dateOfBirth: data.date_of_birth!,
+          username: data.username!,
+          email: data.email!,
+          password: data.password!,
+          educationLevel: data.educationLevel!,
+          domains: data.domains!,
+          specializations: data.specializations!,
+          referenceOrgName: data.referenceOrgName!,
+          referenceOrgEmail: data.referenceOrgEmail!,
+        };
+        await registerReviewer(payload, backgroundFiles);
+      } else if (userType === "org-admin") {
+        const payload: RegisterOrgAdminPayload = {
+          fullName: data.name!,
+          dateOfBirth: data.date_of_birth!,
+          username: data.username!,
+          email: data.email!,
+          password: data.password!,
+          organizationName: data.organizationName!,
+          organizationType: data.organizationType!,
+          registrationNumber: data.registrationNumber!,
+          organizationEmail: data.organizationEmail!,
+        };
+        await registerOrgAdmin(payload, certificateFiles);
+      }
 
       // Success: inform user to check email for verification
       showToast({
-        type: 'success',
-        title: 'Registration Successful',
-        message: 'Please check your email to verify your account.',
+        type: "success",
+        title: VALIDATION_MESSAGES.success.title,
+        message: SUCCESS_MESSAGES[userType],
+        duration: 5000,
       });
       setTimeout(() => {
-        window.location.href = '/auth/sign-in';
+        window.location.href = "/auth/sign-in";
       }, 3000);
-    } catch {
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : VALIDATION_MESSAGES.failed.message;
       showToast({
-        type: 'error',
-        title: 'Registration Failed',
-        message: 'Registration failed',
+        type: "error",
+        title: VALIDATION_MESSAGES.failed.title,
+        message: msg,
+        duration: 5000,
       });
     } finally {
       setLoading(false);
     }
   };
+
+  const handleUserTypeChange = useCallback((type: UserType) => {
+    setUserType(type);
+    // Keep base fields, clear role-specific fields
+    setData((prev) => ({
+      name: prev.name,
+      date_of_birth: prev.date_of_birth,
+      username: prev.username,
+      email: prev.email,
+      password: prev.password,
+      repassword: prev.repassword,
+      educationLevel: "",
+      domains: [],
+      specializations: [],
+      referenceOrgName: "",
+      referenceOrgEmail: "",
+      organizationName: "",
+      organizationType: "",
+      registrationNumber: "",
+      organizationEmail: "",
+    }));
+    setErrors({});
+    setBackgroundFiles([]);
+    setCertificateFiles([]);
+  }, []);
 
   return (
     <>
@@ -161,11 +379,12 @@ export default function Signup() {
 
       <div>
         <form onSubmit={handleSubmit}>
+          {/* Base Fields */}
             <InputGroup
             type="string"
-            label="Name"
+            label="Full Name"
             className={styles["input-group"]}
-            placeholder="Enter your name"
+            placeholder="Enter your full name"
             name="name"
             handleChange={handleChange}
             value={data.name}
@@ -176,7 +395,7 @@ export default function Signup() {
 
             <InputGroup
             type="date"
-            label="Date of birth"
+            label="Date of Birth"
             className={styles["input-group"]}
             placeholder="Enter your date of birth"
             name="date_of_birth"
@@ -188,7 +407,7 @@ export default function Signup() {
 
             <InputGroup
             type="string"
-            label="UserName"
+            label="Username"
             className={styles["input-group"]}
             placeholder="Enter your username"
             name="username"
@@ -238,15 +457,310 @@ export default function Signup() {
             />
             {errors.repassword && <p className={styles["error-text"]}>{errors.repassword}</p>}
 
-          <div className="mb-4.5">
+          {/* User Type Selection */}
+          <div className={styles["user-type-container"]}>
+            <label className={styles["user-type-label"]}>
+              Register as
+            </label>
+            <div className={styles["user-type-options"]}>
+              <label className={styles["user-type-option"]}>
+                <input
+                  type="radio"
+                  name="userType"
+                  value="reader"
+                  checked={userType === "reader"}
+                  onChange={() => handleUserTypeChange("reader")}
+                  className={styles["user-type-radio"]}
+                  disabled={loading}
+                />
+                <span className={styles["user-type-text"]}>
+                  Reader
+                </span>
+              </label>
+              <label className={styles["user-type-option"]}>
+                <input
+                  type="radio"
+                  name="userType"
+                  value="reviewer"
+                  checked={userType === "reviewer"}
+                  onChange={() => handleUserTypeChange("reviewer")}
+                  className={styles["user-type-radio"]}
+                  disabled={loading}
+                />
+                <span className={styles["user-type-text"]}>
+                  Reviewer
+                </span>
+              </label>
+              <label className={styles["user-type-option"]}>
+                <input
+                  type="radio"
+                  name="userType"
+                  value="org-admin"
+                  checked={userType === "org-admin"}
+                  onChange={() => handleUserTypeChange("org-admin")}
+                  className={styles["user-type-radio"]}
+                  disabled={loading}
+                />
+                <span className={styles["user-type-text"]}>
+                  Organization Admin
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* Reviewer Fields */}
+          {userType === "reviewer" && (
+            <div className={styles["role-section"]}>
+              <h3 className={styles["role-section-title"]}>
+                Reviewer Information
+              </h3>
+
+              <div className="mb-4">
+                <label htmlFor="educationLevel" className={styles["form-label"]}>
+                  Education Level <span className={styles["form-label-required"]}>*</span>
+                </label>
+                <select
+                  id="educationLevel"
+                  name="educationLevel"
+                  value={data.educationLevel}
+                  onChange={handleChange}
+                  className={`${styles["form-select"]} ${errors.educationLevel ? styles["form-select-error"] : ""}`}
+                  disabled={loading}
+                >
+                  {EDUCATION_LEVELS.map((level) => (
+                    <option key={level.value} value={level.value}>
+                      {level.label}
+                    </option>
+                  ))}
+                </select>
+                {errors.educationLevel && <p className={styles["form-error"]}>{errors.educationLevel}</p>}
+              </div>
+
+              <div className="mb-4">
+                <label className={styles["form-label"]}>
+                  Domains <span className={styles["form-label-required"]}>*</span>
+                  <span className={styles["form-label-hint"]}>(Max 3, Min 1)</span>
+                </label>
+                <div className={styles["checkbox-list-container"]}>
+                  {domainOptions.length === 0 ? (
+                    <p className={styles["checkbox-list-empty"]}>Loading domains...</p>
+                  ) : (
+                    <div className={styles["checkbox-list"]}>
+                      {domainOptions.map((domain) => (
+                        <label key={domain.id} className={styles["checkbox-item"]}>
+                          <input
+                            type="checkbox"
+                            checked={(data.domains || []).includes(domain.id)}
+                            onChange={(e) => handleMultiSelectChange("domains", domain.id, e.target.checked)}
+                            className={styles["checkbox-input"]}
+                            disabled={loading || ((data.domains || []).length >= 3 && !((data.domains || []).includes(domain.id)))}
+                          />
+                          <span className={styles["checkbox-label"]}>{domain.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {errors.domains && <p className={styles["form-error"]}>{errors.domains}</p>}
+              </div>
+
+              <div className="mb-4">
+                <label className={styles["form-label"]}>
+                  Review Specializations <span className={styles["form-label-required"]}>*</span>
+                  <span className={styles["form-label-hint"]}>(Max 5, Min 1 per Domain)</span>
+                </label>
+                <div className={styles["checkbox-list-container"]}>
+                  {specializationOptions.length === 0 ? (
+                    <p className={styles["checkbox-list-empty"]}>
+                      {(data.domains || []).length === 0 ? "Please select domains first" : "Loading specializations..."}
+                    </p>
+                  ) : (
+                    <div className={styles["checkbox-list"]}>
+                      {specializationOptions.map((spec) => (
+                        <label key={spec.id} className={styles["checkbox-item"]}>
+                          <input
+                            type="checkbox"
+                            checked={(data.specializations || []).includes(spec.id)}
+                            onChange={(e) => handleMultiSelectChange("specializations", spec.id, e.target.checked)}
+                            className={styles["checkbox-input"]}
+                            disabled={loading || ((data.specializations || []).length >= 5 && !((data.specializations || []).includes(spec.id)))}
+                          />
+                          <span className={styles["checkbox-label"]}>{spec.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {errors.specializations && <p className={styles["form-error"]}>{errors.specializations}</p>}
+              </div>
+
+              <InputGroup
+                type="string"
+                label="Reference Organization Name"
+                className={styles["input-group"]}
+                placeholder="Enter reference organization name"
+                name="referenceOrgName"
+                handleChange={handleChange}
+                value={data.referenceOrgName}
+                error={errors.referenceOrgName}
+              />
+              {errors.referenceOrgName && <p className={styles["error-text"]}>{errors.referenceOrgName}</p>}
+
+              <InputGroup
+                type="email"
+                label="Reference Organization Email"
+                className={styles["input-group"]}
+                placeholder="Enter reference organization email"
+                name="referenceOrgEmail"
+                handleChange={handleChange}
+                value={data.referenceOrgEmail}
+                icon={<EmailIcon />}
+                error={errors.referenceOrgEmail}
+              />
+              {errors.referenceOrgEmail && <p className={styles["error-text"]}>{errors.referenceOrgEmail}</p>}
+
+              <div className="mb-4">
+                <label htmlFor="backgroundUpload" className={styles["form-label"]}>
+                  Verified Background Upload <span className={styles["form-label-required"]}>*</span>
+                  <span className={styles["form-label-hint"]}>(PDF, DOC, DOCX)</span>
+                </label>
+                <input
+                  id="backgroundUpload"
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  multiple
+                  onChange={(e) => handleFileUpload(e, "background")}
+                  className={`${styles["file-upload"]} ${errors.backgroundFiles ? "border-red-500" : ""}`}
+                  disabled={loading}
+                />
+                {backgroundFiles.length > 0 ? (
+                  <div className={styles["file-list"]}>
+                    {backgroundFiles.map((file, idx) => (
+                      <p key={idx} className={styles["file-item"]}>
+                        • {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  errors.backgroundFiles && <p className={styles["form-error"]}>{errors.backgroundFiles}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Organization Admin Fields */}
+          {userType === "org-admin" && (
+            <div className={styles["role-section"]}>
+              <h3 className={styles["role-section-title"]}>
+                Organization Information
+              </h3>
+
+              <InputGroup
+                type="string"
+                label="Organization Name"
+                className={styles["input-group"]}
+                placeholder="Enter organization name"
+                name="organizationName"
+                handleChange={handleChange}
+                value={data.organizationName}
+                error={errors.organizationName}
+              />
+              {errors.organizationName && <p className={styles["error-text"]}>{errors.organizationName}</p>}
+
+              <div className="mb-4">
+                <label htmlFor="organizationType" className={styles["form-label"]}>
+                  Organization Type <span className={styles["form-label-required"]}>*</span>
+                </label>
+                <select
+                  id="organizationType"
+                  name="organizationType"
+                  value={data.organizationType}
+                  onChange={handleChange}
+                  className={`${styles["form-select"]} ${errors.organizationType ? styles["form-select-error"] : ""}`}
+                  disabled={loading}
+                >
+                  {ORGANIZATION_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+                {errors.organizationType && <p className={styles["form-error"]}>{errors.organizationType}</p>}
+              </div>
+
+              <InputGroup
+                type="string"
+                label="Registration Number"
+                className={styles["input-group"]}
+                placeholder="Enter registration number"
+                name="registrationNumber"
+                handleChange={handleChange}
+                value={data.registrationNumber}
+                error={errors.registrationNumber}
+              />
+              {errors.registrationNumber && <p className={styles["error-text"]}>{errors.registrationNumber}</p>}
+
+              <InputGroup
+                type="email"
+                label="Organization Email"
+                className={styles["input-group"]}
+                placeholder="Enter organization email"
+                name="organizationEmail"
+                handleChange={handleChange}
+                value={data.organizationEmail}
+                icon={<EmailIcon />}
+                error={errors.organizationEmail}
+              />
+              {errors.organizationEmail && <p className={styles["error-text"]}>{errors.organizationEmail}</p>}
+
+              <div className="mb-4">
+                <label htmlFor="certificateUpload" className={styles["form-label"]}>
+                  Organization Certificate Upload <span className={styles["form-label-required"]}>*</span>
+                  <span className={styles["form-label-hint"]}>(PDF, DOC, Images)</span>
+                </label>
+                <input
+                  id="certificateUpload"
+                  type="file"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  multiple
+                  onChange={(e) => handleFileUpload(e, "certificate")}
+                  className={`${styles["file-upload"]} ${errors.certificateFiles ? "border-red-500" : ""}`}
+                  disabled={loading}
+                />
+                {certificateFiles.length > 0 ? (
+                  <div className={styles["file-list"]}>
+                    {certificateFiles.map((file, idx) => (
+                      <p key={idx} className={styles["file-item"]}>
+                        • {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  errors.certificateFiles && <p className={styles["form-error"]}>{errors.certificateFiles}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="mb-4.5 mt-6">
+            <p className={styles["terms-text"]}>
+              By clicking Create Account, you agree to our{" "}
+              <Link href="/terms-of-use" className="text-primary hover:underline">
+                Terms Of Use
+              </Link>
+            </p>
             <button
               type="submit"
               className={styles["submit-btn"]}
               disabled={loading}
             >
-              Create Account
-              {loading && (
-                <span className={styles.spinner} />
+              {loading ? (
+                <>
+                  Creating Account
+                  <span className={styles.spinner} />
+                </>
+              ) : (
+                "Create Account"
               )}
             </button>
           </div>
@@ -256,7 +770,7 @@ export default function Signup() {
       <div className={styles.footer}>
         <p>
           Already have an account?{" "}
-          <Link href="/auth/sign-in" className="text-primary">
+          <Link href="/auth/sign-in" className="text-primary hover:underline">
             Sign In
           </Link>
         </p>

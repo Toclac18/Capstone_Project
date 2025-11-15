@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
     log.error("Business exception at {}: {} (code: {})",
         req.getRequestURI(), ex.getMessage(), ex.getErrorCode());
 
-    ApiResponse<Object> response = ApiResponse.<Object>builder()
+    ApiResponse<Object> response = ApiResponse.builder()
         .success(false)
         .message(ex.getMessage())
         .build();
@@ -346,7 +346,7 @@ public class GlobalExceptionHandler {
    * Create error response with error code
    */
   private ApiResponse<Object> createErrorResponse(String message, String errorCode) {
-    ApiResponse<Object> response = ApiResponse.<Object>builder()
+    ApiResponse<Object> response = ApiResponse.builder()
         .success(false)
         .message(message)
         .build();

@@ -26,14 +26,16 @@ public class InvalidRequestException extends BusinessException {
 
   public static InvalidRequestException invalidFileType(String actualType, String... allowedTypes) {
     return new InvalidRequestException(
-        String.format("Invalid file type: %s. Allowed types: %s", actualType, String.join(", ", allowedTypes)),
+        String.format("Invalid file type: %s. Allowed types: %s", actualType,
+            String.join(", ", allowedTypes)),
         ErrorCode.INVALID_FILE_TYPE.getCode()
     );
   }
 
   public static InvalidRequestException fileTooLarge(long actualSize, long maxSize) {
     return new InvalidRequestException(
-        String.format("File size (%d bytes) exceeds maximum allowed size (%d bytes)", actualSize, maxSize),
+        String.format("File size (%d bytes) exceeds maximum allowed size (%d bytes)", actualSize,
+            maxSize),
         ErrorCode.FILE_TOO_LARGE.getCode()
     );
   }

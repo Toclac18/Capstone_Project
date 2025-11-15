@@ -39,7 +39,8 @@ public class DuplicateResourceException extends BusinessException {
 
   public static DuplicateResourceException enrollment(String userEmail, String organizationName) {
     return new DuplicateResourceException(
-        String.format("User %s is already enrolled in organization %s", userEmail, organizationName),
+        String.format("User %s is already enrolled in organization %s", userEmail,
+            organizationName),
         HttpStatus.CONFLICT,
         ErrorCode.DUPLICATE_ENROLLMENT.getCode()
     );

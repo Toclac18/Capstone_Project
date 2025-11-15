@@ -1,5 +1,14 @@
 // src/services/docsService.ts
-import { apiClient } from "./http"; // đường dẫn tới file apiClient của bạn
+import { apiClient } from "./http";
+
+export type Comment = {
+  id: string;
+  docId: string;
+  author: string;
+  avatarUrl?: string;
+  content: string;
+  createdAt: string;
+};
 
 export type DocDetail = {
   id: string;
@@ -33,11 +42,7 @@ export type RelatedLite = {
 };
 
 export async function fetchDocDetail(id: string) {
-  // apiClient.baseURL = "/api"  -> gọi tới /api/docs/:id
-  const res = await apiClient.get(`/docs-view/${encodeURIComponent(id)}`, {
-    // axios sẽ không cache theo HTTP; thêm headers nếu bạn có layer CDN
-    headers: { "Cache-Control": "no-store" },
-  });
+  const res = await apiClient.get(`/docs-view/${encodeURIComponent(id)}`);
   return res.data as {
     detail: DocDetail;
     related: RelatedLite[];
@@ -47,6 +52,7 @@ export async function fetchDocDetail(id: string) {
       upvotes: number;
       downvotes: number;
     };
+    comments: Comment[];
   };
 }
 
@@ -59,4 +65,36 @@ export async function redeemDoc(id: string) {
     redeemed: boolean;
     pointsLeft?: number;
   };
+}
+
+export async function upvoteDoc(id: string) {
+  const res = await apiClient.post(
+    `/docs-view/${encodeURIComponent(id)}/upvote`,
+  );
+  return res.data as {
+    upvote_counts: number;
+    downvote_counts: number;
+    vote_scores: number;
+  };
+}
+
+export async function downvoteDoc(id: string) {
+  const res = await apiClient.post(
+    `/docs-view/${encodeURIComponent(id)}/downvote`,
+  );
+  return res.data as {
+    upvote_counts: number;
+    downvote_counts: number;
+    vote_scores: number;
+  };
+}
+
+export async function addComment(docId: string, content: string) {
+  const res = await apiClient.post(
+    `/docs-view/${encodeURIComponent(docId)}/comments`,
+    {
+      content,
+    },
+  );
+  return res.data as { comment: Comment };
 }

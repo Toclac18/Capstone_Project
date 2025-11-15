@@ -1,23 +1,43 @@
 // src/app/api/docs-view/[id]/redeem/route.ts
-function json(data: any, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "content-type": "application/json",
-      "cache-control": "no-store",
-    },
-  });
-}
+import { mockRedeemDoc } from "@/mock/docsDetail";
+import { badRequest, getBeBase, buildForwardHeaders } from "../../_utils";
+
+const USE_MOCK = process.env.USE_MOCK === "true";
 
 export async function POST(
   _req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id } = await ctx.params;
-  if (!id) return json({ message: "Missing id" }, 400);
-  return json({
-    success: true,
-    redeemed: true,
-    pointsLeft: 1200, // ví dụ
+  if (!id) return badRequest("Missing id");
+
+  if (USE_MOCK) {
+    const result = mockRedeemDoc(id);
+    return new Response(JSON.stringify(result), {
+      status: result.success ? 200 : 404,
+      headers: {
+        "content-type": "application/json",
+        "x-mode": "mock",
+      },
+    });
+  }
+
+  const BE_BASE = getBeBase();
+  const fh = await buildForwardHeaders();
+
+  const upstream = await fetch(`${BE_BASE}/api/docs-view/${id}/redeem`, {
+    method: "POST",
+    headers: fh,
+    cache: "no-store",
+  });
+
+  const text = await upstream.text();
+  return new Response(text, {
+    status: upstream.status,
+    headers: {
+      "content-type":
+        upstream.headers.get("content-type") ?? "application/json",
+      "x-mode": "real",
+    },
   });
 }

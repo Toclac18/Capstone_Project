@@ -1,69 +1,59 @@
-// src/app/docs-view/[id]/_components/LeftSidebar.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { Document, Page, pdfjs } from "react-pdf";
 import { useDocsView } from "../DocsViewProvider";
 import styles from "../styles.module.css";
 
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+
 export default function LeftSidebar() {
-  const { numPages, page, setPage } = useDocsView();
-  const total = Math.max(1, numPages); // fallback khi chưa load PDF
-  const pages = Array.from({ length: total }, (_, i) => i + 1);
+  const { detail, page, setPage, numPages } = useDocsView();
 
-  const [inputValue, setInputValue] = useState<string>("1");
+  if (!detail) {
+    return null;
+  }
 
-  // đồng bộ input khi page đổi (click ở thumbnail)
-  useEffect(() => {
-    setInputValue(String(page));
-  }, [page]);
-
-  const handleJump = () => {
-    const n = Number(inputValue);
-    if (!Number.isFinite(n)) return;
-    if (n < 1 || n > total) return;
-    setPage(n);
-  };
-
-  const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleJump();
-    }
-  };
+  const totalPages = numPages || 1;
 
   return (
     <aside className={styles.leftSidebar}>
       <div className={styles.leftHeaderRow}>
         <div className={styles.leftHeader}>Pages</div>
-
         <div className={styles.pageJump}>
-          <input
-            type="number"
-            min={1}
-            max={total}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onBlur={handleJump}
-            onKeyDown={handleKeyDown}
-            className={styles.pageJumpInput}
-          />
-          <span className={styles.pageJumpTotal}>/ {total}</span>
+          <span>{page}</span>
+          <span className={styles.pageJumpTotal}>/ {totalPages}</span>
         </div>
       </div>
 
       <div className={styles.pageThumbList}>
-        {pages.map((p) => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => setPage(p)}
-            className={p === page ? styles.pageThumbActive : styles.pageThumb}
-            aria-current={p === page ? "page" : undefined}
-          >
-            <div className={styles.pageThumbPage} />
-            <span className={styles.pageThumbNumber}>{p}</span>
-          </button>
-        ))}
+        <Document
+          file={detail.fileUrl}
+          loading={<div className={styles.loading}>Loading pages…</div>}
+          error={<div className={styles.loading}>Failed to load pages</div>}
+        >
+          {Array.from({ length: totalPages }, (_, idx) => {
+            const pageNumber = idx + 1;
+            const isActive = pageNumber === page;
+
+            return (
+              <div
+                key={pageNumber}
+                className={isActive ? styles.pageThumbActive : styles.pageThumb}
+                onClick={() => setPage(pageNumber)}
+              >
+                <div className={styles.pageThumbPage}>
+                  <Page
+                    pageNumber={pageNumber}
+                    width={160}
+                    renderAnnotationLayer={false}
+                    renderTextLayer={false}
+                  />
+                </div>
+                <div className={styles.pageThumbNumber}>{pageNumber}</div>
+              </div>
+            );
+          })}
+        </Document>
       </div>
     </aside>
   );

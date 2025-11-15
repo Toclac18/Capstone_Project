@@ -1,10 +1,10 @@
-// src/app/api/docs-view/[id]/route.ts
-import { mockGetDocDetail } from "@/mock/docsDetail";
-import { badRequest, getBeBase, buildForwardHeaders } from "../_utils";
+// src/app/api/docs-view/[id]/downvote/route.ts
+import { mockDownvoteDoc } from "@/mock/docsDetail";
+import { badRequest, getBeBase, buildForwardHeaders } from "../../_utils";
 
 const USE_MOCK = process.env.USE_MOCK === "true";
 
-export async function GET(
+export async function POST(
   _req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
@@ -12,24 +12,22 @@ export async function GET(
   if (!id) return badRequest("Missing id");
 
   if (USE_MOCK) {
-    const data = mockGetDocDetail(id);
-    if (!data) return badRequest("Not found", 404);
-    return new Response(JSON.stringify(data), {
+    const result = mockDownvoteDoc(id);
+    if (!result) return badRequest("Not found", 404);
+    return new Response(JSON.stringify(result), {
       status: 200,
       headers: {
         "content-type": "application/json",
-        "cache-control": "no-store",
         "x-mode": "mock",
       },
     });
   }
 
-  // REAL: forward sang BE
   const BE_BASE = getBeBase();
   const fh = await buildForwardHeaders();
 
-  const upstream = await fetch(`${BE_BASE}/api/docs-view/${id}`, {
-    method: "GET",
+  const upstream = await fetch(`${BE_BASE}/api/docs-view/${id}/downvote`, {
+    method: "POST",
     headers: fh,
     cache: "no-store",
   });

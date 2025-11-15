@@ -278,10 +278,18 @@
 /* hình chữ nhật tượng trưng cho trang PDF */
 .pageThumbPage {
   width: 100%;
-  aspect-ratio: 3 / 4;
   border-radius: 10px;
-  background: linear-gradient(180deg, #ffffff 0%, #f9fafb 40%, #f3f4f6 100%);
+  overflow: hidden;
+  background: #f9fafb;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+}
+
+/* đảm bảo canvas / svg của react-pdf fit khung */
+.pageThumbPage canvas,
+.pageThumbPage svg {
+  width: 100% !important;
+  height: auto !important;
+  display: block;
 }
 :global(html.dark) .pageThumbPage {
   background: linear-gradient(180deg, #111827 0%, #020617 65%, #020617 100%);
@@ -303,9 +311,10 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 14px;
-  min-height: 70vh;
   padding: 0.75rem;
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 .viewerWrap {
   display: flex;
@@ -591,4 +600,214 @@
 
 :global(html.dark) .statIcon {
   color: var(--text-subtle);
+}
+
+/* icon stats click */
+.statButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--text-subtle);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid transparent;
+  background: transparent;
+}
+.statButton:hover:not(:disabled) {
+  background: var(--accent-50);
+  border-color: var(--accent-50);
+}
+.statButton:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* -------- Comments -------- */
+
+.commentsSection {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.commentsHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.commentsTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.commentsCount {
+  font-size: 0.75rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--text-subtle);
+}
+
+.commentForm {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  padding: 0.5rem 0.6rem 0.4rem;
+  margin-bottom: 0.7rem;
+}
+
+.commentInput {
+  width: 100%;
+  border: none;
+  resize: vertical;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.commentInput::placeholder {
+  color: var(--text-subtle);
+  opacity: 0.8;
+}
+
+.commentFormFooter {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.25rem;
+}
+
+.commentSubmit {
+  border-radius: 999px;
+  border: none;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.86rem;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.commentSubmit:hover:not(:disabled) {
+  background: var(--accent-600);
+}
+
+.commentSubmit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.commentList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.commentItem {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.commentAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--accent-50);
+  color: var(--accent-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.commentBody {
+  flex: 1;
+}
+
+.commentMeta {
+  display: flex;
+  gap: 0.4rem;
+  align-items: baseline;
+  margin-bottom: 0.15rem;
+}
+
+.commentAuthor {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.commentTime {
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+}
+
+.commentContent {
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.commentEmpty {
+  font-size: 0.85rem;
+  color: var(--text-subtle);
+}
+
+/* ==== PDF iframe viewer (no react-pdf) ==== */
+
+.viewerRoot {
+  width: 100%;
+}
+
+.viewerWrap {
+  position: relative;
+  width: 100%;
+  max-height: calc(100vh - 220px);
+  /* cho phép cuộn nếu trang PDF cao hơn khung */
+  overflow: auto;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+  padding: 0.5rem;
+}
+
+/* canh canvas/svgs của react-pdf cho đẹp */
+.viewerWrap canvas,
+.viewerWrap svg {
+  display: block;
+  margin: 0 auto;
+}
+
+:global(html.dark) .viewerWrap {
+  background: var(--card);
+}
+/* Premium overlay (dùng lại style đẹp bạn đang có, có thể tinh chỉnh thêm) */
+.premiumOverlay {
+  @apply pointer-events-none absolute inset-0 flex items-center justify-center;
+}
+
+.premiumCard {
+  @apply pointer-events-auto flex max-w-sm flex-col items-center gap-3 rounded-2xl bg-neutral-800/95 px-8 py-6 text-center text-white shadow-2xl;
+}
+
+.premiumBadge {
+  @apply mb-1 rounded-full bg-amber-400 px-3 py-0.5 text-xs font-semibold text-neutral-900 shadow;
+}
+
+.premiumTitle {
+  @apply text-lg font-semibold;
+}
+
+.premiumText {
+  @apply text-sm text-neutral-200;
+}
+
+.btnRedeem {
+  @apply mt-2 rounded-full bg-gradient-to-b from-amber-400 to-amber-500 px-6 py-2 text-sm font-semibold text-neutral-900 shadow-lg hover:brightness-110 active:scale-95;
 }

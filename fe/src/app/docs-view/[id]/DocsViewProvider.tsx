@@ -5,8 +5,12 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
   fetchDocDetail,
   redeemDoc,
+  upvoteDoc,
+  downvoteDoc,
+  addComment,
   type DocDetail,
   type RelatedLite,
+  type Comment,
 } from "@/services/docsService";
 
 type DocsContextValue = {
@@ -29,13 +33,23 @@ type DocsContextValue = {
   goNextHit: () => void;
   goPrevHit: () => void;
 
-  // premium flow
+  // vote
+  voteLoading: boolean;
+  handleUpvote: () => Promise<void>;
+  handleDownvote: () => Promise<void>;
+
+  // premium
   redeemed: boolean;
   isRedeemModalOpen: boolean;
   redeemLoading: boolean;
   openRedeemModal: () => void;
   closeRedeemModal: () => void;
   redeem: () => Promise<void>;
+
+  // comments
+  comments: Comment[];
+  commentLoading: boolean;
+  addNewComment: (content: string) => Promise<void>;
 
   onPageText: (pageNumber: number, text: string) => void;
 };
@@ -73,6 +87,11 @@ export function DocsViewProvider({
   const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
   const [redeemLoading, setRedeemLoading] = useState(false);
 
+  const [voteLoading, setVoteLoading] = useState(false);
+
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentLoading, setCommentLoading] = useState(false);
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -89,9 +108,12 @@ export function DocsViewProvider({
         setQuery("");
         setHits([]);
         setHitIndex(0);
+
         setRedeemed(!data.detail.isPremium);
         setIsRedeemModalOpen(false);
         setRedeemLoading(false);
+
+        setComments(data.comments || []);
       } catch (e: any) {
         if (!mounted) return;
         setError(e?.message || "Failed to load document");
@@ -156,8 +178,53 @@ export function DocsViewProvider({
     setPage(hits[ni]);
   };
 
-  const openRedeemModal = () => setIsRedeemModalOpen(true);
+  // vote
+  const handleUpvote = async () => {
+    if (!detail) return;
+    try {
+      setVoteLoading(true);
+      const res = await upvoteDoc(detail.id);
+      setDetail((d) =>
+        d
+          ? {
+              ...d,
+              upvote_counts: res.upvote_counts,
+              downvote_counts: res.downvote_counts,
+              vote_scores: res.vote_scores,
+            }
+          : d,
+      );
+    } catch (e: any) {
+      setError(e?.message || "Upvote failed");
+    } finally {
+      setVoteLoading(false);
+    }
+  };
 
+  const handleDownvote = async () => {
+    if (!detail) return;
+    try {
+      setVoteLoading(true);
+      const res = await downvoteDoc(detail.id);
+      setDetail((d) =>
+        d
+          ? {
+              ...d,
+              upvote_counts: res.upvote_counts,
+              downvote_counts: res.downvote_counts,
+              vote_scores: res.vote_scores,
+            }
+          : d,
+      );
+    } catch (e: any) {
+      setError(e?.message || "Downvote failed");
+    } finally {
+      setVoteLoading(false);
+    }
+  };
+
+  // redeem
+  const openRedeemModal = () => setIsRedeemModalOpen(true);
   const closeRedeemModal = () => {
     if (!redeemLoading) setIsRedeemModalOpen(false);
   };
@@ -174,6 +241,22 @@ export function DocsViewProvider({
       setError(e?.message || "Redeem failed");
     } finally {
       setRedeemLoading(false);
+    }
+  };
+
+  // comments
+  const addNewComment = async (content: string) => {
+    if (!detail) return;
+    const trimmed = content.trim();
+    if (!trimmed) return;
+    try {
+      setCommentLoading(true);
+      const res = await addComment(detail.id, trimmed);
+      setComments((prev) => [res.comment, ...prev]);
+    } catch (e: any) {
+      setError(e?.message || "Add comment failed");
+    } finally {
+      setCommentLoading(false);
     }
   };
 
@@ -194,12 +277,18 @@ export function DocsViewProvider({
     hits,
     goNextHit,
     goPrevHit,
+    voteLoading,
+    handleUpvote,
+    handleDownvote,
     redeemed,
     isRedeemModalOpen,
     redeemLoading,
     openRedeemModal,
     closeRedeemModal,
     redeem,
+    comments,
+    commentLoading,
+    addNewComment,
     onPageText,
   };
 

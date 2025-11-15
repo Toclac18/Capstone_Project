@@ -1,7 +1,7 @@
 // src/app/docs-view/[id]/_components/HeaderBar.tsx
 "use client";
 
-import { Eye, Download, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Eye, ThumbsUp, ThumbsDown } from "lucide-react";
 import Link from "next/link";
 import { useDocsView } from "../DocsViewProvider";
 import styles from "../styles.module.css";
@@ -23,6 +23,9 @@ export default function HeaderBar() {
     openRedeemModal,
     closeRedeemModal,
     redeem,
+    voteLoading,
+    handleUpvote,
+    handleDownvote,
   } = useDocsView();
 
   if (!detail) return null;
@@ -39,20 +42,27 @@ export default function HeaderBar() {
             <Eye size={18} className={styles.statIcon} />
             <span>{detail.viewCount}</span>
           </div>
-          <div className={styles.stat2}>
-            <Download size={18} className={styles.statIcon} />
-            <span>{detail.downloadCount}</span>
-          </div>
-          <div className={styles.stat2}>
+          <button
+            type="button"
+            className={styles.statButton}
+            disabled={voteLoading}
+            onClick={handleUpvote}
+          >
             <ThumbsUp size={18} className={styles.statIcon} />
             <span>{detail.upvote_counts}</span>
-          </div>
-          <div className={styles.stat2}>
+          </button>
+          <button
+            type="button"
+            className={styles.statButton}
+            disabled={voteLoading}
+            onClick={handleDownvote}
+          >
             <ThumbsDown size={18} className={styles.statIcon} />
             <span>{detail.downvote_counts}</span>
-          </div>
+          </button>
         </div>
 
+        {/* zoom + search giữ nguyên */}
         <div className={styles.headerCenter}>
           <button
             className={styles.iconBtn}
@@ -117,7 +127,7 @@ export default function HeaderBar() {
         open={isPremiumLocked && isRedeemModalOpen}
         title="Redeem document"
         content={`You will spend ${points} points to unlock this document.`}
-        subContent="After payment, this document will appear in your library and you won't need to redeem it again."
+        subContent="After payment, this document will appear in your library and you won't need to purchase it again."
         confirmLabel="Redeem"
         cancelLabel="Cancel"
         loading={redeemLoading}

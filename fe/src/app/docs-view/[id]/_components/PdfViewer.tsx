@@ -1,85 +1,75 @@
 // src/app/docs-view/[id]/_components/PdfViewer.tsx
 "use client";
 
-import dynamic from "next/dynamic";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
+
 import { useDocsView } from "../DocsViewProvider";
 import styles from "../styles.module.css";
-import { pdfjs } from "react-pdf";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 export default function PdfViewer() {
   const {
     detail,
     page,
-    setNumPages,
     scale,
-    onPageText,
+    setNumPages,
     redeemed,
     openRedeemModal,
+    onPageText,
   } = useDocsView();
+
   if (!detail) return null;
-
-  const DocumentComponent = dynamic(
-    () => import("react-pdf").then((mod) => mod.Document),
-    {
-      ssr: false,
-      loading: () => <div className={styles.loading}>Loading PDF…</div>,
-    },
-  );
-
-  const PageComponent = dynamic(
-    () => import("react-pdf").then((mod) => mod.Page),
-    {
-      ssr: false,
-    },
-  );
-
-  const onRenderSuccess = async (pageObj: any) => {
-    try {
-      const tc = await pageObj.getTextContent();
-      const text = tc.items.map((i: any) => i.str).join(" ");
-      onPageText(pageObj.pageNumber, text);
-    } catch {}
-  };
 
   const blurred = detail.isPremium && !redeemed;
 
-  return (
-    <div className={styles.viewerWrap}>
-      <div className={blurred ? styles.viewerBlur : undefined}>
-        <DocumentComponent
-          file={detail.fileUrl}
-          onLoadSuccess={({ numPages }: any) => setNumPages(numPages)}
-          onLoadError={() => {}}
-          loading={<div className={styles.loading}>Loading PDF…</div>}
-        >
-          <PageComponent
-            pageNumber={page}
-            scale={scale}
-            renderTextLayer
-            renderAnnotationLayer
-            onRenderSuccess={onRenderSuccess}
-          />
-        </DocumentComponent>
-      </div>
+  const handleDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+  };
 
-      {blurred && (
-        <div className={styles.premiumOverlay}>
-          <div className={styles.overlayBox}>
-            <div className={styles.overlayBadge}>Premium</div>
-            <div className={styles.overlayTitle}>Premium document</div>
-            <div className={styles.overlayHint}>
-              Redeem to read this document.
-            </div>
-            <div className={styles.overlayCTA}>
+  const handlePageText = (textContent: any) => {
+    const items = textContent?.items ?? [];
+    const text = items.map((item: any) => item?.str ?? "").join(" ");
+    onPageText(page, text);
+  };
+
+  return (
+    <div className={styles.viewerRoot}>
+      <div className={styles.viewerWrap}>
+        <div className={blurred ? styles.viewerBlur : undefined}>
+          <Document
+            file={detail.fileUrl}
+            onLoadSuccess={handleDocumentLoadSuccess}
+            loading={<div className={styles.pdfLoading}>Loading PDF…</div>}
+            error={<div className={styles.pdfError}>Failed to load PDF</div>}
+          >
+            <Page
+              pageNumber={page}
+              scale={scale}
+              onGetTextSuccess={handlePageText}
+            />
+          </Document>
+        </div>
+
+        {/* Overlay khi là premium mà chưa redeem */}
+        {blurred && (
+          <div className={styles.premiumOverlay}>
+            <div className={styles.premiumCard}>
+              <div className={styles.premiumBadge}>Premium</div>
+              <h3 className={styles.premiumTitle}>Premium document</h3>
+              <p className={styles.premiumText}>
+                Redeem to read this document. It will be saved in your library
+                and you won&apos;t need to redeem it again.
+              </p>
               <button className={styles.btnRedeem} onClick={openRedeemModal}>
                 Redeem
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

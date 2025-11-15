@@ -14,6 +14,7 @@ export default function ModalPreview() {
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLevel("short");
     }
   }, [isOpen]);

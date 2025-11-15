@@ -131,9 +131,11 @@
 }
 .findMeta {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
   color: var(--text-subtle);
   font-size: 0.8rem;
+  line-height: 1;
 }
 .findNav {
   padding: 0.2rem 0.5rem;
@@ -152,6 +154,13 @@
 .btnPrimary:focus-visible,
 .btnDisabled:focus-visible {
   outline: var(--focus);
+}
+
+.highlightMatch {
+  background: #fde68a;
+  color: inherit;
+  padding: 0 0.05em;
+  border-radius: 2px;
 }
 
 /* header buttons */

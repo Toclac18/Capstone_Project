@@ -10,6 +10,30 @@ import styles from "../styles.module.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
+type TextRenderer = (textItem: { str: string }) => string;
+
+function escapeRegExp(input: string) {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function makeTextRenderer(query: string): TextRenderer {
+  const q = query.trim();
+  if (!q) {
+    return ({ str }: { str: string }) => str;
+  }
+
+  const regex = new RegExp(escapeRegExp(q), "gi");
+
+  return ({ str }: { str: string }) => {
+    if (!str) return str;
+
+    return str.replace(
+      regex,
+      (match: string) => `<mark class="pdf-highlight">${match}</mark>`,
+    );
+  };
+}
+
 export default function PdfViewer() {
   const {
     detail,
@@ -19,11 +43,14 @@ export default function PdfViewer() {
     redeemed,
     openRedeemModal,
     onPageText,
+    query,
   } = useDocsView();
 
   if (!detail) return null;
 
   const blurred = detail.isPremium && !redeemed;
+
+  const textRenderer = makeTextRenderer(query);
 
   const handleDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
@@ -31,7 +58,7 @@ export default function PdfViewer() {
 
   const handlePageText = (textContent: any) => {
     const items = textContent?.items ?? [];
-    const text = items.map((item: any) => item?.str ?? "").join(" ");
+    const text = items.map((i: any) => i?.str ?? "").join(" ");
     onPageText(page, text);
   };
 
@@ -49,11 +76,11 @@ export default function PdfViewer() {
               pageNumber={page}
               scale={scale}
               onGetTextSuccess={handlePageText}
+              customTextRenderer={textRenderer}
             />
           </Document>
         </div>
 
-        {/* Overlay khi là premium mà chưa redeem */}
         {blurred && (
           <div className={styles.premiumOverlay}>
             <div className={styles.premiumCard}>

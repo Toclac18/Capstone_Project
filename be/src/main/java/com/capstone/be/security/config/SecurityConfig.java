@@ -62,7 +62,8 @@ public class SecurityConfig {
             .requestMatchers("/api/v1/reader/**").hasRole("READER")
             .requestMatchers("/api/v1/reviewer/**").hasRole("REVIEWER")
             .requestMatchers("/api/v1/organization/**").hasRole("ORGANIZATION_ADMIN")
-            .requestMatchers("/api/v1/admin/**").hasAnyRole("BUSINESS_ADMIN", "SYSTEM_ADMIN")
+            .requestMatchers("/api/v1/business-admin/**").hasAnyRole("BUSINESS_ADMIN")
+            .requestMatchers("/api/v1/system-admin/**").hasAnyRole("SYSTEM_ADMIN")
             // All other requests need authentication
             .anyRequest().authenticated()
         )

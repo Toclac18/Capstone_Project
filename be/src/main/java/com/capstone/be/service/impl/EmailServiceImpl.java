@@ -60,6 +60,22 @@ public class EmailServiceImpl implements EmailService {
     }
   }
 
+  @Override
+  @Async
+  public void sendReviewerRejectionEmail(String email, String fullName, String rejectionReason) {
+    try {
+      String subject = "Reviewer Application Update - Capstone Platform";
+      String htmlContent = buildRejectionEmailHtml(fullName, rejectionReason);
+
+      sendHtmlEmail(email, subject, htmlContent);
+      log.info("Sent rejection email to: {}", email);
+
+    } catch (Exception e) {
+      log.error("Failed to send rejection email to: {}", email, e);
+      // Don't throw exception for rejection email - it's not critical
+    }
+  }
+
   private void sendHtmlEmail(String to, String subject, String htmlContent)
       throws MessagingException {
     MimeMessage message = mailSender.createMimeMessage();
@@ -149,5 +165,49 @@ public class EmailServiceImpl implements EmailService {
         </body>
         </html>
         """.formatted(fullName);
+  }
+
+  private String buildRejectionEmailHtml(String fullName, String rejectionReason) {
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #f44336; color: white; padding: 20px; text-align: center; }
+                .content { padding: 20px; background-color: #f9f9f9; }
+                .reason-box { background-color: #fff3cd; border-left: 4px solid #ffc107;
+                             padding: 15px; margin: 20px 0; }
+                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Reviewer Application Update</h1>
+                </div>
+                <div class="content">
+                    <h2>Dear %s,</h2>
+                    <p>Thank you for your interest in becoming a reviewer on the Capstone Platform.</p>
+                    <p>After careful review of your application, we regret to inform you that we are unable
+                       to approve your reviewer registration at this time.</p>
+                    <div class="reason-box">
+                        <strong>Reason:</strong>
+                        <p>%s</p>
+                    </div>
+                    <p>We appreciate your interest in contributing to our platform. If you believe this decision
+                       was made in error or if you would like to reapply in the future, please feel free to
+                       contact our support team.</p>
+                    <p>Thank you for your understanding.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; 2025 Capstone Platform. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(fullName, rejectionReason);
   }
 }

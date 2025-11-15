@@ -10,6 +10,7 @@ public enum UserStatus {
   PENDING_APPROVE("Pending approve"),
   ACTIVE("Active"),
   INACTIVE("Inactive"),
+  REJECTED("Rejected"),
   DELETED("Deleted");
 
   private final String displayName;

@@ -33,6 +33,10 @@ public class ResourceNotFoundException extends BusinessException {
     return new ResourceNotFoundException("User", id);
   }
 
+  public static ResourceNotFoundException userById(Object id) {
+    return new ResourceNotFoundException("User", "id", id);
+  }
+
   public static ResourceNotFoundException userByEmail(String email) {
     return new ResourceNotFoundException("User", "email", email);
   }

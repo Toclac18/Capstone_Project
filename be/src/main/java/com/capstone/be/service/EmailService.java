@@ -23,4 +23,13 @@ public interface EmailService {
    * @param fullName User full name
    */
   void sendWelcomeEmail(String email, String fullName);
+
+  /**
+   * Send rejection email to reviewer with reason
+   *
+   * @param email           Reviewer email
+   * @param fullName        Reviewer full name
+   * @param rejectionReason Reason for rejection
+   */
+  void sendReviewerRejectionEmail(String email, String fullName, String rejectionReason);
 }

@@ -1,6 +1,7 @@
 package com.capstone.be.repository;
 
 import com.capstone.be.domain.entity.ReviewerSpecLink;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -9,4 +10,6 @@ import org.springframework.stereotype.Repository;
 public interface ReviewerSpecLinkRepository extends JpaRepository<ReviewerSpecLink, UUID> {
 
   void deleteAllByReviewerId(UUID reviewerId);
+
+  List<ReviewerSpecLink> findByReviewerId(UUID reviewerId);
 }

@@ -27,7 +27,7 @@ export default function RightSidebar() {
                 <div className={styles.relatedTitle}>{d.title}</div>
                 <div className={styles.relatedOrg}>{d.orgName}</div>
                 <div className={styles.relatedVotes}>
-                  ▲ {d.upvote_counts} • score {d.vote_scores}
+                  ▲ {d.upvote_counts} • ▼ {d.downvote_counts}
                 </div>
               </div>
               {d.isPremium && (

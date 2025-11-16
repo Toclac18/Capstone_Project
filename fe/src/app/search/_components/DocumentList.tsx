@@ -19,9 +19,7 @@ export default function DocumentList() {
   }, []);
 
   const { paged } = useMemo(() => {
-    const start = (page - 1) * perPage;
-    const end = start + perPage;
-    const paged = items.slice(start, end);
+    const paged = items;
 
     // Client-only search within current page data
     const query = q.trim().toLowerCase();

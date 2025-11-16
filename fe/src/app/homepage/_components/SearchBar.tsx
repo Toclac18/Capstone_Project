@@ -11,7 +11,6 @@ export default function SearchBar() {
   const router = useRouter();
 
   const goSearchPage = () => {
-    // Advanced search: chuyển sang trang /search (không dùng ở đây)
     router.push(
       `/search${localQ.trim() ? `?q=${encodeURIComponent(localQ.trim())}` : ""}`,
     );

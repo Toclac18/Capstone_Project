@@ -34,10 +34,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       String jwt = getJwtFromRequest(request);
 
       if (StringUtils.hasText(jwt) && jwtUtil.validateToken(jwt)) {
+        // Get email from token to load user details
         String email = jwtUtil.getEmailFromToken(jwt);
 
+        // Load user details by email
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
+        // Create authentication with userDetails (which contains UUID as username)
         UsernamePasswordAuthenticationToken authentication =
             new UsernamePasswordAuthenticationToken(
                 userDetails,

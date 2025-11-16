@@ -45,7 +45,7 @@ public class UserPrincipal implements UserDetails {
 
   @Override
   public String getUsername() {
-    return email;
+    return id.toString();  // Return UUID instead of email for consistency with JWT subject
   }
 
   @Override

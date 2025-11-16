@@ -36,7 +36,8 @@ public class EmailServiceImpl implements EmailService {
       String htmlContent = buildVerificationEmailHtml(email, verificationUrl);
 
       sendHtmlEmail(email, subject, htmlContent);
-      log.info("Sent verification email to: {}", email);
+      log.info("Sent verification email to: {}, [{}]", email, token);
+      log.info("", email);
 
     } catch (Exception e) {
       log.error("Failed to send verification email to: {}", email, e);
@@ -200,6 +201,66 @@ public class EmailServiceImpl implements EmailService {
                     <p>We appreciate your interest in contributing to our platform. If you believe this decision
                        was made in error or if you would like to reapply in the future, please feel free to
                        contact our support team.</p>
+                    <p>Thank you for your understanding.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; 2025 Capstone Platform. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(fullName, rejectionReason);
+  }
+
+  @Override
+  @Async
+  public void sendOrganizationRejectionEmail(String email, String fullName,
+      String rejectionReason) {
+    try {
+      String subject = "Organization Registration Update - Capstone Platform";
+      String htmlContent = buildOrganizationRejectionEmailHtml(fullName, rejectionReason);
+
+      sendHtmlEmail(email, subject, htmlContent);
+      log.info("Sent organization rejection email to: {}", email);
+
+    } catch (Exception e) {
+      log.error("Failed to send organization rejection email to: {}", email, e);
+      // Don't throw exception - it's not critical
+    }
+  }
+
+  private String buildOrganizationRejectionEmailHtml(String fullName, String rejectionReason) {
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #f44336; color: white; padding: 20px; text-align: center; }
+                .content { padding: 20px; background-color: #f9f9f9; }
+                .reason-box { background-color: #fff3cd; border-left: 4px solid #ffc107;
+                             padding: 15px; margin: 20px 0; }
+                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Organization Registration Update</h1>
+                </div>
+                <div class="content">
+                    <h2>Dear %s,</h2>
+                    <p>Thank you for registering your organization on the Capstone Platform.</p>
+                    <p>After careful review of your registration, we regret to inform you that we are unable
+                       to approve your organization at this time.</p>
+                    <div class="reason-box">
+                        <strong>Reason:</strong>
+                        <p>%s</p>
+                    </div>
+                    <p>If you believe this decision was made in error or if you have additional documentation
+                       to support your registration, please feel free to contact our support team.</p>
                     <p>Thank you for your understanding.</p>
                 </div>
                 <div class="footer">

@@ -32,4 +32,13 @@ public interface EmailService {
    * @param rejectionReason Reason for rejection
    */
   void sendReviewerRejectionEmail(String email, String fullName, String rejectionReason);
+
+  /**
+   * Send rejection email to organization admin with reason
+   *
+   * @param email           Organization admin email
+   * @param fullName        Organization admin full name
+   * @param rejectionReason Reason for rejection
+   */
+  void sendOrganizationRejectionEmail(String email, String fullName, String rejectionReason);
 }

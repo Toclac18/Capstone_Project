@@ -1,6 +1,7 @@
 package com.capstone.be.service;
 
 import com.capstone.be.dto.request.auth.LoginRequest;
+import com.capstone.be.dto.request.auth.RegisterOrganizationRequest;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
 import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
 import com.capstone.be.dto.response.auth.AuthResponse;
@@ -36,6 +37,16 @@ public interface AuthService {
    * @return Auth response with access token (or pending approve status for reviewers)
    */
   AuthResponse verifyEmail(String token);
+
+  /**
+   * Register a new organization account Status will be PENDING_EMAIL_VERIFY -> PENDING_APPROVE ->
+   * ACTIVE
+   *
+   * @param request Registration request
+   * @param logoFile Optional logo file
+   * @return Auth response with user info (no token until email verified)
+   */
+  AuthResponse registerOrganization(RegisterOrganizationRequest request, MultipartFile logoFile);
 
   /**
    * Login with email and password

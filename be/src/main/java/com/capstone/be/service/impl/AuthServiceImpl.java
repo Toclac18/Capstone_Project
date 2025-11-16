@@ -1,6 +1,7 @@
 package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.Domain;
+import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.ReaderProfile;
 import com.capstone.be.domain.entity.ReviewerDomainLink;
 import com.capstone.be.domain.entity.ReviewerProfile;
@@ -10,6 +11,7 @@ import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.domain.enums.UserStatus;
 import com.capstone.be.dto.request.auth.LoginRequest;
+import com.capstone.be.dto.request.auth.RegisterOrganizationRequest;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
 import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
 import com.capstone.be.dto.response.auth.AuthResponse;
@@ -19,6 +21,7 @@ import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.exception.UnauthorizedException;
 import com.capstone.be.mapper.AuthMapper;
 import com.capstone.be.repository.DomainRepository;
+import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.repository.ReviewerDomainLinkRepository;
 import com.capstone.be.repository.ReviewerProfileRepository;
@@ -48,6 +51,7 @@ public class AuthServiceImpl implements AuthService {
   private final UserRepository userRepository;
   private final ReaderProfileRepository readerProfileRepository;
   private final ReviewerProfileRepository reviewerProfileRepository;
+  private final OrganizationProfileRepository organizationProfileRepository;
   private final DomainRepository domainRepository;
   private final SpecializationRepository specializationRepository;
   private final ReviewerDomainLinkRepository reviewerDomainLinkRepository;
@@ -125,9 +129,11 @@ public class AuthServiceImpl implements AuthService {
         log.info("Reader {} email verified successfully - account activated", email);
         // Send welcome email (async, non-blocking)
         emailService.sendWelcomeEmail(user.getEmail(), user.getFullName());
-      } else if (user.getRole() == UserRole.REVIEWER) {
+      } else if (user.getRole() == UserRole.REVIEWER
+          || user.getRole() == UserRole.ORGANIZATION_ADMIN) {
         user.setStatus(UserStatus.PENDING_APPROVE);
-        log.info("Reviewer {} email verified - waiting for admin approval", email);
+        log.info("{} {} email verified - waiting for admin approval",
+            user.getRole(), email);
         // Don't send welcome email yet, wait for approval
       }
       userRepository.save(user);
@@ -175,6 +181,72 @@ public class AuthServiceImpl implements AuthService {
     String token = jwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole().name());
 
     return authMapper.toAuthResponseWithToken(user, token);
+  }
+
+  @Override
+  @Transactional
+  public AuthResponse registerOrganization(RegisterOrganizationRequest request,
+      MultipartFile logoFile) {
+    // Check if admin email already exists
+    if (userRepository.existsByEmail(request.getAdminEmail())) {
+      throw DuplicateResourceException.email(request.getAdminEmail());
+    }
+
+    // Check if organization name already exists
+    if (organizationProfileRepository.existsByName(request.getOrganizationName())) {
+      throw new DuplicateResourceException(
+          "Organization name already exists: " + request.getOrganizationName());
+    }
+
+    // Check if organization email already exists
+    if (organizationProfileRepository.existsByEmail(request.getOrganizationEmail())) {
+      throw new DuplicateResourceException(
+          "Organization email already exists: " + request.getOrganizationEmail());
+    }
+
+    // Check if registration number already exists
+    if (organizationProfileRepository.existsByRegistrationNumber(
+        request.getRegistrationNumber())) {
+      throw new DuplicateResourceException(
+          "Registration number already exists: " + request.getRegistrationNumber());
+    }
+
+    // Upload logo if provided
+    String logoUrl = null;
+    if (logoFile != null && !logoFile.isEmpty()) {
+      logoUrl = fileStorageService.uploadFile(logoFile, "organization-logos", null);
+      log.info("Uploaded organization logo to S3: {}", logoUrl);
+    }
+
+    // Map request to User entity (Organization Admin)
+    User admin = authMapper.toOrganizationAdminEntity(request);
+    admin.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+    admin.setRole(UserRole.ORGANIZATION_ADMIN);
+    admin.setStatus(UserStatus.PENDING_EMAIL_VERIFY);
+
+    admin = userRepository.save(admin);
+    log.info("Created organization admin user with id: {} - pending email verification",
+        admin.getId());
+
+    // Map request to OrganizationProfile
+    OrganizationProfile organizationProfile = authMapper.toOrganizationProfile(request);
+    organizationProfile.setAdmin(admin);
+    organizationProfile.setLogo(logoUrl);
+
+    organizationProfileRepository.save(organizationProfile);
+    log.info("Created organization profile for admin id: {}", admin.getId());
+
+    // Generate email verification token (expires in 10 minutes)
+    String verificationToken = jwtUtil.generateEmailVerificationToken(
+        admin.getId(),
+        admin.getEmail()
+    );
+
+    // Send verification email (async)
+    emailService.sendEmailVerification(admin.getId(), admin.getEmail(), verificationToken);
+
+    // Return response WITHOUT access token (user needs to verify email first)
+    return authMapper.toAuthResponse(admin);
   }
 
   @Override

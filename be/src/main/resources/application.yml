@@ -15,7 +15,7 @@ spring:
       ddl-auto: ${JPA_DDL_AUTO:update}
 #      ddl-auto: update
 #      ddl-auto: create-drop
-    show-sql: true
+    show-sql: ${JPA_SHOW_SQL:true}
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
       hibernate:

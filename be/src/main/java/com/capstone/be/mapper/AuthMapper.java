@@ -1,8 +1,10 @@
 package com.capstone.be.mapper;
 
+import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.ReaderProfile;
 import com.capstone.be.domain.entity.ReviewerProfile;
 import com.capstone.be.domain.entity.User;
+import com.capstone.be.dto.request.auth.RegisterOrganizationRequest;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
 import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
 import com.capstone.be.dto.response.auth.AuthResponse;
@@ -74,4 +76,28 @@ public interface AuthMapper {
   @Mapping(target = "ordid", source = "orcid")
   @Mapping(target = "credentialFileUrls", ignore = true)
   ReviewerProfile toReviewerProfile(RegisterReviewerRequest request);
+
+  /**
+   * Map RegisterOrganizationRequest to User entity (Organization Admin)
+   */
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "email", source = "adminEmail")
+  @Mapping(target = "fullName", source = "adminFullName")
+  @Mapping(target = "passwordHash", ignore = true)
+  @Mapping(target = "role", ignore = true)
+  @Mapping(target = "status", ignore = true)
+  @Mapping(target = "point", constant = "0")
+  @Mapping(target = "avatarUrl", ignore = true)
+  User toOrganizationAdminEntity(RegisterOrganizationRequest request);
+
+  /**
+   * Map RegisterOrganizationRequest to OrganizationProfile entity
+   */
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "admin", ignore = true)
+  @Mapping(target = "name", source = "organizationName")
+  @Mapping(target = "type", source = "organizationType")
+  @Mapping(target = "email", source = "organizationEmail")
+  @Mapping(target = "logo", ignore = true)
+  OrganizationProfile toOrganizationProfile(RegisterOrganizationRequest request);
 }

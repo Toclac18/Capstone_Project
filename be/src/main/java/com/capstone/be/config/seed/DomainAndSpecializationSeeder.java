@@ -137,8 +137,7 @@ public class DomainAndSpecializationSeeder {
     int specCount = 0;
 
     for (DomainData dd : data) {
-      UUID xid = generateUUID(domainIndex);
-      System.out.println(xid);
+      UUID xid = SeedUtil.generateUUID(domainIndex);
       Domain domain = Domain.builder()
           .id(xid)
           .code(domainIndex)
@@ -150,7 +149,7 @@ public class DomainAndSpecializationSeeder {
       specIndex = domainIndex * 100 + 1;
       for (String specName : dd.specializations) {
         Specialization spec = Specialization.builder()
-            .id(generateUUID(specIndex))
+            .id(SeedUtil.generateUUID(specIndex))
             .code(specIndex)
             .name(specName)
             .domain(domain)
@@ -165,11 +164,7 @@ public class DomainAndSpecializationSeeder {
     }
 
     log.info("Seeded {} domains and {} specializations",
-        data.size(), specCount - 1);
-  }
-
-  private UUID generateUUID(int seed) {
-    return UUID.nameUUIDFromBytes(("seed-" + seed).getBytes(StandardCharsets.UTF_8));
+        data.size(), specCount);
   }
 
   record DomainData(String name, List<String> specializations) {

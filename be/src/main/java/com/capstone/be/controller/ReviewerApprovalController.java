@@ -62,7 +62,7 @@ public class ReviewerApprovalController {
   @GetMapping("/pending/{userId}")
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
   public ResponseEntity<PendingReviewerResponse> getPendingReviewerById(
-      @PathVariable UUID userId) {
+      @PathVariable("userId") UUID userId) {
     log.info("Get pending reviewer by id: {}", userId);
     PendingReviewerResponse response = reviewerApprovalService.getPendingReviewerById(userId);
     return ResponseEntity.ok(response);

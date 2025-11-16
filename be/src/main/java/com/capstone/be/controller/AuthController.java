@@ -1,6 +1,7 @@
 package com.capstone.be.controller;
 
 import com.capstone.be.dto.request.auth.LoginRequest;
+import com.capstone.be.dto.request.auth.RegisterOrganizationRequest;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
 import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
 import com.capstone.be.dto.request.auth.VerifyEmailRequest;
@@ -42,6 +43,15 @@ public class AuthController {
       @RequestPart("credentialFiles") List<MultipartFile> credentialFiles) {
     log.info("Register reviewer request for email: {}", request.getEmail());
     AuthResponse response = authService.registerReviewer(request, credentialFiles);
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+  }
+
+  @PostMapping(value = "/register/organization", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<AuthResponse> registerOrganization(
+      @Valid @RequestPart("data") RegisterOrganizationRequest request,
+      @RequestPart(value = "logoFile", required = false) MultipartFile logoFile) {
+    log.info("Register organization request for admin email: {}", request.getAdminEmail());
+    AuthResponse response = authService.registerOrganization(request, logoFile);
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 

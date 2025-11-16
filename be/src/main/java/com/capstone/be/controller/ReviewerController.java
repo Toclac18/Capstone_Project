@@ -1,8 +1,8 @@
 package com.capstone.be.controller;
 
-import com.capstone.be.dto.request.reader.UpdateReaderProfileRequest;
-import com.capstone.be.dto.response.reader.ReaderProfileResponse;
-import com.capstone.be.service.ReaderService;
+import com.capstone.be.dto.request.reviewer.UpdateReviewerProfileRequest;
+import com.capstone.be.dto.response.reviewer.ReviewerProfileResponse;
+import com.capstone.be.service.ReviewerService;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -20,70 +20,70 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * Controller for Reader-specific operations
+ * Controller for Reviewer-specific operations
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/reader")
+@RequestMapping("/api/v1/reviewer")
 @RequiredArgsConstructor
-public class ReaderController {
+public class ReviewerController {
 
-  private final ReaderService readerService;
+  private final ReviewerService reviewerService;
 
   /**
-   * Get reader profile
-   * GET /api/v1/reader/profile
+   * Get reviewer profile
+   * GET /api/v1/reviewer/profile
    *
    * @param authentication Spring Security authentication
-   * @return ReaderProfileResponse
+   * @return ReviewerProfileResponse
    */
   @GetMapping("/profile")
-  @PreAuthorize("hasRole('READER')")
-  public ResponseEntity<ReaderProfileResponse> getProfile(Authentication authentication) {
+  @PreAuthorize("hasRole('REVIEWER')")
+  public ResponseEntity<ReviewerProfileResponse> getProfile(Authentication authentication) {
     UUID userId = UUID.fromString(authentication.getName());
-    log.info("Get profile request for reader user ID: {}", userId);
+    log.info("Get profile request for reviewer user ID: {}", userId);
 
-    ReaderProfileResponse response = readerService.getProfile(userId);
+    ReviewerProfileResponse response = reviewerService.getProfile(userId);
 
     return ResponseEntity.ok(response);
   }
 
   /**
-   * Update reader profile PUT /api/v1/reader/profile
+   * Update reviewer profile PUT /api/v1/reviewer/profile
    *
    * @param authentication Spring Security authentication
    * @param request        Update profile request
-   * @return Updated ReaderProfileResponse
+   * @return Updated ReviewerProfileResponse
    */
   @PutMapping("/profile")
-  @PreAuthorize("hasRole('READER')")
-  public ResponseEntity<ReaderProfileResponse> updateProfile(
+  @PreAuthorize("hasRole('REVIEWER')")
+  public ResponseEntity<ReviewerProfileResponse> updateProfile(
       Authentication authentication,
-      @Valid @RequestBody UpdateReaderProfileRequest request) {
+      @Valid @RequestBody UpdateReviewerProfileRequest request) {
     UUID userId = UUID.fromString(authentication.getName());
-    log.info("Update profile request for reader user ID: {}", userId);
+    log.info("Update profile request for reviewer user ID: {}", userId);
 
-    ReaderProfileResponse response = readerService.updateProfile(userId, request);
+    ReviewerProfileResponse response = reviewerService.updateProfile(userId, request);
 
     return ResponseEntity.ok(response);
   }
 
   /**
-   * Upload avatar for reader POST /api/v1/reader/profile/avatar
+   * Upload avatar for reviewer POST /api/v1/reviewer/profile/avatar
    *
    * @param authentication Spring Security authentication
    * @param file           Avatar image file
-   * @return Updated ReaderProfileResponse with new avatar URL
+   * @return Updated ReviewerProfileResponse with new avatar URL
    */
   @PostMapping("/profile/avatar")
-  @PreAuthorize("hasRole('READER')")
-  public ResponseEntity<ReaderProfileResponse> uploadAvatar(
+  @PreAuthorize("hasRole('REVIEWER')")
+  public ResponseEntity<ReviewerProfileResponse> uploadAvatar(
       Authentication authentication,
       @RequestParam(value = "file") MultipartFile file) {
     UUID userId = UUID.fromString(authentication.getName());
-    log.info("Upload avatar request for reader user ID: {}", userId);
+    log.info("Upload avatar request for reviewer user ID: {}", userId);
 
-    ReaderProfileResponse response = readerService.uploadAvatar(userId, file);
+    ReviewerProfileResponse response = reviewerService.uploadAvatar(userId, file);
 
     return ResponseEntity.ok(response);
   }

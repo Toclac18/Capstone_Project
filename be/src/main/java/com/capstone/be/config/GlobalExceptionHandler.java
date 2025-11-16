@@ -31,6 +31,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Global exception handler that catches all exceptions and wraps them in ApiResponse format
@@ -366,6 +367,18 @@ public class GlobalExceptionHandler {
 
     ApiResponse<Object> response = ApiResponse.error(
         "Invalid or missing request body"
+    );
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+  }
+
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ResponseEntity<ApiResponse<Object>> handleNoResourceFound(
+      HttpMessageNotReadableException ex, HttpServletRequest req) {
+    log.error("No Resource Found {} : {}", req.getRequestURI(), ex.getMessage());
+
+    ApiResponse<Object> response = ApiResponse.error(
+        ex.getMessage()
     );
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

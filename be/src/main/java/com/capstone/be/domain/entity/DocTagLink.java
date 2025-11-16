@@ -1,32 +1,23 @@
 package com.capstone.be.domain.entity;
 
-import com.capstone.be.domain.entity.common.TimestampEntity;
-import jakarta.persistence.Column;
+import com.capstone.be.domain.entity.common.BaseEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import java.util.UUID;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.UuidGenerator;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
-public class DocTagLink extends TimestampEntity {
-
-  @Id
-  @UuidGenerator
-  @Column(columnDefinition = "UUID")
-  private UUID id;
+public class DocTagLink extends BaseEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "document_id")

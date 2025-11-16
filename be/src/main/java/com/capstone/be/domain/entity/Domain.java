@@ -1,38 +1,23 @@
 package com.capstone.be.domain.entity;
 
-import com.capstone.be.domain.entity.common.TimestampEntity;
-import jakarta.persistence.Column;
+import com.capstone.be.domain.entity.common.BaseEntity;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import java.util.UUID;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
-public class Domain extends TimestampEntity {
-
-  @Id
-  @Column(columnDefinition = "UUID")
-  private UUID id;
+public class Domain extends BaseEntity {
 
   private int code;
 
   private String name;
-
-  @PrePersist
-  public void prePersist() {
-    if (this.id == null) {
-      this.id = UUID.randomUUID();
-    }
-  }
 
 }

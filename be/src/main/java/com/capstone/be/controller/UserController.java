@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,6 +42,23 @@ public class UserController {
     log.info("Change password request for user: {}", userId);
 
     userService.changePassword(userId, request);
+
+    return ResponseEntity.noContent().build();
+  }
+
+  /**
+   * Delete account for the authenticated user (soft delete)
+   * DELETE /api/v1/user/account
+   *
+   * @param authentication Spring Security authentication
+   * @return 204 No Content on success
+   */
+  @DeleteMapping("/account")
+  public ResponseEntity<Void> deleteAccount(Authentication authentication) {
+    UUID userId = UUID.fromString(authentication.getName());
+    log.info("Delete account request for user: {}", userId);
+
+    userService.deleteAccount(userId);
 
     return ResponseEntity.noContent().build();
   }

@@ -1,6 +1,7 @@
 package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.User;
+import com.capstone.be.domain.enums.UserStatus;
 import com.capstone.be.dto.request.user.ChangePasswordRequest;
 import com.capstone.be.exception.BusinessException;
 import com.capstone.be.repository.UserRepository;
@@ -64,5 +65,34 @@ public class UserServiceImpl implements UserService {
     userRepository.save(user);
 
     log.info("Password changed successfully for user: {}", userId);
+  }
+
+  @Override
+  @Transactional
+  public void deleteAccount(UUID userId) {
+    log.info("Deleting account for user ID: {}", userId);
+
+    // Find user
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new BusinessException(
+            "User not found with id: " + userId,
+            HttpStatus.NOT_FOUND,
+            "USER_NOT_FOUND"
+        ));
+
+    // Check if already deleted
+    if (user.getStatus() == UserStatus.DELETED) {
+      throw new BusinessException(
+          "Account is already deleted",
+          HttpStatus.BAD_REQUEST,
+          "ACCOUNT_ALREADY_DELETED"
+      );
+    }
+
+    // Soft delete - set status to DELETED
+    user.setStatus(UserStatus.DELETED);
+    userRepository.save(user);
+
+    log.info("Account deleted successfully for user: {}", userId);
   }
 }

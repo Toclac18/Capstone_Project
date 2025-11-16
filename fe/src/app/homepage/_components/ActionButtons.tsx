@@ -6,17 +6,13 @@ export default function ActionButtons() {
   return (
     <div className={styles.actions}>
       <button className={styles.actionBtn} type="button">
-        + Upload your documents
+        What is READEE?
       </button>
       <button className={styles.actionBtn} type="button">
-        Ask a Question
+        READEE's policies
       </button>
-      <button
-        className={styles.actionBtn}
-        type="button"
-        onClick={() => alert("Filter is available on the Search page")}
-      >
-        Summarize your notes
+      <button className={styles.actionBtn} type="button">
+        + Upload my documents
       </button>
     </div>
   );

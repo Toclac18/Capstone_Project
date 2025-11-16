@@ -24,9 +24,12 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
@@ -238,6 +241,49 @@ public class GlobalExceptionHandler {
 
     ApiResponse<Object> response = ApiResponse.error(
         ex.getMessage() != null ? ex.getMessage() : "Bad request"
+    );
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+  }
+
+  /**
+   * Handle missing request parameter (400)
+   */
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  public ResponseEntity<ApiResponse<Object>> handleMissingParameter(
+      MissingServletRequestParameterException ex, HttpServletRequest req) {
+    log.error("Missing request parameter at {}: {}", req.getRequestURI(), ex.getMessage());
+
+    String message = String.format("Required parameter '%s' is missing", ex.getParameterName());
+    ApiResponse<Object> response = ApiResponse.error(message);
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+  }
+
+  /**
+   * Handle missing multipart file (400)
+   */
+  @ExceptionHandler(MissingServletRequestPartException.class)
+  public ResponseEntity<ApiResponse<Object>> handleMissingFile(
+      MissingServletRequestPartException ex, HttpServletRequest req) {
+    log.error("Missing file upload at {}: {}", req.getRequestURI(), ex.getMessage());
+
+    String message = String.format("Required file '%s' is missing", ex.getRequestPartName());
+    ApiResponse<Object> response = ApiResponse.error(message);
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+  }
+
+  /**
+   * Handle multipart exception (400) - when request is not multipart/form-data
+   */
+  @ExceptionHandler(MultipartException.class)
+  public ResponseEntity<ApiResponse<Object>> handleMultipartException(
+      MultipartException ex, HttpServletRequest req) {
+    log.error("Multipart exception at {}: {}", req.getRequestURI(), ex.getMessage());
+
+    ApiResponse<Object> response = ApiResponse.error(
+        "Request must be multipart/form-data with a file"
     );
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

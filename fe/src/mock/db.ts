@@ -371,6 +371,343 @@ export const mockOrganizationAdminDB = {
   },
 };
 
+// ---------------- Business Admin Tags Mock ----------------
+import type { Tag as BusinessAdminTag, TagStatus } from "@/types/document-tag";
+
+const _businessAdminTags: BusinessAdminTag[] = [
+  {
+    id: "tag-1",
+    name: "Machine Learning",
+    status: "ACTIVE",
+    createdDate: "2025-01-15T10:00:00Z",
+  },
+  {
+    id: "tag-2",
+    name: "Artificial Intelligence",
+    status: "ACTIVE",
+    createdDate: "2025-01-16T11:00:00Z",
+  },
+  {
+    id: "tag-3",
+    name: "Data Science",
+    status: "ACTIVE",
+    createdDate: "2025-01-17T12:00:00Z",
+  },
+  {
+    id: "tag-4",
+    name: "Web Development",
+    status: "ACTIVE",
+    createdDate: "2025-01-18T13:00:00Z",
+  },
+  {
+    id: "tag-5",
+    name: "Software Engineering",
+    status: "ACTIVE",
+    createdDate: "2025-01-19T14:00:00Z",
+  },
+  {
+    id: "tag-6",
+    name: "Algorithms",
+    status: "ACTIVE",
+    createdDate: "2025-01-20T15:00:00Z",
+  },
+  {
+    id: "tag-7",
+    name: "Database",
+    status: "INACTIVE",
+    createdDate: "2025-01-21T16:00:00Z",
+  },
+  {
+    id: "tag-8",
+    name: "Security",
+    status: "ACTIVE",
+    createdDate: "2025-01-22T17:00:00Z",
+  },
+  {
+    id: "tag-9",
+    name: "Cloud Computing",
+    status: "ACTIVE",
+    createdDate: "2025-01-23T18:00:00Z",
+  },
+  {
+    id: "tag-10",
+    name: "DevOps",
+    status: "ACTIVE",
+    createdDate: "2025-01-24T19:00:00Z",
+  },
+  {
+    id: "tag-11",
+    name: "Mobile Development",
+    status: "ACTIVE",
+    createdDate: "2025-01-25T20:00:00Z",
+  },
+  {
+    id: "tag-12",
+    name: "Blockchain",
+    status: "INACTIVE",
+    createdDate: "2025-01-26T21:00:00Z",
+  },
+  {
+    id: "tag-13",
+    name: "Cybersecurity",
+    status: "PENDING",
+    createdDate: "2025-01-27T10:00:00Z",
+  },
+  {
+    id: "tag-14",
+    name: "Quantum Computing",
+    status: "PENDING",
+    createdDate: "2025-01-28T11:00:00Z",
+  },
+  {
+    id: "tag-15",
+    name: "Internet of Things",
+    status: "PENDING",
+    createdDate: "2025-01-29T12:00:00Z",
+  },
+];
+
+export const mockTagsDB = {
+  list(params?: {
+    search?: string;
+    status?: TagStatus;
+    dateFrom?: string;
+    dateTo?: string;
+  }): BusinessAdminTag[] {
+    let filtered = [..._businessAdminTags];
+
+    // Filter by search
+    if (params?.search) {
+      const searchLower = params.search.toLowerCase().trim();
+      filtered = filtered.filter(
+        (tag) =>
+          tag.name.toLowerCase().includes(searchLower) ||
+          tag.id.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Filter by status
+    if (params?.status) {
+      filtered = filtered.filter((tag) => tag.status === params.status);
+    }
+
+    // Filter by date range
+    if (params?.dateFrom) {
+      const fromDate = new Date(params.dateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      filtered = filtered.filter((tag) => {
+        const tagDate = new Date(tag.createdDate);
+        tagDate.setHours(0, 0, 0, 0);
+        return tagDate >= fromDate;
+      });
+    }
+
+    if (params?.dateTo) {
+      const toDate = new Date(params.dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter((tag) => {
+        const tagDate = new Date(tag.createdDate);
+        tagDate.setHours(0, 0, 0, 0);
+        return tagDate <= toDate;
+      });
+    }
+
+    return filtered;
+  },
+  get(id: string): BusinessAdminTag | undefined {
+    return _businessAdminTags.find((tag) => tag.id === id);
+  },
+  create(data: { name: string }): BusinessAdminTag {
+    // Check for duplicate name (case-insensitive)
+    const existingTag = _businessAdminTags.find(
+      (tag) => tag.name.toLowerCase().trim() === data.name.toLowerCase().trim()
+    );
+
+    if (existingTag) {
+      throw new Error("This tag name already exists. Please choose another name.");
+    }
+
+    // Validate name is not empty
+    if (!data.name || !data.name.trim()) {
+      throw new Error("Tag name cannot be empty.");
+    }
+
+    const newTag: BusinessAdminTag = {
+      id: `tag-${Date.now()}`,
+      name: data.name.trim(),
+      status: "ACTIVE",
+      createdDate: new Date().toISOString(),
+    };
+
+    _businessAdminTags.unshift(newTag);
+    return newTag;
+  },
+  update(id: string, data: { name?: string; status?: TagStatus }): BusinessAdminTag {
+    const tagIndex = _businessAdminTags.findIndex((tag) => tag.id === id);
+
+    if (tagIndex === -1) {
+      throw new Error(`Tag with id ${id} not found`);
+    }
+
+    const existingTag = _businessAdminTags[tagIndex];
+
+    // Check for duplicate name if name is being updated
+    if (data.name !== undefined) {
+      const trimmedName = data.name.trim();
+      if (trimmedName !== existingTag.name) {
+        const duplicateTag = _businessAdminTags.find(
+          (tag) =>
+            tag.id !== id &&
+            tag.name.toLowerCase().trim() === trimmedName.toLowerCase()
+        );
+
+        if (duplicateTag) {
+          throw new Error("This tag name already exists. Please choose another name.");
+        }
+      }
+    }
+
+    // Validate name is not empty if provided
+    if (data.name !== undefined && (!data.name || !data.name.trim())) {
+      throw new Error("Tag name cannot be empty.");
+    }
+
+    const updatedTag: BusinessAdminTag = {
+      ...existingTag,
+      ...(data.name !== undefined && { name: data.name.trim() }),
+      ...(data.status !== undefined && { status: data.status }),
+    };
+
+    _businessAdminTags[tagIndex] = updatedTag;
+    return updatedTag;
+  },
+  delete(id: string): void {
+    const tagIndex = _businessAdminTags.findIndex((tag) => tag.id === id);
+
+    if (tagIndex === -1) {
+      throw new Error(`Tag with id ${id} not found`);
+    }
+
+    _businessAdminTags.splice(tagIndex, 1);
+  },
+  approve(id: string): BusinessAdminTag {
+    const tagIndex = _businessAdminTags.findIndex((tag) => tag.id === id);
+
+    if (tagIndex === -1) {
+      throw new Error(`Tag with id ${id} not found`);
+    }
+
+    const tag = _businessAdminTags[tagIndex];
+
+    if (tag.status !== "PENDING") {
+      throw new Error("Only pending tags can be approved");
+    }
+
+    const updatedTag: BusinessAdminTag = {
+      ...tag,
+      status: "ACTIVE",
+    };
+
+    _businessAdminTags[tagIndex] = updatedTag;
+    return updatedTag;
+  },
+  reset(): void {
+    _businessAdminTags.length = 0;
+    _businessAdminTags.push(
+      {
+        id: "tag-1",
+        name: "Machine Learning",
+        status: "ACTIVE",
+        createdDate: "2025-01-15T10:00:00Z",
+      },
+      {
+        id: "tag-2",
+        name: "Artificial Intelligence",
+        status: "ACTIVE",
+        createdDate: "2025-01-16T11:00:00Z",
+      },
+      {
+        id: "tag-3",
+        name: "Data Science",
+        status: "ACTIVE",
+        createdDate: "2025-01-17T12:00:00Z",
+      },
+      {
+        id: "tag-4",
+        name: "Web Development",
+        status: "ACTIVE",
+        createdDate: "2025-01-18T13:00:00Z",
+      },
+      {
+        id: "tag-5",
+        name: "Software Engineering",
+        status: "ACTIVE",
+        createdDate: "2025-01-19T14:00:00Z",
+      },
+      {
+        id: "tag-6",
+        name: "Algorithms",
+        status: "ACTIVE",
+        createdDate: "2025-01-20T15:00:00Z",
+      },
+      {
+        id: "tag-7",
+        name: "Database",
+        status: "INACTIVE",
+        createdDate: "2025-01-21T16:00:00Z",
+      },
+      {
+        id: "tag-8",
+        name: "Security",
+        status: "ACTIVE",
+        createdDate: "2025-01-22T17:00:00Z",
+      },
+      {
+        id: "tag-9",
+        name: "Cloud Computing",
+        status: "ACTIVE",
+        createdDate: "2025-01-23T18:00:00Z",
+      },
+      {
+        id: "tag-10",
+        name: "DevOps",
+        status: "ACTIVE",
+        createdDate: "2025-01-24T19:00:00Z",
+      },
+      {
+        id: "tag-11",
+        name: "Mobile Development",
+        status: "ACTIVE",
+        createdDate: "2025-01-25T20:00:00Z",
+      },
+      {
+        id: "tag-12",
+        name: "Blockchain",
+        status: "INACTIVE",
+        createdDate: "2025-01-26T21:00:00Z",
+      },
+      {
+        id: "tag-13",
+        name: "Cybersecurity",
+        status: "PENDING",
+        createdDate: "2025-01-27T10:00:00Z",
+      },
+      {
+        id: "tag-14",
+        name: "Quantum Computing",
+        status: "PENDING",
+        createdDate: "2025-01-28T11:00:00Z",
+      },
+      {
+        id: "tag-15",
+        name: "Internet of Things",
+        status: "PENDING",
+        createdDate: "2025-01-29T12:00:00Z",
+      }
+    );
+  },
+};
+
 // ---------------- Organizations Mock ----------------
 export type OrganizationSummary = {
   id: string;

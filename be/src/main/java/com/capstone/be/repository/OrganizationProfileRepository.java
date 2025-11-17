@@ -12,6 +12,11 @@ public interface OrganizationProfileRepository extends
 
   Optional<OrganizationProfile> findByAdminId(UUID adminId);
 
+  // Alias for findByAdminId (for consistency with other profile repositories)
+  default Optional<OrganizationProfile> findByUserId(UUID userId) {
+    return findByAdminId(userId);
+  }
+
   boolean existsByName(String name);
 
   boolean existsByEmail(String email);

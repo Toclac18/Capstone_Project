@@ -37,7 +37,6 @@ public class EmailServiceImpl implements EmailService {
 
       sendHtmlEmail(email, subject, htmlContent);
       log.info("Sent verification email to: {}, [{}]", email, token);
-      log.info("", email);
 
     } catch (Exception e) {
       log.error("Failed to send verification email to: {}", email, e);

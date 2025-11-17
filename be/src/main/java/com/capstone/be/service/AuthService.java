@@ -56,4 +56,11 @@ public interface AuthService {
    * @return Auth response with access token
    */
   AuthResponse login(LoginRequest request);
+
+  /**
+   * Resend email verification when the old code has expired
+   *
+   * @param email User's email address
+   */
+  void resendVerificationEmail(String email);
 }

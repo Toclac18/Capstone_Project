@@ -4,6 +4,7 @@ import com.capstone.be.dto.request.auth.LoginRequest;
 import com.capstone.be.dto.request.auth.RegisterOrganizationRequest;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
 import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
+import com.capstone.be.dto.request.auth.ResendVerificationEmailRequest;
 import com.capstone.be.dto.request.auth.VerifyEmailRequest;
 import com.capstone.be.dto.response.auth.AuthResponse;
 import com.capstone.be.service.AuthService;
@@ -69,5 +70,13 @@ public class AuthController {
     log.info("Login request for email: {}", request.getEmail());
     AuthResponse response = authService.login(request);
     return ResponseEntity.ok(response);
+  }
+
+  @PostMapping("/resend-verification-email")
+  public ResponseEntity<Void> resendVerificationEmail(
+      @Valid @RequestBody ResendVerificationEmailRequest request) {
+    log.info("Resend verification email request for: {}", request.getEmail());
+    authService.resendVerificationEmail(request.getEmail());
+    return ResponseEntity.ok().build();
   }
 }

@@ -344,4 +344,34 @@ public class AuthServiceImpl implements AuthService {
     // Return response WITHOUT access token (user needs to verify email first)
     return authMapper.toAuthResponse(user);
   }
+
+  @Override
+  @Transactional
+  public void resendVerificationEmail(String email) {
+    // Find user by email
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> ResourceNotFoundException.userByEmail(email));
+
+    // Check if user is in PENDING_EMAIL_VERIFY status
+    if (user.getStatus() != UserStatus.PENDING_EMAIL_VERIFY) {
+      if (user.getStatus() == UserStatus.ACTIVE) {
+        throw new InvalidRequestException("Email already verified");
+      } else if (user.getStatus() == UserStatus.PENDING_APPROVE) {
+        throw new InvalidRequestException("Email already verified, waiting for admin approval");
+      } else {
+        throw new InvalidRequestException("Account status does not require email verification");
+      }
+    }
+
+    // Generate new email verification token
+    String verificationToken = jwtUtil.generateEmailVerificationToken(
+        user.getId(),
+        user.getEmail()
+    );
+
+    // Send verification email (async)
+    emailService.sendEmailVerification(user.getId(), user.getEmail(), verificationToken);
+
+    log.info("Resent verification email to: {}", email);
+  }
 }

@@ -11,20 +11,20 @@ import { FileText, Clock, History } from "lucide-react";
 type TabType = "todo" | "requests" | "history";
 
 export default function ReviewListPage() {
-  const [activeTab, setActiveTab] = useState<TabType>("todo");
+  const [activeTab, setActiveTab] = useState<TabType>("requests");
 
   const tabs = [
-    { 
-      id: "todo" as TabType, 
-      label: "Todo", 
-      icon: Clock,
-      description: "Documents assigned and pending review"
-    },
     { 
       id: "requests" as TabType, 
       label: "Review Requests", 
       icon: FileText,
       description: "Documents waiting for invitation acceptance"
+    },
+    { 
+      id: "todo" as TabType, 
+      label: "Todo", 
+      icon: Clock,
+      description: "Documents assigned and pending review"
     },
     { 
       id: "history" as TabType, 

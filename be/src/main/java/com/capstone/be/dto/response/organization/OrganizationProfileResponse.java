@@ -1,5 +1,6 @@
-package com.capstone.be.dto.response.admin;
+package com.capstone.be.dto.response.organization;
 
+import com.capstone.be.domain.enums.OrgType;
 import com.capstone.be.domain.enums.UserStatus;
 import java.time.Instant;
 import java.util.UUID;
@@ -12,9 +13,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AdminOrganizationResponse {
+public class OrganizationProfileResponse {
 
-  // User info (OrgAdmin)
+  // User fields
   private UUID userId;
   private String email;
   private String fullName;
@@ -22,9 +23,9 @@ public class AdminOrganizationResponse {
   private Integer point;
   private UserStatus status;
 
-  // Organization profile info
+  // Organization profile fields
   private String orgName;
-  private String orgType;
+  private OrgType orgType;
   private String orgEmail;
   private String orgHotline;
   private String orgLogo;

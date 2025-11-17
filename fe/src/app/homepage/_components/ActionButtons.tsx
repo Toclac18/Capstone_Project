@@ -9,7 +9,7 @@ export default function ActionButtons() {
         What is READEE?
       </button>
       <button className={styles.actionBtn} type="button">
-        READEE's policies
+        READEE&apos;s policies
       </button>
       <button className={styles.actionBtn} type="button">
         + Upload my documents

@@ -21,6 +21,22 @@ public interface UserService {
   void changePassword(UUID userId, ChangePasswordRequest request);
 
   /**
+   * Request email change - sends OTP to current email address
+   *
+   * @param userId  User ID
+   * @param request Change email request (contains new email)
+   */
+  void requestEmailChange(UUID userId, com.capstone.be.dto.request.user.ChangeEmailRequest request);
+
+  /**
+   * Verify OTP and update user's email
+   *
+   * @param userId User ID
+   * @param otp    6-digit OTP code
+   */
+  void verifyEmailChangeOtp(UUID userId, String otp);
+
+  /**
    * Delete user account (soft delete - set status to DELETED)
    *
    * @param userId User ID

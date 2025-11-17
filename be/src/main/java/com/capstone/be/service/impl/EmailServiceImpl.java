@@ -270,4 +270,70 @@ public class EmailServiceImpl implements EmailService {
         </html>
         """.formatted(fullName, rejectionReason);
   }
+
+  @Override
+  @Async
+  public void sendEmailChangeOtp(UUID userId, String currentEmail, String newEmail, String otp) {
+    try {
+      String subject = "Email Change Verification - Capstone Platform";
+      String htmlContent = buildEmailChangeOtpHtml(newEmail, otp);
+
+      sendHtmlEmail(currentEmail, subject, htmlContent);
+      log.info("Sent email change OTP to: {} [{}]", currentEmail, otp);
+
+    } catch (Exception e) {
+      log.error("Failed to send email change OTP to: {}", currentEmail, e);
+      throw EmailException.sendFailed(currentEmail, e);
+    }
+  }
+
+  private String buildEmailChangeOtpHtml(String newEmail, String otp) {
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #2196F3; color: white; padding: 20px; text-align: center; }
+                .content { padding: 20px; background-color: #f9f9f9; }
+                .otp-box { background-color: #e3f2fd; border: 2px solid #2196F3;
+                          padding: 20px; margin: 20px 0; text-align: center;
+                          border-radius: 8px; }
+                .otp-code { font-size: 32px; font-weight: bold; letter-spacing: 8px;
+                           color: #2196F3; font-family: monospace; }
+                .warning { background-color: #fff3cd; border-left: 4px solid #ffc107;
+                          padding: 15px; margin: 20px 0; }
+                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Email Change Verification</h1>
+                </div>
+                <div class="content">
+                    <h2>Verify Your Email Change Request</h2>
+                    <p>You have requested to change your email address to:</p>
+                    <p style="text-align: center; font-size: 18px;"><strong>%s</strong></p>
+                    <p>Please use the following OTP code to verify this change:</p>
+                    <div class="otp-box">
+                        <p style="margin: 0; color: #666;">Your OTP Code</p>
+                        <p class="otp-code">%s</p>
+                    </div>
+                    <div class="warning">
+                        <p style="margin: 0;"><strong>⏰ This OTP will expire in 10 minutes.</strong></p>
+                    </div>
+                    <p><strong>Important:</strong> After verifying this OTP, your email will be changed and you will need to log in again with your new email address.</p>
+                    <p>If you did not request this email change, please ignore this email and secure your account immediately.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; 2025 Capstone Platform. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(newEmail, otp);
+  }
 }

@@ -41,4 +41,14 @@ public interface EmailService {
    * @param rejectionReason Reason for rejection
    */
   void sendOrganizationRejectionEmail(String email, String fullName, String rejectionReason);
+
+  /**
+   * Send OTP to user's current email for email change verification
+   *
+   * @param userId      User ID
+   * @param currentEmail Current email address
+   * @param newEmail    New email address (for display in email)
+   * @param otp         6-digit OTP code
+   */
+  void sendEmailChangeOtp(UUID userId, String currentEmail, String newEmail, String otp);
 }

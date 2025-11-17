@@ -1,17 +1,28 @@
 package com.capstone.be.service.impl;
 
+import com.capstone.be.domain.entity.EmailChangeRequest;
 import com.capstone.be.domain.entity.User;
+import com.capstone.be.domain.enums.EmailChangeStatus;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.domain.enums.UserStatus;
+import com.capstone.be.dto.request.admin.UpdateUserStatusRequest;
+import com.capstone.be.dto.request.user.ChangeEmailRequest;
 import com.capstone.be.dto.request.user.ChangePasswordRequest;
 import com.capstone.be.dto.response.admin.AdminReaderResponse;
+import com.capstone.be.dto.response.admin.AdminReviewerResponse;
 import com.capstone.be.exception.BusinessException;
+import com.capstone.be.exception.DuplicateResourceException;
+import com.capstone.be.exception.InvalidRequestException;
+import com.capstone.be.repository.EmailChangeRequestRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.repository.ReviewerProfileRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.repository.specification.UserSpecification;
+import com.capstone.be.service.EmailService;
 import com.capstone.be.service.UserService;
+import com.capstone.be.util.OtpUtil;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +44,8 @@ public class UserServiceImpl implements UserService {
   private final ReaderProfileRepository readerProfileRepository;
   private final ReviewerProfileRepository reviewerProfileRepository;
   private final OrganizationProfileRepository organizationProfileRepository;
+  private final EmailService emailService;
+  private final EmailChangeRequestRepository emailChangeRequestRepository;
 
   @Override
   @Transactional
@@ -108,6 +121,135 @@ public class UserServiceImpl implements UserService {
     log.info("Account deleted successfully for user: {}", userId);
   }
 
+  @Override
+  @Transactional
+  public void requestEmailChange(UUID userId, ChangeEmailRequest request) {
+    log.info("Request email change for user ID: {} to new email: {}", userId, request.getNewEmail());
+
+    // Find user
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new BusinessException(
+            "User not found with id: " + userId,
+            HttpStatus.NOT_FOUND,
+            "USER_NOT_FOUND"
+        ));
+
+    // Check if new email is same as current email
+    if (user.getEmail().equalsIgnoreCase(request.getNewEmail())) {
+      throw new InvalidRequestException("New email must be different from current email");
+    }
+
+    // Check if new email already exists
+    if (userRepository.existsByEmail(request.getNewEmail())) {
+      throw DuplicateResourceException.email(request.getNewEmail());
+    }
+
+    // Check if there's already a pending request for this new email
+    emailChangeRequestRepository.findByNewEmailAndStatus(
+        request.getNewEmail(),
+        EmailChangeStatus.PENDING
+    ).ifPresent(existing -> {
+      throw new InvalidRequestException(
+          "This email is already pending verification for another account");
+    });
+
+    // Cancel any existing pending request for this user
+    emailChangeRequestRepository.findByUserAndStatus(
+        user,
+        EmailChangeStatus.PENDING
+    ).ifPresent(existing -> {
+      existing.setStatus(EmailChangeStatus.CANCELLED);
+      emailChangeRequestRepository.save(existing);
+    });
+
+    // Generate OTP
+    String otp = OtpUtil.generateOtp();
+    String otpHash = passwordEncoder.encode(otp);
+    LocalDateTime otpExpiry = LocalDateTime.now().plusMinutes(10);
+
+    // Create new email change request
+    EmailChangeRequest emailChangeRequest = EmailChangeRequest.builder()
+        .user(user)
+        .currentEmail(user.getEmail())
+        .newEmail(request.getNewEmail())
+        .otpHash(otpHash)
+        .expiryTime(otpExpiry)
+        .status(EmailChangeStatus.PENDING)
+        .attemptCount(0)
+        .build();
+
+    emailChangeRequestRepository.save(emailChangeRequest);
+
+    // Send OTP to current email
+    emailService.sendEmailChangeOtp(userId, user.getEmail(), request.getNewEmail(), otp);
+
+    log.info("Created email change request and sent OTP to current email for user: {}", userId);
+  }
+
+  @Override
+  @Transactional
+  public void verifyEmailChangeOtp(UUID userId, String otp) {
+    log.info("Verify email change OTP for user ID: {}", userId);
+
+    // Find user
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new BusinessException(
+            "User not found with id: " + userId,
+            HttpStatus.NOT_FOUND,
+            "USER_NOT_FOUND"
+        ));
+
+    // Find pending email change request
+    EmailChangeRequest emailChangeRequest = emailChangeRequestRepository.findByUserAndStatus(
+        user,
+        EmailChangeStatus.PENDING
+    ).orElseThrow(() -> new InvalidRequestException("No pending email change request found"));
+
+    // Check if request has expired
+    if (emailChangeRequest.isExpired()) {
+      emailChangeRequest.setStatus(EmailChangeStatus.EXPIRED);
+      emailChangeRequestRepository.save(emailChangeRequest);
+      throw new InvalidRequestException("OTP has expired. Please request a new email change");
+    }
+
+    // Check if max attempts reached
+    if (emailChangeRequest.isMaxAttemptsReached()) {
+      emailChangeRequest.setStatus(EmailChangeStatus.EXPIRED);
+      emailChangeRequestRepository.save(emailChangeRequest);
+      throw new InvalidRequestException(
+          "Maximum verification attempts exceeded. Please request a new email change");
+    }
+
+    // Increment attempt count
+    emailChangeRequest.incrementAttemptCount();
+
+    // Verify OTP using password encoder (constant-time comparison)
+    if (!passwordEncoder.matches(otp, emailChangeRequest.getOtpHash())) {
+      emailChangeRequestRepository.save(emailChangeRequest);
+      int remainingAttempts = 5 - emailChangeRequest.getAttemptCount();
+      throw new InvalidRequestException(
+          "Invalid OTP code. " + remainingAttempts + " attempts remaining");
+    }
+
+    // Check again if the new email is still available (double check)
+    if (userRepository.existsByEmail(emailChangeRequest.getNewEmail())) {
+      emailChangeRequest.setStatus(EmailChangeStatus.EXPIRED);
+      emailChangeRequestRepository.save(emailChangeRequest);
+      throw DuplicateResourceException.email(emailChangeRequest.getNewEmail());
+    }
+
+    // Update email
+    String oldEmail = user.getEmail();
+    user.setEmail(emailChangeRequest.getNewEmail());
+    userRepository.save(user);
+
+    // Mark request as verified
+    emailChangeRequest.setStatus(EmailChangeStatus.VERIFIED);
+    emailChangeRequestRepository.save(emailChangeRequest);
+
+    log.info("Email changed successfully from {} to {} for user: {}", oldEmail, user.getEmail(), userId);
+  }
+
   // Admin operations - Reader management
 
   @Override
@@ -147,8 +289,8 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional
-  public com.capstone.be.dto.response.admin.AdminReaderResponse updateReaderStatus(
-      UUID userId, com.capstone.be.dto.request.admin.UpdateUserStatusRequest request) {
+  public AdminReaderResponse updateReaderStatus(
+      UUID userId, UpdateUserStatusRequest request) {
     log.info("Admin updating reader status for ID: {} to {}, reason: {}",
         userId, request.getStatus(), request.getReason());
 
@@ -180,7 +322,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional(readOnly = true)
-  public Page<com.capstone.be.dto.response.admin.AdminReviewerResponse> getAllReviewers(
+  public Page<AdminReviewerResponse> getAllReviewers(
       UserStatus status, String search, Pageable pageable) {
     log.info("Admin getting all reviewers - status: {}, search: {}", status, search);
 

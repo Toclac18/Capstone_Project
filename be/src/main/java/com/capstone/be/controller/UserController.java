@@ -1,6 +1,8 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.dto.request.user.ChangeEmailRequest;
 import com.capstone.be.dto.request.user.ChangePasswordRequest;
+import com.capstone.be.dto.request.user.VerifyEmailChangeOtpRequest;
 import com.capstone.be.service.UserService;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -9,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -61,5 +64,45 @@ public class UserController {
     userService.deleteAccount(userId);
 
     return ResponseEntity.noContent().build();
+  }
+
+  /**
+   * Request email change - sends OTP to current email
+   * POST /api/v1/user/change-email
+   *
+   * @param authentication Spring Security authentication
+   * @param request        Change email request (new email)
+   * @return 200 OK with message
+   */
+  @PostMapping("/change-email")
+  public ResponseEntity<String> requestEmailChange(
+      Authentication authentication,
+      @Valid @RequestBody ChangeEmailRequest request) {
+    UUID userId = UUID.fromString(authentication.getName());
+    log.info("Request email change for user: {} to new email: {}", userId, request.getNewEmail());
+
+    userService.requestEmailChange(userId, request);
+
+    return ResponseEntity.ok("OTP has been sent to your current email address");
+  }
+
+  /**
+   * Verify OTP and change email
+   * POST /api/v1/user/verify-email-change
+   *
+   * @param authentication Spring Security authentication
+   * @param request        Verify OTP request
+   * @return 200 OK with message
+   */
+  @PostMapping("/verify-email-change")
+  public ResponseEntity<String> verifyEmailChangeOtp(
+      Authentication authentication,
+      @Valid @RequestBody VerifyEmailChangeOtpRequest request) {
+    UUID userId = UUID.fromString(authentication.getName());
+    log.info("Verify email change OTP for user: {}", userId);
+
+    userService.verifyEmailChangeOtp(userId, request.getOtp());
+
+    return ResponseEntity.ok("Email changed successfully. Please login again with your new email");
   }
 }

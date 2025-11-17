@@ -2,7 +2,11 @@ package com.capstone.be.service;
 
 import com.capstone.be.domain.enums.UserStatus;
 import com.capstone.be.dto.request.admin.UpdateUserStatusRequest;
+import com.capstone.be.dto.request.user.ChangeEmailRequest;
 import com.capstone.be.dto.request.user.ChangePasswordRequest;
+import com.capstone.be.dto.response.admin.AdminOrganizationResponse;
+import com.capstone.be.dto.response.admin.AdminReaderResponse;
+import com.capstone.be.dto.response.admin.AdminReviewerResponse;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,7 +30,7 @@ public interface UserService {
    * @param userId  User ID
    * @param request Change email request (contains new email)
    */
-  void requestEmailChange(UUID userId, com.capstone.be.dto.request.user.ChangeEmailRequest request);
+  void requestEmailChange(UUID userId, ChangeEmailRequest request);
 
   /**
    * Verify OTP and update user's email
@@ -53,8 +57,7 @@ public interface UserService {
    * @param pageable Pagination
    * @return Page of AdminReaderResponse
    */
-  Page<com.capstone.be.dto.response.admin.AdminReaderResponse> getAllReaders(
-      UserStatus status, String search, Pageable pageable);
+  Page<AdminReaderResponse> getAllReaders(UserStatus status, String search, Pageable pageable);
 
   /**
    * Get reader detail by ID (Admin only)
@@ -62,7 +65,7 @@ public interface UserService {
    * @param userId User ID
    * @return AdminReaderResponse
    */
-  com.capstone.be.dto.response.admin.AdminReaderResponse getReaderDetail(UUID userId);
+  AdminReaderResponse getReaderDetail(UUID userId);
 
   /**
    * Update reader status (Admin only)
@@ -71,8 +74,7 @@ public interface UserService {
    * @param request Update status request
    * @return Updated AdminReaderResponse
    */
-  com.capstone.be.dto.response.admin.AdminReaderResponse updateReaderStatus(
-      UUID userId, UpdateUserStatusRequest request);
+  AdminReaderResponse updateReaderStatus(UUID userId, UpdateUserStatusRequest request);
 
   // Admin operations - Reviewer management
 
@@ -84,8 +86,7 @@ public interface UserService {
    * @param pageable Pagination
    * @return Page of AdminReviewerResponse
    */
-  Page<com.capstone.be.dto.response.admin.AdminReviewerResponse> getAllReviewers(
-      UserStatus status, String search, Pageable pageable);
+  Page<AdminReviewerResponse> getAllReviewers(UserStatus status, String search, Pageable pageable);
 
   /**
    * Get reviewer detail by ID (Admin only)
@@ -93,7 +94,7 @@ public interface UserService {
    * @param userId User ID
    * @return AdminReviewerResponse
    */
-  com.capstone.be.dto.response.admin.AdminReviewerResponse getReviewerDetail(UUID userId);
+  AdminReviewerResponse getReviewerDetail(UUID userId);
 
   /**
    * Update reviewer status (Admin only)
@@ -102,8 +103,7 @@ public interface UserService {
    * @param request Update status request
    * @return Updated AdminReviewerResponse
    */
-  com.capstone.be.dto.response.admin.AdminReviewerResponse updateReviewerStatus(
-      UUID userId, UpdateUserStatusRequest request);
+  AdminReviewerResponse updateReviewerStatus(UUID userId, UpdateUserStatusRequest request);
 
   // Admin operations - Organization management
 
@@ -115,8 +115,8 @@ public interface UserService {
    * @param pageable Pagination
    * @return Page of AdminOrganizationResponse
    */
-  Page<com.capstone.be.dto.response.admin.AdminOrganizationResponse> getAllOrganizations(
-      UserStatus status, String search, Pageable pageable);
+  Page<AdminOrganizationResponse> getAllOrganizations(UserStatus status, String search,
+      Pageable pageable);
 
   /**
    * Get organization detail by ID (Admin only)
@@ -124,7 +124,7 @@ public interface UserService {
    * @param userId User ID
    * @return AdminOrganizationResponse
    */
-  com.capstone.be.dto.response.admin.AdminOrganizationResponse getOrganizationDetail(UUID userId);
+  AdminOrganizationResponse getOrganizationDetail(UUID userId);
 
   /**
    * Update organization status (Admin only)
@@ -133,6 +133,5 @@ public interface UserService {
    * @param request Update status request
    * @return Updated AdminOrganizationResponse
    */
-  com.capstone.be.dto.response.admin.AdminOrganizationResponse updateOrganizationStatus(
-      UUID userId, UpdateUserStatusRequest request);
+  AdminOrganizationResponse updateOrganizationStatus(UUID userId, UpdateUserStatusRequest request);
 }

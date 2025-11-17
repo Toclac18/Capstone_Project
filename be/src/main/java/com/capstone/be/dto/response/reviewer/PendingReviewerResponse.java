@@ -43,6 +43,7 @@ public class PendingReviewerResponse {
   @NoArgsConstructor
   @AllArgsConstructor
   public static class DomainInfo {
+
     private UUID id;
     private String name;
   }
@@ -52,6 +53,7 @@ public class PendingReviewerResponse {
   @NoArgsConstructor
   @AllArgsConstructor
   public static class SpecializationInfo {
+
     private UUID id;
     private String name;
     private UUID domainId;

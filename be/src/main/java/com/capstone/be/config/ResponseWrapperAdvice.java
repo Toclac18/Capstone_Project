@@ -34,12 +34,8 @@ public class ResponseWrapperAdvice implements ResponseBodyAdvice<Object> {
     }
 
     // Check if method or class has @NoResponseWrapping annotation
-    if (returnType.hasMethodAnnotation(NoResponseWrapping.class) ||
-        (returnType.getDeclaringClass().isAnnotationPresent(NoResponseWrapping.class))) {
-      return false;
-    }
-
-    return true;
+    return !returnType.hasMethodAnnotation(NoResponseWrapping.class) &&
+        (!returnType.getDeclaringClass().isAnnotationPresent(NoResponseWrapping.class));
   }
 
   @Override

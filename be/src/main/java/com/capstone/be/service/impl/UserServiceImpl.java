@@ -124,7 +124,8 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional
   public void requestEmailChange(UUID userId, ChangeEmailRequest request) {
-    log.info("Request email change for user ID: {} to new email: {}", userId, request.getNewEmail());
+    log.info("Request email change for user ID: {} to new email: {}", userId,
+        request.getNewEmail());
 
     // Find user
     User user = userRepository.findById(userId)
@@ -247,7 +248,8 @@ public class UserServiceImpl implements UserService {
     emailChangeRequest.setStatus(EmailChangeStatus.VERIFIED);
     emailChangeRequestRepository.save(emailChangeRequest);
 
-    log.info("Email changed successfully from {} to {} for user: {}", oldEmail, user.getEmail(), userId);
+    log.info("Email changed successfully from {} to {} for user: {}", oldEmail, user.getEmail(),
+        userId);
   }
 
   // Admin operations - Reader management

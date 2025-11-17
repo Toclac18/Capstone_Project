@@ -36,7 +36,8 @@ public class ReaderServiceImpl implements ReaderService {
 
     // Get reader profile
     ReaderProfile readerProfile = readerProfileRepository.findByUserId(userId)
-        .orElseThrow(() -> new ResourceNotFoundException("Reader profile not found for user ID: " + userId));
+        .orElseThrow(
+            () -> new ResourceNotFoundException("Reader profile not found for user ID: " + userId));
 
     // Build response
     return buildProfileResponse(user, readerProfile);

@@ -47,12 +47,15 @@ public class AdminOrganizationController {
       @RequestParam(name = "sort", defaultValue = "createdAt") String sort,
       @RequestParam(name = "order", defaultValue = "desc") String order) {
 
-    log.info("Admin get all organizations - status: {}, search: {}, page: {}, size: {}", status, search, page, size);
+    log.info("Admin get all organizations - status: {}, search: {}, page: {}, size: {}", status,
+        search, page, size);
 
-    Sort.Direction direction = order.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort.Direction direction =
+        order.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sort));
 
-    Page<AdminOrganizationResponse> organizations = userService.getAllOrganizations(status, search, pageable);
+    Page<AdminOrganizationResponse> organizations = userService.getAllOrganizations(status, search,
+        pageable);
 
     return ResponseEntity.ok(organizations);
   }
@@ -62,7 +65,8 @@ public class AdminOrganizationController {
    * GET /api/v1/admin/organizations/{userId}
    */
   @GetMapping("/{userId}")
-  public ResponseEntity<AdminOrganizationResponse> getOrganizationDetail(@PathVariable(name="userId") UUID userId) {
+  public ResponseEntity<AdminOrganizationResponse> getOrganizationDetail(
+      @PathVariable(name = "userId") UUID userId) {
     log.info("Admin get organization detail for ID: {}", userId);
 
     AdminOrganizationResponse organization = userService.getOrganizationDetail(userId);
@@ -76,7 +80,7 @@ public class AdminOrganizationController {
    */
   @PutMapping("/{userId}/status")
   public ResponseEntity<AdminOrganizationResponse> updateOrganizationStatus(
-      @PathVariable(name="userId") UUID userId,
+      @PathVariable(name = "userId") UUID userId,
       @Valid @RequestBody UpdateUserStatusRequest request) {
 
     log.info("Admin update organization status for ID: {} to {}", userId, request.getStatus());

@@ -47,9 +47,11 @@ public class AdminReviewerController {
       @RequestParam(name = "sort", defaultValue = "createdAt") String sort,
       @RequestParam(name = "order", defaultValue = "desc") String order) {
 
-    log.info("Admin get all reviewers - status: {}, search: {}, page: {}, size: {}", status, search, page, size);
+    log.info("Admin get all reviewers - status: {}, search: {}, page: {}, size: {}", status, search,
+        page, size);
 
-    Sort.Direction direction = order.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort.Direction direction =
+        order.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sort));
 
     Page<AdminReviewerResponse> reviewers = userService.getAllReviewers(status, search, pageable);
@@ -62,7 +64,8 @@ public class AdminReviewerController {
    * GET /api/v1/admin/reviewers/{userId}
    */
   @GetMapping("/{userId}")
-  public ResponseEntity<AdminReviewerResponse> getReviewerDetail(@PathVariable(name="userId") UUID userId) {
+  public ResponseEntity<AdminReviewerResponse> getReviewerDetail(
+      @PathVariable(name = "userId") UUID userId) {
     log.info("Admin get reviewer detail for ID: {}", userId);
 
     AdminReviewerResponse reviewer = userService.getReviewerDetail(userId);
@@ -76,7 +79,7 @@ public class AdminReviewerController {
    */
   @PutMapping("/{userId}/status")
   public ResponseEntity<AdminReviewerResponse> updateReviewerStatus(
-      @PathVariable(name="userId") UUID userId,
+      @PathVariable(name = "userId") UUID userId,
       @Valid @RequestBody UpdateUserStatusRequest request) {
 
     log.info("Admin update reviewer status for ID: {} to {}", userId, request.getStatus());

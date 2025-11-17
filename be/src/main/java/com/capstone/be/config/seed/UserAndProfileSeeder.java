@@ -124,7 +124,8 @@ public class UserAndProfileSeeder {
         LocalDate.of(2001, 7, 25));
 
     // Pending email verification
-    createReaderUser(seed++, "reader.pending@gmail.com", "Ngô Thị Lan", UserStatus.PENDING_EMAIL_VERIFY,
+    createReaderUser(seed++, "reader.pending@gmail.com", "Ngô Thị Lan",
+        UserStatus.PENDING_EMAIL_VERIFY,
         LocalDate.of(1999, 4, 18));
 
     log.info("Seeded 6 Readers (5 active, 1 pending email)");

@@ -2,7 +2,6 @@ package com.capstone.be.service;
 
 import com.capstone.be.dto.request.reviewer.ApproveReviewerRequest;
 import com.capstone.be.dto.response.reviewer.PendingReviewerResponse;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -4,7 +4,6 @@ import com.capstone.be.domain.entity.Domain;
 import com.capstone.be.domain.entity.Specialization;
 import com.capstone.be.repository.DomainRepository;
 import com.capstone.be.repository.SpecializationRepository;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;

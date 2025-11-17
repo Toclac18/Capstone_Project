@@ -36,7 +36,8 @@ public class ReviewerServiceImpl implements ReviewerService {
 
     // Get reviewer profile
     ReviewerProfile reviewerProfile = reviewerProfileRepository.findByUserId(userId)
-        .orElseThrow(() -> new ResourceNotFoundException("Reviewer profile not found for user ID: " + userId));
+        .orElseThrow(() -> new ResourceNotFoundException(
+            "Reviewer profile not found for user ID: " + userId));
 
     // Force initialization of lazy-loaded collection
     reviewerProfile.getCredentialFileUrls().size();
@@ -57,7 +58,8 @@ public class ReviewerServiceImpl implements ReviewerService {
     // Get reviewer profile
     ReviewerProfile reviewerProfile = reviewerProfileRepository.findByUserId(userId)
         .orElseThrow(
-            () -> new ResourceNotFoundException("Reviewer profile not found for user ID: " + userId));
+            () -> new ResourceNotFoundException(
+                "Reviewer profile not found for user ID: " + userId));
 
     // Force initialization of lazy-loaded collection
     reviewerProfile.getCredentialFileUrls().size();
@@ -106,7 +108,8 @@ public class ReviewerServiceImpl implements ReviewerService {
     // Get reviewer profile
     ReviewerProfile reviewerProfile = reviewerProfileRepository.findByUserId(userId)
         .orElseThrow(
-            () -> new ResourceNotFoundException("Reviewer profile not found for user ID: " + userId));
+            () -> new ResourceNotFoundException(
+                "Reviewer profile not found for user ID: " + userId));
 
     // Force initialization of lazy-loaded collection
     reviewerProfile.getCredentialFileUrls().size();

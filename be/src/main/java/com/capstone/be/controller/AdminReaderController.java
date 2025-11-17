@@ -47,9 +47,11 @@ public class AdminReaderController {
       @RequestParam(name = "sort", defaultValue = "createdAt") String sort,
       @RequestParam(name = "order", defaultValue = "desc") String order) {
 
-    log.info("Admin get all readers - status: {}, search: {}, page: {}, size: {}", status, search, page, size);
+    log.info("Admin get all readers - status: {}, search: {}, page: {}, size: {}", status, search,
+        page, size);
 
-    Sort.Direction direction = order.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort.Direction direction =
+        order.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sort));
 
     Page<AdminReaderResponse> readers = userService.getAllReaders(status, search, pageable);
@@ -62,7 +64,8 @@ public class AdminReaderController {
    * GET /api/v1/admin/readers/{userId}
    */
   @GetMapping("/{userId}")
-  public ResponseEntity<AdminReaderResponse> getReaderDetail(@PathVariable(name="userId") UUID userId) {
+  public ResponseEntity<AdminReaderResponse> getReaderDetail(
+      @PathVariable(name = "userId") UUID userId) {
     log.info("Admin get reader detail for ID: {}", userId);
 
     AdminReaderResponse reader = userService.getReaderDetail(userId);
@@ -76,7 +79,7 @@ public class AdminReaderController {
    */
   @PutMapping("/{userId}/status")
   public ResponseEntity<AdminReaderResponse> updateReaderStatus(
-      @PathVariable(name="userId") UUID userId,
+      @PathVariable(name = "userId") UUID userId,
       @Valid @RequestBody UpdateUserStatusRequest request) {
 
     log.info("Admin update reader status for ID: {} to {}", userId, request.getStatus());

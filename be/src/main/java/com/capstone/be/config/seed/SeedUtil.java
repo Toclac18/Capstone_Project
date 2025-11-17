@@ -5,9 +5,9 @@ import java.util.UUID;
 
 public class SeedUtil {
 
-  /*
-  * create fixed UUID to test
-  * */
+  /**
+   * create fixed UUID to test
+   */
   public static UUID generateUUID(int seed) {
     return UUID.nameUUIDFromBytes(("seed-" + seed).getBytes(StandardCharsets.UTF_8));
   }

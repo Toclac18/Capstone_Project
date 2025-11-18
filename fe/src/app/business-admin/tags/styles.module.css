@@ -1,0 +1,435 @@
+/* Business Admin Tag Management Styles */
+
+/* Container */
+.container {
+  @apply mx-auto w-full gap-6;
+}
+
+/* Title */
+.page-title {
+  @apply mb-6 text-3xl font-extrabold text-dark;
+}
+:global(html.dark) .page-title {
+  @apply text-white;
+}
+
+/* Filters Container */
+.filters-container {
+  @apply rounded-xl border p-6 shadow-sm mb-2;
+  @apply border-stroke bg-white text-dark;
+}
+:global(html.dark) .filters-container {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.label {
+  @apply mb-2 block text-sm font-medium text-dark;
+}
+:global(html.dark) .label {
+  @apply text-white;
+}
+
+/* Inputs / Select */
+.input {
+  @apply w-full rounded-lg border border-stroke px-3 py-2 text-sm text-dark placeholder:text-dark-5 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+}
+:global(html.dark) .input {
+  @apply border-stroke-dark bg-dark-3 text-white placeholder:text-dark-6 focus:border-primary;
+}
+
+.select {
+  @apply w-full rounded-lg border border-stroke px-3 py-2 text-sm text-dark focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+}
+:global(html.dark) .select {
+  @apply border-stroke-dark bg-dark-3 text-white focus:border-primary;
+}
+
+/* Buttons */
+.btn {
+  @apply inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-primary {
+  @apply bg-primary text-white hover:bg-primary/90;
+}
+
+.btn-secondary {
+  @apply border border-stroke bg-white text-dark hover:bg-gray-2;
+}
+:global(html.dark) .btn-secondary {
+  @apply border-stroke-dark bg-dark-2 text-white hover:bg-dark-3;
+}
+
+/* Table Container */
+.table-container {
+  @apply rounded-xl border shadow-lg overflow-hidden;
+  @apply border-stroke bg-white text-dark;
+}
+:global(html.dark) .table-container {
+  @apply border-stroke-dark bg-dark-2 text-dark-8;
+}
+
+/* Table */
+.table {
+  @apply min-w-full divide-y divide-gray-200 table-fixed;
+}
+:global(html.dark) .table {
+  @apply divide-gray-700;
+}
+
+/* Column widths */
+.col-id {
+  @apply w-[15%];
+}
+
+.col-name {
+  @apply w-[30%];
+}
+
+.col-status {
+  @apply w-[15%];
+}
+
+.col-date {
+  @apply w-[25%];
+}
+
+.col-action {
+  @apply w-[15%];
+}
+
+.table-header {
+  @apply bg-gray-50;
+}
+:global(html.dark) .table-header {
+  @apply bg-gray-800;
+}
+
+.table-header-cell {
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+:global(html.dark) .table-header-cell {
+  @apply text-gray-400;
+}
+
+.table-header-cell-right {
+  @apply text-right;
+}
+
+.sortable-header {
+  @apply cursor-pointer select-none hover:bg-gray-100 transition-colors;
+}
+:global(html.dark) .sortable-header {
+  @apply hover:bg-gray-700;
+}
+
+.table-body {
+  @apply bg-white divide-y divide-gray-200;
+}
+:global(html.dark) .table-body {
+  @apply bg-gray-900 divide-gray-700;
+}
+
+.table-row {
+  @apply hover:bg-gray-50 transition;
+}
+:global(html.dark) .table-row {
+  @apply hover:bg-gray-800;
+}
+
+.table-cell {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-500;
+}
+:global(html.dark) .table-cell {
+  @apply text-gray-400;
+}
+
+.table-cell-right {
+  @apply text-right;
+}
+
+.table-cell-main {
+  @apply text-sm font-medium text-gray-900;
+}
+:global(html.dark) .table-cell-main {
+  @apply text-white;
+}
+
+/* Status Badge */
+.status-badge {
+  @apply inline-flex px-2 py-1 text-xs font-semibold rounded-full;
+}
+
+.status-active {
+  @apply bg-green-100 text-green-800;
+}
+:global(html.dark) .status-active {
+  @apply bg-green-900 text-green-200;
+}
+
+.status-inactive {
+  @apply bg-red-100 text-red-800;
+}
+:global(html.dark) .status-inactive {
+  @apply bg-red-900 text-red-200;
+}
+
+.status-pending {
+  @apply bg-yellow-100 text-yellow-800;
+}
+:global(html.dark) .status-pending {
+  @apply bg-yellow-900 text-yellow-200;
+}
+
+/* Action Cell */
+.action-cell {
+  @apply flex items-center justify-end gap-3;
+}
+
+.action-icon-btn {
+  @apply h-9 px-2 rounded-lg transition-all duration-200;
+  @apply flex items-center justify-center;
+  @apply border border-gray-300 bg-white;
+  @apply text-gray-600 hover:text-primary hover:border-primary hover:bg-gray-50;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:bg-white;
+  @apply shadow-sm hover:shadow-md;
+}
+:global(html.dark) .action-icon-btn {
+  @apply border-gray-600 bg-gray-800;
+  @apply text-gray-400 hover:text-primary hover:border-primary hover:bg-gray-700;
+  @apply disabled:hover:border-gray-600 disabled:hover:bg-gray-800;
+}
+
+.action-icon-btn-approve {
+  @apply border-green-300 text-green-600 hover:text-green-700 hover:border-green-400 hover:bg-green-50;
+}
+:global(html.dark) .action-icon-btn-approve {
+  @apply border-green-700 text-green-400 hover:text-green-300 hover:border-green-600 hover:bg-green-900/20;
+}
+
+.action-icon-btn-reject {
+  @apply border-red-300 text-red-600 hover:text-red-700 hover:border-red-400 hover:bg-red-50;
+}
+:global(html.dark) .action-icon-btn-reject {
+  @apply border-red-700 text-red-400 hover:text-red-300 hover:border-red-600 hover:bg-red-900/20;
+}
+
+/* Loading & Empty States */
+.loading-container,
+.empty-container {
+  @apply px-6 py-8 text-center text-gray-500;
+}
+:global(html.dark) .loading-container,
+:global(html.dark) .empty-container {
+  @apply text-gray-400;
+}
+
+/* Alerts */
+.alert {
+  @apply rounded-lg border-l-4 p-4 text-sm font-medium mb-4;
+}
+
+.alert-error {
+  @apply border-red bg-red-light-6 text-red-dark;
+}
+:global(html.dark) .alert-error {
+  @apply border-red bg-dark-2 text-red;
+}
+
+/* Search input with icon */
+.search-container {
+  @apply relative flex items-center;
+}
+
+.search-icon {
+  @apply absolute left-3 h-5 w-5 text-gray-400 pointer-events-none;
+}
+:global(html.dark) .search-icon {
+  @apply text-gray-600;
+}
+
+.search-input {
+  @apply w-full rounded-lg border border-stroke pl-10 pr-3 py-2 text-sm text-dark placeholder:text-dark-5 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+}
+:global(html.dark) .search-input {
+  @apply border-stroke-dark bg-dark-3 text-white placeholder:text-dark-6 focus:border-primary;
+}
+
+.filter-tag {
+  @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  @apply fixed inset-0 z-50 flex items-center justify-center;
+}
+
+.modal-backdrop {
+  @apply absolute inset-0 bg-black/50;
+}
+
+.modal-container {
+  @apply relative z-10 w-full max-w-md mx-4;
+}
+
+.modal-card {
+  @apply rounded-xl border shadow-xl;
+  @apply border-gray-200 bg-white text-dark;
+}
+:global(html.dark) .modal-card {
+  @apply border-gray-700 bg-dark-2 text-dark-8;
+}
+
+.modal-header {
+  @apply flex items-center justify-between px-5 py-3 border-b;
+  @apply border-gray-200;
+}
+:global(html.dark) .modal-header {
+  @apply border-gray-700;
+}
+
+.modal-title {
+  @apply text-lg font-semibold text-gray-900;
+}
+:global(html.dark) .modal-title {
+  @apply text-white;
+}
+
+.modal-close-button {
+  @apply p-1 rounded-lg transition-colors;
+  @apply text-gray-500 hover:text-gray-700 hover:bg-gray-100;
+}
+:global(html.dark) .modal-close-button {
+  @apply text-gray-400 hover:text-gray-200 hover:bg-gray-700;
+}
+
+.modal-content {
+  @apply px-5 py-4;
+}
+
+.form-group {
+  @apply mb-4;
+}
+
+.form-label {
+  @apply block mb-2 text-sm font-medium text-gray-700;
+}
+:global(html.dark) .form-label {
+  @apply text-gray-300;
+}
+
+.required {
+  @apply text-red;
+}
+
+.form-input,
+.form-select {
+  @apply w-full px-4 py-2.5 rounded-lg border text-sm;
+  @apply border-gray-300 bg-white text-gray-900 placeholder-gray-400;
+  @apply focus:border-primary focus:ring-2 focus:ring-primary/60 focus:outline-none;
+  @apply transition-colors;
+}
+:global(html.dark) .form-input,
+:global(html.dark) .form-select {
+  @apply border-gray-600 bg-dark-3 text-white placeholder-gray-500;
+}
+
+.form-error {
+  @apply mt-1 text-sm text-red;
+}
+
+.modal-footer {
+  @apply flex items-center justify-end gap-3 px-5 py-3 border-t;
+  @apply border-gray-200;
+}
+:global(html.dark) .modal-footer {
+  @apply border-gray-700;
+}
+
+.modal-button-cancel {
+  @apply px-4 py-2 rounded-lg border transition-colors;
+  @apply border-gray-300 bg-white text-gray-700;
+  @apply hover:bg-gray-50;
+}
+:global(html.dark) .modal-button-cancel {
+  @apply border-gray-600 bg-dark-3 text-gray-300;
+  @apply hover:bg-gray-700;
+}
+
+.modal-button-submit {
+  @apply px-4 py-2 rounded-lg transition-colors shadow-sm;
+  @apply bg-primary text-white;
+  @apply hover:bg-primary/90 hover:shadow-md;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm;
+}
+
+.modal-button-approve {
+  @apply px-4 py-2 rounded-lg transition-colors;
+  @apply bg-green-600 text-white;
+  @apply hover:bg-green-700;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.modal-button-reject {
+  @apply px-4 py-2 rounded-lg transition-colors;
+  @apply bg-red-600 text-white;
+  @apply hover:bg-red-700;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.modal-icon-wrapper-green {
+  @apply flex items-center justify-center w-10 h-10 rounded-full bg-green-100;
+}
+:global(html.dark) .modal-icon-wrapper-green {
+  @apply bg-green-900/20;
+}
+
+.modal-icon-wrapper-red {
+  @apply flex items-center justify-center w-10 h-10 rounded-full bg-red-100;
+}
+:global(html.dark) .modal-icon-wrapper-red {
+  @apply bg-red-900/20;
+}
+
+.modal-icon-wrapper-primary {
+  @apply flex items-center justify-center w-10 h-10 rounded-full bg-primary/10;
+}
+:global(html.dark) .modal-icon-wrapper-primary {
+  @apply bg-primary/20;
+}
+
+.modal-description {
+  @apply text-sm text-gray-600 mb-4 leading-relaxed;
+}
+:global(html.dark) .modal-description {
+  @apply text-gray-300;
+}
+
+.modal-info-section {
+  @apply mt-4 p-4 rounded-lg bg-gray-50 border border-gray-200;
+}
+:global(html.dark) .modal-info-section {
+  @apply bg-gray-800 border-gray-700;
+}
+
+.modal-info-item {
+  @apply flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0;
+}
+:global(html.dark) .modal-info-item {
+  @apply border-gray-700;
+}
+
+.modal-info-label {
+  @apply text-sm font-semibold text-gray-700;
+}
+:global(html.dark) .modal-info-label {
+  @apply text-gray-300;
+}
+
+.modal-info-value {
+  @apply text-sm text-gray-900;
+}
+:global(html.dark) .modal-info-value {
+  @apply text-white;
+}
+

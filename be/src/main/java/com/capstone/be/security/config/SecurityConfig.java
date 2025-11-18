@@ -58,7 +58,7 @@ public class SecurityConfig {
                 "/swagger-ui.html",
 
                 "/api/v1/dev/**",
-                "/api/v1/contact-tickets" // Public endpoint for ticket creation, auth handled in controller
+                "/api/v1/contact-tickets/**" // Public endpoint for ticket creation, auth handled in controller
             ).permitAll()
             // Role-based access control
             .requestMatchers("/api/v1/reader/**").hasRole("READER")

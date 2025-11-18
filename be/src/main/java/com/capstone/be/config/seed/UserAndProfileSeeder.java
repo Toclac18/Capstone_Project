@@ -1,5 +1,6 @@
 package com.capstone.be.config.seed;
 
+import com.capstone.be.config.seed.event.UserSeededEvent;
 import com.capstone.be.domain.entity.Domain;
 import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.ReaderProfile;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,7 +34,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Profile("dev")
-@Component
+@Component("userAndProfileSeeder")
 @RequiredArgsConstructor
 @Slf4j
 public class UserAndProfileSeeder {
@@ -46,6 +48,8 @@ public class UserAndProfileSeeder {
   private final DomainRepository domainRepository;
   private final SpecializationRepository specializationRepository;
   private final PasswordEncoder passwordEncoder;
+
+  private final ApplicationEventPublisher eventPublisher;
 
   // Password for all user
   private static final String DEFAULT_PASSWORD = "aa123123";
@@ -91,6 +95,7 @@ public class UserAndProfileSeeder {
     // Seed Organizations
     seedOrganizations();
 
+    eventPublisher.publishEvent(new UserSeededEvent());
     log.info("User seeding completed successfully!");
   }
 

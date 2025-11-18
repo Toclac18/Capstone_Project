@@ -14,6 +14,14 @@ import {
 export type { LibraryDocument, LibraryQueryParams, LibraryResponse, UpdateDocumentRequest };
 export { mockLibraryDocuments };
 
+// Re-export reviewer functions only (types are exported from types/review.ts)
+export {
+  getReviewDocuments,
+  getReviewRequests,
+  getReviewHistory,
+  resetMockReviewData,
+} from "./review-list";
+
 export type TicketCategory =
   | "PAYMENT"
   | "ACCESS"

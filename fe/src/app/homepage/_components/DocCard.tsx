@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import type { MouseEvent } from "react";
 import styles from "../styles.module.css";
 import type { DocumentItem as BaseDoc } from "@/types/documentResponse";
 
@@ -28,6 +29,11 @@ export default function DocCard(props: Props) {
 
   const handlePreview = () => onPreview?.(props);
 
+  const handleSaveClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    event.preventDefault();
+  };
+
   return (
     <div
       className={styles.card}
@@ -45,6 +51,24 @@ export default function DocCard(props: Props) {
           sizes="(max-width: 768px) 80vw, 260px"
           className={styles.thumbImg}
         />
+
+        <button
+          type="button"
+          className={styles.saveBtn}
+          aria-label="Save document"
+          onClick={handleSaveClick}
+        >
+          <svg
+            viewBox="0 0 20 20"
+            aria-hidden="true"
+            className={styles.saveIcon}
+          >
+            <path
+              d="M5 3.5A1.5 1.5 0 0 1 6.5 2h7A1.5 1.5 0 0 1 15 3.5V17l-4.5-2.7L6 17V3.5Z"
+              fill="currentColor"
+            />
+          </svg>
+        </button>
       </div>
 
       <div className={styles.cardTitle}>{title}</div>

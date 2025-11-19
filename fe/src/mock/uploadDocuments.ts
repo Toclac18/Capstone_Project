@@ -89,6 +89,94 @@ export function setupMockDocuments() {
       );
     }
 
+    // Upload history endpoint
+    if (url.includes("/api/reader/documents/upload-history") && init?.method === "GET") {
+      const urlObj = new URL(url, "http://localhost");
+      const dateFrom = urlObj.searchParams.get("dateFrom") || undefined;
+      const dateTo = urlObj.searchParams.get("dateTo") || undefined;
+      const type = urlObj.searchParams.get("type") || undefined;
+      const domain = urlObj.searchParams.get("domain") || undefined;
+      const status = urlObj.searchParams.get("status") || undefined;
+      const page = urlObj.searchParams.get("page")
+        ? parseInt(urlObj.searchParams.get("page")!, 10)
+        : 1;
+      const limit = urlObj.searchParams.get("limit")
+        ? parseInt(urlObj.searchParams.get("limit")!, 10)
+        : 10;
+
+      const result = mockDocumentsDB.getUploadHistory({
+        dateFrom,
+        dateTo,
+        type,
+        domain,
+        status: status as "PENDING" | "APPROVED" | "REJECTED" | undefined,
+        page,
+        limit,
+      });
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    // Re-review endpoint
+    if (url.match(/\/api\/reader\/documents\/.+\/re-review$/) && init?.method === "POST") {
+      const documentId = url.split("/").slice(-2, -1)[0]; // Extract ID from URL
+      const body = init.body ? JSON.parse(init.body as string) : {};
+      const reason = body.reason?.trim() || "";
+
+      // Validate reason
+      if (!reason) {
+        return new Response(
+          JSON.stringify({
+            error: "Reason is required",
+          }),
+          {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          }
+        );
+      }
+
+      if (reason.length < 10) {
+        return new Response(
+          JSON.stringify({
+            error: "Reason must be at least 10 characters",
+          }),
+          {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          }
+        );
+      }
+
+      // Use mockDocumentsDB.requestReReview
+      const result = mockDocumentsDB.requestReReview(documentId, reason);
+
+      if (result.error) {
+        return new Response(
+          JSON.stringify({
+            error: result.error,
+          }),
+          {
+            status: result.status || 400,
+            headers: { "content-type": "application/json" },
+          }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          message: result.message || "Your request has been submitted and is under review.",
+        }),
+        {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }
+      );
+    }
+
     return originalFetch(input, init);
   };
 

@@ -1,0 +1,123 @@
+/* src/components/common/modal/confirm-modal.module.css */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(
+      circle at top,
+      rgba(15, 23, 42, 0.12),
+      transparent
+    ),
+    rgba(15, 23, 42, 0.28);
+  backdrop-filter: blur(6px);
+  padding: 1rem;
+}
+
+.modal {
+  max-width: 420px;
+  width: 100%;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  padding: 1.1rem 1.25rem 0.9rem;
+}
+
+:global(html.dark) .modal {
+  background: #020617;
+  border-color: rgba(148, 163, 184, 0.5);
+}
+
+.body {
+  padding-bottom: 0.75rem;
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.4rem;
+  color: #0f172a;
+}
+
+:global(html.dark) .title {
+  color: #e5e7eb;
+}
+
+.content {
+  font-size: 0.92rem;
+  color: #111827;
+}
+
+.subContent {
+  margin-top: 0.4rem;
+  font-size: 0.83rem;
+  color: #6b7280;
+}
+
+:global(html.dark) .content,
+:global(html.dark) .subContent {
+  color: #cbd5f5;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 0.45rem;
+}
+
+.btnGhost,
+.btnPrimary {
+  border-radius: 999px;
+  font-size: 0.9rem;
+  padding: 0.35rem 0.95rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.12s ease,
+    background-color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.btnGhost {
+  background: transparent;
+  border-color: rgba(148, 163, 184, 0.8);
+  color: #4b5563;
+}
+.btnGhost:hover {
+  background: rgba(148, 163, 184, 0.08);
+}
+:global(html.dark) .btnGhost {
+  color: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.8);
+}
+:global(html.dark) .btnGhost:hover {
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.btnPrimary {
+  background: linear-gradient(180deg, #22c55e, #16a34a);
+  color: white;
+  box-shadow: 0 10px 20px rgba(22, 163, 74, 0.45);
+}
+.btnPrimary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 24px rgba(22, 163, 74, 0.5);
+}
+.btnPrimary:active {
+  transform: translateY(0);
+  box-shadow: 0 8px 16px rgba(22, 163, 74, 0.4);
+}
+
+.btnGhost:disabled,
+.btnPrimary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+}

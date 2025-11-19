@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { headers, cookies } from "next/headers";
-import { MOCK_DOCUMENTS } from "@/mock/searchMock";
+import { mockLibraryDocs } from "@/mock/documents";
 
 function beBase() {
   return (
@@ -24,100 +24,157 @@ async function forward(path: string) {
   const passHeaders: Record<string, string> = {
     ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
   };
-
   const cookieHeader = (await h).get("cookie");
   if (cookieHeader) passHeaders["cookie"] = cookieHeader;
 
-  const res = await fetch(upstreamUrl, {
-    headers: passHeaders,
-    cache: "no-store",
-  });
-  return res;
+  return fetch(upstreamUrl, { headers: passHeaders, cache: "no-store" });
 }
 
 const toNum = (v: string | null) =>
   v != null && v !== "" && !Number.isNaN(Number(v)) ? Number(v) : undefined;
 
+const norm = (s: unknown) =>
+  String(s ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .trim();
+
+function contains(hay: string | number | undefined | null, q: string) {
+  if (!q) return true;
+  const needle = norm(q);
+  const txt = norm(hay);
+  return txt.includes(needle);
+}
+
+/**
+ * Priority-aware matching:
+ * 1) description (highest priority)
+ * 2) summarizations.short | medium | detailed
+ * 3) other fields (title, orgName, domain, specialization, uploader, publicYear)
+ */
+function matchDocWithPriority(doc: any, q: string) {
+  if (!q) return true;
+
+  // 1) description first
+  if (contains(doc.description, q)) return true;
+
+  // 2) summarizations
+  const s = doc.summarizations || {};
+  if (contains(s.short, q) || contains(s.medium, q) || contains(s.detailed, q))
+    return true;
+
+  // 3) other fields
+  const other = [
+    doc.title,
+    doc.orgName,
+    doc.domain,
+    doc.specialization,
+    doc.uploader,
+    doc.publicYear,
+  ];
+  return other.some((v) => contains(v, q));
+}
+
 export async function GET(req: NextRequest) {
   const USE_MOCK = process.env.USE_MOCK === "true";
   const sp = new URL(req.url).searchParams;
 
+  // pagination
+  const page = Math.max(1, Number(sp.get("page") || 1));
+  const perPage = Math.max(1, Number(sp.get("perPage") || 10));
+  const offset = (page - 1) * perPage;
+
+  // filters
+  const q = sp.get("q") || "";
+
   const organization = sp.get("organization") || undefined;
-
-  // legacy single domain
   const legacyDomain = sp.get("domain") || undefined;
-  // multi domains
   const domains = sp.getAll("domains").filter(Boolean);
-
   const specialization = sp.get("specialization") || undefined;
 
-  // year: single + range
   const publicYear = toNum(sp.get("publicYear"));
   const publicYearFrom = toNum(sp.get("publicYearFrom"));
   const publicYearTo = toNum(sp.get("publicYearTo"));
 
-  // premium + points
   const isPremium = sp.get("isPremium") === "true";
   const pointsFrom = toNum(sp.get("pointsFrom"));
   const pointsTo = toNum(sp.get("pointsTo"));
 
   if (USE_MOCK) {
-    let data = [...MOCK_DOCUMENTS];
+    // Ensure every mock has fields used in matching
+    let rows = [...mockLibraryDocs].map((d) => ({
+      ...d,
+      description:
+        d.description ??
+        `${d.title} — extended description for ${d.domain} / ${d.specialization} (${d.publicYear}).`,
+      summarizations: d.summarizations ?? {
+        short: `${d.title} short summary.`,
+        medium: `${d.title} medium summary with more context.`,
+        detailed: `${d.title} detailed summary with extensive context and methodology.`,
+      },
+    }));
 
-    if (organization) data = data.filter((d) => d.orgName === organization);
+    // Keyword search with priority
+    if (q) rows = rows.filter((d) => matchDocWithPriority(d, q));
 
-    // domain: ưu tiên multi, fallback legacy
-    if (domains.length > 0) {
-      data = data.filter((d) => domains.includes(d.domain));
-    } else if (legacyDomain) {
-      data = data.filter((d) => d.domain === legacyDomain);
-    }
+    // Filters
+    if (organization) rows = rows.filter((d) => d.orgName === organization);
+
+    if (domains.length > 0)
+      rows = rows.filter((d) => domains.includes(d.domain));
+    else if (legacyDomain) rows = rows.filter((d) => d.domain === legacyDomain);
 
     if (specialization)
-      data = data.filter((d) => d.specialization === specialization);
+      rows = rows.filter((d) => d.specialization === specialization);
 
-    // year single
     if (publicYear != null)
-      data = data.filter((d) => d.publicYear === publicYear);
-    // year range
+      rows = rows.filter((d) => d.publicYear === publicYear);
     if (publicYearFrom != null)
-      data = data.filter((d) => (d.publicYear ?? 0) >= publicYearFrom);
+      rows = rows.filter((d) => (d.publicYear ?? 0) >= publicYearFrom);
     if (publicYearTo != null)
-      data = data.filter((d) => (d.publicYear ?? 0) <= publicYearTo);
+      rows = rows.filter((d) => (d.publicYear ?? 0) <= publicYearTo);
 
-    // premium
-    if (isPremium) data = data.filter((d) => d.isPremium === true);
-    // points range (chỉ khi isPremium)
+    if (isPremium) rows = rows.filter((d) => d.isPremium === true);
     if (isPremium && pointsFrom != null)
-      data = data.filter((d) => (d.points ?? 0) >= pointsFrom);
+      rows = rows.filter((d) => (d.points ?? 0) >= pointsFrom);
     if (isPremium && pointsTo != null)
-      data = data.filter((d) => (d.points ?? 0) <= pointsTo);
+      rows = rows.filter((d) => (d.points ?? 0) <= pointsTo);
 
-    return NextResponse.json(
-      data.map((d) => ({
-        id: d.id,
-        title: d.title,
-        orgName: d.orgName,
-        specialization: d.specialization,
-        uploader: d.uploader,
-        domain: d.domain,
-        publicYear: d.publicYear,
-        isPremium: d.isPremium ?? false,
-        points: d.points ?? null,
-      })),
-      { headers: { "x-mode": "mock" } },
-    );
+    // Server-side pagination
+    const total = rows.length;
+    const items = rows.slice(offset, offset + perPage).map((d) => ({
+      id: d.id,
+      title: d.title,
+      orgName: d.orgName,
+      specialization: d.specialization,
+      uploader: d.uploader,
+      domain: d.domain,
+      publicYear: d.publicYear,
+      isPremium: d.isPremium ?? false,
+      points: d.points ?? null,
+      description: d.description,
+      summarizations: d.summarizations,
+    }));
+
+    return NextResponse.json({
+      items,
+      total,
+      page,
+      perPage,
+      pageCount: Math.max(1, Math.ceil(total / perPage)),
+    });
   }
 
-  // Forward sang BE thật
+  // Forward to real BE
   const qs = new URLSearchParams();
+  qs.set("page", String(page));
+  qs.set("perPage", String(perPage));
+  if (q) qs.set("q", q);
+
   if (organization) qs.set("organization", organization);
-
-  // domains[] (append)
   if (domains.length) domains.forEach((d) => qs.append("domains", d));
-  // legacy
   if (legacyDomain) qs.set("domain", legacyDomain);
-
   if (specialization) qs.set("specialization", specialization);
 
   if (publicYear != null) qs.set("publicYear", String(publicYear));
@@ -128,16 +185,13 @@ export async function GET(req: NextRequest) {
   if (pointsFrom != null) qs.set("pointsFrom", String(pointsFrom));
   if (pointsTo != null) qs.set("pointsTo", String(pointsTo));
 
-  // ví dụ path upstream
-  const UPSTREAM_PATH = `/api/search/documents${qs.toString() ? `?${qs}` : ""}`;
+  // Example upstream path (ensure your real BE matches this contract and also searches in summarizations)
+  const UPSTREAM_PATH = `/api/search/documents?${qs.toString()}`;
 
   try {
     const upstream = await forward(UPSTREAM_PATH);
     const body = await upstream.json().catch(() => ({}));
-    return NextResponse.json(body?.data ?? body, {
-      status: upstream.status,
-      headers: { "x-mode": "real" },
-    });
+    return NextResponse.json(body?.data ?? body, { status: upstream.status });
   } catch (e: any) {
     return NextResponse.json(
       { message: "Upstream search failed", error: String(e) },

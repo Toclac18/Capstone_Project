@@ -4,14 +4,13 @@ import { useSearch } from "../SearchProvider";
 import styles from "../styles.module.css";
 
 export default function Pagination() {
-  const { items, page, setPage, perPage } = useSearch();
+  // Lấy meta phân trang từ context (server-side)
+  const { page, setPage, perPage, total, pageCount } = useSearch();
 
-  const total = items.length;
-  const totalPages = useMemo(
-    () => Math.max(1, Math.ceil(total / perPage)),
-    [total, perPage],
-  );
+  // Số trang tổng do BE trả về
+  const totalPages = Math.max(1, pageCount || 1);
 
+  // Tạo dải trang hiển thị (window)
   const pages = useMemo(() => {
     const out: number[] = [];
     const maxShown = 7;
@@ -23,57 +22,68 @@ export default function Pagination() {
   }, [page, totalPages]);
 
   return (
-    <nav className={styles.paginationNav} aria-label="Pagination">
-      {/* « First */}
-      <button
-        className={styles.pageBtn}
-        onClick={() => setPage(1)}
-        disabled={page === 1}
-        aria-label="First page"
-      >
-        « First
-      </button>
+    <>
+      {/* Info: tổng bản ghi + trang hiện tại */}
+      <div className={styles.paginationBar} role="status" aria-live="polite">
+        <span className={styles.pageInfo}>
+          Page <strong>{page}</strong> of <strong>{totalPages}</strong>
+          {" · "}
+          {total} results · {perPage} / page
+        </span>
+      </div>
 
-      {/* ‹ Prev — dùng icon mũi tên y như thanh trên */}
-      <button
-        className={styles.pageBtn}
-        onClick={() => setPage(Math.max(1, page - 1))}
-        disabled={page === 1}
-        aria-label="Previous page"
-      >
-        ◀
-      </button>
-
-      {pages.map((p) => (
+      <nav className={styles.paginationNav} aria-label="Pagination">
+        {/* « First */}
         <button
-          key={p}
-          className={p === page ? styles.pageBtnActive : styles.pageBtn}
-          onClick={() => setPage(p)}
-          aria-current={p === page ? "page" : undefined}
+          className={styles.pageBtn}
+          onClick={() => setPage(1)}
+          disabled={page === 1}
+          aria-label="First page"
         >
-          {p}
+          « First
         </button>
-      ))}
 
-      {/* Next › — dùng icon mũi tên y như thanh trên */}
-      <button
-        className={styles.pageBtn}
-        onClick={() => setPage(page + 1)}
-        disabled={page >= totalPages}
-        aria-label="Next page"
-      >
-        ▶
-      </button>
+        {/* ‹ Prev */}
+        <button
+          className={styles.pageBtn}
+          onClick={() => setPage(Math.max(1, page - 1))}
+          disabled={page === 1}
+          aria-label="Previous page"
+        >
+          ◀
+        </button>
 
-      {/* Last » */}
-      <button
-        className={styles.pageBtn}
-        onClick={() => setPage(totalPages)}
-        disabled={page >= totalPages}
-        aria-label="Last page"
-      >
-        Last »
-      </button>
-    </nav>
+        {pages.map((p) => (
+          <button
+            key={p}
+            className={p === page ? styles.pageBtnActive : styles.pageBtn}
+            onClick={() => setPage(p)}
+            aria-current={p === page ? "page" : undefined}
+          >
+            {p}
+          </button>
+        ))}
+
+        {/* Next › */}
+        <button
+          className={styles.pageBtn}
+          onClick={() => setPage(Math.min(totalPages, page + 1))}
+          disabled={page >= totalPages}
+          aria-label="Next page"
+        >
+          ▶
+        </button>
+
+        {/* Last » */}
+        <button
+          className={styles.pageBtn}
+          onClick={() => setPage(totalPages)}
+          disabled={page >= totalPages}
+          aria-label="Last page"
+        >
+          Last »
+        </button>
+      </nav>
+    </>
   );
 }

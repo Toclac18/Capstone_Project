@@ -3,11 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styles from "../styles.module.css";
-import DocCard from "./DocCard";
+import DocCard, { type DocCardItem } from "./DocCard";
 import { useHomepage } from "../HomepageProvider";
-
-// Accept flexible input from provider (DocumentLite or similar)
-type AnyDoc = Record<string, any>;
+import { useModalPreview } from "@/components/ModalPreview";
+import type { DocumentItem as BaseDoc } from "@/types/documentResponse";
 
 function readInt(sp: URLSearchParams, key: string, fallback: number) {
   const v = parseInt(sp.get(key) || "", 10);
@@ -21,72 +20,91 @@ export default function Section({
   defaultPageSize = 8,
 }: {
   title: string;
-  items: AnyDoc[]; // NOTE: flexible to avoid incompatibilities
+  items: BaseDoc[];
   sectionKey: string;
   defaultPageSize?: number;
 }) {
   const { q } = useHomepage();
-  const sp = useSearchParams();
+  const spObj = useSearchParams();
   const router = useRouter();
+  const { open } = useModalPreview();
 
-  const pageKey = `${sectionKey}Page`;
-  const sizeKey = `${sectionKey}Size`;
-
-  const [size] = useState(() =>
-    readInt(new URLSearchParams(sp.toString()), sizeKey, defaultPageSize),
+  const normalized: DocCardItem[] = useMemo(
+    () =>
+      (items ?? []).map((d) => ({
+        ...d,
+        viewCount: (d as any).viewCount ?? 0,
+      })),
+    [items],
   );
-  const [page, setPage] = useState(() =>
-    readInt(new URLSearchParams(sp.toString()), pageKey, 1),
-  );
 
-  // local filter: expand to orgName/subject/points
+  const initial = useMemo(() => {
+    const sp = new URLSearchParams(spObj.toString());
+    return {
+      page: readInt(sp, `${sectionKey}Page`, 1),
+      size: readInt(sp, `${sectionKey}Size`, defaultPageSize),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [page, setPage] = useState(initial.page);
+  const [size] = useState(initial.size);
+
+  // Filter theo q
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return items;
-    return items.filter((d) => {
-      const t = d.title?.toLowerCase?.() ?? "";
-      const u = d.uploader?.toLowerCase?.() ?? "";
-      const spz = d.specialization?.toLowerCase?.() ?? "";
-      const org = (d.orgName ?? d.org_name ?? "").toLowerCase?.() ?? "";
-      const sub = d.subject?.toLowerCase?.() ?? "";
-      const pts = d.points?.toString?.().toLowerCase?.() ?? "";
+    if (!s) return normalized;
+    return normalized.filter((d) => {
+      const pts = (d.points ?? "").toString();
       return (
-        t.includes(s) ||
-        u.includes(s) ||
-        spz.includes(s) ||
-        org.includes(s) ||
-        sub.includes(s) ||
+        d.title.toLowerCase().includes(s) ||
+        d.uploader.toLowerCase().includes(s) ||
+        d.specialization.toLowerCase().includes(s) ||
+        d.orgName.toLowerCase().includes(s) ||
         pts.includes(s)
       );
     });
-  }, [q, items]);
+  }, [q, normalized]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / size));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filtered.length / Math.max(1, size)),
+  );
   const clampedPage = Math.min(page, totalPages);
-  const start = (clampedPage - 1) * size;
-  const pageItems = filtered.slice(start, start + size);
+  const start = (clampedPage - 1) * Math.max(1, size);
+  const pageItems = filtered.slice(start, start + Math.max(1, size));
 
-  const updateQuery = (kv: Record<string, string | number>) => {
-    const next = new URLSearchParams(sp.toString());
-    Object.entries(kv).forEach(([k, v]) => {
-      if (!v || v === "" || v === 0) next.delete(k);
-      else next.set(k, String(v));
-    });
-    router.replace(`?${next.toString()}`, { scroll: false });
-  };
-
+  // Khi filter đổi, về page 1 nếu đang ở trang khác
   useEffect(() => {
-    setPage(1);
-    updateQuery({ [pageKey]: 1 });
+    if (clampedPage !== 1) setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, items]);
 
   useEffect(() => {
-    updateQuery({ [pageKey]: clampedPage, [sizeKey]: size });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clampedPage, size]);
+    const current = new URLSearchParams(spObj.toString());
+    const next = new URLSearchParams(current.toString());
+    const pk = `${sectionKey}Page`;
+    const sk = `${sectionKey}Size`;
 
-  if (!items?.length) return null;
+    let changed = false;
+    if (current.get(pk) !== String(clampedPage)) {
+      next.set(pk, String(clampedPage));
+      changed = true;
+    }
+    if (current.get(sk) !== String(size)) {
+      next.set(sk, String(size));
+      changed = true;
+    }
+
+    if (changed) {
+      const qs = next.toString();
+      const url = qs ? `?${qs}` : location.pathname;
+      router.replace(url, { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clampedPage, size, sectionKey, spObj]);
+
+  if (!normalized.length) return null;
 
   return (
     <section className={styles.section}>
@@ -96,29 +114,7 @@ export default function Section({
 
       <div className={styles.cardsGrid}>
         {pageItems.map((d) => (
-          <DocCard
-            key={d.id}
-            id={d.id}
-            title={d.title}
-            subject={d.subject}
-            pageCount={d.pageCount}
-            specialization={d.specialization}
-            upvote_counts={d.upvote_counts ?? d.upvotes ?? 0}
-            downvote_counts={d.downvote_counts ?? d.downvotes ?? 0}
-            uploader={d.uploader}
-            thumbnail={d.thumbnail}
-            // map to DocCard exact props with safe fallbacks
-            orgName={d.orgName ?? d.org_name ?? "—"}
-            viewCount={
-              typeof d.viewCount === "number"
-                ? d.viewCount
-                : typeof d.views === "number"
-                  ? d.views
-                  : 0
-            }
-            isPremium={!!d.isPremium}
-            points={d.points}
-          />
+          <DocCard key={d.id} {...d} onPreview={() => open(d)} />
         ))}
       </div>
     </section>

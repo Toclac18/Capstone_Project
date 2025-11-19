@@ -1,14 +1,12 @@
 // src/app/api/homepage/route.ts
+import {
+  mockContinueReading,
+  mockLibraryDocs,
+  mockSpecializationGroups,
+  mockTopUpvoted,
+} from "@/mock/documents";
 import { headers, cookies } from "next/headers";
 import { NextRequest } from "next/server";
-import {
-  mockLibraryDocs,
-  mockTopUpvoted,
-  mockContinueReading,
-  // make sure this exists/was exported from your mock file
-  mockSpecializationGroups,
-} from "@/mock/documents";
-
 function beBase() {
   return (
     process.env.BE_BASE_URL?.replace(/\/$/, "") ||
@@ -33,10 +31,9 @@ export async function GET(req: NextRequest) {
   const specialization = (url.searchParams.get("specialization") || "").trim();
   const page = Number(url.searchParams.get("page") || 1);
   const pageSize = Number(url.searchParams.get("pageSize") || 12);
-  const mode = (url.searchParams.get("mode") || "").toLowerCase(); // "paged" to force items/total
+  const mode = (url.searchParams.get("mode") || "").toLowerCase();
 
   if (USE_MOCK) {
-    // --- MODE A: paged list (backward compatible with current "group" endpoint) ---
     if (mode === "paged" || group !== "all") {
       let pool = mockLibraryDocs;
 
@@ -71,7 +68,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // --- MODE B: bulk home payload (what HomepageProvider expects) ---
     return json(
       {
         continueReading: mockContinueReading,
@@ -83,7 +79,6 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // === REAL BACKEND FORWARD ===
   const qs = new URLSearchParams();
   if (q) qs.set("q", q);
   if (group && group !== "all") qs.set("group", group);

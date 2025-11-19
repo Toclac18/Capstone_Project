@@ -11,21 +11,25 @@ export default function SearchPage() {
   const [open, setOpen] = useState(false);
 
   return (
-    <SearchProvider>
-      <main className={styles.container}>
-        <header className={styles.header}>
-          <h1 className={styles.title}>Library Search</h1>
-          <p className={styles.subtitle}>
-            Studocu‑style listing with filters, pagination, and on‑page search
-          </p>
-        </header>
+    <div data-search-scope>
+      {" "}
+      {/* ✅ scope CSS cho riêng trang search */}
+      <SearchProvider>
+        <main className={styles.container}>
+          <header className={styles.header}>
+            <h1 className={styles.title}>Library Search</h1>
+            <p className={styles.subtitle}>
+              Studocu-style listing with filters, pagination, and on-page search
+            </p>
+          </header>
 
-        <SearchToolbar onOpenFilter={() => setOpen(true)} />
-        <DocumentList />
-        <Pagination />
+          <SearchToolbar onOpenFilter={() => setOpen(true)} />
+          <DocumentList />
+          <Pagination />
 
-        <FilterModal open={open} onClose={() => setOpen(false)} />
-      </main>
-    </SearchProvider>
+          <FilterModal open={open} onClose={() => setOpen(false)} />
+        </main>
+      </SearchProvider>
+    </div>
   );
 }

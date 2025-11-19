@@ -114,16 +114,16 @@ export default function UploadDocumentPage() {
   // Load tags (no search param)
   useEffect(() => {
     const loadTags = async () => {
-      try {
+        try {
         const results = await fetchTags();
-        setTags(results);
+          setTags(results);
         if (tagSearch.trim()) {
           setShowTagDropdown(true);
         }
-      } catch {
+        } catch {
         // Ignore errors
-      }
-    };
+        }
+      };
     loadTags();
   }, [tagSearch]);
 

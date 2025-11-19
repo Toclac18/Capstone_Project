@@ -1,0 +1,149 @@
+.backdrop {
+  @apply fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/50 p-4;
+}
+
+.modal {
+  @apply w-full max-w-5xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl;
+  @apply flex flex-col;
+  max-height: calc(100vh - 2rem);
+}
+:global(html.dark) .modal {
+  @apply border-white/10 bg-[#0f1a2a] text-gray-100 shadow-none;
+}
+
+.header {
+  @apply flex gap-6 p-6 pb-4;
+}
+.thumbWrap {
+  @apply relative h-40 w-40 shrink-0 overflow-hidden rounded-xl bg-gray-100;
+}
+:global(html.dark) .thumbWrap {
+  @apply bg-gray-900;
+}
+.thumb {
+  @apply object-cover;
+}
+
+.headerText {
+  @apply flex min-w-0 flex-col gap-2;
+}
+.title {
+  @apply truncate text-2xl font-extrabold tracking-tight text-gray-900;
+}
+:global(html.dark) .title {
+  @apply text-gray-100;
+}
+.metaLine {
+  @apply text-sm text-gray-500;
+}
+:global(html.dark) .metaLine {
+  @apply text-gray-400;
+}
+.badgeRow {
+  @apply mt-1;
+}
+.badge {
+  @apply inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-sm font-medium text-gray-700;
+}
+:global(html.dark) .badge {
+  @apply border-white/10 bg-gray-900 text-gray-300;
+}
+.statRow {
+  @apply mt-3 flex flex-wrap items-center gap-3;
+}
+.stat {
+  @apply inline-flex items-center rounded-lg border border-gray-200 px-3 py-1 text-sm text-gray-700;
+}
+:global(html.dark) .stat {
+  @apply border-white/10 text-gray-400;
+}
+.uploader {
+  @apply text-sm text-gray-600;
+}
+:global(html.dark) .uploader {
+  @apply text-gray-400;
+}
+
+.body {
+  @apply px-6 pb-4;
+  @apply flex-1 overflow-y-auto overscroll-contain;
+}
+.block {
+  @apply mb-5;
+}
+.blockTitleRow {
+  @apply mb-2 flex items-center justify-between gap-3;
+}
+.blockTitle {
+  @apply text-base font-semibold text-gray-900;
+}
+:global(html.dark) .blockTitle {
+  @apply text-gray-100;
+}
+.paragraph {
+  @apply text-[15px] leading-relaxed text-gray-800;
+}
+:global(html.dark) .paragraph {
+  @apply text-gray-200;
+}
+.paragraphMuted {
+  @apply text-sm text-gray-500;
+}
+:global(html.dark) .paragraphMuted {
+  @apply text-gray-400;
+}
+
+.levelGroup {
+  @apply inline-flex items-center gap-2;
+}
+.levelItem {
+  @apply inline-flex items-center gap-2;
+}
+.levelCheck {
+  appearance: none;
+  @apply absolute h-0 w-0 opacity-0;
+}
+.levelLabel {
+  @apply select-none rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-sm text-gray-700 transition;
+}
+.levelItem:active .levelLabel {
+  @apply scale-95;
+}
+.levelCheck:checked + .levelLabel {
+  @apply border-gray-900 bg-gray-900 text-white;
+}
+:global(html.dark) .levelLabel {
+  @apply border-white/10 bg-gray-900 text-gray-300;
+}
+:global(html.dark) .levelCheck:checked + .levelLabel {
+  @apply border-white/20 bg-white text-gray-900;
+}
+
+.footer {
+  @apply mt-2 flex items-center justify-between gap-3 border-t border-gray-100 px-6 py-4;
+  flex: 0 0 auto;
+}
+:global(html.dark) .footer {
+  @apply border-white/10;
+}
+.docId {
+  @apply text-sm text-gray-500;
+}
+:global(html.dark) .docId {
+  @apply text-gray-400;
+}
+.actions {
+  @apply flex items-center gap-3;
+}
+.btnGhost {
+  @apply rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700;
+}
+:global(html.dark) .btnGhost {
+  @apply border-white/10 text-gray-300;
+}
+.btnPrimary {
+  @apply inline-flex items-center justify-center rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white;
+}
+:global(html.dark) .btnPrimary {
+  @apply bg-white text-gray-900;
+}

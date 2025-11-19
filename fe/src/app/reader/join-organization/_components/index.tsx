@@ -21,11 +21,11 @@ export default function JoinOrganizationContent() {
     
     // Validate token and handle join process
     const handleJoin = async () => {
-      if (!token) {
-        setStatus("error");
-        setMessage("Invitation token is missing");
-        return;
-      }
+    if (!token) {
+      setStatus("error");
+      setMessage("Invitation token is missing");
+      return;
+    }
 
       try {
         // Show loading spinner for at least 1.5 seconds

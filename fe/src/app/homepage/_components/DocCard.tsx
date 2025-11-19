@@ -2,63 +2,75 @@
 
 import Image from "next/image";
 import styles from "../styles.module.css";
+import type { DocumentItem as BaseDoc } from "@/types/documentResponse";
 
-type Props = {
-  id: string;
-  title: string;
-  subject?: string;
-  pageCount?: number;
-  upvote_counts: number;
-  downvote_counts: number;
-  specialization: string;
-  uploader: string;
-  thumbnail: string;
-  orgName: string;
-  viewCount: number;
-  isPremium: boolean;
-  points?: string;
+export type DocCardItem = BaseDoc & { viewCount: number };
+
+type Props = DocCardItem & {
+  onPreview?: (doc: DocCardItem) => void;
 };
 
 export default function DocCard(props: Props) {
+  const {
+    title,
+    orgName,
+    specialization,
+    uploader,
+    publicYear,
+    isPremium,
+    points,
+    upvote_counts,
+    downvote_counts,
+    thumbnail,
+    viewCount,
+    onPreview,
+  } = props;
+
+  const handlePreview = () => onPreview?.(props);
+
   return (
-    <div className={styles.card}>
+    <div
+      className={styles.card}
+      role="button"
+      tabIndex={0}
+      onClick={handlePreview}
+      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handlePreview()}
+      aria-label={`Preview ${title}`}
+    >
       <div className={styles.thumb}>
         <Image
-          src={props.thumbnail}
-          alt={props.title}
+          src={thumbnail}
+          alt={title}
           fill
           sizes="(max-width: 768px) 80vw, 260px"
           className={styles.thumbImg}
-          priority={false}
         />
       </div>
 
-      <div className={styles.cardTitle}>{props.title}</div>
+      <div className={styles.cardTitle}>{title}</div>
 
-      {/* Meta: subject • pages • views • org */}
       <div className={styles.meta}>
-        {/* <span>{props.subject ?? "—"}</span> */}
-        {props.pageCount && <span> • {props.pageCount} pages</span>}
-        <span> • {props.viewCount.toLocaleString()} views</span>
-        <span> • {props.orgName}</span>
+        <div>• {viewCount.toLocaleString()} views</div>
+        <div>• {orgName}</div>
+        <div>• Public on {publicYear}</div>
       </div>
 
       <div className={styles.votesRow}>
-        <span className={styles.voteUp}>▲ {props.upvote_counts}</span>
-        <span className={styles.voteDown}>▼ {props.downvote_counts}</span>
-        <span className={styles.specChip}>{props.specialization}</span>
+        <span className={styles.voteUp}>▲ {upvote_counts}</span>
+        <span className={styles.voteDown}>▼ {downvote_counts}</span>
       </div>
 
-      <div className={styles.uploader}>Uploaded by {props.uploader}</div>
+      <div className={styles.specRow}>
+        <span className={styles.specChip}>{specialization}</span>
+      </div>
 
-      {/* Premium badge (only when premium) — reuses existing chip class */}
-      {props.isPremium && (
+      {isPremium && (
         <div className={styles.meta}>
-          <span className={styles.specChip}>
-            Premium{props.points ? ` • ${props.points} pts` : ""}
-          </span>
+          <span className={styles.specChip}>Premium • {points} pts</span>
         </div>
       )}
+
+      <div className={styles.uploader}>Uploaded by {uploader}</div>
     </div>
   );
 }

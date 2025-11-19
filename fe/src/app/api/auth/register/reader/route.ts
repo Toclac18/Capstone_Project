@@ -7,7 +7,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // Validate required fields
+  // Validate required fields for Reader
   const { fullName, dateOfBirth, username, email, password } = body;
   if (!fullName || !dateOfBirth || !username || !email || !password) {
     return Response.json(
@@ -17,28 +17,20 @@ export async function POST(req: Request) {
   }
 
   if (USE_MOCK) {
-    // Mock registration - always success
     const mockUser = {
       id: Math.floor(Math.random() * 10000),
       username,
       email,
       fullName,
-      dateOfBirth,
+      role: "READER",
       status: "PENDING_VERIFICATION",
-      createdAt: new Date().toISOString(),
+      message: "Registration successful! Please check your email to verify your account.",
     };
-
-    return Response.json(
-      {
-        ...mockUser,
-        message: "Registration successful! Please check your email to verify your account. (mock)",
-      },
-      { status: 201 }
-    );
+    return Response.json(mockUser, { status: 201 });
   }
 
   // Proxy to BE
-  const upstream = await fetch(`${BE_BASE}/api/auth/reader/register`, {
+  const upstream = await fetch(`${BE_BASE}/api/auth/register-reader`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -48,7 +40,6 @@ export async function POST(req: Request) {
   const text = await upstream.text();
   const contentType = upstream.headers.get("content-type") ?? "application/json";
 
-  // If error, try to parse and return proper error message
   if (!upstream.ok) {
     let errorMsg = "Registration failed";
     try {
@@ -65,4 +56,3 @@ export async function POST(req: Request) {
     headers: { "content-type": contentType },
   });
 }
-

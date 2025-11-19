@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm, SubmitHandler, useWatch } from "react-hook-form";
 import type { ReviewHistoryQueryParams } from "@/types/review";
 import { getDocumentTypes, getDomains } from "@/services/uploadDocuments";
 import styles from "../styles.module.css";
@@ -29,7 +29,7 @@ export function HistoryFilters({
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
   } = useForm<FilterValues>({
     defaultValues: {
       search: "",
@@ -42,7 +42,7 @@ export function HistoryFilters({
     },
   });
 
-  const watchedFilters = watch();
+  const watchedFilters = useWatch({ control });
   const [documentTypes, setDocumentTypes] = useState<string[]>([]);
   const [domains, setDomains] = useState<string[]>([]);
 
@@ -295,7 +295,15 @@ export function HistoryFilters({
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters = { ...watchedFilters, search: "" };
+                    const updatedFilters: FilterValues = {
+                      search: "",
+                      dateFrom: watchedFilters.dateFrom || "",
+                      dateTo: watchedFilters.dateTo || "",
+                      type: watchedFilters.type || "",
+                      domain: watchedFilters.domain || "",
+                      active: watchedFilters.active || false,
+                      rejected: watchedFilters.rejected || false,
+                    };
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
@@ -316,7 +324,15 @@ export function HistoryFilters({
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters = { ...watchedFilters, active: false, rejected: false };
+                    const updatedFilters: FilterValues = {
+                      search: watchedFilters.search || "",
+                      dateFrom: watchedFilters.dateFrom || "",
+                      dateTo: watchedFilters.dateTo || "",
+                      type: watchedFilters.type || "",
+                      domain: watchedFilters.domain || "",
+                      active: false,
+                      rejected: false,
+                    };
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
@@ -332,7 +348,15 @@ export function HistoryFilters({
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters = { ...watchedFilters, type: "" };
+                    const updatedFilters: FilterValues = {
+                      search: watchedFilters.search || "",
+                      dateFrom: watchedFilters.dateFrom || "",
+                      dateTo: watchedFilters.dateTo || "",
+                      type: "",
+                      domain: watchedFilters.domain || "",
+                      active: watchedFilters.active || false,
+                      rejected: watchedFilters.rejected || false,
+                    };
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
@@ -348,7 +372,15 @@ export function HistoryFilters({
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters = { ...watchedFilters, domain: "" };
+                    const updatedFilters: FilterValues = {
+                      search: watchedFilters.search || "",
+                      dateFrom: watchedFilters.dateFrom || "",
+                      dateTo: watchedFilters.dateTo || "",
+                      type: watchedFilters.type || "",
+                      domain: "",
+                      active: watchedFilters.active || false,
+                      rejected: watchedFilters.rejected || false,
+                    };
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
@@ -364,7 +396,15 @@ export function HistoryFilters({
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters = { ...watchedFilters, dateFrom: "", dateTo: "" };
+                    const updatedFilters: FilterValues = {
+                      search: watchedFilters.search || "",
+                      dateFrom: "",
+                      dateTo: "",
+                      type: watchedFilters.type || "",
+                      domain: watchedFilters.domain || "",
+                      active: watchedFilters.active || false,
+                      rejected: watchedFilters.rejected || false,
+                    };
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}

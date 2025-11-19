@@ -14,6 +14,7 @@ import { setupMockOrganizations } from "./organizations";
 import { setupMockDocuments } from "./uploadDocuments";
 import { setupMockManageTags } from "./manageTags";
 import { setupMockManageDomains } from "./manageDomains";
+import { setupMockManageTypes } from "./manageTypes";
 
 export function setupMocks() {
   const enabled = process.env.NEXT_PUBLIC_USE_MOCK === "true";
@@ -29,4 +30,5 @@ export function setupMocks() {
   setupMockDocuments();
   setupMockManageTags();
   setupMockManageDomains();
+  setupMockManageTypes();
 }

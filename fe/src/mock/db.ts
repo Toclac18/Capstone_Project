@@ -382,6 +382,7 @@ export const mockOrganizationAdminDB = {
 // ---------------- Business Admin Tags Mock ----------------
 import type { Tag as BusinessAdminTag, TagStatus } from "@/types/document-tag";
 import type { Domain as BusinessAdminDomain } from "@/types/document-domain";
+import type { DocumentType as BusinessAdminType } from "@/types/document-type";
 
 const _businessAdminTags: BusinessAdminTag[] = [
   {
@@ -934,6 +935,244 @@ export const mockDomainsDB = {
         id: "domain-10",
         name: "Literature",
         createdDate: "2025-01-19T19:00:00Z",
+      }
+    );
+  },
+};
+
+// ---------------- Business Admin Types Mock ----------------
+const _businessAdminTypes: BusinessAdminType[] = [
+  {
+    id: "type-1",
+    name: "Research Paper",
+    createdAt: "2025-01-10T10:00:00Z",
+    updatedAt: "2025-01-10T10:00:00Z",
+  },
+  {
+    id: "type-2",
+    name: "Article",
+    createdAt: "2025-01-11T11:00:00Z",
+    updatedAt: "2025-01-11T11:00:00Z",
+  },
+  {
+    id: "type-3",
+    name: "Book",
+    createdAt: "2025-01-12T12:00:00Z",
+    updatedAt: "2025-01-12T12:00:00Z",
+  },
+  {
+    id: "type-4",
+    name: "Report",
+    createdAt: "2025-01-13T13:00:00Z",
+    updatedAt: "2025-01-13T13:00:00Z",
+  },
+  {
+    id: "type-5",
+    name: "Thesis",
+    createdAt: "2025-01-14T14:00:00Z",
+    updatedAt: "2025-01-14T14:00:00Z",
+  },
+  {
+    id: "type-6",
+    name: "Tutorial",
+    createdAt: "2025-01-15T15:00:00Z",
+    updatedAt: "2025-01-15T15:00:00Z",
+  },
+  {
+    id: "type-7",
+    name: "Technical Report",
+    createdAt: "2025-01-16T16:00:00Z",
+    updatedAt: "2025-01-16T16:00:00Z",
+  },
+  {
+    id: "type-8",
+    name: "Case Study",
+    createdAt: "2025-01-17T17:00:00Z",
+    updatedAt: "2025-01-17T17:00:00Z",
+  },
+  {
+    id: "type-9",
+    name: "Review",
+    createdAt: "2025-01-18T18:00:00Z",
+    updatedAt: "2025-01-18T18:00:00Z",
+  },
+  {
+    id: "type-10",
+    name: "Conference Paper",
+    createdAt: "2025-01-19T19:00:00Z",
+    updatedAt: "2025-01-19T19:00:00Z",
+  },
+];
+
+export const mockTypesDB = {
+  list(params?: {
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): BusinessAdminType[] {
+    let filtered = [..._businessAdminTypes];
+
+    // Filter by search
+    if (params?.search) {
+      const searchLower = params.search.toLowerCase().trim();
+      filtered = filtered.filter(
+        (type) =>
+          type.name.toLowerCase().includes(searchLower) ||
+          type.id.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Filter by date range
+    if (params?.dateFrom) {
+      const fromDate = new Date(params.dateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      filtered = filtered.filter((type) => {
+        if (!type.createdAt) return false;
+        const typeDate = new Date(type.createdAt);
+        typeDate.setHours(0, 0, 0, 0);
+        return typeDate >= fromDate;
+      });
+    }
+
+    if (params?.dateTo) {
+      const toDate = new Date(params.dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter((type) => {
+        if (!type.createdAt) return false;
+        const typeDate = new Date(type.createdAt);
+        typeDate.setHours(0, 0, 0, 0);
+        return typeDate <= toDate;
+      });
+    }
+
+    return filtered;
+  },
+  get(id: string): BusinessAdminType | undefined {
+    return _businessAdminTypes.find((type) => type.id === id);
+  },
+  create(data: { name: string }): BusinessAdminType {
+    // Check for duplicate name (case-insensitive)
+    const existingType = _businessAdminTypes.find(
+      (type) => type.name.toLowerCase().trim() === data.name.toLowerCase().trim()
+    );
+
+    if (existingType) {
+      throw new Error("Type name already in use. Please choose another name.");
+    }
+
+    // Validate name is not empty
+    if (!data.name || !data.name.trim()) {
+      throw new Error("Type name cannot be empty.");
+    }
+
+    const now = new Date().toISOString();
+    const newType: BusinessAdminType = {
+      id: `type-${Date.now()}`,
+      name: data.name.trim(),
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    _businessAdminTypes.unshift(newType);
+    return newType;
+  },
+  update(id: string, data: { name?: string }): BusinessAdminType {
+    const typeIndex = _businessAdminTypes.findIndex((type) => type.id === id);
+
+    if (typeIndex === -1) {
+      throw new Error(`Type with id ${id} not found`);
+    }
+
+    const existingType = _businessAdminTypes[typeIndex];
+
+    // Check for duplicate name if name is being updated
+    if (data.name !== undefined) {
+      const trimmedName = data.name.trim();
+      if (trimmedName !== existingType.name) {
+        const duplicateType = _businessAdminTypes.find(
+          (type) =>
+            type.id !== id &&
+            type.name.toLowerCase().trim() === trimmedName.toLowerCase()
+        );
+
+        if (duplicateType) {
+          throw new Error("Type name already in use. Please choose another name.");
+        }
+      }
+
+      // Validate name is not empty
+      if (!trimmedName) {
+        throw new Error("Type name cannot be empty.");
+      }
+
+      existingType.name = trimmedName;
+      existingType.updatedAt = new Date().toISOString();
+    }
+
+    return existingType;
+  },
+  reset(): void {
+    _businessAdminTypes.length = 0;
+    _businessAdminTypes.push(
+      {
+        id: "type-1",
+        name: "Research Paper",
+        createdAt: "2025-01-10T10:00:00Z",
+        updatedAt: "2025-01-10T10:00:00Z",
+      },
+      {
+        id: "type-2",
+        name: "Article",
+        createdAt: "2025-01-11T11:00:00Z",
+        updatedAt: "2025-01-11T11:00:00Z",
+      },
+      {
+        id: "type-3",
+        name: "Book",
+        createdAt: "2025-01-12T12:00:00Z",
+        updatedAt: "2025-01-12T12:00:00Z",
+      },
+      {
+        id: "type-4",
+        name: "Report",
+        createdAt: "2025-01-13T13:00:00Z",
+        updatedAt: "2025-01-13T13:00:00Z",
+      },
+      {
+        id: "type-5",
+        name: "Thesis",
+        createdAt: "2025-01-14T14:00:00Z",
+        updatedAt: "2025-01-14T14:00:00Z",
+      },
+      {
+        id: "type-6",
+        name: "Tutorial",
+        createdAt: "2025-01-15T15:00:00Z",
+        updatedAt: "2025-01-15T15:00:00Z",
+      },
+      {
+        id: "type-7",
+        name: "Technical Report",
+        createdAt: "2025-01-16T16:00:00Z",
+        updatedAt: "2025-01-16T16:00:00Z",
+      },
+      {
+        id: "type-8",
+        name: "Case Study",
+        createdAt: "2025-01-17T17:00:00Z",
+        updatedAt: "2025-01-17T17:00:00Z",
+      },
+      {
+        id: "type-9",
+        name: "Review",
+        createdAt: "2025-01-18T18:00:00Z",
+        updatedAt: "2025-01-18T18:00:00Z",
+      },
+      {
+        id: "type-10",
+        name: "Conference Paper",
+        createdAt: "2025-01-19T19:00:00Z",
+        updatedAt: "2025-01-19T19:00:00Z",
       }
     );
   },

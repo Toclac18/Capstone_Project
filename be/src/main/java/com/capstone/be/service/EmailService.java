@@ -61,4 +61,11 @@ public interface EmailService {
    */
   void sendPasswordResetOtp(String email, String fullName, String otp);
 
+  /**
+   * Send confirmation email after password reset successful
+   *
+   * @param email    User email address
+   * @param fullName User full name
+   */
+  void sendPasswordResetConfirmation(String email, String fullName);
 }

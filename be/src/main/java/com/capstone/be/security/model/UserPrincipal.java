@@ -1,135 +1,51 @@
 package com.capstone.be.security.model;
 
-import com.capstone.be.domain.entity.BusinessAdmin;
-import com.capstone.be.domain.entity.Organization;
-import com.capstone.be.domain.entity.Reader;
-import com.capstone.be.domain.entity.Reviewer;
-import com.capstone.be.domain.entity.SystemAdmin;
-import com.capstone.be.domain.enums.OrganizationStatus;
-import com.capstone.be.domain.enums.ReaderStatus;
-import com.capstone.be.domain.enums.ReviewerStatus;
-import com.capstone.be.domain.enums.UserRole;
+import com.capstone.be.domain.entity.User;
+import com.capstone.be.domain.enums.UserStatus;
 import java.util.Collection;
-import java.util.List;
+import java.util.Collections;
 import java.util.UUID;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.ToString;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-@ToString
+@Getter
+@AllArgsConstructor
 public class UserPrincipal implements UserDetails {
 
-  @Getter
-  private final UUID id;
-  @Getter
-  private final UserRole role;
-  private final String email;
-  @Getter
-  private final String displayName;
-  private final String passwordHash;
-  private final boolean accountNonLocked;
-  private final boolean enabled;
-  private final List<GrantedAuthority> authorities;
+  private UUID id;
+  private String email;
+  private String password;
+  private String fullName;
+  private String role;
+  private UserStatus status;
 
-  private UserPrincipal(UUID id,
-      UserRole role,
-      String email,
-      String displayName,
-      String passwordHash,
-      boolean accountNonLocked,
-      boolean enabled) {
-    this.id = id;
-    this.role = role;
-    this.email = email;
-    this.displayName = displayName;
-    this.passwordHash = passwordHash;
-    this.accountNonLocked = accountNonLocked;
-    this.enabled = enabled;
-    this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
-  }
-
-  public static UserPrincipal fromReader(Reader reader) {
-    boolean locked = ReaderStatus.DEACTIVE.equals(reader.getStatus());
-    boolean enabled = ReaderStatus.ACTIVE.equals(reader.getStatus());
+  public static UserPrincipal fromUser(User user) {
     return new UserPrincipal(
-        reader.getId(),
-        UserRole.READER,
-        reader.getEmail(),
-        reader.getUsername(),
-        reader.getPasswordHash(),
-        !locked,
-        enabled
-    );
-  }
-
-  public static UserPrincipal fromReviewer(Reviewer reviewer) {
-    boolean locked = ReviewerStatus.DEACTIVE.equals(reviewer.getStatus());
-    boolean enabled = ReviewerStatus.PENDING_VERIFICATION.equals(reviewer.getStatus());
-    return new UserPrincipal(
-        reviewer.getId(),
-        UserRole.REVIEWER,
-        reviewer.getEmail(),
-        reviewer.getFullName(),
-        reviewer.getPasswordHash(),
-        !locked,
-        enabled
-    );
-  }
-
-  public static UserPrincipal fromOrganization(Organization org) {
-    boolean locked = OrganizationStatus.DEACTIVE.equals(org.getStatus());
-    boolean enabled = OrganizationStatus.PENDING_VERIFICATION.equals(org.getStatus());
-    return new UserPrincipal(
-        org.getId(),
-        UserRole.ORGANIZATION,
-        org.getAdminEmail(),
-        org.getAdminName(),
-        org.getAdminPassword(),
-        !locked,
-        enabled
-    );
-  }
-
-  //#Temp: Admins are not Locked or Disabled
-  public static UserPrincipal fromBusinessAdmin(BusinessAdmin admin) {
-    return new UserPrincipal(
-        admin.getId(),
-        UserRole.BUSINESS_ADMIN,
-        admin.getEmail(),
-        admin.getFullName(),
-        admin.getPasswordHash(),
-        true,
-        true
-    );
-  }
-
-  public static UserPrincipal fromSystemAdmin(SystemAdmin admin) {
-    return new UserPrincipal(
-        admin.getId(),
-        UserRole.SYSTEM_ADMIN,
-        admin.getEmail(),
-        admin.getFullName(),
-        admin.getPasswordHash(),
-        true,
-        true
+        user.getId(),
+        user.getEmail(),
+        user.getPasswordHash(),
+        user.getFullName(),
+        user.getRole().name(),
+        user.getStatus()
     );
   }
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    return authorities;
+    return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
   }
 
   @Override
   public String getPassword() {
-    return passwordHash;
+    return password;
   }
 
   @Override
   public String getUsername() {
-    return email;
+    return id.toString();  // Return UUID instead of email for consistency with JWT subject
   }
 
   @Override
@@ -139,7 +55,7 @@ public class UserPrincipal implements UserDetails {
 
   @Override
   public boolean isAccountNonLocked() {
-    return accountNonLocked;
+    return status != UserStatus.INACTIVE && status != UserStatus.DELETED;
   }
 
   @Override
@@ -149,6 +65,6 @@ public class UserPrincipal implements UserDetails {
 
   @Override
   public boolean isEnabled() {
-    return enabled;
+    return status == UserStatus.ACTIVE;
   }
 }

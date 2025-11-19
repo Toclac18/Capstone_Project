@@ -2,36 +2,32 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
-import type { Tag, TagQueryParams, TagResponse, TagStatus } from "../api";
-import { getTags, createTag, updateTag, deleteTag, approveTag } from "../api";
+import type { Domain, DomainQueryParams, DomainResponse } from "../api";
+import { getDomains, createDomain, updateDomain } from "../api";
 import { Pagination } from "@/components/ui/pagination";
-import { AddTagModal } from "./AddTagModal";
-import { UpdateTagModal } from "./UpdateTagModal";
-import { RejectTagModal } from "./RejectTagModal";
-import { ApproveTagModal } from "./ApproveTagModal";
-import { Plus, Edit2, X, CheckCircle, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { AddDomainModal } from "./AddDomainModal";
+import { UpdateDomainModal } from "./UpdateDomainModal";
+import { Plus, Edit2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import styles from "../styles.module.css";
 
 type FilterValues = {
   search: string;
-  status: string;
   dateFrom: string;
   dateTo: string;
 };
 
-export function TagManagement() {
-  const [allTags, setAllTags] = useState<Tag[]>([]);
+export function DomainManagement() {
+  const [allDomains, setAllDomains] = useState<Domain[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
-  const [filters, setFilters] = useState<TagQueryParams>({
+  const [filters, setFilters] = useState<DomainQueryParams>({
     page: 1,
     limit: 10,
     search: "",
-    status: undefined,
     dateFrom: undefined,
     dateTo: undefined,
     sortBy: undefined,
@@ -48,7 +44,6 @@ export function TagManagement() {
   } = useForm<FilterValues>({
     defaultValues: {
       search: "",
-      status: "",
       dateFrom: "",
       dateTo: "",
     },
@@ -56,34 +51,31 @@ export function TagManagement() {
 
   // Watch specific fields instead of entire form to avoid React Compiler warning
   const searchValue = useWatch({ control, name: "search" });
-  const statusValue = useWatch({ control, name: "status" });
   const dateFromValue = useWatch({ control, name: "dateFrom" });
   const dateToValue = useWatch({ control, name: "dateTo" });
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
-  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
-  const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
+  const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
 
-  // Fetch tags with current filters
-  const fetchTags = useCallback(
-    async (queryParams: TagQueryParams) => {
+  // Fetch domains with current filters
+  const fetchDomains = useCallback(
+    async (queryParams: DomainQueryParams) => {
       setLoading(true);
       setError(null);
 
       try {
         // Don't send sortBy, sortOrder, page, limit to BE - handle in FE
         const { sortBy: _sortBy, sortOrder: _sortOrder, page: _page, limit: _limit, ...filterParams } = queryParams;
-        const response: TagResponse = await getTags(filterParams);
-        setAllTags(response.tags);
-        setTotalItems(response.tags.length); // Total after filtering (before pagination)
+        const response: DomainResponse = await getDomains(filterParams);
+        setAllDomains(response.domains);
+        setTotalItems(response.domains.length); // Total after filtering (before pagination)
         setCurrentPage(queryParams.page || 1);
       } catch (e: unknown) {
         const errorMessage =
-          e instanceof Error ? e.message : "Failed to fetch tags";
+          e instanceof Error ? e.message : "Failed to fetch domains";
         setError(errorMessage);
-        setAllTags([]);
+        setAllDomains([]);
         setTotalItems(0);
       } finally {
         setLoading(false);
@@ -94,11 +86,10 @@ export function TagManagement() {
 
   // Initial load
   useEffect(() => {
-    fetchTags(filters);
+    fetchDomains(filters);
     // Sync form with initial filters
     reset({
       search: filters.search || "",
-      status: filters.status || "",
       dateFrom: filters.dateFrom || "",
       dateTo: filters.dateTo || "",
     });
@@ -107,10 +98,9 @@ export function TagManagement() {
 
   // Apply filters when form is submitted
   const onSubmit: SubmitHandler<FilterValues> = (data: FilterValues) => {
-    const newFilters: TagQueryParams = {
+    const newFilters: DomainQueryParams = {
       ...filters,
       search: data.search?.trim() || undefined,
-      status: (data.status as TagStatus) || undefined,
       dateFrom: data.dateFrom || undefined,
       dateTo: data.dateTo || undefined,
       page: 1,
@@ -118,17 +108,16 @@ export function TagManagement() {
     };
     setFilters(newFilters);
     setCurrentPage(1);
-    fetchTags(newFilters);
+    fetchDomains(newFilters);
   };
 
   // Clear all filters
   const handleClearFilters = () => {
     reset();
-    const clearedFilters: TagQueryParams = {
+    const clearedFilters: DomainQueryParams = {
       page: 1,
       limit: itemsPerPage,
       search: undefined,
-      status: undefined,
       dateFrom: undefined,
       dateTo: undefined,
       sortBy: undefined,
@@ -136,13 +125,12 @@ export function TagManagement() {
     };
     setFilters(clearedFilters);
     setCurrentPage(1);
-    fetchTags(clearedFilters);
+    fetchDomains(clearedFilters);
   };
 
   // Check if there are active filters
   const hasActiveFilters = 
     searchValue ||
-    statusValue ||
     dateFromValue ||
     dateToValue;
 
@@ -153,59 +141,30 @@ export function TagManagement() {
     // Don't refetch - just update page for pagination
   };
 
-  // Handle add tag
-  const handleAddTag = useCallback(
+  // Handle add domain
+  const handleAddDomain = useCallback(
     async (name: string) => {
-      await createTag({ name });
-      await fetchTags(filters);
+      await createDomain({ name });
+      await fetchDomains(filters);
     },
-    [filters, fetchTags]
+    [filters, fetchDomains]
   );
 
-  // Handle update tag
-  const handleUpdateTag = useCallback(
-    async (id: string, name: string, status: TagStatus) => {
-      await updateTag(id, { name, status });
-      await fetchTags(filters);
+  // Handle update domain
+  const handleUpdateDomain = useCallback(
+    async (id: string, name: string) => {
+      await updateDomain(id, { name });
+      await fetchDomains(filters);
     },
-    [filters, fetchTags]
+    [filters, fetchDomains]
   );
 
   // Handle open update modal
-  const handleOpenUpdateModal = (tag: Tag) => {
-    setSelectedTag(tag);
+  const handleOpenUpdateModal = (domain: Domain) => {
+    setSelectedDomain(domain);
     setIsUpdateModalOpen(true);
   };
 
-  // Handle reject tag
-  const handleRejectTag = useCallback(
-    async (id: string) => {
-      await deleteTag(id);
-      await fetchTags(filters);
-    },
-    [filters, fetchTags]
-  );
-
-  // Handle approve tag
-  const handleApproveTag = useCallback(
-    async (id: string) => {
-      await approveTag(id);
-      await fetchTags(filters);
-    },
-    [filters, fetchTags]
-  );
-
-  // Handle open reject modal
-  const handleOpenRejectModal = (tag: Tag) => {
-    setSelectedTag(tag);
-    setIsRejectModalOpen(true);
-  };
-
-  // Handle open approve modal
-  const handleOpenApproveModal = (tag: Tag) => {
-    setSelectedTag(tag);
-    setIsApproveModalOpen(true);
-  };
 
   // Handle column sort
   const handleSort = useCallback((column: "name" | "createdDate" | "id") => {
@@ -238,8 +197,8 @@ export function TagManagement() {
     setCurrentPage(1);
   }, [filters]);
 
-  // Sort and paginate tags in FE
-  const sortedAndPaginatedTags = useMemo(() => {
+  // Sort and paginate domains in FE
+  const sortedAndPaginatedDomains = useMemo(() => {
     const sortBy = filters.sortBy;
     const sortOrder = filters.sortOrder;
     
@@ -247,11 +206,11 @@ export function TagManagement() {
     if (!sortBy || !sortOrder) {
       const startIndex = (currentPage - 1) * itemsPerPage;
       const endIndex = startIndex + itemsPerPage;
-      return allTags.slice(startIndex, endIndex);
+      return allDomains.slice(startIndex, endIndex);
     }
     
     // Create a copy to avoid mutating the original array
-    const sorted = [...allTags].sort((a, b) => {
+    const sorted = [...allDomains].sort((a, b) => {
       let aValue: string | number;
       let bValue: string | number;
 
@@ -277,7 +236,7 @@ export function TagManagement() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return sorted.slice(startIndex, endIndex);
-  }, [allTags, filters.sortBy, filters.sortOrder, currentPage, itemsPerPage]);
+  }, [allDomains, filters.sortBy, filters.sortOrder, currentPage, itemsPerPage]);
 
   // Get sort icon for a column
   const getSortIcon = (column: "name" | "createdDate" | "id") => {
@@ -345,7 +304,7 @@ export function TagManagement() {
                 type="text"
                 {...register("search")}
                 className={styles["search-input"]}
-                placeholder="Search by tag name or ID..."
+                placeholder="Search by domain name or ID..."
                 disabled={loading}
               />
             </div>
@@ -372,24 +331,7 @@ export function TagManagement() {
         </div>
 
         {/* Filter Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-          <div>
-            <label htmlFor="status" className={styles["label"]}>
-              Status
-            </label>
-            <select
-              id="status"
-              {...register("status")}
-              className={styles["select"]}
-              disabled={loading}
-            >
-              <option value="">All Status</option>
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
-              <option value="PENDING">Pending</option>
-            </select>
-          </div>
-
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-4">
           <div>
             <label htmlFor="dateFrom" className={styles["label"]}>
               Date From
@@ -441,23 +383,6 @@ export function TagManagement() {
                   </button>
                 </span>
               )}
-              {statusValue && (
-                <span className={`${styles["filter-tag"]} bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200`}>
-                  Status: {statusValue === "ACTIVE" ? "Active" : statusValue === "INACTIVE" ? "Inactive" : "Pending"}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const currentValues = getValues();
-                      const updatedFilters = { ...currentValues, status: "" };
-                      reset(updatedFilters);
-                      onSubmit(updatedFilters);
-                    }}
-                    className="ml-1 text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-200"
-                  >
-                    ×
-                  </button>
-                </span>
-              )}
               {(dateFromValue || dateToValue) && (
                 <span className={`${styles["filter-tag"]} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`}>
                   Date: {dateFromValue || "Start"} - {dateToValue || "End"}
@@ -480,14 +405,14 @@ export function TagManagement() {
         )}
       </form>
 
-      {/* Add Tag Button */}
+      {/* Add Domain Button */}
       <div className="my-2 flex justify-end">
         <button
           onClick={() => setIsAddModalOpen(true)}
           className={`${styles["btn"]} ${styles["btn-primary"]} inline-flex items-center`}
         >
           <Plus className="w-4 h-4 mr-2" />
-          Add Tag
+          Add Domain
         </button>
       </div>
 
@@ -495,11 +420,11 @@ export function TagManagement() {
       <div className={styles["table-container"]}>
         {loading ? (
           <div className={styles["loading-container"]}>
-            <p>Loading tags...</p>
+            <p>Loading domains...</p>
           </div>
-        ) : sortedAndPaginatedTags.length === 0 ? (
+        ) : sortedAndPaginatedDomains.length === 0 ? (
           <div className={styles["empty-container"]}>
-            <p>No tags found in the system</p>
+            <p>No domains found in the system</p>
           </div>
         ) : (
           <>
@@ -507,7 +432,6 @@ export function TagManagement() {
               <colgroup>
                 <col className={styles["col-id"]} />
                 <col className={styles["col-name"]} />
-                <col className={styles["col-status"]} />
                 <col className={styles["col-date"]} />
                 <col className={styles["col-action"]} />
               </colgroup>
@@ -518,7 +442,7 @@ export function TagManagement() {
                     onClick={() => handleSort("id")}
                   >
                     <div className="flex items-center">
-                      Tag ID
+                      Domain ID
                       {getSortIcon("id")}
                     </div>
                   </th>
@@ -527,11 +451,10 @@ export function TagManagement() {
                     onClick={() => handleSort("name")}
                   >
                     <div className="flex items-center">
-                      Tag Name
+                      Domain Name
                       {getSortIcon("name")}
                     </div>
                   </th>
-                  <th className={styles["table-header-cell"]}>Status</th>
                   <th 
                     className={styles["table-header-cell"] + " " + styles["sortable-header"]}
                     onClick={() => handleSort("createdDate")}
@@ -545,63 +468,27 @@ export function TagManagement() {
                 </tr>
               </thead>
               <tbody className={styles["table-body"]}>
-                {sortedAndPaginatedTags.map((tag) => (
-                  <tr key={tag.id} className={styles["table-row"]}>
+                {sortedAndPaginatedDomains.map((domain) => (
+                  <tr key={domain.id} className={styles["table-row"]}>
                     <td className={styles["table-cell"]}>
-                      <span className={styles["table-cell-main"]}>{tag.id}</span>
+                      <span className={styles["table-cell-main"]}>{domain.id}</span>
                     </td>
                     <td className={styles["table-cell"]}>
-                      <span className={styles["table-cell-main"]}>{tag.name}</span>
+                      <span className={styles["table-cell-main"]}>{domain.name}</span>
                     </td>
                     <td className={styles["table-cell"]}>
-                      <span
-                        className={
-                          styles["status-badge"] +
-                          " " +
-                          (tag.status === "ACTIVE"
-                            ? styles["status-active"]
-                            : tag.status === "INACTIVE"
-                            ? styles["status-inactive"]
-                            : styles["status-pending"])
-                        }
-                      >
-                        {tag.status}
-                      </span>
-                    </td>
-                    <td className={styles["table-cell"]}>
-                      {formatDate(tag.createdDate)}
+                      {formatDate(domain.createdDate)}
                     </td>
                     <td className={styles["table-cell"] + " " + styles["table-cell-right"]}>
                       <div className={styles["action-cell"]}>
-                        {tag.status === "PENDING" ? (
-                          <>
-                            <button
-                              onClick={() => handleOpenApproveModal(tag)}
-                              className={styles["action-icon-btn"] + " " + styles["action-icon-btn-approve"]}
-                              disabled={loading}
-                              title="Approve Tag"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleOpenRejectModal(tag)}
-                              className={styles["action-icon-btn"] + " " + styles["action-icon-btn-reject"]}
-                              disabled={loading}
-                              title="Reject Tag"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => handleOpenUpdateModal(tag)}
-                            className={styles["action-icon-btn"]}
-                            disabled={loading}
-                            title="Update Tag"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => handleOpenUpdateModal(domain)}
+                          className={styles["action-icon-btn"]}
+                          disabled={loading}
+                          title="Update Domain"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -627,40 +514,20 @@ export function TagManagement() {
       </div>
 
       {/* Modals */}
-      <AddTagModal
+      <AddDomainModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onAdd={handleAddTag}
+        onAdd={handleAddDomain}
       />
 
-      <UpdateTagModal
+      <UpdateDomainModal
         isOpen={isUpdateModalOpen}
         onClose={() => {
           setIsUpdateModalOpen(false);
-          setSelectedTag(null);
+          setSelectedDomain(null);
         }}
-        tag={selectedTag}
-        onUpdate={handleUpdateTag}
-      />
-
-      <RejectTagModal
-        isOpen={isRejectModalOpen}
-        onClose={() => {
-          setIsRejectModalOpen(false);
-          setSelectedTag(null);
-        }}
-        tag={selectedTag}
-        onReject={handleRejectTag}
-      />
-
-      <ApproveTagModal
-        isOpen={isApproveModalOpen}
-        onClose={() => {
-          setIsApproveModalOpen(false);
-          setSelectedTag(null);
-        }}
-        tag={selectedTag}
-        onApprove={handleApproveTag}
+        domain={selectedDomain}
+        onUpdate={handleUpdateDomain}
       />
     </div>
   );

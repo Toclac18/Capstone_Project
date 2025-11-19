@@ -13,6 +13,7 @@ import { setupMockManageOrganization } from "./manageOrganization";
 import { setupMockOrganizations } from "./organizations";
 import { setupMockDocuments } from "./uploadDocuments";
 import { setupMockManageTags } from "./manageTags";
+import { setupMockManageDomains } from "./manageDomains";
 import { setupMockManageTypes } from "./manageTypes";
 
 export function setupMocks() {
@@ -28,5 +29,6 @@ export function setupMocks() {
   setupMockOrganizations();
   setupMockDocuments();
   setupMockManageTags();
+  setupMockManageDomains();
   setupMockManageTypes();
 }

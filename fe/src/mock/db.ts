@@ -381,6 +381,7 @@ export const mockOrganizationAdminDB = {
 
 // ---------------- Business Admin Tags Mock ----------------
 import type { Tag as BusinessAdminTag, TagStatus } from "@/types/document-tag";
+import type { Domain as BusinessAdminDomain } from "@/types/document-domain";
 import type { DocumentType as BusinessAdminType } from "@/types/document-type";
 
 const _businessAdminTags: BusinessAdminTag[] = [
@@ -712,6 +713,228 @@ export const mockTagsDB = {
         name: "Internet of Things",
         status: "PENDING",
         createdDate: "2025-01-29T12:00:00Z",
+      }
+    );
+  },
+};
+
+// ---------------- Business Admin Domains Mock ----------------
+const _businessAdminDomains: BusinessAdminDomain[] = [
+  {
+    id: "domain-1",
+    name: "Computer Science",
+    createdDate: "2025-01-10T10:00:00Z",
+  },
+  {
+    id: "domain-2",
+    name: "Mathematics",
+    createdDate: "2025-01-11T11:00:00Z",
+  },
+  {
+    id: "domain-3",
+    name: "Physics",
+    createdDate: "2025-01-12T12:00:00Z",
+  },
+  {
+    id: "domain-4",
+    name: "Biology",
+    createdDate: "2025-01-13T13:00:00Z",
+  },
+  {
+    id: "domain-5",
+    name: "Chemistry",
+    createdDate: "2025-01-14T14:00:00Z",
+  },
+  {
+    id: "domain-6",
+    name: "Engineering",
+    createdDate: "2025-01-15T15:00:00Z",
+  },
+  {
+    id: "domain-7",
+    name: "Medicine",
+    createdDate: "2025-01-16T16:00:00Z",
+  },
+  {
+    id: "domain-8",
+    name: "Economics",
+    createdDate: "2025-01-17T17:00:00Z",
+  },
+  {
+    id: "domain-9",
+    name: "Psychology",
+    createdDate: "2025-01-18T18:00:00Z",
+  },
+  {
+    id: "domain-10",
+    name: "Literature",
+    createdDate: "2025-01-19T19:00:00Z",
+  },
+];
+
+export const mockDomainsDB = {
+  list(params?: {
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): BusinessAdminDomain[] {
+    let filtered = [..._businessAdminDomains];
+
+    // Filter by search
+    if (params?.search) {
+      const searchLower = params.search.toLowerCase().trim();
+      filtered = filtered.filter(
+        (domain) =>
+          domain.name.toLowerCase().includes(searchLower) ||
+          domain.id.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Filter by date range
+    if (params?.dateFrom) {
+      const fromDate = new Date(params.dateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      filtered = filtered.filter((domain) => {
+        const domainDate = new Date(domain.createdDate);
+        domainDate.setHours(0, 0, 0, 0);
+        return domainDate >= fromDate;
+      });
+    }
+
+    if (params?.dateTo) {
+      const toDate = new Date(params.dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter((domain) => {
+        const domainDate = new Date(domain.createdDate);
+        domainDate.setHours(0, 0, 0, 0);
+        return domainDate <= toDate;
+      });
+    }
+
+    return filtered;
+  },
+  get(id: string): BusinessAdminDomain | undefined {
+    return _businessAdminDomains.find((domain) => domain.id === id);
+  },
+  create(data: { name: string }): BusinessAdminDomain {
+    // Check for duplicate name (case-insensitive)
+    const existingDomain = _businessAdminDomains.find(
+      (domain) => domain.name.toLowerCase().trim() === data.name.toLowerCase().trim()
+    );
+
+    if (existingDomain) {
+      throw new Error("Domain name already in use. Please choose another name.");
+    }
+
+    // Validate name is not empty
+    if (!data.name || !data.name.trim()) {
+      throw new Error("Domain name cannot be empty.");
+    }
+
+    const newDomain: BusinessAdminDomain = {
+      id: `domain-${Date.now()}`,
+      name: data.name.trim(),
+      createdDate: new Date().toISOString(),
+    };
+
+    _businessAdminDomains.unshift(newDomain);
+    return newDomain;
+  },
+  update(id: string, data: { name?: string }): BusinessAdminDomain {
+    const domainIndex = _businessAdminDomains.findIndex((domain) => domain.id === id);
+
+    if (domainIndex === -1) {
+      throw new Error(`Domain with id ${id} not found`);
+    }
+
+    const existingDomain = _businessAdminDomains[domainIndex];
+
+    // Check for duplicate name if name is being updated
+    if (data.name !== undefined) {
+      const trimmedName = data.name.trim();
+      if (trimmedName !== existingDomain.name) {
+        const duplicateDomain = _businessAdminDomains.find(
+          (domain) =>
+            domain.id !== id &&
+            domain.name.toLowerCase().trim() === trimmedName.toLowerCase()
+        );
+
+        if (duplicateDomain) {
+          throw new Error("Domain name already in use. Please choose another name.");
+        }
+      }
+
+      // Validate name is not empty
+      if (!trimmedName) {
+        throw new Error("Domain name cannot be empty.");
+      }
+
+      existingDomain.name = trimmedName;
+    }
+
+    return existingDomain;
+  },
+  delete(id: string): void {
+    const domainIndex = _businessAdminDomains.findIndex((domain) => domain.id === id);
+
+    if (domainIndex === -1) {
+      throw new Error(`Domain with id ${id} not found`);
+    }
+
+    _businessAdminDomains.splice(domainIndex, 1);
+  },
+  reset(): void {
+    _businessAdminDomains.length = 0;
+    _businessAdminDomains.push(
+      {
+        id: "domain-1",
+        name: "Computer Science",
+        createdDate: "2025-01-10T10:00:00Z",
+      },
+      {
+        id: "domain-2",
+        name: "Mathematics",
+        createdDate: "2025-01-11T11:00:00Z",
+      },
+      {
+        id: "domain-3",
+        name: "Physics",
+        createdDate: "2025-01-12T12:00:00Z",
+      },
+      {
+        id: "domain-4",
+        name: "Biology",
+        createdDate: "2025-01-13T13:00:00Z",
+      },
+      {
+        id: "domain-5",
+        name: "Chemistry",
+        createdDate: "2025-01-14T14:00:00Z",
+      },
+      {
+        id: "domain-6",
+        name: "Engineering",
+        createdDate: "2025-01-15T15:00:00Z",
+      },
+      {
+        id: "domain-7",
+        name: "Medicine",
+        createdDate: "2025-01-16T16:00:00Z",
+      },
+      {
+        id: "domain-8",
+        name: "Economics",
+        createdDate: "2025-01-17T17:00:00Z",
+      },
+      {
+        id: "domain-9",
+        name: "Psychology",
+        createdDate: "2025-01-18T18:00:00Z",
+      },
+      {
+        id: "domain-10",
+        name: "Literature",
+        createdDate: "2025-01-19T19:00:00Z",
       }
     );
   },

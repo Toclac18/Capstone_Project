@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm, type SubmitHandler, useWatch } from "react-hook-form";
 import type { UploadHistoryQueryParams, DocumentHistoryStatus } from "../api";
 import styles from "../styles.module.css";
 
@@ -38,7 +38,7 @@ export function UploadHistoryFilters({
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
     formState: { errors },
   } = useForm<FilterValues>({
     defaultValues: {
@@ -51,7 +51,7 @@ export function UploadHistoryFilters({
     },
   });
 
-  const watchedFilters = watch();
+  const watchedFilters = useWatch({ control });
 
   // Note: Filters are applied on form submit or individual field change
   // Auto-apply is disabled to allow users to set multiple filters before applying
@@ -283,7 +283,14 @@ export function UploadHistoryFilters({
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters = { ...watchedFilters, search: "" };
+                    const updatedFilters: FilterValues = {
+                      search: "",
+                      dateFrom: watchedFilters.dateFrom || "",
+                      dateTo: watchedFilters.dateTo || "",
+                      type: watchedFilters.type || "",
+                      domain: watchedFilters.domain || "",
+                      status: watchedFilters.status || "",
+                    };
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
@@ -299,7 +306,14 @@ export function UploadHistoryFilters({
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters = { ...watchedFilters, status: "" };
+                    const updatedFilters: FilterValues = {
+                      search: watchedFilters.search || "",
+                      dateFrom: watchedFilters.dateFrom || "",
+                      dateTo: watchedFilters.dateTo || "",
+                      type: watchedFilters.type || "",
+                      domain: watchedFilters.domain || "",
+                      status: "",
+                    };
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
@@ -315,7 +329,14 @@ export function UploadHistoryFilters({
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters = { ...watchedFilters, type: "" };
+                    const updatedFilters: FilterValues = {
+                      search: watchedFilters.search || "",
+                      dateFrom: watchedFilters.dateFrom || "",
+                      dateTo: watchedFilters.dateTo || "",
+                      type: "",
+                      domain: watchedFilters.domain || "",
+                      status: watchedFilters.status || "",
+                    };
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
@@ -331,7 +352,14 @@ export function UploadHistoryFilters({
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters = { ...watchedFilters, domain: "" };
+                    const updatedFilters: FilterValues = {
+                      search: watchedFilters.search || "",
+                      dateFrom: watchedFilters.dateFrom || "",
+                      dateTo: watchedFilters.dateTo || "",
+                      type: watchedFilters.type || "",
+                      domain: "",
+                      status: watchedFilters.status || "",
+                    };
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
@@ -347,7 +375,14 @@ export function UploadHistoryFilters({
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters = { ...watchedFilters, dateFrom: "", dateTo: "" };
+                    const updatedFilters: FilterValues = {
+                      search: watchedFilters.search || "",
+                      dateFrom: "",
+                      dateTo: "",
+                      type: watchedFilters.type || "",
+                      domain: watchedFilters.domain || "",
+                      status: watchedFilters.status || "",
+                    };
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import type { Tag, TagQueryParams, TagResponse, TagStatus } from "../api";
 import { getTags, createTag, updateTag, deleteTag, approveTag } from "../api";
-import { Pagination } from "@/app/business-admin/users/_components/Pagination";
+import { Pagination } from "@/components/ui/pagination";
 import { AddTagModal } from "./AddTagModal";
 import { UpdateTagModal } from "./UpdateTagModal";
 import { RejectTagModal } from "./RejectTagModal";

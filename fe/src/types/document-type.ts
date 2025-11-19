@@ -3,7 +3,6 @@ import { BaseEntity } from './base';
 export interface DocumentType extends BaseEntity {
   id: string;
   name: string;
-  createdDate?: string; // For business admin management, uses createdDate instead of createdAt
 }
 
 export interface TypeQueryParams {
@@ -12,7 +11,7 @@ export interface TypeQueryParams {
   search?: string;
   dateFrom?: string;
   dateTo?: string;
-  sortBy?: "name" | "createdDate" | "id";
+  sortBy?: "name" | "createdAt" | "id";
   sortOrder?: "asc" | "desc";
 }
 

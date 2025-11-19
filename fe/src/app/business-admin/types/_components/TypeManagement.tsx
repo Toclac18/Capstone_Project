@@ -166,11 +166,11 @@ export function TypeManagement() {
   };
 
   // Handle column sort
-  const handleSort = useCallback((column: "name" | "createdDate" | "id") => {
+  const handleSort = useCallback((column: "name" | "createdAt" | "id") => {
     const currentSortBy = filters.sortBy;
     const currentSortOrder = filters.sortOrder;
     
-    let newSortBy: "name" | "createdDate" | "id" | undefined = column;
+    let newSortBy: "name" | "createdAt" | "id" | undefined = column;
     let newSortOrder: "asc" | "desc" | undefined = "asc";
     
     // If clicking on the same column, cycle through: undefined -> asc -> desc -> undefined
@@ -220,8 +220,8 @@ export function TypeManagement() {
         aValue = a.id.toLowerCase();
         bValue = b.id.toLowerCase();
       } else {
-        aValue = new Date(a.createdDate).getTime();
-        bValue = new Date(b.createdDate).getTime();
+        aValue = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        bValue = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       }
 
       if (sortOrder === "asc") {
@@ -238,7 +238,7 @@ export function TypeManagement() {
   }, [allTypes, filters.sortBy, filters.sortOrder, currentPage, itemsPerPage]);
 
   // Get sort icon for a column
-  const getSortIcon = (column: "name" | "createdDate" | "id") => {
+  const getSortIcon = (column: "name" | "createdAt" | "id") => {
     const sortBy = filters.sortBy;
     const sortOrder = filters.sortOrder;
     
@@ -259,8 +259,9 @@ export function TypeManagement() {
   };
 
   // Format date
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+  const formatDate = (type: Type) => {
+    if (!type.createdAt) return "N/A";
+    return new Date(type.createdAt).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -456,11 +457,11 @@ export function TypeManagement() {
                   </th>
                   <th 
                     className={styles["table-header-cell"] + " " + styles["sortable-header"]}
-                    onClick={() => handleSort("createdDate")}
+                    onClick={() => handleSort("createdAt")}
                   >
                     <div className="flex items-center">
                       Created Date
-                      {getSortIcon("createdDate")}
+                      {getSortIcon("createdAt")}
                     </div>
                   </th>
                   <th className={styles["table-header-cell"] + " " + styles["table-header-cell-right"]}>Action</th>
@@ -476,7 +477,7 @@ export function TypeManagement() {
                       <span className={styles["table-cell-main"]}>{type.name}</span>
                     </td>
                     <td className={styles["table-cell"]}>
-                      {formatDate(type.createdDate)}
+                      {formatDate(type)}
                     </td>
                     <td className={styles["table-cell"] + " " + styles["table-cell-right"]}>
                       <div className={styles["action-cell"]}>

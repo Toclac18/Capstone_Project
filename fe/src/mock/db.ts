@@ -724,70 +724,60 @@ const _businessAdminTypes: BusinessAdminType[] = [
     name: "Research Paper",
     createdAt: "2025-01-10T10:00:00Z",
     updatedAt: "2025-01-10T10:00:00Z",
-    createdDate: "2025-01-10T10:00:00Z",
   },
   {
     id: "type-2",
     name: "Article",
     createdAt: "2025-01-11T11:00:00Z",
     updatedAt: "2025-01-11T11:00:00Z",
-    createdDate: "2025-01-11T11:00:00Z",
   },
   {
     id: "type-3",
     name: "Book",
     createdAt: "2025-01-12T12:00:00Z",
     updatedAt: "2025-01-12T12:00:00Z",
-    createdDate: "2025-01-12T12:00:00Z",
   },
   {
     id: "type-4",
     name: "Report",
     createdAt: "2025-01-13T13:00:00Z",
     updatedAt: "2025-01-13T13:00:00Z",
-    createdDate: "2025-01-13T13:00:00Z",
   },
   {
     id: "type-5",
     name: "Thesis",
     createdAt: "2025-01-14T14:00:00Z",
     updatedAt: "2025-01-14T14:00:00Z",
-    createdDate: "2025-01-14T14:00:00Z",
   },
   {
     id: "type-6",
     name: "Tutorial",
     createdAt: "2025-01-15T15:00:00Z",
     updatedAt: "2025-01-15T15:00:00Z",
-    createdDate: "2025-01-15T15:00:00Z",
   },
   {
     id: "type-7",
     name: "Technical Report",
     createdAt: "2025-01-16T16:00:00Z",
     updatedAt: "2025-01-16T16:00:00Z",
-    createdDate: "2025-01-16T16:00:00Z",
   },
   {
     id: "type-8",
     name: "Case Study",
     createdAt: "2025-01-17T17:00:00Z",
     updatedAt: "2025-01-17T17:00:00Z",
-    createdDate: "2025-01-17T17:00:00Z",
   },
   {
     id: "type-9",
     name: "Review",
     createdAt: "2025-01-18T18:00:00Z",
     updatedAt: "2025-01-18T18:00:00Z",
-    createdDate: "2025-01-18T18:00:00Z",
   },
   {
     id: "type-10",
     name: "Conference Paper",
     createdAt: "2025-01-19T19:00:00Z",
     updatedAt: "2025-01-19T19:00:00Z",
-    createdDate: "2025-01-19T19:00:00Z",
   },
 ];
 
@@ -814,9 +804,8 @@ export const mockTypesDB = {
       const fromDate = new Date(params.dateFrom);
       fromDate.setHours(0, 0, 0, 0);
       filtered = filtered.filter((type) => {
-        const dateStr = type.createdDate || type.createdAt;
-        if (!dateStr) return false;
-        const typeDate = new Date(dateStr);
+        if (!type.createdAt) return false;
+        const typeDate = new Date(type.createdAt);
         typeDate.setHours(0, 0, 0, 0);
         return typeDate >= fromDate;
       });
@@ -826,9 +815,8 @@ export const mockTypesDB = {
       const toDate = new Date(params.dateTo);
       toDate.setHours(23, 59, 59, 999);
       filtered = filtered.filter((type) => {
-        const dateStr = type.createdDate || type.createdAt;
-        if (!dateStr) return false;
-        const typeDate = new Date(dateStr);
+        if (!type.createdAt) return false;
+        const typeDate = new Date(type.createdAt);
         typeDate.setHours(0, 0, 0, 0);
         return typeDate <= toDate;
       });
@@ -860,7 +848,6 @@ export const mockTypesDB = {
       name: data.name.trim(),
       createdAt: now,
       updatedAt: now,
-      createdDate: now,
     };
 
     _businessAdminTypes.unshift(newType);
@@ -909,70 +896,60 @@ export const mockTypesDB = {
         name: "Research Paper",
         createdAt: "2025-01-10T10:00:00Z",
         updatedAt: "2025-01-10T10:00:00Z",
-        createdDate: "2025-01-10T10:00:00Z",
       },
       {
         id: "type-2",
         name: "Article",
         createdAt: "2025-01-11T11:00:00Z",
         updatedAt: "2025-01-11T11:00:00Z",
-        createdDate: "2025-01-11T11:00:00Z",
       },
       {
         id: "type-3",
         name: "Book",
         createdAt: "2025-01-12T12:00:00Z",
         updatedAt: "2025-01-12T12:00:00Z",
-        createdDate: "2025-01-12T12:00:00Z",
       },
       {
         id: "type-4",
         name: "Report",
         createdAt: "2025-01-13T13:00:00Z",
         updatedAt: "2025-01-13T13:00:00Z",
-        createdDate: "2025-01-13T13:00:00Z",
       },
       {
         id: "type-5",
         name: "Thesis",
         createdAt: "2025-01-14T14:00:00Z",
         updatedAt: "2025-01-14T14:00:00Z",
-        createdDate: "2025-01-14T14:00:00Z",
       },
       {
         id: "type-6",
         name: "Tutorial",
         createdAt: "2025-01-15T15:00:00Z",
         updatedAt: "2025-01-15T15:00:00Z",
-        createdDate: "2025-01-15T15:00:00Z",
       },
       {
         id: "type-7",
         name: "Technical Report",
         createdAt: "2025-01-16T16:00:00Z",
         updatedAt: "2025-01-16T16:00:00Z",
-        createdDate: "2025-01-16T16:00:00Z",
       },
       {
         id: "type-8",
         name: "Case Study",
         createdAt: "2025-01-17T17:00:00Z",
         updatedAt: "2025-01-17T17:00:00Z",
-        createdDate: "2025-01-17T17:00:00Z",
       },
       {
         id: "type-9",
         name: "Review",
         createdAt: "2025-01-18T18:00:00Z",
         updatedAt: "2025-01-18T18:00:00Z",
-        createdDate: "2025-01-18T18:00:00Z",
       },
       {
         id: "type-10",
         name: "Conference Paper",
         createdAt: "2025-01-19T19:00:00Z",
         updatedAt: "2025-01-19T19:00:00Z",
-        createdDate: "2025-01-19T19:00:00Z",
       }
     );
   },

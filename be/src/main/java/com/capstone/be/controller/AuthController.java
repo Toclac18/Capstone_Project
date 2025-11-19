@@ -6,8 +6,11 @@ import com.capstone.be.dto.request.auth.RegisterReaderRequest;
 import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
 import com.capstone.be.dto.request.auth.ResendVerificationEmailRequest;
 import com.capstone.be.dto.request.auth.VerifyEmailRequest;
+import com.capstone.be.dto.request.user.RequestPasswordResetRequest;
+import com.capstone.be.dto.request.user.VerifyPasswordResetOtpRequest;
 import com.capstone.be.dto.response.auth.AuthResponse;
 import com.capstone.be.service.AuthService;
+import com.capstone.be.service.UserService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class AuthController {
 
   private final AuthService authService;
+  private final UserService userService;
 
   @PostMapping("/register/reader")
   public ResponseEntity<AuthResponse> registerReader(
@@ -78,5 +82,35 @@ public class AuthController {
     log.info("Resend verification email request for: {}", request.getEmail());
     authService.resendVerificationEmail(request.getEmail());
     return ResponseEntity.ok().build();
+  }
+
+  /**
+   * Request password reset - sends OTP to user's email
+   * POST /api/v1/auth/request-password-reset
+   *
+   * @param request Request password reset request (email)
+   * @return 200 OK with message
+   */
+  @PostMapping("/request-password-reset")
+  public ResponseEntity<String> requestPasswordReset(
+      @Valid @RequestBody RequestPasswordResetRequest request) {
+    log.info("Request password reset for email: {}", request.getEmail());
+    userService.requestPasswordReset(request.getEmail());
+    return ResponseEntity.ok("OTP has been sent to your email address");
+  }
+
+  /**
+   * Verify OTP and reset password
+   * POST /api/v1/auth/reset-password
+   *
+   * @param request Verify password reset OTP request (email, otp, newPassword)
+   * @return 200 OK with message
+   */
+  @PostMapping("/reset-password")
+  public ResponseEntity<String> resetPassword(
+      @Valid @RequestBody VerifyPasswordResetOtpRequest request) {
+    log.info("Reset password for email: {}", request.getEmail());
+    userService.verifyPasswordResetOtp(request.getEmail(), request.getOtp(), request.getNewPassword());
+    return ResponseEntity.ok("Password reset successfully. You can now login with your new password");
   }
 }

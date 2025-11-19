@@ -41,6 +41,22 @@ public interface UserService {
   void verifyEmailChangeOtp(UUID userId, String otp);
 
   /**
+   * Request password reset - sends OTP to user's email address
+   *
+   * @param email User email address
+   */
+  void requestPasswordReset(String email);
+
+  /**
+   * Verify OTP and reset user's password
+   *
+   * @param email       User email address
+   * @param otp         6-digit OTP code
+   * @param newPassword New password
+   */
+  void verifyPasswordResetOtp(String email, String otp, String newPassword);
+
+  /**
    * Delete user account (soft delete - set status to DELETED)
    *
    * @param userId User ID

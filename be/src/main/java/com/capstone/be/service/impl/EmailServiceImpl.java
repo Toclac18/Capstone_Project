@@ -336,4 +336,69 @@ public class EmailServiceImpl implements EmailService {
         </html>
         """.formatted(newEmail, otp);
   }
+
+  @Override
+  @Async
+  public void sendPasswordResetOtp(String email, String fullName, String otp) {
+    try {
+      String subject = "Password Reset Verification - Capstone Platform";
+      String htmlContent = buildPasswordResetOtpHtml(fullName, otp);
+
+      sendHtmlEmail(email, subject, htmlContent);
+      log.info("Sent password reset OTP to: {} [{}]", email, otp);
+
+    } catch (Exception e) {
+      log.error("Failed to send password reset OTP to: {}", email, e);
+      throw EmailException.sendFailed(email, e);
+    }
+  }
+
+  private String buildPasswordResetOtpHtml(String fullName, String otp) {
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #FF9800; color: white; padding: 20px; text-align: center; }
+                .content { padding: 20px; background-color: #f9f9f9; }
+                .otp-box { background-color: #fff3e0; border: 2px solid #FF9800;
+                          padding: 20px; margin: 20px 0; text-align: center;
+                          border-radius: 8px; }
+                .otp-code { font-size: 32px; font-weight: bold; letter-spacing: 8px;
+                           color: #FF9800; font-family: monospace; }
+                .warning { background-color: #ffebee; border-left: 4px solid #f44336;
+                          padding: 15px; margin: 20px 0; }
+                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Password Reset Request</h1>
+                </div>
+                <div class="content">
+                    <h2>Hello %s,</h2>
+                    <p>We received a request to reset your password for your Capstone Platform account.</p>
+                    <p>Please use the following OTP code to reset your password:</p>
+                    <div class="otp-box">
+                        <p style="margin: 0; color: #666;">Your OTP Code</p>
+                        <p class="otp-code">%s</p>
+                    </div>
+                    <div class="warning">
+                        <p style="margin: 0;"><strong>⏰ This OTP will expire in 10 minutes.</strong></p>
+                        <p style="margin: 10px 0 0 0;"><strong>Maximum 5 attempts allowed.</strong></p>
+                    </div>
+                    <p><strong>Security Notice:</strong> If you did not request a password reset, please ignore this email and ensure your account is secure. Consider changing your password if you suspect unauthorized access.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; 2025 Capstone Platform. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(fullName, otp);
+  }
 }

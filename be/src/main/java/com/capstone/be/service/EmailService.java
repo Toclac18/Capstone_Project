@@ -51,4 +51,14 @@ public interface EmailService {
    * @param otp         6-digit OTP code
    */
   void sendEmailChangeOtp(UUID userId, String currentEmail, String newEmail, String otp);
+
+  /**
+   * Send OTP to user's email for password reset verification
+   *
+   * @param email    User email address
+   * @param fullName User full name
+   * @param otp      6-digit OTP code
+   */
+  void sendPasswordResetOtp(String email, String fullName, String otp);
+
 }

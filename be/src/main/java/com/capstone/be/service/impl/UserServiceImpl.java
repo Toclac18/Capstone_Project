@@ -1,8 +1,10 @@
 package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.EmailChangeRequest;
+import com.capstone.be.domain.entity.PasswordResetRequest;
 import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.EmailChangeStatus;
+import com.capstone.be.domain.enums.PasswordResetStatus;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.domain.enums.UserStatus;
 import com.capstone.be.dto.request.admin.UpdateUserStatusRequest;
@@ -15,6 +17,7 @@ import com.capstone.be.exception.DuplicateResourceException;
 import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.repository.EmailChangeRequestRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
+import com.capstone.be.repository.PasswordResetRequestRepository;
 import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.repository.ReviewerProfileRepository;
 import com.capstone.be.repository.UserRepository;
@@ -46,6 +49,7 @@ public class UserServiceImpl implements UserService {
   private final OrganizationProfileRepository organizationProfileRepository;
   private final EmailService emailService;
   private final EmailChangeRequestRepository emailChangeRequestRepository;
+  private final PasswordResetRequestRepository passwordResetRequestRepository;
 
   @Override
   @Transactional
@@ -250,6 +254,122 @@ public class UserServiceImpl implements UserService {
 
     log.info("Email changed successfully from {} to {} for user: {}", oldEmail, user.getEmail(),
         userId);
+  }
+
+  @Override
+  @Transactional(noRollbackFor = InvalidRequestException.class)
+  public void requestPasswordReset(String email) {
+    log.info("Request password reset for email: {}", email);
+
+    // Find user by email
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new BusinessException(
+            "User not found with email: " + email,
+            HttpStatus.NOT_FOUND,
+            "USER_NOT_FOUND"
+        ));
+
+    // Check if user is active
+    if (user.getStatus() != UserStatus.ACTIVE) {
+      throw new InvalidRequestException("Account is not active. Cannot reset password");
+    }
+
+    // Cancel any existing pending request for this user
+    passwordResetRequestRepository.findByUserAndStatus(
+        user,
+        PasswordResetStatus.PENDING
+    ).ifPresent(existing -> {
+      existing.setStatus(PasswordResetStatus.CANCELLED);
+      passwordResetRequestRepository.save(existing);
+    });
+
+    // Generate OTP
+    String otp = OtpUtil.generateOtp();
+    String otpHash = passwordEncoder.encode(otp);
+    LocalDateTime otpExpiry = LocalDateTime.now().plusMinutes(10);
+
+    // Create new password reset request
+    PasswordResetRequest passwordResetRequest = PasswordResetRequest.builder()
+        .user(user)
+        .email(user.getEmail())
+        .otpHash(otpHash)
+        .expiryTime(otpExpiry)
+        .status(PasswordResetStatus.PENDING)
+        .attemptCount(0)
+        .build();
+
+    passwordResetRequestRepository.save(passwordResetRequest);
+
+    // Send OTP to user's email
+    emailService.sendPasswordResetOtp(user.getEmail(), user.getFullName(), otp);
+
+    log.info("Created password reset request and sent OTP to email: {}", email);
+  }
+
+  @Override
+  @Transactional(noRollbackFor = InvalidRequestException.class)
+  public void verifyPasswordResetOtp(String email, String otp, String newPassword) {
+    log.info("Verify password reset OTP for email: {}", email);
+
+    // Find user by email
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new BusinessException(
+            "User not found with email: " + email,
+            HttpStatus.NOT_FOUND,
+            "USER_NOT_FOUND"
+        ));
+
+    // Find pending password reset request
+    PasswordResetRequest passwordResetRequest = passwordResetRequestRepository.findByUserAndStatus(
+        user,
+        PasswordResetStatus.PENDING
+    ).orElseThrow(() -> new InvalidRequestException("No pending password reset request found"));
+
+    // Check if request has expired
+    if (passwordResetRequest.isExpired()) {
+      passwordResetRequest.setStatus(PasswordResetStatus.EXPIRED);
+      passwordResetRequestRepository.save(passwordResetRequest);
+      throw new InvalidRequestException("OTP has expired. Please request a new password reset");
+    }
+
+    // Check if max attempts reached
+    if (passwordResetRequest.isMaxAttemptsReached()) {
+      passwordResetRequest.setStatus(PasswordResetStatus.EXPIRED);
+      passwordResetRequestRepository.save(passwordResetRequest);
+      throw new InvalidRequestException(
+          "Maximum verification attempts exceeded. Please request a new password reset");
+    }
+
+    // Increment attempt count
+    passwordResetRequest.incrementAttemptCount();
+    System.out.println(passwordResetRequest.getAttemptCount());
+
+    // Verify OTP using password encoder (constant-time comparison)
+    if (!passwordEncoder.matches(otp, passwordResetRequest.getOtpHash())) {
+      passwordResetRequestRepository.save(passwordResetRequest);
+      int remainingAttempts = 5 - passwordResetRequest.getAttemptCount();
+      throw new InvalidRequestException(
+          "Invalid OTP code. " + remainingAttempts + " attempts remaining");
+    }
+
+    // Check if new password is same as current password
+    if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+      throw new BusinessException(
+          "New password must be different from current password",
+          HttpStatus.BAD_REQUEST,
+          "SAME_PASSWORD"
+      );
+    }
+
+    // Update password
+    user.setPasswordHash(passwordEncoder.encode(newPassword));
+    userRepository.save(user);
+
+    // Mark request as verified
+    passwordResetRequest.setStatus(PasswordResetStatus.VERIFIED);
+    passwordResetRequestRepository.save(passwordResetRequest);
+
+    log.info("Password reset successfully for email: {}", email);
   }
 
   // Admin operations - Reader management

@@ -1,7 +1,6 @@
 import { headers } from "next/headers";
 import { mockOrganizationAdminDB } from "@/mock/db";
-
-const DEFAULT_BE_BASE = "http://localhost:8080";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 
 // Helper function to create forward headers
 async function createForwardHeaders(): Promise<Headers> {
@@ -22,9 +21,7 @@ async function forwardRequest(
   headers: Headers,
   body?: FormData | string
 ) {
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") || DEFAULT_BE_BASE;
-
+  
   const upstream = await fetch(`${BE_BASE}${url}`, {
     method,
     headers,
@@ -43,8 +40,6 @@ async function forwardRequest(
 }
 
 export async function GET() {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-
   if (USE_MOCK) {
     const orgInfo = mockOrganizationAdminDB.get();
     return new Response(JSON.stringify(orgInfo), {
@@ -67,8 +62,6 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-
   if (USE_MOCK) {
     let body: any = {};
     
@@ -145,8 +138,6 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE() {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-
   if (USE_MOCK) {
     mockOrganizationAdminDB.delete();
     return new Response(
@@ -170,4 +161,3 @@ export async function DELETE() {
     fh
   );
 }
-

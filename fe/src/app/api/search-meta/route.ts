@@ -3,13 +3,10 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { headers, cookies } from "next/headers";
 import { mockLibraryDocs } from "@/mock/documents";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 
 function beBase() {
-  return (
-    process.env.BE_BASE_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    "http://localhost:8081"
-  );
+  return BE_BASE;
 }
 
 async function forward(path: string) {
@@ -35,8 +32,6 @@ async function forward(path: string) {
 }
 
 export async function GET() {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-
   if (USE_MOCK) {
     // Organizations, domains, specializations, years
     const organizations = Array.from(

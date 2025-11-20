@@ -1,17 +1,11 @@
 // app/api/profile/change-email/route.ts
 import { headers } from "next/headers";
 import { mockProfileDB } from "@/mock/db";
-
-const DEFAULT_BE_BASE = "http://localhost:8080";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   let body: { newEmail: string; password: string };
   try {
     body = await req.json();
@@ -63,4 +57,3 @@ export async function POST(req: Request) {
     },
   });
 }
-

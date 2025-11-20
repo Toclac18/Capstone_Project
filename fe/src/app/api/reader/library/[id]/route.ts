@@ -1,18 +1,12 @@
-import { cookies } from "next/headers";
-import { mockLibraryDB } from "@/mock/db";
 
-const DEFAULT_BE_BASE = "http://localhost:8080";
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+import { mockLibraryDB } from "@/mock/db";
+import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   const { id: documentId } = await params;
   const body = await request.json();
 
@@ -39,18 +33,13 @@ export async function PUT(
     }
   }
 
-  // Get authentication from cookie
-  const cookieStore = await cookies();
-  const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
-
+  // Get authentication from shared helper
+  const authHeader = await getAuthHeader();
   const fh = new Headers();
-  fh.set("Content-Type", "application/json");
-  if (bearerToken) {
-    fh.set("Authorization", bearerToken);
+  if (authHeader) {
+    fh.set("Authorization", authHeader);
   }
-
-  const url = `${BE_BASE}/api/reader/library/${documentId}`;
+const url = `${BE_BASE}/api/reader/library/${documentId}`;
 
   const upstream = await fetch(url, {
     method: "PUT",
@@ -74,11 +63,6 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   const { id: documentId } = await params;
 
   if (USE_MOCK) {
@@ -104,17 +88,13 @@ export async function DELETE(
     }
   }
 
-  // Get authentication from cookie
-  const cookieStore = await cookies();
-  const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
-
+  // Get authentication from shared helper
+  const authHeader = await getAuthHeader();
   const fh = new Headers();
-  if (bearerToken) {
-    fh.set("Authorization", bearerToken);
+  if (authHeader) {
+    fh.set("Authorization", authHeader);
   }
-
-  const url = `${BE_BASE}/api/reader/library/${documentId}`;
+const url = `${BE_BASE}/api/reader/library/${documentId}`;
 
   const upstream = await fetch(url, {
     method: "DELETE",
@@ -132,4 +112,3 @@ export async function DELETE(
     },
   });
 }
-

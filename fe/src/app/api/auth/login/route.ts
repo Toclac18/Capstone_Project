@@ -1,7 +1,7 @@
+// app/api/auth/login/route.ts
 import { cookies } from "next/headers";
-
-const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+import { BE_BASE, COOKIE_NAME } from "@/server/config";
+import { parseError } from "@/server/response";
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
@@ -13,11 +13,12 @@ export async function POST(req: Request) {
   if (!email || !password || !role) {
     return Response.json(
       { error: "Email, password and role are required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const upstream = await fetch(`${BE_BASE}/api/auth/login`, {
+  const url = `${BE_BASE}/api/auth/login`;
+  const upstream = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password, role }),
@@ -25,37 +26,33 @@ export async function POST(req: Request) {
   });
 
   const text = await upstream.text();
+
   if (!upstream.ok) {
     return Response.json(
-      { error: parseError(text) },
-      { status: upstream.status }
+      { error: parseError(text, "Login failed") },
+      { status: upstream.status },
     );
   }
 
+  let responseJson: any;
   try {
-    const response = JSON.parse(text);
-    const loginData = response.data || response;
-
-    if (!loginData.accessToken) {
-      return Response.json(
-        { error: "Invalid server response" },
-        { status: 500 }
-      );
-    }
-
-    await setCookie(loginData.accessToken, remember);
-    return Response.json(loginData);
+    responseJson = JSON.parse(text);
   } catch {
     return Response.json(
-      { error: "Failed to process login" },
-      { status: 500 }
+      { error: "Failed to parse backend response" },
+      { status: 500 },
     );
   }
-}
 
-async function setCookie(token: string, remember?: boolean) {
-  if (!token) throw new Error("Token is required");
+  const token = responseJson?.token;
+  if (!token) {
+    return Response.json(
+      { error: "No token received from backend" },
+      { status: 500 },
+    );
+  }
 
+  // Write JWT cookie
   const cookieStore = await cookies();
   cookieStore.set({
     name: COOKIE_NAME,
@@ -64,15 +61,8 @@ async function setCookie(token: string, remember?: boolean) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: remember ? 2592000 : 28800, // 30d : 8h
+    maxAge: remember ? 2592000 : 28800,
   });
-}
 
-function parseError(text: string): string {
-  try {
-    const json = JSON.parse(text);
-    return json?.detail || json?.message || "Login failed";
-  } catch {
-    return text || "Login failed";
-  }
+  return Response.json({ success: true, role });
 }

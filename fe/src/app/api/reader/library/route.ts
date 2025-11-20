@@ -1,15 +1,9 @@
-import { cookies } from "next/headers";
-import { mockLibraryDB } from "@/mock/db";
 
-const DEFAULT_BE_BASE = "http://localhost:8080";
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+import { mockLibraryDB } from "@/mock/db";
+import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
 
 export async function GET(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") || undefined;
   const source = searchParams.get("source") as "UPLOADED" | "REDEEMED" | undefined;
@@ -40,17 +34,13 @@ export async function GET(request: Request) {
     });
   }
 
-  // Get authentication from cookie
-  const cookieStore = await cookies();
-  const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
-
+  // Get authentication from shared helper
+  const authHeader = await getAuthHeader();
   const fh = new Headers();
-  if (bearerToken) {
-    fh.set("Authorization", bearerToken);
+  if (authHeader) {
+    fh.set("Authorization", authHeader);
   }
-
-  const queryParams = new URLSearchParams();
+const queryParams = new URLSearchParams();
   if (search) queryParams.append("search", search);
   if (source) queryParams.append("source", source);
   if (type) queryParams.append("type", type);
@@ -79,4 +69,3 @@ export async function GET(request: Request) {
     },
   });
 }
-

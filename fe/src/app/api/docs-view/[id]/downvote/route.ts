@@ -1,8 +1,7 @@
 // src/app/api/docs-view/[id]/downvote/route.ts
 import { mockDownvoteDoc } from "@/mock/docsDetail";
-import { badRequest, getBeBase, buildForwardHeaders } from "../../_utils";
-
-const USE_MOCK = process.env.USE_MOCK === "true";
+import { badRequest, buildForwardHeaders } from "../../_utils";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 
 export async function POST(
   _req: Request,
@@ -23,7 +22,6 @@ export async function POST(
     });
   }
 
-  const BE_BASE = getBeBase();
   const fh = await buildForwardHeaders();
 
   const upstream = await fetch(`${BE_BASE}/api/docs-view/${id}/downvote`, {

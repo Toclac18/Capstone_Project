@@ -5,17 +5,13 @@ import {
 } from "@/mock/imports";
 import { headers, cookies } from "next/headers";
 import { NextRequest } from "next/server";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 
 function beBase() {
-  return (
-    process.env.BE_BASE_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    "http://localhost:8081"
-  );
+  return BE_BASE;
 }
 
 export async function GET(req: NextRequest) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
   const download = url.searchParams.get("download");
@@ -136,7 +132,6 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
   if (USE_MOCK) {
     const form = await req.formData();
     const file = form.get("file");

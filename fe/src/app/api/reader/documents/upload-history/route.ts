@@ -1,15 +1,9 @@
 import { cookies } from "next/headers";
 import { mockDocumentsDB } from "@/mock/db";
-
-const DEFAULT_BE_BASE = "http://localhost:8080";
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
 
 export async function GET(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") || undefined;
   const dateFrom = searchParams.get("dateFrom") || undefined;
@@ -80,4 +74,3 @@ export async function GET(request: Request) {
     },
   });
 }
-

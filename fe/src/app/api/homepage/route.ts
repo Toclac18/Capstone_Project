@@ -7,12 +7,9 @@ import {
 } from "@/mock/documents";
 import { headers, cookies } from "next/headers";
 import { NextRequest } from "next/server";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 function beBase() {
-  return (
-    process.env.BE_BASE_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    "http://localhost:8081"
-  );
+  return BE_BASE;
 }
 
 export async function GET(req: NextRequest) {

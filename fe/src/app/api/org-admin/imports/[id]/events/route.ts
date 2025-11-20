@@ -1,15 +1,12 @@
 // app/api/org-admin/imports/[id]/events/route.ts
 import { NextRequest } from "next/server";
-import { headers, cookies } from "next/headers";
+import { headers } from "next/headers";
+import { BE_BASE } from "@/server/config";
 
 export const runtime = "nodejs";
 
 function beBase(): string {
-  return (
-    process.env.BE_BASE_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    "http://localhost:8081"
-  );
+  return BE_BASE;
 }
 
 export async function GET(

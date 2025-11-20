@@ -1,8 +1,7 @@
 // src/app/api/org-admin/reader-change-access/route.ts
 import { headers, cookies } from "next/headers";
 import { mockChangeReaderAccess } from "@/mock/readers";
-
-const DEFAULT_BE_BASE = "http://localhost:8081";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 
 function badRequest(msg: string, code = 400) {
   return new Response(JSON.stringify({ error: msg }), {
@@ -12,11 +11,6 @@ function badRequest(msg: string, code = 400) {
 }
 
 export async function POST(req: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   // validate body
   let body: { userId?: string; enable?: boolean };
   try {

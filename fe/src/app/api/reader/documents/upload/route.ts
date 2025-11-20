@@ -1,13 +1,7 @@
 import { headers } from "next/headers";
-
-const DEFAULT_BE_BASE = "http://localhost:8080";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 
 export async function POST(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   try {
     if (USE_MOCK) {
       const formData = await request.formData();
@@ -84,4 +78,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

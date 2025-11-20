@@ -1,6 +1,4 @@
-const USE_MOCK = process.env.USE_MOCK === "true";
-const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-
+import { BE_BASE, USE_MOCK } from "@/server/config";
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");

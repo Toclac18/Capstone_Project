@@ -1,18 +1,12 @@
 // app/api/profile/get/route.ts
 import { cookies } from "next/headers";
 import { mockProfileDB } from "@/mock/db";
-
-const DEFAULT_BE_BASE = "http://localhost:8080";
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   const cookieStore = await cookies();
   
   // TẠI SAO PHẢI CONVERT COOKIE → BEARER TOKEN?
@@ -62,4 +56,3 @@ export async function GET(request: Request) {
     },
   });
 }
-

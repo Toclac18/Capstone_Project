@@ -1,18 +1,15 @@
 // app/api/users/[id]/status/route.ts
-import { cookies } from "next/headers";
 
-const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+import { BE_BASE } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { parseError } from "@/server/response";
 
-async function getAuthHeader(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  return token ? `Bearer ${token}` : null;
-}
-
+/**
+ * Update user status by id. Proxies to BE_BASE/api/users/{id}/status with PATCH.
+ */
 export async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
 
@@ -40,8 +37,8 @@ export async function PATCH(
   const text = await upstream.text();
   if (!upstream.ok) {
     return Response.json(
-      { error: parseError(text) },
-      { status: upstream.status }
+      { error: parseError(text, "Request failed") },
+      { status: upstream.status },
     );
   }
 
@@ -51,17 +48,7 @@ export async function PATCH(
   } catch {
     return Response.json(
       { error: "Failed to process response" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
-function parseError(text: string): string {
-  try {
-    const json = JSON.parse(text);
-    return json?.error || json?.message || "Request failed";
-  } catch {
-    return text || "Request failed";
-  }
-}
-

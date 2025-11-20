@@ -2,6 +2,7 @@ package com.capstone.be.service;
 
 import com.capstone.be.domain.enums.OrgEnrollStatus;
 import com.capstone.be.dto.response.organization.InviteMembersResponse;
+import com.capstone.be.dto.response.organization.MemberImportBatchResponse;
 import com.capstone.be.dto.response.organization.OrgEnrollmentResponse;
 import java.util.List;
 import java.util.UUID;
@@ -97,4 +98,27 @@ public interface OrgEnrollmentService {
    * @return Enrollment detail
    */
   OrgEnrollmentResponse getEnrollmentDetail(UUID enrollmentId);
+
+  /**
+   * Get import batches for an organization
+   *
+   * @param organizationAdminId Organization admin user ID
+   * @param pageable            Pagination
+   * @return Page of import batches
+   */
+  Page<MemberImportBatchResponse> getImportBatches(UUID organizationAdminId, Pageable pageable);
+
+  /**
+   * Get successful enrollments for a specific import batch
+   *
+   * @param organizationAdminId Organization admin user ID
+   * @param importBatchId       Import batch ID
+   * @param pageable            Pagination
+   * @return Page of enrollments from this batch
+   */
+  Page<OrgEnrollmentResponse> getImportBatchEnrollments(
+      UUID organizationAdminId,
+      UUID importBatchId,
+      Pageable pageable
+  );
 }

@@ -1,5 +1,6 @@
 package com.capstone.be.repository.specification;
 
+import com.capstone.be.domain.entity.MemberImportBatch;
 import com.capstone.be.domain.entity.OrgEnrollment;
 import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.User;
@@ -86,5 +87,16 @@ public class OrgEnrollmentSpecification {
 
       return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
     };
+  }
+
+  /**
+   * Build specification for enrollments from a specific import batch
+   *
+   * @param batch Import batch
+   * @return Specification for querying
+   */
+  public static Specification<OrgEnrollment> hasImportBatch(MemberImportBatch batch) {
+    return (root, query, criteriaBuilder) ->
+        criteriaBuilder.equal(root.get("importBatch"), batch);
   }
 }

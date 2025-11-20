@@ -1,5 +1,6 @@
 package com.capstone.be.service.impl;
 
+import com.capstone.be.domain.entity.MemberImportBatch;
 import com.capstone.be.domain.entity.OrgEnrollment;
 import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.User;
@@ -8,16 +9,20 @@ import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.domain.enums.UserStatus;
 import com.capstone.be.dto.response.organization.InviteMembersResponse;
 import com.capstone.be.dto.response.organization.InviteMembersResponse.FailedInvitation;
+import com.capstone.be.dto.response.organization.MemberImportBatchResponse;
 import com.capstone.be.dto.response.organization.OrgEnrollmentResponse;
 import com.capstone.be.exception.BusinessException;
 import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
+import com.capstone.be.mapper.MemberImportBatchMapper;
 import com.capstone.be.mapper.OrgEnrollmentMapper;
+import com.capstone.be.repository.MemberImportBatchRepository;
 import com.capstone.be.repository.OrgEnrollmentRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.repository.specification.OrgEnrollmentSpecification;
 import com.capstone.be.service.EmailService;
+import com.capstone.be.service.FileStorageService;
 import com.capstone.be.service.OrgEnrollmentService;
 import com.capstone.be.util.ExcelUtil;
 import java.util.ArrayList;
@@ -45,18 +50,23 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
   private final UserRepository userRepository;
   private final EmailService emailService;
   private final OrgEnrollmentMapper orgEnrollmentMapper;
+  private final MemberImportBatchRepository memberImportBatchRepository;
+  private final MemberImportBatchMapper memberImportBatchMapper;
+  private final FileStorageService fileStorageService;
 
   @Override
   @Transactional
   public InviteMembersResponse inviteMembers(UUID organizationAdminId, List<String> emails) {
     log.info("Inviting {} members for organization admin: {}", emails.size(), organizationAdminId);
 
-    // Get organization
-    OrganizationProfile organization = getOrganizationByAdminId(organizationAdminId);
-
-    // Process invitations
-    return processInvitations(organization, emails);
+    return handleInviteMembers(
+        organizationAdminId,
+        emails,
+        "MANUAL",
+        null,
+        null);
   }
+
 
   @Override
   @Transactional
@@ -69,19 +79,65 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
     // Parse emails from Excel
     List<String> emails = ExcelUtil.parseEmailListFromExcel(file);
 
-    if (emails.isEmpty()) {
-      throw new InvalidRequestException("No valid emails found in Excel file");
-    }
 
-    // Get organization
-    OrganizationProfile organization = getOrganizationByAdminId(organizationAdminId);
 
-    // Process invitations
-    return processInvitations(organization, emails);
+    return handleInviteMembers(
+        organizationAdminId,
+        emails,
+        "MANUAL",
+        file,
+        file.getOriginalFilename());
+
   }
 
-  private InviteMembersResponse processInvitations(OrganizationProfile organization,
-      List<String> emails) {
+
+  @Transactional
+  private InviteMembersResponse handleInviteMembers(
+      UUID organizationAdminId,
+      List<String> emails,
+      String importSource,
+      MultipartFile file,
+      String fileName
+  ) {
+    log.info("Inviting {} members ({}) for admin: {}",
+        emails.size(), importSource, organizationAdminId);
+
+    if (emails.isEmpty()) {
+      throw new InvalidRequestException("No valid emails found");
+    }
+
+    OrganizationProfile organization = getOrganizationByAdminId(organizationAdminId);
+    User admin = organization.getAdmin();
+
+
+
+    // Create batch
+    MemberImportBatch batch = createImportBatch(
+        organization,
+        admin,
+        importSource,
+        emails.size(),
+        fileName,
+        file
+    );
+
+    // process invitations
+    InviteMembersResponse response = processInvitations(organization, emails, batch);
+
+    // Update batch with statics
+    batch.setSuccessCount(response.getSuccessCount());
+    batch.setFailedCount(response.getFailedCount());
+    batch.setSkippedCount(response.getSkippedCount());
+    memberImportBatchRepository.save(batch);
+
+    return response;
+  }
+
+
+  private InviteMembersResponse processInvitations(
+      OrganizationProfile organization,
+      List<String> emails,
+      MemberImportBatch batch) {
     List<String> successEmails = new ArrayList<>();
     List<FailedInvitation> failedInvitations = new ArrayList<>();
     List<String> skippedEmails = new ArrayList<>();
@@ -158,6 +214,7 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
             .member(user)
             .memberEmail(email)
             .status(OrgEnrollStatus.PENDING_INVITE)
+            .importBatch(batch)  // Link to import batch if exists
             .build();
 
         orgEnrollmentRepository.save(enrollment);
@@ -332,7 +389,7 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
       );
     }
 
-    // Remove member
+    // Remove member (Soft delete)
     enrollment.removeMember();
     orgEnrollmentRepository.save(enrollment);
 
@@ -380,5 +437,92 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
 
   private OrgEnrollmentResponse buildEnrollmentResponse(OrgEnrollment enrollment) {
     return orgEnrollmentMapper.toResponse(enrollment);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<MemberImportBatchResponse> getImportBatches(
+      UUID organizationAdminId,
+      Pageable pageable) {
+    log.info("Get import batches for organization admin: {}", organizationAdminId);
+
+    OrganizationProfile organization = getOrganizationByAdminId(organizationAdminId);
+
+    Page<MemberImportBatch> batchPage = memberImportBatchRepository
+        .findByOrganizationOrderByCreatedAtDesc(organization, pageable);
+
+    return batchPage.map(memberImportBatchMapper::toResponse);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<OrgEnrollmentResponse> getImportBatchEnrollments(
+      UUID organizationAdminId,
+      UUID importBatchId,
+      Pageable pageable) {
+    log.info("Get enrollments for import batch: {}", importBatchId);
+
+    // Verify organization ownership
+    OrganizationProfile organization = getOrganizationByAdminId(organizationAdminId);
+
+    MemberImportBatch batch = memberImportBatchRepository.findById(importBatchId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            "Import batch", "id", importBatchId));
+
+    // Verify batch belongs to the organization
+    if (!batch.getOrganization().getId().equals(organization.getId())) {
+      throw new BusinessException(
+          "Import batch does not belong to this organization",
+          HttpStatus.FORBIDDEN,
+          "IMPORT_BATCH_FORBIDDEN"
+      );
+    }
+
+    // Find all enrollments created from this batch
+    Page<OrgEnrollment> enrollments = orgEnrollmentRepository
+        .findAll(OrgEnrollmentSpecification.hasImportBatch(batch), pageable);
+
+    return enrollments.map(this::buildEnrollmentResponse);
+  }
+
+  private MemberImportBatch createImportBatch(
+      OrganizationProfile organization,
+      User admin,
+      String importSource,
+      int totalEmails,
+      String fileName,
+      MultipartFile file) {
+
+    // Upload Excel file to S3 if provided
+    String fileUrl = null;
+    if (file != null && !file.isEmpty()) {
+      try {
+        fileUrl = fileStorageService.uploadFile(file, "import-batches", null);
+        log.info("Uploaded import Excel file to S3: {}", fileUrl);
+      } catch (Exception e) {
+        log.error("Failed to upload Excel file to S3", e);
+        // Continue without file URL
+      }
+    }
+
+    // Create and save import batch with initial counts
+    MemberImportBatch batch = MemberImportBatch.builder()
+        .organization(organization)
+        .admin(admin)
+        .importSource(importSource)
+        .totalEmails(totalEmails)
+        .successCount(0)
+        .failedCount(0)
+        .skippedCount(0)
+        .fileName(fileName)
+        .fileUrl(fileUrl)
+        .build();
+
+    batch = memberImportBatchRepository.save(batch);
+
+    log.info("Created import batch for organization: {}, source: {}",
+        organization.getName(), importSource);
+
+    return batch;
   }
 }

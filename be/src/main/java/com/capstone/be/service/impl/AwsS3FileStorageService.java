@@ -38,7 +38,8 @@ public class AwsS3FileStorageService implements FileStorageService {
       "application/pdf",
       "image/jpeg",
       "image/jpg",
-      "image/png"
+      "image/png",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   );
 
   @Override

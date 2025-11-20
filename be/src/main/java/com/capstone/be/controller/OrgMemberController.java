@@ -4,6 +4,7 @@ import com.capstone.be.domain.enums.OrgEnrollStatus;
 import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.organization.InviteMembersRequest;
 import com.capstone.be.dto.response.organization.InviteMembersResponse;
+import com.capstone.be.dto.response.organization.MemberImportBatchResponse;
 import com.capstone.be.dto.response.organization.OrgEnrollmentResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.OrgEnrollmentService;
@@ -146,5 +147,51 @@ public class OrgMemberController {
     OrgEnrollmentResponse enrollment = orgEnrollmentService.getEnrollmentDetail(enrollmentId);
 
     return ResponseEntity.ok(enrollment);
+  }
+
+  /**
+   * Get member import batches for organization
+   * GET /api/v1/organization/members/import-batches
+   *
+   * @param userPrincipal Organization admin
+   * @param pageable      Pagination parameters
+   * @return Paged response of import batches
+   */
+  @GetMapping("/import-batches")
+  @PreAuthorize("hasRole('ORGANIZATION_ADMIN')")
+  public ResponseEntity<PagedResponse<MemberImportBatchResponse>> getImportBatches(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      Pageable pageable) {
+    UUID adminId = userPrincipal.getId();
+    log.info("Get import batches for organization admin: {}", adminId);
+
+    Page<MemberImportBatchResponse> batches = orgEnrollmentService.getImportBatches(
+        adminId, pageable);
+
+    return ResponseEntity.ok(PagedResponse.of(batches));
+  }
+
+  /**
+   * Get successful enrollments for a specific import batch
+   * GET /api/v1/organization/members/import-batches/{importBatchId}/enrollments
+   *
+   * @param userPrincipal Organization admin
+   * @param importBatchId Import batch ID
+   * @param pageable      Pagination parameters
+   * @return Paged response of enrollments from this batch
+   */
+  @GetMapping("/import-batches/{importBatchId}/enrollments")
+  @PreAuthorize("hasRole('ORGANIZATION_ADMIN')")
+  public ResponseEntity<PagedResponse<OrgEnrollmentResponse>> getImportBatchEnrollments(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "importBatchId") UUID importBatchId,
+      Pageable pageable) {
+    UUID adminId = userPrincipal.getId();
+    log.info("Get enrollments for import batch: {}", importBatchId);
+
+    Page<OrgEnrollmentResponse> enrollments = orgEnrollmentService.getImportBatchEnrollments(
+        adminId, importBatchId, pageable);
+
+    return ResponseEntity.ok(PagedResponse.of(enrollments));
   }
 }

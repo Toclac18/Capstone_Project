@@ -60,6 +60,13 @@ public class OrgEnrollment extends BaseEntity {
   private String memberEmail;
 
   /**
+   * Import batch that this enrollment was created from (nullable for manual invites)
+   */
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "import_batch_id")
+  private MemberImportBatch importBatch;
+
+  /**
    * Domain methods
    */
   public boolean isPending() {

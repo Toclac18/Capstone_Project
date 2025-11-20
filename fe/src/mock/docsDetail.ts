@@ -26,6 +26,7 @@ export type DocDetailMock = {
   description?: string;
   fileUrl: string;
   comments: DocComment[];
+  isRedeemed?: boolean;
 };
 
 export const mockDocDetails: DocDetailMock[] = [
@@ -75,6 +76,7 @@ export const mockDocDetails: DocDetailMock[] = [
     description: "Premium course notes on structural analysis.",
     fileUrl: "/sample.pdf",
     comments: [],
+    isRedeemed: false,
   },
 ];
 
@@ -119,9 +121,11 @@ export function mockGetDocDetail(id: string) {
 
 export function mockRedeemDoc(id: string) {
   const doc = findDocById(id);
-  if (!doc) return { success: false, redeemed: false };
+  if (!doc || !doc.isPremium) return { success: false, redeemed: false };
 
-  // mock: đánh dấu là đã “redeem”
+  // mock: đánh dấu là đã “redeem” – trạng thái này sẽ được GET trả về qua field isRedeemed
+  doc.isRedeemed = true;
+
   return { success: true, redeemed: true, pointsLeft: 1200 };
 }
 

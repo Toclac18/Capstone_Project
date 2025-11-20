@@ -92,24 +92,31 @@ export function DocsViewProvider({
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentLoading, setCommentLoading] = useState(false);
 
+  // load doc detail
   useEffect(() => {
     let mounted = true;
+
     (async () => {
       try {
         setLoading(true);
         setError(null);
+
         const data = await fetchDocDetail(id);
         if (!mounted) return;
 
-        setDetail(data.detail);
+        const doc = data.detail;
+
+        setDetail(doc);
         setRelated(data.related);
-        setNumPages(data.detail.pageCount);
+        setNumPages(doc.pageCount);
         setPage(1);
         setQuery("");
         setHits([]);
         setHitIndex(0);
 
-        setRedeemed(!data.detail.isPremium);
+        const initialRedeemed = doc.isPremium ? !!doc.isRedeemed : true;
+        setRedeemed(initialRedeemed);
+
         setIsRedeemModalOpen(false);
         setRedeemLoading(false);
 
@@ -127,9 +134,11 @@ export function DocsViewProvider({
     };
   }, [id]);
 
+  // zoom
   const zoomIn = () => setScale((s) => Math.min(3, s + 0.1));
   const zoomOut = () => setScale((s) => Math.max(0.5, s - 0.1));
 
+  // text search
   const onPageText = (pageNumber: number, text: string) => {
     pagesTextRef.current[pageNumber] = text.toLowerCase();
     if (query.trim()) recomputeHits(query);
@@ -231,10 +240,25 @@ export function DocsViewProvider({
 
   const redeem = async () => {
     if (!detail || redeemed) return;
+
     try {
       setRedeemLoading(true);
+      setError(null);
+
       const res = await redeemDoc(detail.id);
-      if (!res.success) throw new Error("Redeem failed");
+
+      if (!res.success || !res.redeemed) {
+        throw new Error("Redeem failed");
+      }
+
+      setDetail((d) =>
+        d
+          ? {
+              ...d,
+              isRedeemed: true,
+            }
+          : d,
+      );
       setRedeemed(true);
       setIsRedeemModalOpen(false);
     } catch (e: any) {

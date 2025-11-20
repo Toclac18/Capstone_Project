@@ -28,12 +28,7 @@ export function LibraryFilters({
   documentTypes,
   domains,
 }: LibraryFiltersProps) {
-  const {
-    register,
-    handleSubmit,
-    reset,
-    control,
-  } = useForm<FilterValues>({
+  const { register, handleSubmit, reset, control } = useForm<FilterValues>({
     defaultValues: {
       search: "",
       uploaded: false,
@@ -110,7 +105,10 @@ export function LibraryFilters({
 
   return (
     <div className={styles["filters-container"]}>
-      <form onSubmit={handleSubmit(onSubmit)} className={styles["filters-form"]}>
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className={styles["filters-form"]}
+      >
         {/* Search Bar and Actions */}
         <div className={styles["search-actions-row"]}>
           <div className={styles["search-wrapper"]}>
@@ -227,11 +225,15 @@ export function LibraryFilters({
         {hasActiveFilters && (
           <div className={styles["active-filters"]}>
             <div className={styles["active-filters-header"]}>
-              <span className={styles["active-filters-title"]}>Active Filters:</span>
+              <span className={styles["active-filters-title"]}>
+                Active Filters:
+              </span>
             </div>
             <div className={styles["active-filters-tags"]}>
               {watchedFilters.search?.trim() && (
-                <span className={`${styles["filter-tag"]} ${styles["filter-tag-search"]}`}>
+                <span
+                  className={`${styles["filter-tag"]} ${styles["filter-tag-search"]}`}
+                >
                   Search: {watchedFilters.search}
                   <button
                     type="button"
@@ -254,8 +256,11 @@ export function LibraryFilters({
                 </span>
               )}
               {(watchedFilters.uploaded || watchedFilters.redeemed) && (
-                <span className={`${styles["filter-tag"]} ${styles["filter-tag-source"]}`}>
-                  Source: {[
+                <span
+                  className={`${styles["filter-tag"]} ${styles["filter-tag-source"]}`}
+                >
+                  Source:{" "}
+                  {[
                     watchedFilters.uploaded && "Uploaded",
                     watchedFilters.redeemed && "Redeemed",
                   ]
@@ -264,16 +269,11 @@ export function LibraryFilters({
                   <button
                     type="button"
                     onClick={() => {
-                      const updatedFilters: FilterValues = {
-                        search: watchedFilters.search || "",
+                      reset({
+                        ...watchedFilters,
                         uploaded: false,
                         redeemed: false,
-                        dateFrom: watchedFilters.dateFrom || "",
-                        dateTo: watchedFilters.dateTo || "",
-                        type: watchedFilters.type || "",
-                        domain: watchedFilters.domain || "",
-                      };
-                      reset(updatedFilters);
+                      });
                     }}
                     className={`${styles["filter-tag-remove"]} ${styles["filter-tag-remove-source"]}`}
                   >
@@ -282,7 +282,9 @@ export function LibraryFilters({
                 </span>
               )}
               {watchedFilters.dateFrom && (
-                <span className={`${styles["filter-tag"]} ${styles["filter-tag-date"]}`}>
+                <span
+                  className={`${styles["filter-tag"]} ${styles["filter-tag-date"]}`}
+                >
                   From: {new Date(watchedFilters.dateFrom).toLocaleDateString()}
                   <button
                     type="button"
@@ -305,7 +307,9 @@ export function LibraryFilters({
                 </span>
               )}
               {watchedFilters.dateTo && (
-                <span className={`${styles["filter-tag"]} ${styles["filter-tag-date"]}`}>
+                <span
+                  className={`${styles["filter-tag"]} ${styles["filter-tag-date"]}`}
+                >
                   To: {new Date(watchedFilters.dateTo).toLocaleDateString()}
                   <button
                     type="button"
@@ -328,7 +332,9 @@ export function LibraryFilters({
                 </span>
               )}
               {watchedFilters.type && (
-                <span className={`${styles["filter-tag"]} ${styles["filter-tag-type"]}`}>
+                <span
+                  className={`${styles["filter-tag"]} ${styles["filter-tag-type"]}`}
+                >
                   Type: {watchedFilters.type}
                   <button
                     type="button"
@@ -351,7 +357,9 @@ export function LibraryFilters({
                 </span>
               )}
               {watchedFilters.domain && (
-                <span className={`${styles["filter-tag"]} ${styles["filter-tag-domain"]}`}>
+                <span
+                  className={`${styles["filter-tag"]} ${styles["filter-tag-domain"]}`}
+                >
                   Domain: {watchedFilters.domain}
                   <button
                     type="button"
@@ -380,4 +388,3 @@ export function LibraryFilters({
     </div>
   );
 }
-

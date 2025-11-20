@@ -38,8 +38,8 @@ export function UploadHistoryFilters({
     register,
     handleSubmit,
     reset,
-    control,
     formState: { errors },
+    control,
   } = useForm<FilterValues>({
     defaultValues: {
       search: "",
@@ -102,13 +102,11 @@ export function UploadHistoryFilters({
       "Thesis",
     ];
     defaultTypes.forEach((t) => map.set(t, { value: t, label: t }));
-    documentTypes
-      .filter(Boolean)
-      .forEach((t) => {
-        if (!map.has(t)) {
-          map.set(t, { value: t, label: t });
-        }
-      });
+    documentTypes.filter(Boolean).forEach((t) => {
+      if (!map.has(t)) {
+        map.set(t, { value: t, label: t });
+      }
+    });
     return Array.from(map.values());
   }, [documentTypes]);
 
@@ -124,13 +122,11 @@ export function UploadHistoryFilters({
       "Engineering",
     ];
     defaultDomains.forEach((d) => map.set(d, { value: d, label: d }));
-    domains
-      .filter(Boolean)
-      .forEach((d) => {
-        if (!map.has(d)) {
-          map.set(d, { value: d, label: d });
-        }
-      });
+    domains.filter(Boolean).forEach((d) => {
+      if (!map.has(d)) {
+        map.set(d, { value: d, label: d });
+      }
+    });
     return Array.from(map.values());
   }, [domains]);
 
@@ -140,8 +136,8 @@ export function UploadHistoryFilters({
       className={styles["filters-container"]}
     >
       {/* Search Bar and Action Buttons */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 mb-6">
-        <div className="flex-1 relative">
+      <div className="mb-6 flex flex-col items-stretch gap-3 lg:flex-row lg:items-center">
+        <div className="relative flex-1">
           <div className={styles["search-container"]}>
             <svg
               className={styles["search-icon"]}
@@ -167,7 +163,7 @@ export function UploadHistoryFilters({
           </div>
         </div>
 
-        <div className="flex gap-2 flex-shrink-0">
+        <div className="flex flex-shrink-0 gap-2">
           <button
             type="button"
             onClick={handleClearFilters}
@@ -188,7 +184,7 @@ export function UploadHistoryFilters({
       </div>
 
       {/* Filter Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div>
           <label htmlFor="dateFrom" className={styles["label"]}>
             Date From
@@ -272,25 +268,23 @@ export function UploadHistoryFilters({
 
       {/* Active Filters Summary */}
       {hasActiveFilters && (
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
           <div className="flex flex-wrap gap-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">
               Active filters:
             </span>
             {watchedFilters.search && (
-              <span className={`${styles["filter-tag"]} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}>
+              <span
+                className={`${styles["filter-tag"]} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}
+              >
                 Search: {watchedFilters.search}
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters: FilterValues = {
+                    const updatedFilters = {
+                      ...watchedFilters,
                       search: "",
-                      dateFrom: watchedFilters.dateFrom || "",
-                      dateTo: watchedFilters.dateTo || "",
-                      type: watchedFilters.type || "",
-                      domain: watchedFilters.domain || "",
-                      status: watchedFilters.status || "",
-                    };
+                    } as FilterValues;
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
@@ -301,19 +295,21 @@ export function UploadHistoryFilters({
               </span>
             )}
             {watchedFilters.status && (
-              <span className={`${styles["filter-tag"]} bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200`}>
-                Status: {STATUS_OPTIONS.find((s) => s.value === watchedFilters.status)?.label}
+              <span
+                className={`${styles["filter-tag"]} bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200`}
+              >
+                Status:{" "}
+                {
+                  STATUS_OPTIONS.find((s) => s.value === watchedFilters.status)
+                    ?.label
+                }
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters: FilterValues = {
-                      search: watchedFilters.search || "",
-                      dateFrom: watchedFilters.dateFrom || "",
-                      dateTo: watchedFilters.dateTo || "",
-                      type: watchedFilters.type || "",
-                      domain: watchedFilters.domain || "",
+                    const updatedFilters = {
+                      ...watchedFilters,
                       status: "",
-                    };
+                    } as FilterValues;
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
@@ -324,19 +320,19 @@ export function UploadHistoryFilters({
               </span>
             )}
             {watchedFilters.type && (
-              <span className={`${styles["filter-tag"]} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}>
-                Type: {typeOptions.find((t) => t.value === watchedFilters.type)?.label ?? watchedFilters.type}
+              <span
+                className={`${styles["filter-tag"]} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}
+              >
+                Type:{" "}
+                {typeOptions.find((t) => t.value === watchedFilters.type)
+                  ?.label ?? watchedFilters.type}
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters: FilterValues = {
-                      search: watchedFilters.search || "",
-                      dateFrom: watchedFilters.dateFrom || "",
-                      dateTo: watchedFilters.dateTo || "",
+                    const updatedFilters = {
+                      ...watchedFilters,
                       type: "",
-                      domain: watchedFilters.domain || "",
-                      status: watchedFilters.status || "",
-                    };
+                    } as FilterValues;
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
@@ -347,19 +343,19 @@ export function UploadHistoryFilters({
               </span>
             )}
             {watchedFilters.domain && (
-              <span className={`${styles["filter-tag"]} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`}>
-                Domain: {domainOptions.find((d) => d.value === watchedFilters.domain)?.label ?? watchedFilters.domain}
+              <span
+                className={`${styles["filter-tag"]} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`}
+              >
+                Domain:{" "}
+                {domainOptions.find((d) => d.value === watchedFilters.domain)
+                  ?.label ?? watchedFilters.domain}
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters: FilterValues = {
-                      search: watchedFilters.search || "",
-                      dateFrom: watchedFilters.dateFrom || "",
-                      dateTo: watchedFilters.dateTo || "",
-                      type: watchedFilters.type || "",
+                    const updatedFilters = {
+                      ...watchedFilters,
                       domain: "",
-                      status: watchedFilters.status || "",
-                    };
+                    } as FilterValues;
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
@@ -370,19 +366,19 @@ export function UploadHistoryFilters({
               </span>
             )}
             {(watchedFilters.dateFrom || watchedFilters.dateTo) && (
-              <span className={`${styles["filter-tag"]} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`}>
-                Date: {watchedFilters.dateFrom || "Start"} - {watchedFilters.dateTo || "End"}
+              <span
+                className={`${styles["filter-tag"]} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`}
+              >
+                Date: {watchedFilters.dateFrom || "Start"} -{" "}
+                {watchedFilters.dateTo || "End"}
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters: FilterValues = {
-                      search: watchedFilters.search || "",
+                    const updatedFilters = {
+                      ...watchedFilters,
                       dateFrom: "",
                       dateTo: "",
-                      type: watchedFilters.type || "",
-                      domain: watchedFilters.domain || "",
-                      status: watchedFilters.status || "",
-                    };
+                    } as FilterValues;
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
@@ -398,4 +394,3 @@ export function UploadHistoryFilters({
     </form>
   );
 }
-

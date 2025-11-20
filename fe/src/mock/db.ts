@@ -14,6 +14,14 @@ import {
 export type { LibraryDocument, LibraryQueryParams, LibraryResponse, UpdateDocumentRequest };
 export { mockLibraryDocuments };
 
+// Re-export reviewer functions only (types are exported from types/review.ts)
+export {
+  getReviewDocuments,
+  getReviewRequests,
+  getReviewHistory,
+  resetMockReviewData,
+} from "./review-list";
+
 export type TicketCategory =
   | "PAYMENT"
   | "ACCESS"
@@ -368,6 +376,805 @@ export const mockOrganizationAdminDB = {
   delete(): void {
     // Mark as deleted (in real scenario, this would update the database)
     _organizationInfo.deleted = true;
+  },
+};
+
+// ---------------- Business Admin Tags Mock ----------------
+import type { Tag as BusinessAdminTag, TagStatus } from "@/types/document-tag";
+import type { Domain as BusinessAdminDomain } from "@/types/document-domain";
+import type { DocumentType as BusinessAdminType } from "@/types/document-type";
+
+const _businessAdminTags: BusinessAdminTag[] = [
+  {
+    id: "tag-1",
+    name: "Machine Learning",
+    status: "ACTIVE",
+    createdDate: "2025-01-15T10:00:00Z",
+  },
+  {
+    id: "tag-2",
+    name: "Artificial Intelligence",
+    status: "ACTIVE",
+    createdDate: "2025-01-16T11:00:00Z",
+  },
+  {
+    id: "tag-3",
+    name: "Data Science",
+    status: "ACTIVE",
+    createdDate: "2025-01-17T12:00:00Z",
+  },
+  {
+    id: "tag-4",
+    name: "Web Development",
+    status: "ACTIVE",
+    createdDate: "2025-01-18T13:00:00Z",
+  },
+  {
+    id: "tag-5",
+    name: "Software Engineering",
+    status: "ACTIVE",
+    createdDate: "2025-01-19T14:00:00Z",
+  },
+  {
+    id: "tag-6",
+    name: "Algorithms",
+    status: "ACTIVE",
+    createdDate: "2025-01-20T15:00:00Z",
+  },
+  {
+    id: "tag-7",
+    name: "Database",
+    status: "INACTIVE",
+    createdDate: "2025-01-21T16:00:00Z",
+  },
+  {
+    id: "tag-8",
+    name: "Security",
+    status: "ACTIVE",
+    createdDate: "2025-01-22T17:00:00Z",
+  },
+  {
+    id: "tag-9",
+    name: "Cloud Computing",
+    status: "ACTIVE",
+    createdDate: "2025-01-23T18:00:00Z",
+  },
+  {
+    id: "tag-10",
+    name: "DevOps",
+    status: "ACTIVE",
+    createdDate: "2025-01-24T19:00:00Z",
+  },
+  {
+    id: "tag-11",
+    name: "Mobile Development",
+    status: "ACTIVE",
+    createdDate: "2025-01-25T20:00:00Z",
+  },
+  {
+    id: "tag-12",
+    name: "Blockchain",
+    status: "INACTIVE",
+    createdDate: "2025-01-26T21:00:00Z",
+  },
+  {
+    id: "tag-13",
+    name: "Cybersecurity",
+    status: "PENDING",
+    createdDate: "2025-01-27T10:00:00Z",
+  },
+  {
+    id: "tag-14",
+    name: "Quantum Computing",
+    status: "PENDING",
+    createdDate: "2025-01-28T11:00:00Z",
+  },
+  {
+    id: "tag-15",
+    name: "Internet of Things",
+    status: "PENDING",
+    createdDate: "2025-01-29T12:00:00Z",
+  },
+];
+
+export const mockTagsDB = {
+  list(params?: {
+    search?: string;
+    status?: TagStatus;
+    dateFrom?: string;
+    dateTo?: string;
+  }): BusinessAdminTag[] {
+    let filtered = [..._businessAdminTags];
+
+    // Filter by search
+    if (params?.search) {
+      const searchLower = params.search.toLowerCase().trim();
+      filtered = filtered.filter(
+        (tag) =>
+          tag.name.toLowerCase().includes(searchLower) ||
+          tag.id.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Filter by status
+    if (params?.status) {
+      filtered = filtered.filter((tag) => tag.status === params.status);
+    }
+
+    // Filter by date range
+    if (params?.dateFrom) {
+      const fromDate = new Date(params.dateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      filtered = filtered.filter((tag) => {
+        const tagDate = new Date(tag.createdDate);
+        tagDate.setHours(0, 0, 0, 0);
+        return tagDate >= fromDate;
+      });
+    }
+
+    if (params?.dateTo) {
+      const toDate = new Date(params.dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter((tag) => {
+        const tagDate = new Date(tag.createdDate);
+        tagDate.setHours(0, 0, 0, 0);
+        return tagDate <= toDate;
+      });
+    }
+
+    return filtered;
+  },
+  get(id: string): BusinessAdminTag | undefined {
+    return _businessAdminTags.find((tag) => tag.id === id);
+  },
+  create(data: { name: string }): BusinessAdminTag {
+    // Check for duplicate name (case-insensitive)
+    const existingTag = _businessAdminTags.find(
+      (tag) => tag.name.toLowerCase().trim() === data.name.toLowerCase().trim()
+    );
+
+    if (existingTag) {
+      throw new Error("This tag name already exists. Please choose another name.");
+    }
+
+    // Validate name is not empty
+    if (!data.name || !data.name.trim()) {
+      throw new Error("Tag name cannot be empty.");
+    }
+
+    const newTag: BusinessAdminTag = {
+      id: `tag-${Date.now()}`,
+      name: data.name.trim(),
+      status: "ACTIVE",
+      createdDate: new Date().toISOString(),
+    };
+
+    _businessAdminTags.unshift(newTag);
+    return newTag;
+  },
+  update(id: string, data: { name?: string; status?: TagStatus }): BusinessAdminTag {
+    const tagIndex = _businessAdminTags.findIndex((tag) => tag.id === id);
+
+    if (tagIndex === -1) {
+      throw new Error(`Tag with id ${id} not found`);
+    }
+
+    const existingTag = _businessAdminTags[tagIndex];
+
+    // Check for duplicate name if name is being updated
+    if (data.name !== undefined) {
+      const trimmedName = data.name.trim();
+      if (trimmedName !== existingTag.name) {
+        const duplicateTag = _businessAdminTags.find(
+          (tag) =>
+            tag.id !== id &&
+            tag.name.toLowerCase().trim() === trimmedName.toLowerCase()
+        );
+
+        if (duplicateTag) {
+          throw new Error("This tag name already exists. Please choose another name.");
+        }
+      }
+    }
+
+    // Validate name is not empty if provided
+    if (data.name !== undefined && (!data.name || !data.name.trim())) {
+      throw new Error("Tag name cannot be empty.");
+    }
+
+    const updatedTag: BusinessAdminTag = {
+      ...existingTag,
+      ...(data.name !== undefined && { name: data.name.trim() }),
+      ...(data.status !== undefined && { status: data.status }),
+    };
+
+    _businessAdminTags[tagIndex] = updatedTag;
+    return updatedTag;
+  },
+  delete(id: string): void {
+    const tagIndex = _businessAdminTags.findIndex((tag) => tag.id === id);
+
+    if (tagIndex === -1) {
+      throw new Error(`Tag with id ${id} not found`);
+    }
+
+    _businessAdminTags.splice(tagIndex, 1);
+  },
+  approve(id: string): BusinessAdminTag {
+    const tagIndex = _businessAdminTags.findIndex((tag) => tag.id === id);
+
+    if (tagIndex === -1) {
+      throw new Error(`Tag with id ${id} not found`);
+    }
+
+    const tag = _businessAdminTags[tagIndex];
+
+    if (tag.status !== "PENDING") {
+      throw new Error("Only pending tags can be approved");
+    }
+
+    const updatedTag: BusinessAdminTag = {
+      ...tag,
+      status: "ACTIVE",
+    };
+
+    _businessAdminTags[tagIndex] = updatedTag;
+    return updatedTag;
+  },
+  reset(): void {
+    _businessAdminTags.length = 0;
+    _businessAdminTags.push(
+      {
+        id: "tag-1",
+        name: "Machine Learning",
+        status: "ACTIVE",
+        createdDate: "2025-01-15T10:00:00Z",
+      },
+      {
+        id: "tag-2",
+        name: "Artificial Intelligence",
+        status: "ACTIVE",
+        createdDate: "2025-01-16T11:00:00Z",
+      },
+      {
+        id: "tag-3",
+        name: "Data Science",
+        status: "ACTIVE",
+        createdDate: "2025-01-17T12:00:00Z",
+      },
+      {
+        id: "tag-4",
+        name: "Web Development",
+        status: "ACTIVE",
+        createdDate: "2025-01-18T13:00:00Z",
+      },
+      {
+        id: "tag-5",
+        name: "Software Engineering",
+        status: "ACTIVE",
+        createdDate: "2025-01-19T14:00:00Z",
+      },
+      {
+        id: "tag-6",
+        name: "Algorithms",
+        status: "ACTIVE",
+        createdDate: "2025-01-20T15:00:00Z",
+      },
+      {
+        id: "tag-7",
+        name: "Database",
+        status: "INACTIVE",
+        createdDate: "2025-01-21T16:00:00Z",
+      },
+      {
+        id: "tag-8",
+        name: "Security",
+        status: "ACTIVE",
+        createdDate: "2025-01-22T17:00:00Z",
+      },
+      {
+        id: "tag-9",
+        name: "Cloud Computing",
+        status: "ACTIVE",
+        createdDate: "2025-01-23T18:00:00Z",
+      },
+      {
+        id: "tag-10",
+        name: "DevOps",
+        status: "ACTIVE",
+        createdDate: "2025-01-24T19:00:00Z",
+      },
+      {
+        id: "tag-11",
+        name: "Mobile Development",
+        status: "ACTIVE",
+        createdDate: "2025-01-25T20:00:00Z",
+      },
+      {
+        id: "tag-12",
+        name: "Blockchain",
+        status: "INACTIVE",
+        createdDate: "2025-01-26T21:00:00Z",
+      },
+      {
+        id: "tag-13",
+        name: "Cybersecurity",
+        status: "PENDING",
+        createdDate: "2025-01-27T10:00:00Z",
+      },
+      {
+        id: "tag-14",
+        name: "Quantum Computing",
+        status: "PENDING",
+        createdDate: "2025-01-28T11:00:00Z",
+      },
+      {
+        id: "tag-15",
+        name: "Internet of Things",
+        status: "PENDING",
+        createdDate: "2025-01-29T12:00:00Z",
+      }
+    );
+  },
+};
+
+// ---------------- Business Admin Domains Mock ----------------
+const _businessAdminDomains: BusinessAdminDomain[] = [
+  {
+    id: "domain-1",
+    name: "Computer Science",
+    createdDate: "2025-01-10T10:00:00Z",
+  },
+  {
+    id: "domain-2",
+    name: "Mathematics",
+    createdDate: "2025-01-11T11:00:00Z",
+  },
+  {
+    id: "domain-3",
+    name: "Physics",
+    createdDate: "2025-01-12T12:00:00Z",
+  },
+  {
+    id: "domain-4",
+    name: "Biology",
+    createdDate: "2025-01-13T13:00:00Z",
+  },
+  {
+    id: "domain-5",
+    name: "Chemistry",
+    createdDate: "2025-01-14T14:00:00Z",
+  },
+  {
+    id: "domain-6",
+    name: "Engineering",
+    createdDate: "2025-01-15T15:00:00Z",
+  },
+  {
+    id: "domain-7",
+    name: "Medicine",
+    createdDate: "2025-01-16T16:00:00Z",
+  },
+  {
+    id: "domain-8",
+    name: "Economics",
+    createdDate: "2025-01-17T17:00:00Z",
+  },
+  {
+    id: "domain-9",
+    name: "Psychology",
+    createdDate: "2025-01-18T18:00:00Z",
+  },
+  {
+    id: "domain-10",
+    name: "Literature",
+    createdDate: "2025-01-19T19:00:00Z",
+  },
+];
+
+export const mockDomainsDB = {
+  list(params?: {
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): BusinessAdminDomain[] {
+    let filtered = [..._businessAdminDomains];
+
+    // Filter by search
+    if (params?.search) {
+      const searchLower = params.search.toLowerCase().trim();
+      filtered = filtered.filter(
+        (domain) =>
+          domain.name.toLowerCase().includes(searchLower) ||
+          domain.id.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Filter by date range
+    if (params?.dateFrom) {
+      const fromDate = new Date(params.dateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      filtered = filtered.filter((domain) => {
+        const domainDate = new Date(domain.createdDate);
+        domainDate.setHours(0, 0, 0, 0);
+        return domainDate >= fromDate;
+      });
+    }
+
+    if (params?.dateTo) {
+      const toDate = new Date(params.dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter((domain) => {
+        const domainDate = new Date(domain.createdDate);
+        domainDate.setHours(0, 0, 0, 0);
+        return domainDate <= toDate;
+      });
+    }
+
+    return filtered;
+  },
+  get(id: string): BusinessAdminDomain | undefined {
+    return _businessAdminDomains.find((domain) => domain.id === id);
+  },
+  create(data: { name: string }): BusinessAdminDomain {
+    // Check for duplicate name (case-insensitive)
+    const existingDomain = _businessAdminDomains.find(
+      (domain) => domain.name.toLowerCase().trim() === data.name.toLowerCase().trim()
+    );
+
+    if (existingDomain) {
+      throw new Error("Domain name already in use. Please choose another name.");
+    }
+
+    // Validate name is not empty
+    if (!data.name || !data.name.trim()) {
+      throw new Error("Domain name cannot be empty.");
+    }
+
+    const newDomain: BusinessAdminDomain = {
+      id: `domain-${Date.now()}`,
+      name: data.name.trim(),
+      createdDate: new Date().toISOString(),
+    };
+
+    _businessAdminDomains.unshift(newDomain);
+    return newDomain;
+  },
+  update(id: string, data: { name?: string }): BusinessAdminDomain {
+    const domainIndex = _businessAdminDomains.findIndex((domain) => domain.id === id);
+
+    if (domainIndex === -1) {
+      throw new Error(`Domain with id ${id} not found`);
+    }
+
+    const existingDomain = _businessAdminDomains[domainIndex];
+
+    // Check for duplicate name if name is being updated
+    if (data.name !== undefined) {
+      const trimmedName = data.name.trim();
+      if (trimmedName !== existingDomain.name) {
+        const duplicateDomain = _businessAdminDomains.find(
+          (domain) =>
+            domain.id !== id &&
+            domain.name.toLowerCase().trim() === trimmedName.toLowerCase()
+        );
+
+        if (duplicateDomain) {
+          throw new Error("Domain name already in use. Please choose another name.");
+        }
+      }
+
+      // Validate name is not empty
+      if (!trimmedName) {
+        throw new Error("Domain name cannot be empty.");
+      }
+
+      existingDomain.name = trimmedName;
+    }
+
+    return existingDomain;
+  },
+  delete(id: string): void {
+    const domainIndex = _businessAdminDomains.findIndex((domain) => domain.id === id);
+
+    if (domainIndex === -1) {
+      throw new Error(`Domain with id ${id} not found`);
+    }
+
+    _businessAdminDomains.splice(domainIndex, 1);
+  },
+  reset(): void {
+    _businessAdminDomains.length = 0;
+    _businessAdminDomains.push(
+      {
+        id: "domain-1",
+        name: "Computer Science",
+        createdDate: "2025-01-10T10:00:00Z",
+      },
+      {
+        id: "domain-2",
+        name: "Mathematics",
+        createdDate: "2025-01-11T11:00:00Z",
+      },
+      {
+        id: "domain-3",
+        name: "Physics",
+        createdDate: "2025-01-12T12:00:00Z",
+      },
+      {
+        id: "domain-4",
+        name: "Biology",
+        createdDate: "2025-01-13T13:00:00Z",
+      },
+      {
+        id: "domain-5",
+        name: "Chemistry",
+        createdDate: "2025-01-14T14:00:00Z",
+      },
+      {
+        id: "domain-6",
+        name: "Engineering",
+        createdDate: "2025-01-15T15:00:00Z",
+      },
+      {
+        id: "domain-7",
+        name: "Medicine",
+        createdDate: "2025-01-16T16:00:00Z",
+      },
+      {
+        id: "domain-8",
+        name: "Economics",
+        createdDate: "2025-01-17T17:00:00Z",
+      },
+      {
+        id: "domain-9",
+        name: "Psychology",
+        createdDate: "2025-01-18T18:00:00Z",
+      },
+      {
+        id: "domain-10",
+        name: "Literature",
+        createdDate: "2025-01-19T19:00:00Z",
+      }
+    );
+  },
+};
+
+// ---------------- Business Admin Types Mock ----------------
+const _businessAdminTypes: BusinessAdminType[] = [
+  {
+    id: "type-1",
+    name: "Research Paper",
+    createdAt: "2025-01-10T10:00:00Z",
+    updatedAt: "2025-01-10T10:00:00Z",
+  },
+  {
+    id: "type-2",
+    name: "Article",
+    createdAt: "2025-01-11T11:00:00Z",
+    updatedAt: "2025-01-11T11:00:00Z",
+  },
+  {
+    id: "type-3",
+    name: "Book",
+    createdAt: "2025-01-12T12:00:00Z",
+    updatedAt: "2025-01-12T12:00:00Z",
+  },
+  {
+    id: "type-4",
+    name: "Report",
+    createdAt: "2025-01-13T13:00:00Z",
+    updatedAt: "2025-01-13T13:00:00Z",
+  },
+  {
+    id: "type-5",
+    name: "Thesis",
+    createdAt: "2025-01-14T14:00:00Z",
+    updatedAt: "2025-01-14T14:00:00Z",
+  },
+  {
+    id: "type-6",
+    name: "Tutorial",
+    createdAt: "2025-01-15T15:00:00Z",
+    updatedAt: "2025-01-15T15:00:00Z",
+  },
+  {
+    id: "type-7",
+    name: "Technical Report",
+    createdAt: "2025-01-16T16:00:00Z",
+    updatedAt: "2025-01-16T16:00:00Z",
+  },
+  {
+    id: "type-8",
+    name: "Case Study",
+    createdAt: "2025-01-17T17:00:00Z",
+    updatedAt: "2025-01-17T17:00:00Z",
+  },
+  {
+    id: "type-9",
+    name: "Review",
+    createdAt: "2025-01-18T18:00:00Z",
+    updatedAt: "2025-01-18T18:00:00Z",
+  },
+  {
+    id: "type-10",
+    name: "Conference Paper",
+    createdAt: "2025-01-19T19:00:00Z",
+    updatedAt: "2025-01-19T19:00:00Z",
+  },
+];
+
+export const mockTypesDB = {
+  list(params?: {
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): BusinessAdminType[] {
+    let filtered = [..._businessAdminTypes];
+
+    // Filter by search
+    if (params?.search) {
+      const searchLower = params.search.toLowerCase().trim();
+      filtered = filtered.filter(
+        (type) =>
+          type.name.toLowerCase().includes(searchLower) ||
+          type.id.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Filter by date range
+    if (params?.dateFrom) {
+      const fromDate = new Date(params.dateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      filtered = filtered.filter((type) => {
+        if (!type.createdAt) return false;
+        const typeDate = new Date(type.createdAt);
+        typeDate.setHours(0, 0, 0, 0);
+        return typeDate >= fromDate;
+      });
+    }
+
+    if (params?.dateTo) {
+      const toDate = new Date(params.dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter((type) => {
+        if (!type.createdAt) return false;
+        const typeDate = new Date(type.createdAt);
+        typeDate.setHours(0, 0, 0, 0);
+        return typeDate <= toDate;
+      });
+    }
+
+    return filtered;
+  },
+  get(id: string): BusinessAdminType | undefined {
+    return _businessAdminTypes.find((type) => type.id === id);
+  },
+  create(data: { name: string }): BusinessAdminType {
+    // Check for duplicate name (case-insensitive)
+    const existingType = _businessAdminTypes.find(
+      (type) => type.name.toLowerCase().trim() === data.name.toLowerCase().trim()
+    );
+
+    if (existingType) {
+      throw new Error("Type name already in use. Please choose another name.");
+    }
+
+    // Validate name is not empty
+    if (!data.name || !data.name.trim()) {
+      throw new Error("Type name cannot be empty.");
+    }
+
+    const now = new Date().toISOString();
+    const newType: BusinessAdminType = {
+      id: `type-${Date.now()}`,
+      name: data.name.trim(),
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    _businessAdminTypes.unshift(newType);
+    return newType;
+  },
+  update(id: string, data: { name?: string }): BusinessAdminType {
+    const typeIndex = _businessAdminTypes.findIndex((type) => type.id === id);
+
+    if (typeIndex === -1) {
+      throw new Error(`Type with id ${id} not found`);
+    }
+
+    const existingType = _businessAdminTypes[typeIndex];
+
+    // Check for duplicate name if name is being updated
+    if (data.name !== undefined) {
+      const trimmedName = data.name.trim();
+      if (trimmedName !== existingType.name) {
+        const duplicateType = _businessAdminTypes.find(
+          (type) =>
+            type.id !== id &&
+            type.name.toLowerCase().trim() === trimmedName.toLowerCase()
+        );
+
+        if (duplicateType) {
+          throw new Error("Type name already in use. Please choose another name.");
+        }
+      }
+
+      // Validate name is not empty
+      if (!trimmedName) {
+        throw new Error("Type name cannot be empty.");
+      }
+
+      existingType.name = trimmedName;
+      existingType.updatedAt = new Date().toISOString();
+    }
+
+    return existingType;
+  },
+  reset(): void {
+    _businessAdminTypes.length = 0;
+    _businessAdminTypes.push(
+      {
+        id: "type-1",
+        name: "Research Paper",
+        createdAt: "2025-01-10T10:00:00Z",
+        updatedAt: "2025-01-10T10:00:00Z",
+      },
+      {
+        id: "type-2",
+        name: "Article",
+        createdAt: "2025-01-11T11:00:00Z",
+        updatedAt: "2025-01-11T11:00:00Z",
+      },
+      {
+        id: "type-3",
+        name: "Book",
+        createdAt: "2025-01-12T12:00:00Z",
+        updatedAt: "2025-01-12T12:00:00Z",
+      },
+      {
+        id: "type-4",
+        name: "Report",
+        createdAt: "2025-01-13T13:00:00Z",
+        updatedAt: "2025-01-13T13:00:00Z",
+      },
+      {
+        id: "type-5",
+        name: "Thesis",
+        createdAt: "2025-01-14T14:00:00Z",
+        updatedAt: "2025-01-14T14:00:00Z",
+      },
+      {
+        id: "type-6",
+        name: "Tutorial",
+        createdAt: "2025-01-15T15:00:00Z",
+        updatedAt: "2025-01-15T15:00:00Z",
+      },
+      {
+        id: "type-7",
+        name: "Technical Report",
+        createdAt: "2025-01-16T16:00:00Z",
+        updatedAt: "2025-01-16T16:00:00Z",
+      },
+      {
+        id: "type-8",
+        name: "Case Study",
+        createdAt: "2025-01-17T17:00:00Z",
+        updatedAt: "2025-01-17T17:00:00Z",
+      },
+      {
+        id: "type-9",
+        name: "Review",
+        createdAt: "2025-01-18T18:00:00Z",
+        updatedAt: "2025-01-18T18:00:00Z",
+      },
+      {
+        id: "type-10",
+        name: "Conference Paper",
+        createdAt: "2025-01-19T19:00:00Z",
+        updatedAt: "2025-01-19T19:00:00Z",
+      }
+    );
   },
 };
 

@@ -1,0 +1,13 @@
+package com.capstone.be.repository;
+
+import com.capstone.be.domain.entity.ReviewerProfile;
+import java.util.Optional;
+import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface ReviewerProfileRepository extends JpaRepository<ReviewerProfile, UUID> {
+
+  Optional<ReviewerProfile> findByUserId(UUID userId);
+}

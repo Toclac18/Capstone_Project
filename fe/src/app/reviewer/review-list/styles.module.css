@@ -1,0 +1,690 @@
+/* Page Container */
+.page-container {
+  @apply w-full max-w-7xl mx-auto px-6 py-8;
+}
+
+.page-header {
+  @apply mb-8;
+}
+
+.page-title {
+  @apply text-4xl font-bold text-dark mb-3;
+  letter-spacing: -0.02em;
+}
+:global(html.dark) .page-title {
+  @apply text-white;
+}
+
+.page-description {
+  @apply text-base text-dark-6;
+}
+
+/* Tabs - Beautiful Design */
+.tabs-container {
+  @apply mb-8;
+}
+
+.tabs-list {
+  @apply flex gap-3 bg-white rounded-xl p-1.5 
+         border border-stroke shadow-sm;
+}
+:global(html.dark) .tabs-list {
+  @apply bg-dark-2 border-stroke-dark;
+}
+
+.tab-button {
+  @apply flex items-center gap-2.5 px-6 py-3.5 text-sm font-semibold rounded-lg
+         text-dark-6 transition-all duration-200
+         hover:text-dark hover:bg-gray-2
+         flex-1 justify-center relative;
+}
+:global(html.dark) .tab-button {
+  @apply text-dark-6 hover:text-white hover:bg-dark-3;
+}
+
+.tab-button::before {
+  content: "";
+  @apply absolute inset-0 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 
+         opacity-0 transition-opacity duration-200;
+}
+
+.tab-button:hover::before {
+  @apply opacity-100;
+}
+
+.tab-active {
+  @apply bg-gradient-to-r from-primary to-primary/90 text-white
+         shadow-md transform scale-[1.02];
+}
+
+.tab-active::before {
+  @apply opacity-0;
+}
+
+.tab-icon {
+  @apply w-5 h-5;
+}
+
+.tab-label {
+  @apply whitespace-nowrap font-medium;
+}
+
+.tabs-content {
+  @apply min-h-[500px];
+}
+
+/* Tab Content */
+.tab-content {
+  @apply w-full;
+}
+
+/* Loading, Error, Empty States */
+.loading-container,
+.error-container,
+.empty-container {
+  @apply flex flex-col items-center justify-center py-20 text-center;
+}
+
+.empty-icon {
+  @apply w-20 h-20 text-dark-6 mb-6;
+}
+
+.empty-container p,
+.error-container p,
+.loading-container p {
+  @apply text-lg text-dark-6;
+}
+
+/* Table Styles - Enhanced */
+.table-wrapper {
+  @apply mb-8;
+}
+
+.table-container {
+  @apply rounded-xl border border-stroke shadow-lg overflow-hidden bg-white;
+}
+:global(html.dark) .table-container {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.table {
+  @apply min-w-full divide-y divide-gray-100;
+  table-layout: fixed;
+}
+:global(html.dark) .table {
+  @apply divide-dark-3;
+}
+
+.table-header {
+  @apply bg-gradient-to-r from-gray-50 to-gray-100;
+}
+:global(html.dark) .table-header {
+  @apply from-dark-3 to-dark-2;
+}
+
+.table-header-cell {
+  @apply px-6 py-4 text-left text-xs font-bold text-dark-3 
+         uppercase tracking-wider;
+  letter-spacing: 0.05em;
+}
+:global(html.dark) .table-header-cell {
+  @apply text-dark-6;
+}
+
+.table-body {
+  @apply bg-white divide-y divide-gray-100;
+}
+:global(html.dark) .table-body {
+  @apply bg-dark-2 divide-dark-3;
+}
+
+.table-row {
+  @apply hover:bg-gray-2 transition-colors duration-150;
+}
+:global(html.dark) .table-row {
+  @apply hover:bg-dark-3;
+}
+
+.table-cell {
+  @apply px-6 py-5 text-sm text-dark;
+  vertical-align: top;
+}
+:global(html.dark) .table-cell {
+  @apply text-dark-8;
+}
+
+.table-cell-main {
+  @apply font-semibold text-dark text-base mb-1;
+}
+:global(html.dark) .table-cell-main {
+  @apply text-white;
+}
+
+.document-link {
+  @apply text-primary hover:opacity-80 hover:underline transition-colors duration-200;
+}
+:global(html.dark) .document-link {
+  @apply text-primary hover:opacity-90;
+}
+
+.table-cell-secondary {
+  @apply text-sm text-dark-6 leading-relaxed;
+  line-height: 1.5;
+}
+:global(html.dark) .table-cell-secondary {
+  @apply text-dark-6;
+}
+
+.table-cell-value {
+  @apply text-dark-3 font-medium;
+}
+:global(html.dark) .table-cell-value {
+  @apply text-dark-6;
+}
+
+.text-muted {
+  @apply text-dark-6 italic;
+}
+:global(html.dark) .text-muted {
+  @apply text-dark-6;
+}
+
+/* Tags - Enhanced */
+.tags-list {
+  @apply flex flex-wrap gap-2;
+}
+
+.tag {
+  @apply px-3 py-1 text-xs font-medium bg-blue-50 
+         text-blue-700 rounded-lg border border-blue-200;
+}
+:global(html.dark) .tag {
+  @apply bg-blue-900/30 text-blue-300 border-blue-800;
+}
+
+.tag-more {
+  @apply px-3 py-1 text-xs text-dark-6 font-semibold;
+}
+
+/* Review Action Badge - Enhanced */
+.review-action-badge {
+  @apply flex items-center gap-2 mt-2;
+}
+
+.action-approve {
+  @apply text-green-700 font-semibold text-sm;
+}
+:global(html.dark) .action-approve {
+  @apply text-green-400;
+}
+
+.action-reject {
+  @apply text-red-700 font-semibold text-sm;
+}
+:global(html.dark) .action-reject {
+  @apply text-red-400;
+}
+
+.action-default {
+  @apply text-dark-6 font-semibold text-sm;
+}
+
+.action-icon-approve {
+  @apply w-5 h-5 text-green-600;
+}
+:global(html.dark) .action-icon-approve {
+  @apply text-green-400;
+}
+
+.action-icon-reject {
+  @apply w-5 h-5 text-red-600;
+}
+:global(html.dark) .action-icon-reject {
+  @apply text-red-400;
+}
+
+.verification-time {
+  @apply text-xs text-dark-6 mt-2 font-medium;
+}
+
+/* Action Cell & Buttons */
+.action-cell {
+  @apply flex items-center justify-center gap-2;
+}
+
+.action-button-review {
+  @apply px-4 py-2 text-sm font-semibold rounded-lg 
+         bg-gradient-to-r from-primary to-primary/90 text-white
+         hover:opacity-90 hover:shadow-lg
+         transition-all duration-200 shadow-md
+         inline-flex items-center justify-center;
+}
+
+.action-button-accept {
+  @apply px-4 py-2 text-sm font-semibold rounded-lg 
+         bg-green-50 border border-green-200
+         text-green-600 hover:bg-green-100
+         hover:shadow-lg active:scale-95
+         transition-all duration-200 shadow-sm
+         inline-flex items-center justify-center;
+}
+:global(html.dark) .action-button-accept {
+  @apply bg-green-900/20 border-green-800 text-green-400 hover:bg-green-900/30;
+}
+
+.action-button-reject {
+  @apply px-4 py-2 text-sm font-semibold rounded-lg 
+         bg-red-50 border border-red-200
+         text-red-600 hover:bg-red-100
+         hover:shadow-lg active:scale-95
+         transition-all duration-200 shadow-sm
+         inline-flex items-center justify-center;
+}
+:global(html.dark) .action-button-reject {
+  @apply bg-red-900/20 border-red-800 text-red-400 hover:bg-red-900/30;
+}
+
+.action-button-review:disabled,
+.action-button-accept:disabled,
+.action-button-reject:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Pagination */
+.pagination-container {
+  @apply mt-8 flex justify-center;
+}
+
+/* Filters Container (History Tab) - Enhanced */
+.filters-container {
+  @apply mb-8 p-6 bg-white rounded-xl border border-stroke shadow-lg;
+}
+:global(html.dark) .filters-container {
+  @apply bg-dark-2 border-stroke-dark;
+}
+
+.label {
+  @apply mb-2 block text-sm font-medium text-dark;
+}
+:global(html.dark) .label {
+  @apply text-white;
+}
+
+.input {
+  @apply w-full rounded-lg border border-stroke px-3 py-2 text-sm text-dark placeholder:text-dark-5 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+}
+:global(html.dark) .input {
+  @apply border-stroke-dark bg-dark-3 text-white placeholder:text-dark-6 focus:border-primary;
+}
+
+.select {
+  @apply w-full rounded-lg border border-stroke px-3 py-2 text-sm text-dark focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+}
+:global(html.dark) .select {
+  @apply border-stroke-dark bg-dark-3 text-white focus:border-primary;
+}
+
+.btn {
+  @apply rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-primary {
+  @apply bg-primary text-white hover:bg-primary/90;
+}
+
+.btn-secondary {
+  @apply border border-stroke bg-white text-dark hover:bg-gray-2;
+}
+:global(html.dark) .btn-secondary {
+  @apply border-stroke-dark bg-dark-2 text-white hover:bg-dark-3;
+}
+
+/* Search Container */
+.search-container {
+  @apply relative flex items-center;
+}
+
+.search-icon {
+  @apply absolute left-3 h-5 w-5 text-gray-400 pointer-events-none;
+}
+:global(html.dark) .search-icon {
+  @apply text-gray-600;
+}
+
+.search-input {
+  @apply w-full rounded-lg border border-stroke pl-10 pr-3 py-2 text-sm text-dark placeholder:text-dark-5 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+}
+:global(html.dark) .search-input {
+  @apply border-stroke-dark bg-dark-3 text-white placeholder:text-dark-6 focus:border-primary;
+}
+
+/* Checkbox Group */
+.checkbox-group {
+  @apply flex flex-col gap-2.5;
+}
+
+.checkbox-label {
+  @apply flex items-center gap-2.5 cursor-pointer transition-colors;
+}
+
+.checkbox-input {
+  @apply w-4 h-4 text-primary border border-stroke rounded
+         focus:ring-2 focus:ring-primary/60 cursor-pointer
+         transition-all duration-200;
+}
+:global(html.dark) .checkbox-input {
+  @apply border-stroke-dark;
+}
+
+.checkbox-text {
+  @apply text-sm text-dark-3 cursor-pointer select-none;
+}
+:global(html.dark) .checkbox-text {
+  @apply text-dark-6;
+}
+
+.filter-tag {
+  @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+}
+
+.modal-backdrop {
+  @apply absolute inset-0 bg-black/50 backdrop-blur-sm;
+}
+
+.modal-container-md {
+  @apply relative z-10 w-full max-w-md mx-4;
+}
+
+.modal-container-lg {
+  @apply relative z-10 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto;
+}
+
+.modal-card {
+  @apply bg-white rounded-lg shadow-xl border border-stroke;
+}
+:global(html.dark) .modal-card {
+  @apply bg-dark-2 border-stroke-dark;
+}
+
+.modal-header {
+  @apply flex items-center justify-between p-4 border-b border-stroke;
+}
+:global(html.dark) .modal-header {
+  @apply border-stroke-dark;
+}
+
+.modal-header-left {
+  @apply flex items-center gap-3;
+}
+
+.modal-icon-wrapper {
+  @apply flex items-center justify-center w-10 h-10 rounded-full;
+}
+
+.modal-icon-wrapper-green {
+  @apply bg-green-100;
+}
+:global(html.dark) .modal-icon-wrapper-green {
+  @apply bg-green-900/20;
+}
+
+.modal-icon-wrapper-blue {
+  @apply bg-blue-100;
+}
+:global(html.dark) .modal-icon-wrapper-blue {
+  @apply bg-blue-900/20;
+}
+
+.modal-icon-wrapper-red {
+  @apply bg-red-100;
+}
+:global(html.dark) .modal-icon-wrapper-red {
+  @apply bg-red-900/20;
+}
+
+.modal-title {
+  @apply text-lg font-semibold text-dark;
+}
+:global(html.dark) .modal-title {
+  @apply text-white;
+}
+
+.modal-subtitle {
+  @apply text-sm text-dark-6;
+}
+
+.modal-close-button {
+  @apply text-dark-6 hover:text-dark transition-colors
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+:global(html.dark) .modal-close-button {
+  @apply text-dark-6 hover:text-white;
+}
+
+.modal-content {
+  @apply p-6;
+}
+
+.modal-description {
+  @apply text-dark-6 mb-6;
+}
+:global(html.dark) .modal-description {
+  @apply text-dark-6;
+}
+
+.modal-info-section {
+  @apply space-y-4 mb-6;
+}
+
+.modal-info-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+}
+
+.modal-info-item {
+  @apply flex flex-col gap-1;
+}
+
+.modal-info-label {
+  @apply text-sm font-medium text-dark-3;
+}
+:global(html.dark) .modal-info-label {
+  @apply text-dark-6;
+}
+
+.modal-info-value {
+  @apply text-sm text-dark;
+}
+:global(html.dark) .modal-info-value {
+  @apply text-white;
+}
+
+.modal-footer {
+  @apply flex items-center justify-end gap-3 p-4 border-t border-stroke bg-gray-2;
+}
+:global(html.dark) .modal-footer {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.modal-button-cancel {
+  @apply px-4 py-2 text-sm font-medium text-dark 
+         bg-white border border-stroke 
+         rounded-lg hover:bg-gray-2 transition-colors shadow-sm
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+:global(html.dark) .modal-button-cancel {
+  @apply text-white bg-dark-3 border-stroke-dark hover:bg-dark-4;
+}
+
+.modal-button-accept {
+  @apply px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 
+         rounded-lg transition-colors flex items-center gap-2
+         disabled:opacity-50 disabled:cursor-not-allowed shadow-md;
+}
+
+.modal-button-reject {
+  @apply px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 
+         rounded-lg transition-colors flex items-center gap-2
+         disabled:opacity-50 disabled:cursor-not-allowed shadow-md;
+}
+
+.modal-button-submit {
+  @apply px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 
+         rounded-lg transition-colors flex items-center gap-2 shadow-md
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* Review Form Styles */
+.review-form-section {
+  @apply mb-6;
+}
+
+.review-form-label {
+  @apply block text-sm font-medium text-dark-3 mb-2;
+}
+:global(html.dark) .review-form-label {
+  @apply text-dark-6;
+}
+
+.required-asterisk {
+  @apply text-red-500;
+}
+
+/* File Upload Styles */
+.file-upload-container {
+  @apply relative block w-full rounded-xl border border-dashed border-gray-4 bg-gray-2
+         hover:border-primary transition-colors duration-200;
+}
+:global(html.dark) .file-upload-container {
+  @apply border-dark-3 bg-dark-2 hover:border-primary;
+}
+
+.file-upload-input {
+  @apply hidden;
+}
+
+.file-upload-label {
+  @apply flex cursor-pointer flex-col items-center justify-center p-4 sm:py-7.5;
+}
+
+.file-upload-icon-wrapper {
+  @apply flex size-13.5 items-center justify-center rounded-full border border-stroke bg-white;
+}
+:global(html.dark) .file-upload-icon-wrapper {
+  @apply border-dark-3 bg-gray-dark;
+}
+
+.file-upload-text {
+  @apply mt-2.5 text-body-sm font-medium text-dark;
+}
+:global(html.dark) .file-upload-text {
+  @apply text-white;
+}
+
+.file-upload-text-primary {
+  @apply text-primary;
+}
+
+.file-upload-hint {
+  @apply mt-1 text-body-xs text-dark-6;
+}
+
+/* File Preview Styles */
+.file-preview-container {
+  @apply mb-0;
+}
+
+.file-preview {
+  @apply flex items-center gap-3 p-4 border border-stroke rounded-lg bg-gray-2;
+}
+:global(html.dark) .file-preview {
+  @apply border-dark-3 bg-dark-2;
+}
+
+.file-preview-icon {
+  @apply w-8 h-8 text-primary flex-shrink-0;
+}
+
+.file-preview-info {
+  @apply flex-1 flex flex-col gap-1;
+}
+
+.file-preview-name {
+  @apply text-sm font-medium text-dark truncate;
+}
+:global(html.dark) .file-preview-name {
+  @apply text-white;
+}
+
+.file-preview-size {
+  @apply text-xs text-dark-6;
+}
+
+.file-preview-remove {
+  @apply p-1 text-dark-6 hover:text-red transition-colors
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+:global(html.dark) .file-preview-remove {
+  @apply hover:text-red;
+}
+
+.review-action-section {
+  @apply mb-6;
+}
+
+.review-action-buttons {
+  @apply flex gap-4;
+}
+
+.review-action-button {
+  @apply flex items-center gap-2 px-6 py-3 text-sm font-semibold rounded-lg
+         transition-all duration-200 border-2 bg-white disabled:opacity-50 disabled:cursor-not-allowed;
+}
+:global(html.dark) .review-action-button {
+  @apply bg-dark-2;
+}
+
+.review-action-button-approve {
+  @apply border-green-200 text-green-600
+         hover:bg-green-50 hover:border-green-300;
+}
+:global(html.dark) .review-action-button-approve {
+  @apply bg-green-900/20 border-green-800 text-green-400 hover:bg-green-900/30;
+}
+
+.review-action-button-reject {
+  @apply border-red-200 text-red-600
+         hover:bg-red-50 hover:border-red-300;
+}
+:global(html.dark) .review-action-button-reject {
+  @apply bg-red-900/20 border-red-800 text-red-400 hover:bg-red-900/30;
+}
+
+.review-action-button-active {
+  @apply ring-2 ring-offset-2 ring-offset-white;
+}
+:global(html.dark) .review-action-button-active {
+  @apply ring-offset-dark-2;
+}
+
+.review-action-button-active.review-action-button-approve {
+  @apply bg-green-600 border-green-600 text-white hover:bg-green-600;
+  @apply ring-green-500;
+}
+:global(html.dark) .review-action-button-active.review-action-button-approve {
+  @apply bg-green-600 border-green-600 text-white hover:bg-green-600;
+  @apply ring-green-400;
+}
+
+.review-action-button-active.review-action-button-reject {
+  @apply bg-red-600 border-red-600 text-white hover:bg-red-600;
+  @apply ring-red-500;
+}
+:global(html.dark) .review-action-button-active.review-action-button-reject {
+  @apply bg-red-600 border-red-600 text-white hover:bg-red-600;
+  @apply ring-red-400;
+}

@@ -1,13 +1,64 @@
 package com.capstone.be.service;
 
-import com.capstone.be.domain.enums.UserRole;
-import java.time.OffsetDateTime;
+import java.util.UUID;
 
+/**
+ * Service for sending emails
+ */
 public interface EmailService {
 
-  void sendVerificationEmail(UserRole role, String toEmail, String toName);
+  /**
+   * Send email verification to user
+   *
+   * @param userId User ID
+   * @param email  User email
+   * @param token  Verification token
+   */
+  void sendEmailVerification(UUID userId, String email, String token);
 
-  boolean sendInvitationEmail(String email, String username, String verifyUrl,
-      OffsetDateTime expiresAt);
+  /**
+   * Send welcome email after successful verification
+   *
+   * @param email    User email
+   * @param fullName User full name
+   */
+  void sendWelcomeEmail(String email, String fullName);
+
+  /**
+   * Send rejection email to reviewer with reason
+   *
+   * @param email           Reviewer email
+   * @param fullName        Reviewer full name
+   * @param rejectionReason Reason for rejection
+   */
+  void sendReviewerRejectionEmail(String email, String fullName, String rejectionReason);
+
+  /**
+   * Send rejection email to organization admin with reason
+   *
+   * @param email           Organization admin email
+   * @param fullName        Organization admin full name
+   * @param rejectionReason Reason for rejection
+   */
+  void sendOrganizationRejectionEmail(String email, String fullName, String rejectionReason);
+
+  /**
+   * Send OTP to user's current email for email change verification
+   *
+   * @param userId      User ID
+   * @param currentEmail Current email address
+   * @param newEmail    New email address (for display in email)
+   * @param otp         6-digit OTP code
+   */
+  void sendEmailChangeOtp(UUID userId, String currentEmail, String newEmail, String otp);
+
+  /**
+   * Send OTP to user's email for password reset verification
+   *
+   * @param email    User email address
+   * @param fullName User full name
+   * @param otp      6-digit OTP code
+   */
+  void sendPasswordResetOtp(String email, String fullName, String otp);
+
 }
-

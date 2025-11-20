@@ -1,24 +1,35 @@
 package com.capstone.be.service;
 
-import com.capstone.be.dto.request.auth.RegisterReaderRequest;
-import com.capstone.be.dto.request.orgAdmin.ChangeAccessRequest;
-import com.capstone.be.dto.response.auth.RegisterReaderResponse;
-import com.capstone.be.dto.response.orgAdmin.ReaderResponse;
-import com.capstone.be.dto.response.reader.JoinedOrganizationResponse;
+import com.capstone.be.dto.request.reader.UpdateReaderProfileRequest;
+import com.capstone.be.dto.response.reader.ReaderProfileResponse;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface ReaderService {
 
-  RegisterReaderResponse register(RegisterReaderRequest request);
+  /**
+   * Get reader profile by user ID
+   *
+   * @param userId User ID
+   * @return ReaderProfileResponse
+   */
+  ReaderProfileResponse getProfile(UUID userId);
 
-  void verifyEmail(String token);
+  /**
+   * Update reader profile
+   *
+   * @param userId  User ID
+   * @param request Update profile request
+   * @return Updated ReaderProfileResponse
+   */
+  ReaderProfileResponse updateProfile(UUID userId, UpdateReaderProfileRequest request);
 
-  Page<ReaderResponse> getReaders(Integer page, Integer pageSize, String q, String status);
-
-  ReaderResponse changeAccess(ChangeAccessRequest req);
-
-  Page<JoinedOrganizationResponse> getJoinedOrganizations(UUID readerId, Pageable pageable);
-
+  /**
+   * Upload avatar for reader
+   *
+   * @param userId User ID
+   * @param file   Avatar image file
+   * @return Updated ReaderProfileResponse with new avatar URL
+   */
+  ReaderProfileResponse uploadAvatar(UUID userId, MultipartFile file);
 }

@@ -12,7 +12,6 @@ export * from './vote';
 export * from './coin-transaction';
 export * from './comment';
 export * from './document';
-export * from './document-category';
 export * from './document-report';
 export * from './document-tag';
 export * from './document-type';

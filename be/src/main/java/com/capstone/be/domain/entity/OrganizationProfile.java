@@ -1,0 +1,50 @@
+package com.capstone.be.domain.entity;
+
+import com.capstone.be.domain.entity.common.BaseEntity;
+import com.capstone.be.domain.enums.OrgType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
+@Entity
+public class OrganizationProfile extends BaseEntity {
+
+  @OneToOne
+  @JoinColumn(name = "user_id", nullable = false, unique = true)
+  private User admin; //Admin
+
+  @Column(unique = true, nullable = false)
+  private String name;
+
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
+  private OrgType type;
+
+  @Column(unique = true, nullable = false)
+  private String email;
+
+  @Column(nullable = false)
+  private String hotline;
+
+  private String logo;
+
+  @Column(nullable = false)
+  private String address;
+
+  @Column(nullable = false)
+  private String registrationNumber;
+
+}

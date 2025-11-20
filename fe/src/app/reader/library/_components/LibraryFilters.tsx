@@ -238,7 +238,16 @@ export function LibraryFilters({
                   <button
                     type="button"
                     onClick={() => {
-                      reset({ ...watchedFilters, search: "" });
+                      const updatedFilters: FilterValues = {
+                        search: "",
+                        uploaded: watchedFilters.uploaded || false,
+                        redeemed: watchedFilters.redeemed || false,
+                        dateFrom: watchedFilters.dateFrom || "",
+                        dateTo: watchedFilters.dateTo || "",
+                        type: watchedFilters.type || "",
+                        domain: watchedFilters.domain || "",
+                      };
+                      reset(updatedFilters);
                     }}
                     className={`${styles["filter-tag-remove"]} ${styles["filter-tag-remove-search"]}`}
                   >
@@ -280,7 +289,16 @@ export function LibraryFilters({
                   <button
                     type="button"
                     onClick={() => {
-                      reset({ ...watchedFilters, dateFrom: "" });
+                      const updatedFilters: FilterValues = {
+                        search: watchedFilters.search || "",
+                        uploaded: watchedFilters.uploaded || false,
+                        redeemed: watchedFilters.redeemed || false,
+                        dateFrom: "",
+                        dateTo: watchedFilters.dateTo || "",
+                        type: watchedFilters.type || "",
+                        domain: watchedFilters.domain || "",
+                      };
+                      reset(updatedFilters);
                     }}
                     className={`${styles["filter-tag-remove"]} ${styles["filter-tag-remove-date"]}`}
                   >
@@ -296,7 +314,16 @@ export function LibraryFilters({
                   <button
                     type="button"
                     onClick={() => {
-                      reset({ ...watchedFilters, dateTo: "" });
+                      const updatedFilters: FilterValues = {
+                        search: watchedFilters.search || "",
+                        uploaded: watchedFilters.uploaded || false,
+                        redeemed: watchedFilters.redeemed || false,
+                        dateFrom: watchedFilters.dateFrom || "",
+                        dateTo: "",
+                        type: watchedFilters.type || "",
+                        domain: watchedFilters.domain || "",
+                      };
+                      reset(updatedFilters);
                     }}
                     className={`${styles["filter-tag-remove"]} ${styles["filter-tag-remove-date"]}`}
                   >
@@ -312,7 +339,16 @@ export function LibraryFilters({
                   <button
                     type="button"
                     onClick={() => {
-                      reset({ ...watchedFilters, type: "" });
+                      const updatedFilters: FilterValues = {
+                        search: watchedFilters.search || "",
+                        uploaded: watchedFilters.uploaded || false,
+                        redeemed: watchedFilters.redeemed || false,
+                        dateFrom: watchedFilters.dateFrom || "",
+                        dateTo: watchedFilters.dateTo || "",
+                        type: "",
+                        domain: watchedFilters.domain || "",
+                      };
+                      reset(updatedFilters);
                     }}
                     className={`${styles["filter-tag-remove"]} ${styles["filter-tag-remove-type"]}`}
                   >
@@ -328,7 +364,16 @@ export function LibraryFilters({
                   <button
                     type="button"
                     onClick={() => {
-                      reset({ ...watchedFilters, domain: "" });
+                      const updatedFilters: FilterValues = {
+                        search: watchedFilters.search || "",
+                        uploaded: watchedFilters.uploaded || false,
+                        redeemed: watchedFilters.redeemed || false,
+                        dateFrom: watchedFilters.dateFrom || "",
+                        dateTo: watchedFilters.dateTo || "",
+                        type: watchedFilters.type || "",
+                        domain: "",
+                      };
+                      reset(updatedFilters);
                     }}
                     className={`${styles["filter-tag-remove"]} ${styles["filter-tag-remove-domain"]}`}
                   >

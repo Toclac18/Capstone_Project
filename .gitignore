@@ -12,6 +12,8 @@ be/out/
 be/src/main/generated
 be/bin
 be/.env
+be.zip
+be/be_*.zip
 
 #FE
 fe/node_modules/

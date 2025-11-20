@@ -1,343 +1,193 @@
 package com.capstone.be.service.impl;
 
-import com.capstone.be.domain.entity.Organization;
-import com.capstone.be.domain.enums.OrganizationStatus;
-import com.capstone.be.dto.request.organization.OrganizationQueryRequest;
-import com.capstone.be.dto.request.organization.UpdateOrganizationStatusRequest;
-import com.capstone.be.dto.response.organization.OrganizationDetailResponse;
-import com.capstone.be.dto.response.organization.OrganizationListResponse;
-import com.capstone.be.dto.response.organization.OrganizationResponse;
-import com.capstone.be.mapper.OrganizationMapper;
-import com.capstone.be.repository.OrganizationRepository;
-import com.capstone.be.repository.ReaderRepository;
+import com.capstone.be.domain.entity.OrganizationProfile;
+import com.capstone.be.domain.entity.User;
+import com.capstone.be.dto.request.organization.UpdateOrganizationProfileRequest;
+import com.capstone.be.dto.response.organization.OrganizationProfileResponse;
+import com.capstone.be.exception.ResourceNotFoundException;
+import com.capstone.be.repository.OrganizationProfileRepository;
+import com.capstone.be.repository.UserRepository;
+import com.capstone.be.service.FileStorageService;
 import com.capstone.be.service.OrganizationService;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeParseException;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrganizationServiceImpl implements OrganizationService {
 
-  private final OrganizationRepository organizationRepository;
-  private final OrganizationMapper organizationMapper;
-
-  // ++ Inject thêm ReaderRepository để tìm reader qua email
-  private final ReaderRepository readerRepository;
-
-  // ++ Không tạo repository mới: dùng trực tiếp EntityManager cho bảng trung gian
-  @PersistenceContext
-  private EntityManager em;
+  private final UserRepository userRepository;
+  private final OrganizationProfileRepository organizationProfileRepository;
+  private final FileStorageService fileStorageService;
 
   @Override
   @Transactional(readOnly = true)
-  public OrganizationDetailResponse getDetail(UUID id) {
-    Organization organization = organizationRepository.findById(id)
-        .orElseThrow(() -> new RuntimeException("Organization not found"));
+  public OrganizationProfileResponse getProfile(UUID userId) {
+    log.info("Getting organization profile for user ID: {}", userId);
 
-    OrganizationDetailResponse detail = organizationMapper.toDetailResponse(organization);
-    // Optional computed fields (set null for now or compute via other repositories if needed)
-    detail.setTotalMembers(null);
-    detail.setTotalDocuments(null);
-    return detail;
+    // Get user
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+    // Get organization profile
+    OrganizationProfile organizationProfile = organizationProfileRepository.findByUserId(userId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            "Organization profile not found for user ID: " + userId));
+
+    // Build response
+    return buildProfileResponse(user, organizationProfile);
   }
 
   @Override
-  @Transactional(readOnly = true)
-  public OrganizationListResponse query(OrganizationQueryRequest request) {
-    List<Organization> all = organizationRepository.findAll();
+  @Transactional
+  public OrganizationProfileResponse updateProfile(UUID userId,
+      UpdateOrganizationProfileRequest request) {
+    log.info("Updating organization profile for user ID: {}", userId);
 
-    // Exclude deleted in list
-    List<Organization> filtered = all.stream()
-        .filter(org -> !Boolean.TRUE.equals(org.getDeleted()))
-        .filter(org -> applySearch(org, request.getSearch()))
-        .filter(org -> applyStatus(org, request.getStatus()))
-        .filter(org -> applyDateRange(org, request.getDateFrom(), request.getDateTo()))
-        .collect(Collectors.toList());
+    // Get user
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
-    // Sort
-    Comparator<Organization> comparator = buildComparator(request.getSortBy());
-    if (comparator != null) {
-      if ("desc".equalsIgnoreCase(request.getSortOrder())) {
-        comparator = comparator.reversed();
+    // Get organization profile
+    OrganizationProfile organizationProfile = organizationProfileRepository.findByUserId(userId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            "Organization profile not found for user ID: " + userId));
+
+    // Update user fields (only if provided)
+    if (request.getFullName() != null) {
+      user.setFullName(request.getFullName());
+    }
+
+    // Update organization profile fields (only if provided)
+    if (request.getName() != null) {
+      organizationProfile.setName(request.getName());
+    }
+    if (request.getType() != null) {
+      organizationProfile.setType(request.getType());
+    }
+    if (request.getEmail() != null) {
+      organizationProfile.setEmail(request.getEmail());
+    }
+    if (request.getHotline() != null) {
+      organizationProfile.setHotline(request.getHotline());
+    }
+    if (request.getAddress() != null) {
+      organizationProfile.setAddress(request.getAddress());
+    }
+    if (request.getRegistrationNumber() != null) {
+      organizationProfile.setRegistrationNumber(request.getRegistrationNumber());
+    }
+
+    // Save changes
+    userRepository.save(user);
+    organizationProfileRepository.save(organizationProfile);
+
+    log.info("Successfully updated profile for user ID: {}", userId);
+
+    // Return updated profile
+    return buildProfileResponse(user, organizationProfile);
+  }
+
+  @Override
+  @Transactional
+  public OrganizationProfileResponse uploadAvatar(UUID userId, MultipartFile file) {
+    log.info("Uploading avatar for organization admin user ID: {}", userId);
+
+    // Get user
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+    // Get organization profile
+    OrganizationProfile organizationProfile = organizationProfileRepository.findByUserId(userId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            "Organization profile not found for user ID: " + userId));
+
+    // Delete old avatar if exists
+    if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
+      try {
+        fileStorageService.deleteFile(user.getAvatarUrl());
+        log.info("Deleted old avatar for user ID: {}", userId);
+      } catch (Exception e) {
+        log.warn("Failed to delete old avatar, continuing with upload: {}", e.getMessage());
       }
-      filtered = filtered.stream().sorted(comparator).collect(Collectors.toList());
     }
 
-    // Pagination (page starts from 1)
-    int page = Optional.ofNullable(request.getPage()).orElse(1);
-    int limit = Optional.ofNullable(request.getLimit()).orElse(10);
-    if (page < 1) {
-      page = 1;
-    }
-    if (limit < 1) {
-      limit = 10;
-    }
-    int fromIndex = Math.min((page - 1) * limit, filtered.size());
-    int toIndex = Math.min(fromIndex + limit, filtered.size());
+    // Upload new avatar to S3
+    String avatarUrl = fileStorageService.uploadFile(file, "avatars", null);
+    user.setAvatarUrl(avatarUrl);
 
-    List<OrganizationResponse> items = filtered.subList(fromIndex, toIndex).stream()
-        .map(organizationMapper::toResponse)
-        .collect(Collectors.toList());
+    // Save user
+    userRepository.save(user);
 
-    return OrganizationListResponse.builder()
-        .organizations(items)
-        .total(filtered.size())
-        .page(page)
-        .limit(limit)
+    log.info("Successfully uploaded avatar for user ID: {}", userId);
+
+    // Return updated profile
+    return buildProfileResponse(user, organizationProfile);
+  }
+
+  @Override
+  @Transactional
+  public OrganizationProfileResponse uploadLogo(UUID userId, MultipartFile file) {
+    log.info("Uploading logo for organization user ID: {}", userId);
+
+    // Get user
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+    // Get organization profile
+    OrganizationProfile organizationProfile = organizationProfileRepository.findByUserId(userId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            "Organization profile not found for user ID: " + userId));
+
+    // Delete old logo if exists
+    if (organizationProfile.getLogo() != null && !organizationProfile.getLogo().isEmpty()) {
+      try {
+        fileStorageService.deleteFile(organizationProfile.getLogo());
+        log.info("Deleted old logo for organization user ID: {}", userId);
+      } catch (Exception e) {
+        log.warn("Failed to delete old logo, continuing with upload: {}", e.getMessage());
+      }
+    }
+
+    // Upload new logo to S3
+    String logoUrl = fileStorageService.uploadFile(file, "logos", null);
+    organizationProfile.setLogo(logoUrl);
+
+    // Save organization profile
+    organizationProfileRepository.save(organizationProfile);
+
+    log.info("Successfully uploaded logo for organization user ID: {}", userId);
+
+    // Return updated profile
+    return buildProfileResponse(user, organizationProfile);
+  }
+
+  /**
+   * Helper method to build profile response
+   */
+  private OrganizationProfileResponse buildProfileResponse(User user,
+      OrganizationProfile organizationProfile) {
+    return OrganizationProfileResponse.builder()
+        .userId(user.getId())
+        .email(user.getEmail())
+        .fullName(user.getFullName())
+        .avatarUrl(user.getAvatarUrl())
+        .point(user.getPoint())
+        .status(user.getStatus())
+        .orgName(organizationProfile.getName())
+        .orgType(organizationProfile.getType())
+        .orgEmail(organizationProfile.getEmail())
+        .orgHotline(organizationProfile.getHotline())
+        .orgLogo(organizationProfile.getLogo())
+        .orgAddress(organizationProfile.getAddress())
+        .orgRegistrationNumber(organizationProfile.getRegistrationNumber())
+        .createdAt(organizationProfile.getCreatedAt())
+        .updatedAt(organizationProfile.getUpdatedAt())
         .build();
-  }
-
-  @Override
-  @Transactional
-  public OrganizationDetailResponse updateStatus(UUID id, UpdateOrganizationStatusRequest request) {
-    if (request.getStatus() == null) {
-      throw new RuntimeException("Status is required");
-    }
-
-    Organization organization = organizationRepository.findById(id)
-        .orElseThrow(() -> new RuntimeException("Organization not found"));
-
-    OrganizationStatus status = request.getStatus();
-    organization.setStatus(status);
-
-    // Update active field based on status
-    if (status == OrganizationStatus.ACTIVE) {
-      organization.setActive(true);
-    } else if (status == OrganizationStatus.DEACTIVE || status == OrganizationStatus.DELETED) {
-      organization.setActive(false);
-    }
-    // PENDING_VERIFICATION can have active = true or false depending on business logic
-
-    // updatedAt will be handled by auditing; touch entity to mark update
-    organization.setUpdatedAt(LocalDateTime.now());
-    Organization saved = organizationRepository.save(organization);
-    return organizationMapper.toDetailResponse(saved);
-  }
-
-  @Override
-  @Transactional
-  public void delete(UUID id) {
-    Organization organization = organizationRepository.findById(id)
-        .orElseThrow(() -> new RuntimeException("Organization not found"));
-    organization.setDeleted(true);
-    organization.setUpdatedAt(LocalDateTime.now());
-    organizationRepository.save(organization);
-  }
-
-  // =========================
-  // = addMemberByEmail Impl =
-  // =========================
-  @Override
-  @Transactional
-  public void addMemberByEmail(String orgId, String email) {
-    if (orgId == null || orgId.isBlank()) {
-      throw new IllegalArgumentException("orgId is required");
-    }
-    if (email == null || email.isBlank()) {
-      throw new IllegalArgumentException("email is required");
-    }
-
-    UUID orgUuid;
-    try {
-      orgUuid = UUID.fromString(orgId);
-    } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException("orgId must be a valid UUID");
-    }
-
-    // 1) Kiểm tra Organization tồn tại & chưa deleted
-    Organization org = organizationRepository.findById(orgUuid)
-        .orElseThrow(() -> new RuntimeException("Organization not found"));
-
-    if (Boolean.TRUE.equals(org.getDeleted())) {
-      throw new RuntimeException("Organization is deleted");
-    }
-
-    // 2) Tìm Reader qua email
-    var readerOpt = readerRepository.findByEmail(email);
-    var reader = readerOpt.orElseThrow(() -> new RuntimeException("Reader not found by email"));
-
-    UUID readerId = reader.getId();
-
-    // 3) Idempotent: nếu đã là member ACTIVE thì bỏ qua
-    // Không tạo thêm repository: dùng native SQL qua EntityManager
-    // Bảng trung gian: organization_reader_memberships (đã định nghĩa trong phần entity trước đó)
-    // Các cột tối thiểu: id, organization_id, reader_id, status, joined_at, active, created_at, updated_at
-    String existsSql = """
-        SELECT id 
-        FROM organization_reader_memberships 
-        WHERE organization_id = :orgId 
-          AND reader_id = :readerId 
-        LIMIT 1
-        """;
-
-    @SuppressWarnings("unchecked")
-    List<Object> existing = em.createNativeQuery(existsSql)
-        .setParameter("orgId", orgUuid)
-        .setParameter("readerId", readerId)
-        .getResultList();
-
-    OffsetDateTime now = OffsetDateTime.now();
-
-    if (!existing.isEmpty()) {
-      // Đã có membership: cập nhật về ACTIVE + active=true, cập nhật updated_at
-      String updateSql = """
-          UPDATE organization_reader_memberships
-             SET status = 'ACTIVE',
-                 active = TRUE,
-                 updated_at = NOW(),
-                 joined_at = COALESCE(joined_at, NOW())
-           WHERE organization_id = :orgId
-             AND reader_id = :readerId
-          """;
-      em.createNativeQuery(updateSql)
-          .setParameter("orgId", orgUuid)
-          .setParameter("readerId", readerId)
-          .executeUpdate();
-      return;
-    }
-
-    // 4) Chưa có membership: chèn mới (ACTIVE)
-    UUID membershipId = UUID.randomUUID();
-    String insertSql = """
-        INSERT INTO organization_reader_memberships
-          (id, organization_id, reader_id, status, joined_at, active, created_at, updated_at)
-        VALUES
-          (:id, :orgId, :readerId, 'ACTIVE', NOW(), TRUE, NOW(), NOW())
-        """;
-    em.createNativeQuery(insertSql)
-        .setParameter("id", membershipId)
-        .setParameter("orgId", orgUuid)
-        .setParameter("readerId", readerId)
-        .executeUpdate();
-  }
-
-  // ----------------- helpers -----------------
-  private boolean applySearch(Organization org, String search) {
-    if (search == null || search.isBlank()) {
-      return true;
-    }
-    String q = search.toLowerCase(Locale.ROOT);
-    return contains(org.getName(), q)
-        || contains(org.getEmail(), q)
-        || contains(org.getHotline(), q)
-        || contains(org.getAdminEmail(), q)
-        || contains(org.getAddress(), q)
-        || contains(org.getRegistrationNumber(), q);
-  }
-
-  @Override
-  @Transactional(readOnly = true)
-  public OrganizationListResponse getAll() {
-    List<Organization> all = organizationRepository.findAll();
-
-    // Only get ACTIVE organizations (exclude deleted, deactive, pending, etc.)
-    List<Organization> filtered = all.stream()
-        .filter(org -> !Boolean.TRUE.equals(org.getDeleted()))
-        .filter(org -> org.getStatus() == OrganizationStatus.ACTIVE)
-        .collect(Collectors.toList());
-
-    // Sort by name
-    filtered = filtered.stream()
-        .sorted(Comparator.comparing(o -> nullSafeString(o.getName())))
-        .collect(Collectors.toList());
-
-    List<OrganizationResponse> items = filtered.stream()
-        .map(organizationMapper::toResponse)
-        .collect(Collectors.toList());
-
-    return OrganizationListResponse.builder()
-        .organizations(items)
-        .total(filtered.size())
-        .page(1)
-        .limit(filtered.size())
-        .build();
-  }
-
-  private boolean contains(String field, String q) {
-    return field != null && field.toLowerCase(Locale.ROOT).contains(q);
-  }
-
-  private boolean applyStatus(Organization org, String status) {
-    if (status == null || status.isBlank()) {
-      return true;
-    }
-    try {
-      OrganizationStatus filterStatus = OrganizationStatus.valueOf(status.toUpperCase());
-      return org.getStatus() == filterStatus;
-    } catch (IllegalArgumentException e) {
-      // If status string doesn't match enum, try legacy logic
-      if ("ACTIVE".equalsIgnoreCase(status)) {
-        return org.getStatus() == OrganizationStatus.ACTIVE || Boolean.TRUE.equals(org.getActive());
-      }
-      if ("DEACTIVE".equalsIgnoreCase(status) || "INACTIVE".equalsIgnoreCase(status)) {
-        return org.getStatus() == OrganizationStatus.DEACTIVE || Boolean.FALSE.equals(
-            org.getActive());
-      }
-      return true;
-    }
-  }
-
-  private boolean applyDateRange(Organization org, String dateFrom, String dateTo) {
-    LocalDateTime createdAt = org.getCreatedAt();
-    if (createdAt == null) {
-      return true;
-    }
-    try {
-      if (dateFrom != null && !dateFrom.isBlank()) {
-        LocalDate from = LocalDate.parse(dateFrom);
-        if (createdAt.isBefore(from.atStartOfDay())) {
-          return false;
-        }
-      }
-      if (dateTo != null && !dateTo.isBlank()) {
-        LocalDate to = LocalDate.parse(dateTo);
-        LocalDateTime endOfDay = to.plusDays(1).atStartOfDay().minusNanos(1);
-        return !createdAt.isAfter(endOfDay);
-      }
-      return true;
-    } catch (DateTimeParseException e) {
-      return true;
-    }
-  }
-
-  private Comparator<Organization> buildComparator(String sortBy) {
-    if (sortBy == null || sortBy.isBlank()) {
-      sortBy = "createdAt";
-    }
-    switch (sortBy) {
-      case "name":
-        return Comparator.comparing(o -> nullSafeString(o.getName()));
-      case "email":
-        return Comparator.comparing(o -> nullSafeString(o.getEmail()));
-      case "hotline":
-        return Comparator.comparing(o -> nullSafeString(o.getHotline()));
-      case "status":
-        return Comparator.comparing(o -> o.getStatus() != null ? o.getStatus().name() : "");
-      case "active":
-        return Comparator.comparing(o -> Boolean.TRUE.equals(o.getActive()));
-      case "createdAt":
-      default:
-        return Comparator.comparing(Organization::getCreatedAt,
-            Comparator.nullsLast(Comparator.naturalOrder()));
-    }
-  }
-
-  private String nullSafeString(String v) {
-    return v == null ? "" : v;
   }
 }
-
-

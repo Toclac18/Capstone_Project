@@ -1,10 +1,17 @@
 package com.capstone.be.service.impl;
 
+import com.capstone.be.domain.entity.OrgEnrollment;
 import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.User;
+import com.capstone.be.domain.enums.OrgEnrollStatus;
 import com.capstone.be.dto.request.organization.UpdateOrganizationProfileRequest;
 import com.capstone.be.dto.response.organization.OrganizationProfileResponse;
+import com.capstone.be.dto.response.organization.PublicOrganizationResponse;
+import com.capstone.be.exception.BusinessException;
 import com.capstone.be.exception.ResourceNotFoundException;
+import com.capstone.be.mapper.OrganizationMapper;
+import com.capstone.be.repository.DocumentRepository;
+import com.capstone.be.repository.OrgEnrollmentRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.service.FileStorageService;
@@ -12,6 +19,9 @@ import com.capstone.be.service.OrganizationService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +34,9 @@ public class OrganizationServiceImpl implements OrganizationService {
   private final UserRepository userRepository;
   private final OrganizationProfileRepository organizationProfileRepository;
   private final FileStorageService fileStorageService;
+  private final OrgEnrollmentRepository orgEnrollmentRepository;
+  private final OrganizationMapper organizationMapper;
+  private final DocumentRepository documentRepository;
 
   @Override
   @Transactional(readOnly = true)
@@ -189,5 +202,86 @@ public class OrganizationServiceImpl implements OrganizationService {
         .createdAt(organizationProfile.getCreatedAt())
         .updatedAt(organizationProfile.getUpdatedAt())
         .build();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public PublicOrganizationResponse getPublicOrganizationInfo(UUID readerId, UUID organizationId) {
+    log.info("Getting public organization info for ID: {} by reader: {}", organizationId, readerId);
+
+    User reader = userRepository.findById(readerId)
+        .orElseThrow(() -> ResourceNotFoundException.userById(readerId));
+
+    OrganizationProfile organization = organizationProfileRepository.findById(organizationId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            "Organization", "id", organizationId));
+
+    // Check if reader is a JOINED member of the organization
+    boolean isMember = orgEnrollmentRepository.findByOrganizationAndMember(organization, reader)
+        .map(enrollment -> enrollment.getStatus() == OrgEnrollStatus.JOINED)
+        .orElse(false);
+
+    if (!isMember) {
+      throw new BusinessException(
+          "You must be a member of this organization to view its details",
+          HttpStatus.FORBIDDEN,
+          "NOT_MEMBER"
+      );
+    }
+
+    PublicOrganizationResponse response = organizationMapper.toPublicResponse(organization);
+
+    // Get member count (only JOINED members)
+    long memberCount = orgEnrollmentRepository.countByOrganizationAndStatus(
+        organization, OrgEnrollStatus.JOINED);
+    response.setMemberCount(memberCount);
+
+    // Get document count
+    long documentCount = documentRepository.countByOrganizationId(organization.getId());
+    response.setDocumentCount(documentCount);
+
+    return response;
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<PublicOrganizationResponse> getJoinedOrganizations(
+      UUID readerId,
+      String search,
+      Pageable pageable) {
+    log.info("Getting joined organizations for reader: {}, search: {}", readerId, search);
+
+    User reader = userRepository.findById(readerId)
+        .orElseThrow(() -> ResourceNotFoundException.userById(readerId));
+
+    // Get all JOINED enrollments for the reader
+    Page<OrgEnrollment> enrollments = orgEnrollmentRepository.findByMemberAndStatus(
+        reader, OrgEnrollStatus.JOINED, pageable);
+
+    // Map enrollments to responses
+    return enrollments.map(enrollment -> {
+      OrganizationProfile org = enrollment.getOrganization();
+
+      // Apply search filter
+      if (search != null && !search.trim().isEmpty()) {
+        String lowerSearch = search.toLowerCase();
+        if (!org.getName().toLowerCase().contains(lowerSearch)) {
+          return null; // Will be filtered out later
+        }
+      }
+
+      PublicOrganizationResponse response = organizationMapper.toPublicResponse(org);
+
+      // Get member count (only JOINED members)
+      long memberCount = orgEnrollmentRepository.countByOrganizationAndStatus(
+          org, OrgEnrollStatus.JOINED);
+      response.setMemberCount(memberCount);
+
+      // Get document count
+      long documentCount = documentRepository.countByOrganizationId(org.getId());
+      response.setDocumentCount(documentCount);
+
+      return response;
+    });
   }
 }

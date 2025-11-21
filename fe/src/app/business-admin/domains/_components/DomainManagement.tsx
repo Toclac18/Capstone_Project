@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import type { Domain, DomainQueryParams, DomainResponse } from "../api";
 import { getDomains, createDomain, updateDomain } from "../api";
 import { Pagination } from "@/components/ui/pagination";
 import { AddDomainModal } from "./AddDomainModal";
 import { UpdateDomainModal } from "./UpdateDomainModal";
-import { Plus, Edit2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Edit2, ArrowUpDown, ArrowUp, ArrowDown, List } from "lucide-react";
 import styles from "../styles.module.css";
 
 type FilterValues = {
@@ -17,6 +18,7 @@ type FilterValues = {
 };
 
 export function DomainManagement() {
+  const router = useRouter();
   const [allDomains, setAllDomains] = useState<Domain[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -163,6 +165,11 @@ export function DomainManagement() {
   const handleOpenUpdateModal = (domain: Domain) => {
     setSelectedDomain(domain);
     setIsUpdateModalOpen(true);
+  };
+
+  // Handle view specializations
+  const handleViewSpecializations = (domainId: string) => {
+    router.push(`/business-admin/specializations?domainId=${domainId}`);
   };
 
 
@@ -481,6 +488,14 @@ export function DomainManagement() {
                     </td>
                     <td className={styles["table-cell"] + " " + styles["table-cell-right"]}>
                       <div className={styles["action-cell"]}>
+                        <button
+                          onClick={() => handleViewSpecializations(domain.id)}
+                          className={styles["action-icon-btn"]}
+                          disabled={loading}
+                          title="View Specializations"
+                        >
+                          <List className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={() => handleOpenUpdateModal(domain)}
                           className={styles["action-icon-btn"]}

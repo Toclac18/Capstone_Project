@@ -1,0 +1,636 @@
+/* Upload Document Page Styles – Dark/Light Mode Support */
+
+/* Page Container */
+.page-container {
+  @apply mx-auto w-full max-w-6xl px-4 py-8;
+}
+
+/* Pre-upload Interface */
+.pre-upload-container {
+  @apply flex items-center justify-center min-h-[calc(100vh-200px)] py-12;
+}
+
+.pre-upload-content {
+  @apply w-full max-w-4xl text-center space-y-8;
+  @apply rounded-xl border border-stroke bg-white p-10 shadow-sm;
+}
+:global(html.dark) .pre-upload-content {
+  @apply border-dark-3 bg-dark-2;
+}
+
+.pre-upload-title {
+  @apply text-4xl font-bold text-dark mb-6;
+}
+:global(html.dark) .pre-upload-title {
+  @apply text-white;
+}
+
+.pre-upload-description {
+  @apply text-xl text-dark-5 mb-10;
+}
+:global(html.dark) .pre-upload-description {
+  @apply text-dark-6;
+}
+
+/* Drop Zone */
+.drop-zone {
+  @apply border-2 border-dashed border-stroke rounded-xl p-16 bg-gray-50 transition-colors;
+  @apply hover:border-primary hover:bg-gray-100;
+}
+:global(html.dark) .drop-zone {
+  @apply border-dark-3 bg-dark-3 hover:border-primary hover:bg-dark-4;
+}
+
+.drop-zone-active {
+  @apply border-primary bg-primary/5;
+}
+:global(html.dark) .drop-zone-active {
+  @apply border-primary bg-primary/10;
+}
+
+.drop-zone-content {
+  @apply flex flex-col items-center justify-center space-y-6;
+}
+
+.drop-zone-icon {
+  @apply w-24 h-24 text-dark-5;
+}
+:global(html.dark) .drop-zone-icon {
+  @apply text-dark-6;
+}
+
+.btn-select-documents {
+  @apply bg-primary text-white px-10 py-5 rounded-lg font-semibold text-xl;
+  @apply hover:bg-primary/90 transition-colors shadow-md hover:shadow-lg;
+}
+
+.drop-zone-text {
+  @apply text-base text-dark-5 font-medium;
+}
+:global(html.dark) .drop-zone-text {
+  @apply text-dark-6;
+}
+
+.supported-files {
+  @apply text-base text-dark-5 font-medium;
+}
+:global(html.dark) .supported-files {
+  @apply text-dark-6;
+}
+
+.uploader-agreement {
+  @apply text-sm text-dark-5;
+}
+:global(html.dark) .uploader-agreement {
+  @apply text-dark-6;
+}
+
+.agreement-link {
+  @apply text-primary hover:underline;
+}
+
+.ip-notice {
+  @apply mt-8 p-4 bg-gray-50 rounded-lg text-left;
+}
+:global(html.dark) .ip-notice {
+  @apply bg-dark-3;
+}
+
+.ip-text {
+  @apply text-xs text-dark-5 leading-relaxed;
+}
+:global(html.dark) .ip-text {
+  @apply text-dark-6;
+}
+
+/* Footer Icons */
+.footer-icons {
+  @apply flex justify-center items-center gap-8 mt-12;
+}
+
+.footer-icon {
+  @apply w-12 h-12 flex items-center justify-center;
+}
+
+.footer-icon .icon {
+  @apply w-8 h-8 text-dark-5;
+}
+:global(html.dark) .footer-icon .icon {
+  @apply text-dark-6;
+}
+
+/* Card */
+.card {
+  @apply rounded-xl border border-stroke bg-white p-8 shadow-sm;
+}
+:global(html.dark) .card {
+  @apply border-dark-3 bg-dark-2;
+}
+
+/* Change File Section */
+.change-file-section {
+  @apply mb-6 flex justify-end;
+}
+
+.btn-change-file {
+  @apply inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors;
+  @apply border-stroke text-dark hover:bg-gray-50;
+}
+:global(html.dark) .btn-change-file {
+  @apply border-dark-3 text-white hover:bg-dark-3;
+}
+
+/* Form */
+.form {
+  @apply space-y-6;
+}
+
+/* Two Column Layout */
+.two-column-layout {
+  @apply grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-8 mb-6;
+}
+
+/* Preview Column */
+.preview-column {
+  @apply flex flex-col;
+}
+
+.preview-card {
+  @apply rounded-xl border border-stroke bg-white p-6 shadow-sm relative;
+  @apply min-h-[600px] flex flex-col;
+}
+:global(html.dark) .preview-card {
+  @apply border-dark-3 bg-dark-2;
+}
+
+.preview-label {
+  @apply absolute top-2 left-2 bg-gray-100 text-xs font-medium px-2 py-1 rounded text-dark-5 z-10;
+}
+:global(html.dark) .preview-label {
+  @apply bg-dark-3 text-dark-6;
+}
+
+.preview-content {
+  @apply mt-8 mb-4 flex-1;
+}
+
+.preview-object {
+  @apply w-full h-full min-h-[500px] border-0 rounded-lg;
+}
+
+.preview-fallback {
+  @apply flex flex-col items-center justify-center min-h-[500px] p-8 text-center;
+  @apply bg-gray-50 rounded-lg;
+}
+:global(html.dark) .preview-fallback {
+  @apply bg-dark-3;
+}
+
+.preview-download-link {
+  @apply mt-4 px-6 py-3 bg-primary text-white rounded-lg font-medium;
+  @apply hover:bg-primary/90 transition-colors;
+  @apply no-underline;
+}
+
+.preview-placeholder {
+  @apply flex flex-col items-center justify-center flex-1 mt-8 mb-4 text-center;
+}
+
+.preview-icon {
+  @apply w-16 h-16 text-dark-5 mb-4;
+}
+:global(html.dark) .preview-icon {
+  @apply text-dark-6;
+}
+
+.preview-text {
+  @apply text-base text-dark-5 font-medium mb-4;
+}
+:global(html.dark) .preview-text {
+  @apply text-dark-6;
+}
+
+.preview-file-info {
+  @apply mt-4 space-y-2;
+}
+
+.preview-file-type {
+  @apply text-sm text-dark-5 font-medium;
+}
+:global(html.dark) .preview-file-type {
+  @apply text-dark-6;
+}
+
+.preview-file-size {
+  @apply text-sm text-dark-5;
+}
+:global(html.dark) .preview-file-size {
+  @apply text-dark-6;
+}
+
+.preview-filename {
+  @apply text-sm font-medium text-dark truncate text-center mt-2;
+}
+:global(html.dark) .preview-filename {
+  @apply text-white;
+}
+
+/* Form Column */
+.form-column {
+  @apply space-y-6;
+}
+
+/* Field Group */
+.field-group {
+  @apply space-y-3;
+}
+
+.field-label {
+  @apply block text-sm font-semibold text-dark mb-2;
+}
+:global(html.dark) .field-label {
+  @apply text-white;
+}
+
+.required {
+  @apply text-red font-normal;
+}
+
+.field-help {
+  @apply flex justify-between items-start mt-1.5;
+}
+
+.help-text {
+  @apply text-xs text-dark-5 flex-1;
+}
+:global(html.dark) .help-text {
+  @apply text-dark-6;
+}
+
+.char-counter {
+  @apply text-xs text-dark-5 font-medium ml-2;
+}
+:global(html.dark) .char-counter {
+  @apply text-dark-6;
+}
+
+
+/* Input */
+.input {
+  @apply w-full rounded-lg border border-stroke bg-white px-4 py-3;
+  @apply text-sm text-dark placeholder:text-dark-5 outline-none transition;
+  @apply focus:border-primary focus:ring-2 focus:ring-primary/20;
+}
+:global(html.dark) .input {
+  @apply bg-dark-3 text-white placeholder:text-dark-6 border-dark-3;
+  @apply focus:border-primary focus:ring-primary/20;
+}
+
+.input-error {
+  @apply border-red focus:border-red;
+}
+
+/* Textarea */
+.textarea {
+  @apply w-full rounded-lg border border-stroke bg-white px-4 py-3;
+  @apply text-sm text-dark placeholder:text-dark-5 outline-none transition resize-y;
+  @apply focus:border-primary focus:ring-2 focus:ring-primary/20;
+}
+:global(html.dark) .textarea {
+  @apply bg-dark-3 text-white placeholder:text-dark-6 border-dark-3;
+  @apply focus:border-primary focus:ring-primary/20;
+}
+
+/* Select */
+.select {
+  @apply w-full rounded-lg border border-stroke bg-white px-4 py-3;
+  @apply text-sm text-dark outline-none transition cursor-pointer;
+  @apply focus:border-primary focus:ring-2 focus:ring-primary/20;
+  @apply appearance-none bg-no-repeat bg-right pr-10;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 0.75rem center;
+  background-size: 1.5em 1.5em;
+}
+:global(html.dark) .select {
+  @apply bg-dark-3 text-white border-dark-3;
+  @apply focus:border-primary focus:ring-primary/20;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%9ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+}
+
+/* File Upload */
+.file-upload-wrapper {
+  @apply flex items-center gap-3;
+}
+
+.file-input {
+  @apply hidden;
+}
+
+.btn-upload {
+  @apply inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors;
+  @apply border-stroke text-dark hover:bg-gray-50;
+}
+:global(html.dark) .btn-upload {
+  @apply border-dark-3 text-white hover:bg-dark-3;
+}
+
+/* Full Width Section */
+.full-width-section {
+  @apply space-y-4 pt-6 border-t border-stroke;
+}
+:global(html.dark) .full-width-section {
+  @apply border-dark-3;
+}
+
+/* Checkbox Group */
+.checkbox-group {
+  @apply space-y-3;
+}
+
+.checkbox-item {
+  @apply flex items-center gap-2 cursor-pointer;
+}
+
+.checkbox {
+  @apply w-4 h-4 rounded border-stroke text-primary focus:ring-primary;
+}
+:global(html.dark) .checkbox {
+  @apply border-dark-3;
+}
+
+.checkbox-label {
+  @apply text-sm text-dark;
+}
+:global(html.dark) .checkbox-label {
+  @apply text-white;
+}
+
+.no-specializations {
+  @apply text-sm text-dark-5 italic p-4 text-center;
+}
+:global(html.dark) .no-specializations {
+  @apply text-dark-6;
+}
+
+.info-icon {
+  @apply w-4 h-4 text-dark-5;
+}
+:global(html.dark) .info-icon {
+  @apply text-dark-6;
+}
+
+/* Advanced Settings */
+.advanced-section {
+  @apply space-y-4;
+}
+
+.advanced-toggle {
+  @apply flex items-center gap-2 text-sm font-medium text-dark hover:text-primary transition-colors;
+}
+:global(html.dark) .advanced-toggle {
+  @apply text-white hover:text-primary;
+}
+
+.advanced-content {
+  @apply pt-4;
+}
+
+.advanced-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-6;
+}
+
+.advanced-column {
+  @apply space-y-4;
+}
+
+.advanced-title {
+  @apply text-sm font-semibold text-dark mb-3;
+}
+:global(html.dark) .advanced-title {
+  @apply text-white;
+}
+
+.learn-more-link {
+  @apply text-xs text-primary hover:underline mt-2 inline-block;
+}
+
+/* Error */
+.field-error {
+  @apply mt-1 text-xs text-red-600;
+}
+:global(html.dark) .field-error {
+  @apply text-red-400;
+}
+
+.alert-error {
+  @apply rounded-lg p-3 border bg-red-50 border-red-200;
+}
+:global(html.dark) .alert-error {
+  @apply bg-red-900/10 border-red-800;
+}
+
+.alert-error-content {
+  @apply flex items-center gap-2 text-sm text-red-600;
+}
+:global(html.dark) .alert-error-content {
+  @apply text-red-400;
+}
+
+.alert-icon {
+  @apply w-4 h-4;
+}
+
+/* Checkbox Wrapper */
+.checkbox-wrapper {
+  @apply flex items-center gap-2 cursor-pointer;
+}
+
+.checkbox {
+  @apply w-4 h-4 rounded border-stroke text-primary focus:ring-primary cursor-pointer;
+}
+:global(html.dark) .checkbox {
+  @apply border-dark-3;
+}
+
+.checkbox-label {
+  @apply text-sm text-dark flex-1;
+}
+:global(html.dark) .checkbox-label {
+  @apply text-white;
+}
+
+.info-button {
+  @apply p-1 rounded-full hover:bg-gray-100 transition-colors;
+}
+:global(html.dark) .info-button {
+  @apply hover:bg-dark-3;
+}
+
+.info-icon {
+  @apply w-4 h-4 text-dark-5;
+}
+:global(html.dark) .info-icon {
+  @apply text-dark-6;
+}
+
+/* Advanced Settings */
+.advanced-toggle {
+  @apply w-full flex items-center justify-between px-0 py-2 text-sm font-medium text-dark;
+  @apply hover:text-primary transition-colors cursor-pointer;
+}
+:global(html.dark) .advanced-toggle {
+  @apply text-white hover:text-primary;
+}
+
+.chevron-down {
+  @apply text-xs;
+}
+
+.chevron-up {
+  @apply text-xs transform rotate-180;
+}
+
+.advanced-content {
+  @apply space-y-5 pt-2 border-t border-stroke;
+}
+:global(html.dark) .advanced-content {
+  @apply border-dark-3;
+}
+
+/* Form Actions */
+.form-actions {
+  @apply flex justify-end gap-3 pt-6 border-t border-stroke;
+}
+:global(html.dark) .form-actions {
+  @apply border-dark-3;
+}
+
+.btn-delete {
+  @apply rounded-lg border px-6 py-2.5 font-medium transition-colors;
+  @apply border-stroke text-dark hover:bg-gray-50;
+}
+:global(html.dark) .btn-delete {
+  @apply border-dark-3 text-white hover:bg-dark-3;
+}
+
+.btn-submit {
+  @apply inline-flex items-center gap-2 rounded-lg px-6 py-2.5 font-medium transition-colors;
+  @apply bg-primary text-white hover:bg-primary/90 shadow-md hover:shadow-lg;
+}
+:global(html.dark) .btn-submit {
+  @apply bg-primary hover:bg-primary/90;
+}
+.btn-submit:disabled {
+  @apply bg-primary/50 cursor-not-allowed;
+}
+:global(html.dark) .btn-submit:disabled {
+  @apply bg-primary/50;
+}
+
+.spinner {
+  @apply w-4 h-4 animate-spin;
+}
+
+/* Loading State */
+.loading-container {
+  @apply mt-6 rounded-xl border border-stroke bg-white p-6 shadow-sm;
+}
+:global(html.dark) .loading-container {
+  @apply border-dark-3 bg-dark-2;
+}
+
+.loading-skeleton {
+  @apply h-6 w-48 animate-pulse rounded bg-gray-200;
+}
+:global(html.dark) .loading-skeleton {
+  @apply bg-dark-3;
+}
+
+.loading-skeleton-large {
+  @apply mt-6 h-40 animate-pulse rounded bg-gray-200;
+}
+:global(html.dark) .loading-skeleton-large {
+  @apply bg-dark-3;
+}
+
+/* Error State */
+.error-container {
+  @apply mt-6 rounded-lg border-l-4 border-red bg-red-light-6 p-4 text-red-dark;
+}
+:global(html.dark) .error-container {
+  @apply border-red bg-dark-2 text-red-400;
+}
+
+/* Tags */
+.tags-wrapper {
+  @apply space-y-4;
+}
+
+.tag-search-wrapper {
+  @apply relative;
+}
+
+.tag-search-input {
+  @apply w-full rounded-lg border border-stroke bg-white px-4 py-3;
+  @apply text-sm text-dark placeholder:text-dark-5 outline-none transition;
+  @apply focus:border-primary focus:ring-2 focus:ring-primary/20;
+}
+:global(html.dark) .tag-search-input {
+  @apply bg-dark-3 text-white placeholder:text-dark-6 border-dark-3;
+  @apply focus:border-primary focus:ring-primary/20;
+}
+
+.tag-dropdown {
+  @apply absolute z-10 mt-1 w-full max-h-48 overflow-y-auto rounded-lg border border-stroke bg-white shadow-lg;
+}
+:global(html.dark) .tag-dropdown {
+  @apply border-dark-3 bg-dark-2 shadow-xl;
+}
+
+.tag-dropdown-item {
+  @apply w-full px-4 py-2.5 text-left text-sm text-dark hover:bg-gray-50 transition-colors;
+}
+:global(html.dark) .tag-dropdown-item {
+  @apply text-white hover:bg-dark-3;
+}
+
+.new-tag-wrapper {
+  @apply flex items-center gap-3;
+}
+
+.new-tag-input {
+  @apply flex-1 rounded-lg border border-stroke bg-white px-4 py-3;
+  @apply text-sm text-dark placeholder:text-dark-5 outline-none transition;
+  @apply focus:border-primary focus:ring-2 focus:ring-primary/20;
+}
+:global(html.dark) .new-tag-input {
+  @apply bg-dark-3 text-white placeholder:text-dark-6 border-dark-3;
+  @apply focus:border-primary focus:ring-primary/20;
+}
+
+.btn-add-tag {
+  @apply inline-flex items-center gap-2 rounded-lg border border-stroke bg-white px-4 py-3;
+  @apply text-sm font-medium text-dark transition-colors;
+  @apply hover:bg-gray-50 hover:border-primary;
+}
+:global(html.dark) .btn-add-tag {
+  @apply border-dark-3 bg-dark-3 text-white;
+  @apply hover:bg-dark-4 hover:border-primary;
+}
+
+.selected-tags {
+  @apply flex flex-wrap gap-2 mt-3;
+}
+
+.tag-chip {
+  @apply inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary;
+  @apply transition-colors;
+}
+:global(html.dark) .tag-chip {
+  @apply bg-primary/20 text-primary;
+}
+
+.tag-chip-remove {
+  @apply hover:opacity-70 transition-opacity cursor-pointer;
+  @apply flex items-center justify-center ml-1;
+}

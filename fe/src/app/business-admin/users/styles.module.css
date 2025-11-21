@@ -1,0 +1,346 @@
+/* Business Admin User Management Styles – theo phong cách contact admin */
+
+/* Container */
+.container {
+  @apply mx-auto w-full gap-6;
+}
+
+/* Title */
+.page-title {
+  @apply mb-6 text-3xl font-extrabold text-dark;
+}
+:global(html.dark) .page-title {
+  @apply text-white;
+}
+
+/* Filters Container */
+.filters-container {
+  @apply rounded-xl border p-6 shadow-lg;
+  @apply border-stroke bg-white text-dark;
+}
+:global(html.dark) .filters-container {
+  @apply border-stroke-dark bg-dark-2 text-dark-8;
+}
+
+/* Section headers */
+.section-header {
+  @apply mb-4 pt-4 text-xl font-bold text-dark-3;
+}
+:global(html.dark) .section-header {
+  @apply text-dark-6;
+}
+
+/* Field groups */
+.field-group {
+  @apply grid gap-2;
+}
+
+.label {
+  @apply mb-1 block text-base font-semibold text-dark-4;
+}
+:global(html.dark) .label {
+  @apply text-dark-6;
+}
+
+/* Inputs / Select */
+.input,
+.select {
+  @apply w-full rounded-lg border p-3.5 text-base shadow-sm transition-all duration-200 ease-in-out;
+  @apply border-stroke bg-white text-dark placeholder-gray-6;
+  @apply focus:border-primary focus:ring-2 focus:ring-primary/60;
+}
+:global(html.dark) .input,
+:global(html.dark) .select {
+  @apply border-stroke-dark bg-dark-3 text-dark-8 placeholder-dark-6;
+}
+
+/* Error state */
+.input.error,
+.select.error {
+  @apply border-red focus:border-red focus:ring-red/30;
+}
+:global(html.dark) .input.error,
+:global(html.dark) .select.error {
+  @apply border-red focus:ring-red;
+}
+
+/* Error message */
+.error-message {
+  @apply mt-1 text-sm text-red;
+  @apply h-5 overflow-hidden text-ellipsis whitespace-nowrap leading-5;
+}
+
+/* Buttons */
+.btn {
+  @apply rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-200 ease-in-out;
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+:global(html.dark) .btn {
+  @apply focus:ring-offset-dark-2;
+}
+
+.btn-primary {
+  @apply bg-primary text-white shadow-md hover:brightness-110 focus:ring-primary;
+}
+
+.btn-secondary {
+  @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
+}
+:global(html.dark) .btn-secondary {
+  @apply bg-gray-700 text-gray-300 hover:bg-gray-600;
+}
+
+.btn:disabled {
+  @apply cursor-not-allowed opacity-60;
+}
+
+/* Actions */
+.actions {
+  @apply mt-4 flex gap-2;
+}
+
+/* Table Container */
+.table-container {
+  @apply rounded-xl border shadow-lg overflow-hidden;
+  @apply border-stroke bg-white text-dark;
+}
+:global(html.dark) .table-container {
+  @apply border-stroke-dark bg-dark-2 text-dark-8;
+}
+
+/* Table */
+.table {
+  @apply min-w-full divide-y divide-gray-200;
+}
+:global(html.dark) .table {
+  @apply divide-gray-700;
+}
+
+.table-header {
+  @apply bg-gray-50;
+}
+:global(html.dark) .table-header {
+  @apply bg-gray-800;
+}
+
+.table-header-cell {
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+:global(html.dark) .table-header-cell {
+  @apply text-gray-400;
+}
+
+.table-body {
+  @apply bg-white divide-y divide-gray-200;
+}
+:global(html.dark) .table-body {
+  @apply bg-gray-900 divide-gray-700;
+}
+
+.table-row {
+  @apply hover:bg-gray-50 transition;
+}
+:global(html.dark) .table-row {
+  @apply hover:bg-gray-800;
+}
+
+.table-cell {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-500;
+}
+:global(html.dark) .table-cell {
+  @apply text-gray-400;
+}
+
+.table-cell-main {
+  @apply text-sm font-medium text-gray-900;
+}
+:global(html.dark) .table-cell-main {
+  @apply text-white;
+}
+
+/* Status Badge */
+.status-badge {
+  @apply inline-flex px-2 py-1 text-xs font-semibold rounded-full;
+}
+
+.status-active {
+  @apply bg-green-100 text-green-800;
+}
+:global(html.dark) .status-active {
+  @apply bg-green-900 text-green-200;
+}
+
+.status-pending {
+  @apply bg-yellow-100 text-yellow-800;
+}
+:global(html.dark) .status-pending {
+  @apply bg-yellow-900 text-yellow-200;
+}
+
+.status-inactive {
+  @apply bg-red-100 text-red-800;
+}
+:global(html.dark) .status-inactive {
+  @apply bg-red-900 text-red-200;
+}
+
+.status-deleted {
+  @apply bg-gray-100 text-gray-800;
+}
+:global(html.dark) .status-deleted {
+  @apply bg-gray-700 text-gray-200;
+}
+
+/* Role Badge */
+.role-badge {
+  @apply inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800;
+}
+:global(html.dark) .role-badge {
+  @apply bg-blue-900 text-blue-200;
+}
+
+/* Action Buttons */
+.action-btn {
+  @apply px-3 py-1 text-xs font-medium rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.action-btn-success {
+  @apply bg-green-100 text-green-700 hover:bg-green-200;
+}
+:global(html.dark) .action-btn-success {
+  @apply bg-green-900 text-green-300 hover:bg-green-800;
+}
+
+.action-btn-warning {
+  @apply bg-yellow-100 text-yellow-700 hover:bg-yellow-200;
+}
+:global(html.dark) .action-btn-warning {
+  @apply bg-yellow-900 text-yellow-300 hover:bg-yellow-800;
+}
+
+.action-btn-danger {
+  @apply bg-red-100 text-red-700 hover:bg-red-200;
+}
+:global(html.dark) .action-btn-danger {
+  @apply bg-red-900 text-red-300 hover:bg-red-800;
+}
+
+/* Loading & Empty States */
+.loading-container,
+.empty-container {
+  @apply px-6 py-8 text-center text-gray-500;
+}
+:global(html.dark) .loading-container,
+:global(html.dark) .empty-container {
+  @apply text-gray-400;
+}
+
+/* Alerts */
+.alert {
+  @apply rounded-lg border-l-4 p-4 text-sm font-medium mb-4;
+}
+
+.alert-success {
+  @apply border-green bg-green-light-6 text-green-dark;
+}
+:global(html.dark) .alert-success {
+  @apply border-green bg-dark-2 text-green-light-1;
+}
+
+.alert-error {
+  @apply border-red bg-red-light-6 text-red-dark;
+}
+:global(html.dark) .alert-error {
+  @apply border-red bg-dark-2 text-red;
+}
+
+/* Search input with icon */
+.search-container {
+  @apply relative;
+}
+
+.search-icon {
+  @apply absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400;
+}
+
+.search-input {
+  @apply w-full pl-10 pr-4 py-2.5 rounded-lg border text-base;
+  @apply border-stroke bg-white text-dark placeholder-gray-6;
+  @apply focus:border-primary focus:ring-2 focus:ring-primary/60;
+}
+:global(html.dark) .search-input {
+  @apply border-stroke-dark bg-dark-3 text-dark-8 placeholder-dark-6;
+}
+
+/* Filter Tags */
+.filter-tags {
+  @apply mt-4 pt-4 border-t flex flex-wrap gap-2;
+}
+:global(html.dark) .filter-tags {
+  @apply border-gray-700;
+}
+
+.filter-tag {
+  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium;
+}
+
+/* Advanced Filters Toggle */
+.advanced-toggle {
+  @apply px-4 py-2 text-sm font-medium rounded-lg transition;
+  @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
+}
+:global(html.dark) .advanced-toggle {
+  @apply bg-gray-700 text-gray-300 hover:bg-gray-600;
+}
+
+/* Action Cell */
+.action-cell {
+  @apply flex items-center justify-center gap-3;
+}
+
+.action-icon-btn {
+  @apply h-9 px-2 rounded-lg transition-all duration-200;
+  @apply flex items-center justify-center;
+  @apply border border-gray-300 bg-white;
+  @apply text-gray-600 hover:text-primary hover:border-primary hover:bg-gray-50;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:bg-white;
+  @apply shadow-sm hover:shadow-md;
+}
+:global(html.dark) .action-icon-btn {
+  @apply border-gray-600 bg-gray-800;
+  @apply text-gray-400 hover:text-primary hover:border-primary hover:bg-gray-700;
+  @apply disabled:hover:border-gray-600 disabled:hover:bg-gray-800;
+}
+
+.delete-btn-wrapper {
+  @apply flex items-center;
+}
+
+.delete-btn-wrapper button {
+  @apply h-9 px-2 rounded-lg transition-all duration-200;
+  @apply flex items-center justify-center;
+  @apply border border-red-300 bg-white;
+  @apply text-red-600 hover:text-red-700 hover:border-red-400 hover:bg-red-50;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-red-300 disabled:hover:bg-white;
+  @apply shadow-sm hover:shadow-md;
+}
+:global(html.dark) .delete-btn-wrapper button {
+  @apply border-red-700 bg-gray-800;
+  @apply text-red-400 hover:text-red-300 hover:border-red-600 hover:bg-red-900/20;
+  @apply disabled:hover:border-red-700 disabled:hover:bg-gray-800;
+}
+
+.status-btn-wrapper {
+  @apply flex items-center;
+}
+
+.status-btn-wrapper button {
+  @apply h-9 px-2 rounded-lg transition-all duration-200;
+  @apply flex items-center justify-center;
+  @apply border text-xs font-medium;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply shadow-sm hover:shadow-md;
+  /* StatusConfirmation component already has border styles based on variant */
+}
+
+

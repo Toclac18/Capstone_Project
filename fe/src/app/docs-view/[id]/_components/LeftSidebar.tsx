@@ -1,0 +1,60 @@
+"use client";
+
+import { Document, Page, pdfjs } from "react-pdf";
+import { useDocsView } from "../DocsViewProvider";
+import styles from "../styles.module.css";
+
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+
+export default function LeftSidebar() {
+  const { detail, page, setPage, numPages } = useDocsView();
+
+  if (!detail) {
+    return null;
+  }
+
+  const totalPages = numPages || 1;
+
+  return (
+    <aside className={styles.leftSidebar}>
+      <div className={styles.leftHeaderRow}>
+        <div className={styles.leftHeader}>Pages</div>
+        <div className={styles.pageJump}>
+          <span>{page}</span>
+          <span className={styles.pageJumpTotal}>/ {totalPages}</span>
+        </div>
+      </div>
+
+      <div className={styles.pageThumbList}>
+        <Document
+          file={detail.fileUrl}
+          loading={<div className={styles.loading}>Loading pages…</div>}
+          error={<div className={styles.loading}>Failed to load pages</div>}
+        >
+          {Array.from({ length: totalPages }, (_, idx) => {
+            const pageNumber = idx + 1;
+            const isActive = pageNumber === page;
+
+            return (
+              <div
+                key={pageNumber}
+                className={isActive ? styles.pageThumbActive : styles.pageThumb}
+                onClick={() => setPage(pageNumber)}
+              >
+                <div className={styles.pageThumbPage}>
+                  <Page
+                    pageNumber={pageNumber}
+                    width={160}
+                    renderAnnotationLayer={false}
+                    renderTextLayer={false}
+                  />
+                </div>
+                <div className={styles.pageThumbNumber}>{pageNumber}</div>
+              </div>
+            );
+          })}
+        </Document>
+      </div>
+    </aside>
+  );
+}

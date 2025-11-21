@@ -80,6 +80,32 @@ public class AwsS3FileStorageService implements FileStorageService {
   }
 
   @Override
+  public String uploadFile(byte[] content, String contentType, String folder, String filename) {
+    try {
+      String finalFilename = (filename != null && !filename.isBlank())
+          ? filename
+          : generateUniqueFilename("thumbnail.png"); //for extension
+
+      String key = folder + "/" + finalFilename;
+
+      PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+          .bucket(bucketName)
+          .key(key)
+          .contentType(contentType)
+          .build();
+
+      s3Client.putObject(putObjectRequest, RequestBody.fromBytes(content));
+
+      String fileUrl = String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, key);
+      log.info("Successfully uploaded generated file to S3: {}", fileUrl);
+      return fileUrl;
+    } catch (Exception e) {
+      log.error("Failed to upload generated file to S3", e);
+      throw new FileStorageException("Failed to upload generated file to S3", e);
+    }
+  }
+
+  @Override
   public List<String> uploadFiles(List<MultipartFile> files, String folder) {
     List<String> fileUrls = new ArrayList<>();
 

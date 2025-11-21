@@ -19,6 +19,18 @@ public interface FileStorageService {
   String uploadFile(MultipartFile file, String folder, String filename);
 
   /**
+   * Upload a file to S3 from raw bytes (for generated files like thumbnails)
+   *
+   * @param content     File content as byte array
+   * @param contentType MIME type, e.g. "image/png"
+   * @param folder      Folder/prefix in S3 bucket
+   * @param filename    Custom filename (optional)
+   * @return Public URL of uploaded file
+   */
+  String uploadFile(byte[] content, String contentType, String folder, String filename);
+
+
+  /**
    * Upload multiple files to S3
    *
    * @param files  List of files to upload

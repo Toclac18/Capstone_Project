@@ -30,6 +30,7 @@ public class DocumentUploadResponse {
   private String domainName;
   private UUID organizationId;
   private String organizationName;
+  private String thumbnail; //thumbnail url
   private List<String> tagNames;
   private Instant createdAt;
 }

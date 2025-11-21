@@ -23,6 +23,7 @@ import com.capstone.be.repository.SpecializationRepository;
 import com.capstone.be.repository.TagRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.service.DocumentService;
+import com.capstone.be.service.DocumentThumbnailService;
 import com.capstone.be.service.FileStorageService;
 import com.capstone.be.util.StringUtil;
 import java.util.ArrayList;
@@ -57,6 +58,7 @@ public class DocumentServiceImpl implements DocumentService {
   private final DocumentRepository documentRepository;
   private final DocumentTagLinkRepository documentTagLinkRepository;
   private final FileStorageService fileStorageService;
+  private final DocumentThumbnailService documentThumbnailService;
   private final DocumentMapper documentMapper;
 
   @Value("${app.premium-doc-price:100}")
@@ -86,9 +88,24 @@ public class DocumentServiceImpl implements DocumentService {
     String fileUrl = fileStorageService.uploadFile(file, "documents", null);
     log.info("Uploaded document file to S3: {}", fileUrl);
 
+    // 2) Generate thumbnail từ trang đầu tiên & upload lên S3
+    String thumbnailUrl = documentThumbnailService.generateAndUploadThumbnail(
+        file,
+        "documents/thumbnails"
+    );
+    if (thumbnailUrl != null) {
+      log.info("Generated thumbnail for document: {}", thumbnailUrl);
+    } else {
+      log.warn("Thumbnail generation returned null. Document will be saved without thumbnail.");
+    }
+
     // Create and save document
     Document document = createDocument(request, uploader, docType, specialization, organization,
         fileUrl);
+    if (thumbnailUrl != null) {
+      document.setThumbnail(thumbnailUrl);
+    }
+
     document = documentRepository.save(document);
     log.info("Created document with ID: {}", document.getId());
 

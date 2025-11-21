@@ -39,7 +39,7 @@ dependencies {
 
     // Apache POI — Excel reader
     implementation 'org.apache.poi:poi:5.2.5'        // HSSF/XSSF common
-    implementation 'org.apache.poi:poi-ooxml:5.2.5'
+    implementation 'org.apache.poi:poi-ooxml:5.4.0'
 
     // DB driver
     runtimeOnly 'org.postgresql:postgresql'
@@ -67,7 +67,6 @@ dependencies {
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
-    // === ADDED: MapStruct Dependencies ===
     // 1. MapStruct API (Required for the interface)
     implementation "org.mapstruct:mapstruct:${mapstructVersion}"
 
@@ -77,7 +76,13 @@ dependencies {
 
     // 3. Lombok-MapStruct Binding (Ensures Lombok and MapStruct processors work together)
     annotationProcessor "org.projectlombok:lombok-mapstruct-binding:0.2.0"
-    // === END ADDED DEPENDENCIES ===
+
+    //For PDF->Image
+    implementation 'org.apache.pdfbox:pdfbox:2.0.30'
+
+    // Word (DOCX) -> PDF
+    implementation 'org.apache.poi:poi-ooxml:5.4.0'
+    implementation 'fr.opensagres.xdocreport:org.apache.poi.xwpf.converter.pdf:1.0.6'
 }
 
 //MapStruct Compiler Configuration

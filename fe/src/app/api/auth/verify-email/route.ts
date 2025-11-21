@@ -1,5 +1,6 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
-export async function GET(req: Request) {
+import { withErrorBoundary } from "@/server/withErrorBoundary";
+async function handleGET(req: Request) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");
 
@@ -49,3 +50,8 @@ export async function GET(req: Request) {
     { status: 200 }
   );
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/auth/verify-email/route.ts/GET",
+  });

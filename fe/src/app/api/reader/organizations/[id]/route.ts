@@ -1,8 +1,9 @@
 import { headers } from "next/headers";
 import { mockOrganizationsDB } from "@/mock/db";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function GET(
+async function handleGET(
   _: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
@@ -45,3 +46,8 @@ export async function GET(
     },
   });
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/reader/organizations/[id]/route.ts/GET",
+  });

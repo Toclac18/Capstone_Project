@@ -3,8 +3,9 @@
 import { BE_BASE } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { parseError } from "@/server/response";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function GET(
+async function handleGET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -39,3 +40,8 @@ export async function GET(
     );
   }
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/organizations/[id]/route.ts/GET",
+  });

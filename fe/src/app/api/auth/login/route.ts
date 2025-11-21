@@ -2,8 +2,9 @@
 import { cookies } from "next/headers";
 import { BE_BASE, COOKIE_NAME } from "@/server/config";
 import { parseError } from "@/server/response";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body) {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
@@ -66,3 +67,8 @@ export async function POST(req: Request) {
 
   return Response.json({ success: true, role });
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/auth/login/route.ts/POST",
+  });

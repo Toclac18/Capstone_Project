@@ -3,12 +3,13 @@
 import { BE_BASE } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { parseError } from "@/server/response";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 /**
  * This route proxies document detail by id via dynamic segment /documents/[id].
  * Original behavior: call BE_BASE/api/documents/{id} with Authorization.
  */
-export async function GET(
+async function handleGET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -43,3 +44,8 @@ export async function GET(
     );
   }
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/documents/[id]/route.ts/GET",
+  });

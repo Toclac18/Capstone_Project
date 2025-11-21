@@ -3,8 +3,9 @@
 import { BE_BASE } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { parseError } from "@/server/response";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function GET() {
+async function handleGET() {
   const authHeader = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
@@ -34,3 +35,8 @@ export async function GET() {
     );
   }
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/organizations/all/route.ts/GET",
+  });

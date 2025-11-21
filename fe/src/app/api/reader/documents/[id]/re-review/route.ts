@@ -2,8 +2,9 @@ import { cookies } from "next/headers";
 import { mockDocumentsDB } from "@/mock/db";
 import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function POST(
+async function handlePOST(
   request: Request,
   ctx: { params: Promise<{ id: string }> }
 ) {
@@ -117,3 +118,8 @@ export async function POST(
     );
   }
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/reader/documents/[id]/re-review/route.ts/POST",
+  });

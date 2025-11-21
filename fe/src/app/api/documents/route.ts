@@ -3,13 +3,14 @@
 import { BE_BASE } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { parseError } from "@/server/response";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 /**
  * This route proxies document detail by id using a query param (?id=...).
  * It preserves the original behavior: require id in query, then call
  * BE_BASE/api/documents/{id} with Authorization from cookie.
  */
-export async function GET(req: Request) {
+async function handleGET(req: Request) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 
@@ -46,3 +47,8 @@ export async function GET(req: Request) {
     );
   }
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/documents/route.ts/GET",
+  });

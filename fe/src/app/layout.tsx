@@ -10,6 +10,7 @@ import type { PropsWithChildren } from "react";
 import { Providers } from "./providers";
 
 import { ModalPreviewProvider, ModalPreview } from "@/components/ModalPreview";
+import { AlertDialogProvider } from "@/hooks/useAlertDialog";
 
 export const metadata: Metadata = {
   title: {
@@ -24,14 +25,17 @@ export default function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <ModalPreviewProvider>
-          <Providers>
-            <NextTopLoader color="#5750F1" showSpinner={false} />
-            <ConditionalLayout>{children}</ConditionalLayout>
-          </Providers>
+        <AlertDialogProvider>
+          <ModalPreviewProvider>
+            <Providers>
+              <NextTopLoader color="#5750F1" showSpinner={false} />
 
-          <ModalPreview />
-        </ModalPreviewProvider>
+              <ConditionalLayout>{children}</ConditionalLayout>
+            </Providers>
+
+            <ModalPreview />
+          </ModalPreviewProvider>
+        </AlertDialogProvider>
       </body>
     </html>
   );

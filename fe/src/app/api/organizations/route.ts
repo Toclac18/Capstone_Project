@@ -3,8 +3,9 @@
 import { BE_BASE } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { parseError } from "@/server/response";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function GET(req: Request) {
+async function handleGET(req: Request) {
   const { searchParams } = new URL(req.url);
   const queryString = searchParams.toString();
   const url = queryString
@@ -40,3 +41,8 @@ export async function GET(req: Request) {
     );
   }
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/organizations/route.ts/GET",
+  });

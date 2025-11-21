@@ -3,11 +3,12 @@
 import { BE_BASE } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { parseError } from "@/server/response";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 /**
  * Update user status by id. Proxies to BE_BASE/api/users/{id}/status with PATCH.
  */
-export async function PATCH(
+async function handlePATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -52,3 +53,8 @@ export async function PATCH(
     );
   }
 }
+
+export const PATCH = (...args: Parameters<typeof handlePATCH>) =>
+  withErrorBoundary(() => handlePATCH(...args), {
+    context: "api/users/[id]/status/route.ts/PATCH",
+  });

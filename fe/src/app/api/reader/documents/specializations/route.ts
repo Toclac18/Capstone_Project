@@ -1,8 +1,9 @@
 import { headers } from "next/headers";
 import { mockDocumentsDB } from "@/mock/db";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function GET(request: Request) {
+async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);
   const domainIdsParam = searchParams.get("domainIds");
   const domainIds = domainIdsParam
@@ -48,3 +49,8 @@ export async function GET(request: Request) {
     },
   });
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/reader/documents/specializations/route.ts/GET",
+  });

@@ -1,7 +1,8 @@
 import { headers } from "next/headers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   try {
     if (USE_MOCK) {
       const formData = await request.formData();
@@ -78,3 +79,8 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/reader/documents/upload/route.ts/POST",
+  });

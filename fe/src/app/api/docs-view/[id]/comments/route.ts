@@ -2,8 +2,9 @@
 import { mockAddComment, mockGetDocDetail } from "@/mock/docsDetail";
 import { badRequest, buildForwardHeaders } from "../../_utils";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function GET(
+async function handleGET(
   _req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
@@ -41,7 +42,7 @@ export async function GET(
   });
 }
 
-export async function POST(
+async function handlePOST(
   req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
@@ -91,3 +92,13 @@ export async function POST(
     },
   });
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/docs-view/[id]/comments/route.ts/GET",
+  });
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/docs-view/[id]/comments/route.ts/POST",
+  });

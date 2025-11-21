@@ -1,10 +1,11 @@
 // app/api/profile/change-password/route.ts
 import { headers } from "next/headers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   let body: { currentPassword: string; newPassword: string };
   try {
     body = await req.json();
@@ -55,3 +56,8 @@ export async function POST(req: Request) {
     },
   });
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/profile/change-password/route.ts/POST",
+  });

@@ -1,8 +1,9 @@
 import { headers } from "next/headers";
 import { mockOrganizationsDB } from "@/mock/db";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function GET() {
+async function handleGET() {
   if (USE_MOCK) {
     const { items, total } = mockOrganizationsDB.list();
     return new Response(JSON.stringify({ items, total }), {
@@ -37,3 +38,8 @@ export async function GET() {
     },
   });
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/reader/organizations/route.ts/GET",
+  });

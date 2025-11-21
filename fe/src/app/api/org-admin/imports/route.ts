@@ -6,12 +6,13 @@ import {
 import { headers, cookies } from "next/headers";
 import { NextRequest } from "next/server";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 function beBase() {
   return BE_BASE;
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
   const download = url.searchParams.get("download");
@@ -131,7 +132,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   if (USE_MOCK) {
     const form = await req.formData();
     const file = form.get("file");
@@ -208,3 +209,13 @@ function json(
     headers: { "content-type": "application/json", ...extraHeaders },
   });
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/org-admin/imports/route.ts/GET",
+  });
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/org-admin/imports/route.ts/POST",
+  });

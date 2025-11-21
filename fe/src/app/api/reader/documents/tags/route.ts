@@ -1,8 +1,9 @@
 import { headers } from "next/headers";
 import { mockDocumentsDB } from "@/mock/db";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function GET() {
+async function handleGET() {
   if (USE_MOCK) {
     const tags = mockDocumentsDB.getTags();
     return new Response(JSON.stringify(tags), {
@@ -38,3 +39,8 @@ export async function GET() {
     },
   });
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/reader/documents/tags/route.ts/GET",
+  });

@@ -1,5 +1,6 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
-export async function POST(req: Request) {
+import { withErrorBoundary } from "@/server/withErrorBoundary";
+async function handlePOST(req: Request) {
   const contentType = req.headers.get("content-type") || "";
   
   if (!contentType.includes("multipart/form-data")) {
@@ -127,3 +128,8 @@ export async function POST(req: Request) {
     headers: { "content-type": responseContentType },
   });
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/auth/register/reviewer/route.ts/POST",
+  });

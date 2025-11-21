@@ -8,17 +8,13 @@ import {
 import { headers, cookies } from "next/headers";
 import { NextRequest } from "next/server";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 function beBase() {
   return BE_BASE;
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const url = new URL(req.url);
-  const queryMock = url.searchParams.get("use_mock")?.toLowerCase();
-  const useMockByQuery = queryMock && ["1", "true", "yes"].includes(queryMock);
-  const useMockByEnv = process.env.USE_MOCK === "true";
-  const USE_MOCK = !!(useMockByQuery || useMockByEnv);
-
   const q = (url.searchParams.get("q") || "").trim().toLowerCase();
   const group = (url.searchParams.get("group") || "all") as
     | "continueReading"
@@ -128,3 +124,8 @@ function json(
     headers: { "content-type": "application/json", ...extraHeaders },
   });
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/homepage/route.ts/GET",
+  });

@@ -2,8 +2,9 @@
 import { headers } from "next/headers";
 import { mockNotificationDB } from "@/mock/db";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function GET() {
+async function handleGET() {
   if (USE_MOCK) {
     const notifications = mockNotificationDB.list();
     const unreadCount = mockNotificationDB.getUnreadCount();
@@ -45,3 +46,8 @@ export async function GET() {
     },
   });
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/notifications/route.ts/GET",
+  });

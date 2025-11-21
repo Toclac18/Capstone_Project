@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { headers, cookies } from "next/headers";
 import { mockLibraryDocs } from "@/mock/documents";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 function beBase() {
   return BE_BASE;
@@ -31,7 +32,7 @@ async function forward(path: string) {
   return res;
 }
 
-export async function GET() {
+async function handleGET() {
   if (USE_MOCK) {
     // Organizations, domains, specializations, years
     const organizations = Array.from(
@@ -100,3 +101,8 @@ export async function GET() {
     );
   }
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/search-meta/route.ts/GET",
+  });

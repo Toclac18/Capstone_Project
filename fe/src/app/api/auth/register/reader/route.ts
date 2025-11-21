@@ -1,5 +1,6 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
-export async function POST(req: Request) {
+import { withErrorBoundary } from "@/server/withErrorBoundary";
+async function handlePOST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body) {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
@@ -54,3 +55,8 @@ export async function POST(req: Request) {
     headers: { "content-type": contentType },
   });
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/auth/register/reader/route.ts/POST",
+  });

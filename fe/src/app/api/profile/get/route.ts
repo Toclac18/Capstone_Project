@@ -3,10 +3,11 @@ import { cookies } from "next/headers";
 import { mockProfileDB } from "@/mock/db";
 import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
+async function handleGET(request: Request) {
   const cookieStore = await cookies();
   
   // TẠI SAO PHẢI CONVERT COOKIE → BEARER TOKEN?
@@ -56,3 +57,8 @@ export async function GET(request: Request) {
     },
   });
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/profile/get/route.ts/GET",
+  });

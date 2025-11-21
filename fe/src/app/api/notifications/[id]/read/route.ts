@@ -2,8 +2,9 @@
 import { headers } from "next/headers";
 import { mockNotificationDB } from "@/mock/db";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function POST(
+async function handlePOST(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -44,3 +45,8 @@ export async function POST(
     },
   });
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/notifications/[id]/read/route.ts/POST",
+  });

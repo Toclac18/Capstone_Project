@@ -2,6 +2,7 @@
 import { mockReaders } from "@/mock/readers";
 import { headers, cookies } from "next/headers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 type Reader = {
   id: string;
@@ -53,7 +54,7 @@ function filterSortPaginate(
   return { items, total, page, pageSize };
 }
 
-export async function GET(req: Request) {
+async function handleGET(req: Request) {
   const url = new URL(req.url);
   const { page, pageSize, q, status } = normalizeParams(url);
 
@@ -127,3 +128,8 @@ export async function GET(req: Request) {
     },
   );
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/org-admin/readers/route.ts/GET",
+  });

@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { mockOrganizationAdminDB } from "@/mock/db";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 // Helper function to create forward headers
 async function createForwardHeaders(): Promise<Headers> {
@@ -39,7 +40,7 @@ async function forwardRequest(
   });
 }
 
-export async function GET() {
+async function handleGET() {
   if (USE_MOCK) {
     const orgInfo = mockOrganizationAdminDB.get();
     return new Response(JSON.stringify(orgInfo), {
@@ -61,7 +62,7 @@ export async function GET() {
   );
 }
 
-export async function PUT(request: Request) {
+async function handlePUT(request: Request) {
   if (USE_MOCK) {
     let body: any = {};
     
@@ -137,7 +138,7 @@ export async function PUT(request: Request) {
   );
 }
 
-export async function DELETE() {
+async function handleDELETE() {
   if (USE_MOCK) {
     mockOrganizationAdminDB.delete();
     return new Response(
@@ -161,3 +162,18 @@ export async function DELETE() {
     fh
   );
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/organization-admin/manage-organization/route.ts/GET",
+  });
+
+export const PUT = (...args: Parameters<typeof handlePUT>) =>
+  withErrorBoundary(() => handlePUT(...args), {
+    context: "api/organization-admin/manage-organization/route.ts/PUT",
+  });
+
+export const DELETE = (...args: Parameters<typeof handleDELETE>) =>
+  withErrorBoundary(() => handleDELETE(...args), {
+    context: "api/organization-admin/manage-organization/route.ts/DELETE",
+  });

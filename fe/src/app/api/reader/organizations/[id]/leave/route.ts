@@ -1,8 +1,9 @@
 import { headers } from "next/headers";
 import { mockOrganizationsDB } from "@/mock/db";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function POST(
+async function handlePOST(
   req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
@@ -59,3 +60,8 @@ export async function POST(
     },
   });
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/reader/organizations/[id]/leave/route.ts/POST",
+  });

@@ -2,8 +2,9 @@
 import { mockLibraryDB } from "@/mock/db";
 import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function PUT(
+async function handlePUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -59,7 +60,7 @@ const url = `${BE_BASE}/api/reader/library/${documentId}`;
   });
 }
 
-export async function DELETE(
+async function handleDELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -112,3 +113,13 @@ const url = `${BE_BASE}/api/reader/library/${documentId}`;
     },
   });
 }
+
+export const PUT = (...args: Parameters<typeof handlePUT>) =>
+  withErrorBoundary(() => handlePUT(...args), {
+    context: "api/reader/library/[id]/route.ts/PUT",
+  });
+
+export const DELETE = (...args: Parameters<typeof handleDELETE>) =>
+  withErrorBoundary(() => handleDELETE(...args), {
+    context: "api/reader/library/[id]/route.ts/DELETE",
+  });

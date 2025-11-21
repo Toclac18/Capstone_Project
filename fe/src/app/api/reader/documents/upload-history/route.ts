@@ -2,8 +2,9 @@ import { cookies } from "next/headers";
 import { mockDocumentsDB } from "@/mock/db";
 import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function GET(request: Request) {
+async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") || undefined;
   const dateFrom = searchParams.get("dateFrom") || undefined;
@@ -74,3 +75,8 @@ export async function GET(request: Request) {
     },
   });
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/reader/documents/upload-history/route.ts/GET",
+  });

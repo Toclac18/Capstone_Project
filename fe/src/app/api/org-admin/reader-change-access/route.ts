@@ -2,6 +2,7 @@
 import { headers, cookies } from "next/headers";
 import { mockChangeReaderAccess } from "@/mock/readers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 function badRequest(msg: string, code = 400) {
   return new Response(JSON.stringify({ error: msg }), {
@@ -10,7 +11,7 @@ function badRequest(msg: string, code = 400) {
   });
 }
 
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   // validate body
   let body: { userId?: string; enable?: boolean };
   try {
@@ -68,3 +69,8 @@ export async function POST(req: Request) {
     },
   });
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/org-admin/reader-change-access/route.ts/POST",
+  });

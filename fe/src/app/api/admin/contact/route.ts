@@ -2,6 +2,7 @@
 import { headers } from "next/headers";
 import { mockDB, type ContactAdminPayload } from "@/mock/db";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 function badRequest(msg: string) {
   return new Response(JSON.stringify({ error: msg }), {
@@ -10,7 +11,7 @@ function badRequest(msg: string) {
   });
 }
 
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   let body: ContactAdminPayload;
   try {
     body = await req.json();
@@ -79,3 +80,8 @@ export async function POST(req: Request) {
     },
   });
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/admin/contact/route.ts/POST",
+  });

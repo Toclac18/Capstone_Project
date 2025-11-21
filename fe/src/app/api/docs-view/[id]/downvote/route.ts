@@ -2,8 +2,9 @@
 import { mockDownvoteDoc } from "@/mock/docsDetail";
 import { badRequest, buildForwardHeaders } from "../../_utils";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function POST(
+async function handlePOST(
   _req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
@@ -40,3 +41,8 @@ export async function POST(
     },
   });
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/docs-view/[id]/downvote/route.ts/POST",
+  });

@@ -2,8 +2,9 @@
 import { mockLibraryDB } from "@/mock/db";
 import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-export async function GET(request: Request) {
+async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") || undefined;
   const source = searchParams.get("source") as "UPLOADED" | "REDEEMED" | undefined;
@@ -69,3 +70,8 @@ const queryParams = new URLSearchParams();
     },
   });
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/reader/library/route.ts/GET",
+  });

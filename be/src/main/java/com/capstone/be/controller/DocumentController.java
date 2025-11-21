@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -52,4 +53,25 @@ public class DocumentController {
 
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
+
+  /**
+   * Reader Redeem a Document (buy*)
+   *
+   * @param userPrincipal Authenticated user (redeemer)
+   * @param documentId    document to redeem //   * @return Document upload response
+   */
+  @PostMapping(value = "/{id}/redeem")
+  @PreAuthorize("hasRole('READER')")
+  public ResponseEntity<Void> redeemDocument(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "id") UUID documentId) {
+    UUID userId = userPrincipal.getId();
+    log.info("User {} redeeming document: {}", userId, documentId);
+
+    documentService.redeemDocument(userId, documentId);
+
+    return ResponseEntity.noContent().build();
+  }
+
+
 }

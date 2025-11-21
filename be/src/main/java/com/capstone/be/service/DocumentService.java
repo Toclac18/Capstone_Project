@@ -23,4 +23,8 @@ public interface DocumentService {
       UploadDocumentInfoRequest request,
       MultipartFile file
   );
+
+  void redeemDocument(UUID readerId, UUID documentId);
+
+
 }

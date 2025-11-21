@@ -2,8 +2,10 @@ package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.DocType;
 import com.capstone.be.domain.entity.Document;
+import com.capstone.be.domain.entity.DocumentRedemption;
 import com.capstone.be.domain.entity.DocumentTagLink;
 import com.capstone.be.domain.entity.OrganizationProfile;
+import com.capstone.be.domain.entity.ReaderProfile;
 import com.capstone.be.domain.entity.Specialization;
 import com.capstone.be.domain.entity.Tag;
 import com.capstone.be.domain.entity.User;
@@ -16,9 +18,11 @@ import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.mapper.DocumentMapper;
 import com.capstone.be.repository.DocTypeRepository;
+import com.capstone.be.repository.DocumentRedemptionRepository;
 import com.capstone.be.repository.DocumentRepository;
 import com.capstone.be.repository.DocumentTagLinkRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
+import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.repository.SpecializationRepository;
 import com.capstone.be.repository.TagRepository;
 import com.capstone.be.repository.UserRepository;
@@ -51,12 +55,14 @@ import org.springframework.web.multipart.MultipartFile;
 public class DocumentServiceImpl implements DocumentService {
 
   private final UserRepository userRepository;
+  private final ReaderProfileRepository readerProfileRepository;
   private final OrganizationProfileRepository organizationProfileRepository;
   private final SpecializationRepository specializationRepository;
   private final DocTypeRepository docTypeRepository;
   private final TagRepository tagRepository;
   private final DocumentRepository documentRepository;
   private final DocumentTagLinkRepository documentTagLinkRepository;
+  private final DocumentRedemptionRepository documentRedemptionRepository;
   private final FileStorageService fileStorageService;
   private final DocumentThumbnailService documentThumbnailService;
   private final DocumentMapper documentMapper;
@@ -115,6 +121,43 @@ public class DocumentServiceImpl implements DocumentService {
 
     // Build and return response using mapper
     return documentMapper.toUploadResponse(document, allTags);
+  }
+
+  @Override
+  @Transactional
+  public void redeemDocument(UUID userId, UUID documentId) {
+    ReaderProfile reader = readerProfileRepository.findByUserId(userId).orElseThrow(
+        () -> new ResourceNotFoundException("Reader not found"));
+    Document document = documentRepository.findById(documentId).orElseThrow(
+        () -> new ResourceNotFoundException("Document not found"));
+
+    //Self redeem #later
+    //    if (document.getUploader() == reader)
+
+    if (documentRedemptionRepository.existsByReader_IdAndDocument_Id(reader.getId(),
+        document.getId())) {
+      throw new BusinessException("You already redeemed this Document");
+    }
+
+    if (!document.getIsPremium()) {
+      throw new BusinessException("Cannot redeem non-premium Document");
+    }
+
+    if (reader.getPoint() < document.getPrice()) {
+      throw new BusinessException("Insufficient points");
+    }
+
+    //
+    DocumentRedemption redemption =
+        DocumentRedemption.builder()
+            .reader(reader)
+            .document(document)
+            .build();
+
+    reader.setPoint(reader.getPoint() - document.getPrice());
+    readerProfileRepository.save(reader);
+
+    documentRedemptionRepository.save(redemption);
   }
 
   /**

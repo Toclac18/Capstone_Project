@@ -25,3 +25,4 @@ fe/dist/
 fe/.env
 fe/.env.*
 fe/!.env.local.example
+fe/next-env.d.ts

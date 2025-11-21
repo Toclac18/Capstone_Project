@@ -2,7 +2,7 @@ import { BaseEntity } from './base';
 import { Reader } from './reader';
 import { Organization } from './organization';
 import { DocumentType } from './document-type';
-import { DocumentCategory } from './document-category';
+import { Domain } from './document-domain';
 
 export interface Document extends BaseEntity {
   id: number;
@@ -11,7 +11,7 @@ export interface Document extends BaseEntity {
   uploader: Reader;
   organization: Organization;
   type: DocumentType;
-  categories: DocumentCategory[];
+  domains: Domain[];
   isPublic?: boolean;
   isPremium?: boolean;
   price?: number;

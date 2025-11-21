@@ -17,6 +17,7 @@ export type DocDetail = {
   uploader: string;
   specialization: string;
   isPremium: boolean;
+  isRedeemed?: boolean;
   points?: number | null;
   viewCount: number;
   downloadCount: number;

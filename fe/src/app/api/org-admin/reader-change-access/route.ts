@@ -1,15 +1,9 @@
 // src/app/api/org-admin/reader-change-access/route.ts
-import { headers, cookies } from "next/headers";
 import { mockChangeReaderAccess } from "@/mock/readers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
-
-function badRequest(msg: string, code = 400) {
-  return new Response(JSON.stringify({ error: msg }), {
-    status: code,
-    headers: { "content-type": "application/json" },
-  });
-}
+import { badRequest } from "@/server/response";
+import { getAuthHeader } from "@/server/auth";
 
 async function handlePOST(req: Request) {
   // validate body
@@ -35,18 +29,13 @@ async function handlePOST(req: Request) {
     });
   }
 
-  // REAL: build Authorization header (prefer header, fallback cookie)
-  const h = await headers();
-  const cookieStore = cookies();
+  const authHeader = await getAuthHeader("org-admin-imports-upload");
 
-  const headerAuth = h.get("authorization") || "";
-  const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
-  const effectiveAuth = headerAuth || cookieAuth; // <-- quan trọng
+  const fh = new Headers();
+  if (authHeader) fh.set("Authorization", authHeader);
 
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const ip = fh.get("x-forwarded-for")?.split(",")[0]?.trim();
 
-  const fh = new Headers({ "Content-Type": "application/json" });
-  if (effectiveAuth) fh.set("Authorization", effectiveAuth); // JwtFilter đọc từ header
   if (ip) fh.set("X-Forwarded-For", ip);
 
   const upstream = await fetch(

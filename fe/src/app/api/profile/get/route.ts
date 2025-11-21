@@ -2,21 +2,13 @@
 import { cookies } from "next/headers";
 import { mockProfileDB } from "@/mock/db";
 import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
-import { getAuthHeader } from "@/server/auth";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 export const dynamic = "force-dynamic";
 
 async function handleGET(request: Request) {
   const cookieStore = await cookies();
-  
-  // TẠI SAO PHẢI CONVERT COOKIE → BEARER TOKEN?
-  // 1. Client gửi cookie (httpOnly) đến Next.js API route ✅
-  // 2. Backend CHỈ nhận Authorization header, KHÔNG đọc cookie ❌
-  //    (Xem: JwtAuthenticationFilter.java line 55 - chỉ check Authorization header)
-  // 3. Server-to-server call (Next.js → Backend) không tự động forward cookie
-  // 4. → Route handler phải đọc cookie và convert thành Authorization header
-  
+
   const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
   const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
 

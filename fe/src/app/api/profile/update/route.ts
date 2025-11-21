@@ -1,9 +1,8 @@
 // app/api/profile/update/route.ts
-import { cookies } from "next/headers";
 import { mockProfileDB, type ProfileData } from "@/mock/db";
-import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
-import { getAuthHeader } from "@/server/auth";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -30,13 +29,7 @@ async function handlePUT(req: Request) {
     });
   }
 
-  const cookieStore = await cookies();
-  
-  // TẠI SAO PHẢI CONVERT COOKIE → BEARER TOKEN?
-  // Backend CHỈ nhận Authorization header, KHÔNG đọc cookie
-  // (Xem: JwtAuthenticationFilter.java - chỉ check Authorization header)
-  const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
+  const bearerToken = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (bearerToken) {

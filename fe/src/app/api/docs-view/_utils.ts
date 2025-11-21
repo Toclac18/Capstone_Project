@@ -10,10 +10,6 @@ export function json(data: any, status = 200) {
   });
 }
 
-export function badRequest(msg: string, code = 400) {
-  return json({ error: msg }, code);
-}
-
 /** build header forward sang BE (Authorization + X-Forwarded-For) */
 export async function buildForwardHeaders(label?: string) {
   const h = await headers();

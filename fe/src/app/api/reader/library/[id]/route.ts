@@ -1,12 +1,11 @@
-
 import { mockLibraryDB } from "@/mock/db";
-import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handlePUT(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: documentId } = await params;
   const body = await request.json();
@@ -40,7 +39,7 @@ async function handlePUT(
   if (authHeader) {
     fh.set("Authorization", authHeader);
   }
-const url = `${BE_BASE}/api/reader/library/${documentId}`;
+  const url = `${BE_BASE}/api/reader/library/${documentId}`;
 
   const upstream = await fetch(url, {
     method: "PUT",
@@ -62,7 +61,7 @@ const url = `${BE_BASE}/api/reader/library/${documentId}`;
 
 async function handleDELETE(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: documentId } = await params;
 
@@ -95,7 +94,7 @@ async function handleDELETE(
   if (authHeader) {
     fh.set("Authorization", authHeader);
   }
-const url = `${BE_BASE}/api/reader/library/${documentId}`;
+  const url = `${BE_BASE}/api/reader/library/${documentId}`;
 
   const upstream = await fetch(url, {
     method: "DELETE",

@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import { mockDocumentsDB } from "@/mock/db";
 import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
-import { getAuthHeader } from "@/server/auth";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handleGET(request: Request) {
@@ -12,8 +11,12 @@ async function handleGET(request: Request) {
   const type = searchParams.get("type") || undefined;
   const domain = searchParams.get("domain") || undefined;
   const status = searchParams.get("status") || undefined;
-  const page = searchParams.get("page") ? parseInt(searchParams.get("page")!) : 1;
-  const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 10;
+  const page = searchParams.get("page")
+    ? parseInt(searchParams.get("page")!)
+    : 1;
+  const limit = searchParams.get("limit")
+    ? parseInt(searchParams.get("limit")!)
+    : 10;
 
   if (USE_MOCK) {
     const result = mockDocumentsDB.getUploadHistory({

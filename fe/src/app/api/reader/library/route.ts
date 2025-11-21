@@ -1,19 +1,25 @@
-
 import { mockLibraryDB } from "@/mock/db";
-import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") || undefined;
-  const source = searchParams.get("source") as "UPLOADED" | "REDEEMED" | undefined;
+  const source = searchParams.get("source") as
+    | "UPLOADED"
+    | "REDEEMED"
+    | undefined;
   const type = searchParams.get("type") || undefined;
   const domain = searchParams.get("domain") || undefined;
   const dateFrom = searchParams.get("dateFrom") || undefined;
   const dateTo = searchParams.get("dateTo") || undefined;
-  const page = searchParams.get("page") ? parseInt(searchParams.get("page")!) : 1;
-  const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 12;
+  const page = searchParams.get("page")
+    ? parseInt(searchParams.get("page")!)
+    : 1;
+  const limit = searchParams.get("limit")
+    ? parseInt(searchParams.get("limit")!)
+    : 12;
 
   if (USE_MOCK) {
     const result = mockLibraryDB.getLibrary({
@@ -41,7 +47,7 @@ async function handleGET(request: Request) {
   if (authHeader) {
     fh.set("Authorization", authHeader);
   }
-const queryParams = new URLSearchParams();
+  const queryParams = new URLSearchParams();
   if (search) queryParams.append("search", search);
   if (source) queryParams.append("source", source);
   if (type) queryParams.append("type", type);

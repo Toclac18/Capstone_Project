@@ -1,8 +1,9 @@
 // src/app/api/docs-view/[id]/comments/route.ts
 import { mockAddComment, mockGetDocDetail } from "@/mock/docsDetail";
-import { badRequest, buildForwardHeaders } from "../../_utils";
+import { buildForwardHeaders } from "../../_utils";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { badRequest } from "@/server/response";
 
 async function handleGET(
   _req: Request,

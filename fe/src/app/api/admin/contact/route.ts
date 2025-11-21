@@ -3,13 +3,7 @@ import { headers } from "next/headers";
 import { mockDB, type ContactAdminPayload } from "@/mock/db";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
-
-function badRequest(msg: string) {
-  return new Response(JSON.stringify({ error: msg }), {
-    status: 400,
-    headers: { "content-type": "application/json" },
-  });
-}
+import { badRequest } from "@/server/response";
 
 async function handlePOST(req: Request) {
   let body: ContactAdminPayload;

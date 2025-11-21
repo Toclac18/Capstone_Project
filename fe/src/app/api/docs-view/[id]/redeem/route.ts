@@ -1,8 +1,9 @@
 // src/app/api/docs-view/[id]/redeem/route.ts
 import { mockRedeemDoc } from "@/mock/docsDetail";
-import { badRequest, buildForwardHeaders } from "../../_utils";
+import { buildForwardHeaders } from "../../_utils";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { badRequest } from "@/server/response";
 
 async function handlePOST(
   _req: Request,

@@ -54,18 +54,12 @@ public class UserAndProfileSeeder {
   // Password for all user
   private static final String DEFAULT_PASSWORD = "aa123123";
 
-  // Starting seed values for UUID generation
-  private static final int SEED_SYSTEM_ADMIN_START = 1000000;
-  private static final int SEED_BUSINESS_ADMIN_START = 2000000;
-  private static final int SEED_READER_START = 3000000;
-  private static final int SEED_REVIEWER_START = 4000000;
-  private static final int SEED_ORGANIZATION_START = 5000000;
-
   @Transactional
   @EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
   public void run() {
     if (userRepository.count() > 0) {
       log.warn("Users already exist → skip seeding.");
+      eventPublisher.publishEvent(UserSeededEvent.class);
       return;
     }
 
@@ -100,21 +94,21 @@ public class UserAndProfileSeeder {
   }
 
   private void seedSystemAdmins() {
-    createUser(SEED_SYSTEM_ADMIN_START, "admin@capstone.com", "Admin Hệ Thống",
+    createUser(0, "admin@capstone.com", "Admin Hệ Thống",
         UserRole.SYSTEM_ADMIN, UserStatus.ACTIVE, null);
     log.info("Seeded 1 System Admin");
   }
 
   private void seedBusinessAdmins() {
-    createUser(SEED_BUSINESS_ADMIN_START, "business1@capstone.com", "Nguyễn Văn An",
+    createUser(1, "business1@capstone.com", "Nguyễn Văn An",
         UserRole.BUSINESS_ADMIN, UserStatus.ACTIVE, null);
-    createUser(SEED_BUSINESS_ADMIN_START + 1, "business2@capstone.com", "Trần Thị Bình",
+    createUser(2, "business2@capstone.com", "Trần Thị Bình",
         UserRole.BUSINESS_ADMIN, UserStatus.ACTIVE, null);
     log.info("Seeded 2 Business Admins");
   }
 
   private void seedReaders() {
-    int seed = SEED_READER_START;
+    int seed = 0;
 
     // Active readers
     createReaderUser(seed++, "reader1@gmail.com", "Phạm Minh Cường", UserStatus.ACTIVE,
@@ -137,7 +131,7 @@ public class UserAndProfileSeeder {
   }
 
   private void seedReviewers(List<Domain> allDomains, List<Specialization> allSpecs) {
-    int seed = SEED_REVIEWER_START;
+    int seed = 0;
 
     // Get specific domains
     Domain itDomain = allDomains.stream()
@@ -234,7 +228,7 @@ public class UserAndProfileSeeder {
   }
 
   private void seedOrganizations() {
-    int seed = SEED_ORGANIZATION_START;
+    int seed = 0;
 
     // Active organizations
     createOrganizationUser(
@@ -292,7 +286,7 @@ public class UserAndProfileSeeder {
   private void createUser(int seed, String email, String fullName, UserRole role,
       UserStatus status, LocalDate dob) {
     User user = User.builder()
-        .id(SeedUtil.generateUUID(seed))
+        .id(SeedUtil.generateUUID("user" + seed))
         .email(email)
         .passwordHash(passwordEncoder.encode(DEFAULT_PASSWORD))
         .fullName(fullName)
@@ -307,7 +301,7 @@ public class UserAndProfileSeeder {
   private void createReaderUser(int seed, String email, String fullName, UserStatus status,
       LocalDate dob) {
     User user = User.builder()
-        .id(SeedUtil.generateUUID(seed))
+        .id(SeedUtil.generateUUID("user-reader-" + seed))
         .email(email)
         .passwordHash(passwordEncoder.encode(DEFAULT_PASSWORD))
         .fullName(fullName)
@@ -319,7 +313,7 @@ public class UserAndProfileSeeder {
     user = userRepository.save(user);
 
     ReaderProfile profile = ReaderProfile.builder()
-        .id(SeedUtil.generateUUID(seed + 100000)) // Offset for profile IDs
+        .id(SeedUtil.generateUUID("reader-profile-" + seed)) // Offset for profile IDs
         .user(user)
         .dob(dob)
         .build();
@@ -332,7 +326,7 @@ public class UserAndProfileSeeder {
       List<String> credentialUrls, List<Domain> domains, List<Specialization> specializations) {
 
     User user = User.builder()
-        .id(SeedUtil.generateUUID(seed))
+        .id(SeedUtil.generateUUID("user-reviewer-" + seed))
         .email(email)
         .passwordHash(passwordEncoder.encode(DEFAULT_PASSWORD))
         .fullName(fullName)
@@ -344,7 +338,7 @@ public class UserAndProfileSeeder {
     user = userRepository.save(user);
 
     ReviewerProfile profile = ReviewerProfile.builder()
-        .id(SeedUtil.generateUUID(seed + 100000)) // Offset for profile IDs
+        .id(SeedUtil.generateUUID("reviewer-profile-" + seed)) // Offset for profile IDs
         .user(user)
         .dateOfBirth(dob)
         .ordid(orcid)
@@ -357,21 +351,18 @@ public class UserAndProfileSeeder {
     profile = reviewerProfileRepository.save(profile);
 
     // Create domain links
-    int linkSeed = seed + 200000; // Offset for link IDs
     for (Domain domain : domains) {
       ReviewerDomainLink link = ReviewerDomainLink.builder()
-          .id(SeedUtil.generateUUID(linkSeed++))
+          .id(SeedUtil.generateUUID("ReviewerDomainLink-" + seed))
           .reviewer(profile)
           .domain(domain)
           .build();
       reviewerDomainLinkRepository.save(link);
     }
 
-    // Create specialization links
-    linkSeed = seed + 300000; // Offset for spec link IDs
     for (Specialization spec : specializations) {
       ReviewerSpecLink link = ReviewerSpecLink.builder()
-          .id(SeedUtil.generateUUID(linkSeed++))
+          .id(SeedUtil.generateUUID("spec-link-reviewer-" + seed))
           .reviewer(profile)
           .specialization(spec)
           .build();
@@ -384,7 +375,7 @@ public class UserAndProfileSeeder {
       String address, String registrationNumber, String logoUrl) {
 
     User admin = User.builder()
-        .id(SeedUtil.generateUUID(seed))
+        .id(SeedUtil.generateUUID("user-org" + seed))
         .email(adminEmail)
         .passwordHash(passwordEncoder.encode(DEFAULT_PASSWORD))
         .fullName(adminFullName)
@@ -396,7 +387,7 @@ public class UserAndProfileSeeder {
     admin = userRepository.save(admin);
 
     OrganizationProfile organizationProfile = OrganizationProfile.builder()
-        .id(SeedUtil.generateUUID(seed + 100000)) // Offset for profile IDs
+        .id(SeedUtil.generateUUID("org-profile" + seed))
         .admin(admin)
         .name(orgName)
         .type(orgType)

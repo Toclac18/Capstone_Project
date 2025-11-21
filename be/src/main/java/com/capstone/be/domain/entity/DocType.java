@@ -1,38 +1,33 @@
 package com.capstone.be.domain.entity;
 
 import com.capstone.be.domain.entity.common.BaseEntity;
-import com.capstone.be.domain.enums.TagStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+/**
+ * Entity for document types
+ */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
 @Entity
-public class Tag extends BaseEntity {
-
-  @Column(
-      nullable = false,
-      unique = true,
-      updatable = false,
-      insertable = false,
-      columnDefinition = "bigint generated always as identity"
-  )
-  private Long code;
+@Table(name = "doc_types")
+public class DocType extends BaseEntity {
 
   @Column(nullable = false, unique = true)
+  private int code;
+
+  @Column(nullable = false, unique = true, length = 100)
   private String name;
 
-  @Column(nullable = false)
-  @Enumerated(EnumType.STRING)
-  private TagStatus status;
+  @Column(length = 500)
+  private String description;
 }

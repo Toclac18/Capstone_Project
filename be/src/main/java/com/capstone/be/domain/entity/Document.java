@@ -2,7 +2,7 @@ package com.capstone.be.domain.entity;
 
 import com.capstone.be.domain.entity.common.BaseEntity;
 import com.capstone.be.domain.enums.DocStatus;
-import com.capstone.be.domain.enums.DocType;
+import com.capstone.be.domain.enums.DocVisibility;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -32,21 +32,25 @@ public class Document extends BaseEntity {
   private String description;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "uploader_id") //user_id
+  @JoinColumn(name = "uploader_id")
   private User uploader;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "organization_id")
-  private OrganizationProfile organization;  //optional
+  private OrganizationProfile organization;  // Optional - null means system-wide document
 
-  private Boolean isPublic;
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
+  @Builder.Default
+  private DocVisibility visibility = DocVisibility.PUBLIC;
 
-  @Column(name = "type_id")
-  private DocType type;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "doc_type_id")
+  private DocType docType;
 
   private Boolean isPremium;
 
-  private Integer price;
+  private Integer price;  // System will set fixed price for premium docs
 
   private String thumbnail;
 
@@ -72,6 +76,4 @@ public class Document extends BaseEntity {
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "specialization_id")
   private Specialization specialization;
-
-
 }

@@ -84,7 +84,7 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
     return handleInviteMembers(
         organizationAdminId,
         emails,
-        "MANUAL",
+        "EXCEL",
         file,
         file.getOriginalFilename());
 

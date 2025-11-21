@@ -1,85 +1,77 @@
 package com.capstone.be.security.config;
 
 import com.capstone.be.security.jwt.JwtAuthenticationFilter;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
-@RequiredArgsConstructor
+@EnableWebSecurity
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-  private static final String[] PUBLIC_ENDPOINTS = {
-      "/api/auth/login",
-      "/api/auth/register-reader",
-      "/api/auth/register-reviewer",
-      "/api/auth/register-organization",
-      "/api/contact-admin",
-      "/api/org-admin/imports/*/events",
-      "/swagger-ui.html", //Swagger / Open API #temp
-      "/swagger-ui/**",
-      "/v3/api-docs/**",
-      "/api-docs/**"
-  };
-
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final UserDetailsService userDetailsService;
+  private final PasswordEncoder passwordEncoder;
 
-  public static String[] getPublicEndpoints() {
-    return PUBLIC_ENDPOINTS;
+  @Bean
+  public DaoAuthenticationProvider authenticationProvider() {
+    DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+    authProvider.setUserDetailsService(userDetailsService);
+    authProvider.setPasswordEncoder(passwordEncoder);
+    return authProvider;
   }
 
   @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+  public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
+      throws Exception {
+    return config.getAuthenticationManager();
+  }
+
+  @Bean
+  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
-        .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .csrf(AbstractHttpConfigurer::disable)
-        .cors(cors -> {
-        }) //Allow API call from Browser
-        .authorizeHttpRequests(auth -> auth
-            .requestMatchers(PUBLIC_ENDPOINTS)
-            .permitAll() // Public authentication endpoints
-            .anyRequest().authenticated()            // Other endpoint require auth
+        .cors(AbstractHttpConfigurer::disable)
+        .sessionManagement(session ->
+            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         )
-        .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
-          response.setStatus(HttpStatus.UNAUTHORIZED.value());
-          response.setContentType("application/json");
-          response.getWriter().write("{\"message\":\"Security Config: Unauthorized\"}");
-        }))
+        .authorizeHttpRequests(auth -> auth
+            // Public endpoints
+            .requestMatchers(
+                "/api/v1/auth/**",
+                "/v3/api-docs/**",
+                "/swagger-ui/**",
+                "/swagger-ui.html",
+
+                "/api/v1/dev/**",
+                "/api/v1/contact-tickets/**" // Public endpoint for ticket creation, auth handled in controller
+            ).permitAll()
+            // Role-based access control
+            .requestMatchers("/api/v1/reader/**").hasRole("READER")
+            .requestMatchers("/api/v1/reviewer/**").hasRole("REVIEWER")
+            .requestMatchers("/api/v1/organization/**").hasRole("ORGANIZATION_ADMIN")
+            .requestMatchers("/api/v1/business-admin/**").hasAnyRole("BUSINESS_ADMIN")
+            .requestMatchers("/api/v1/system-admin/**").hasAnyRole("SYSTEM_ADMIN")
+            // All other requests need authentication
+            .anyRequest().authenticated()
+        )
+        .authenticationProvider(authenticationProvider())
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
   }
-
-  @Bean
-  public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration cors = new CorsConfiguration();
-    cors.setAllowedOrigins(List.of("http://localhost:3000"));
-    cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-    cors.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-    cors.setAllowCredentials(true);
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", cors);
-    return source;
-  }
-
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
-  }
-
-
 }

@@ -12,6 +12,8 @@ be/out/
 be/src/main/generated
 be/bin
 be/.env
+be.zip
+be/be_*.zip
 
 #FE
 fe/node_modules/
@@ -23,3 +25,4 @@ fe/dist/
 fe/.env
 fe/.env.*
 fe/!.env.local.example
+fe/next-env.d.ts

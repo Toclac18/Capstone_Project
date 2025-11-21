@@ -1,36 +1,66 @@
 package com.capstone.be.service;
 
-import com.capstone.be.domain.enums.UserRole;
-import com.capstone.be.dto.request.auth.ChangePasswordRequest;
-import com.capstone.be.dto.request.auth.DeleteAccountRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
-import com.capstone.be.dto.request.auth.RegisterOrganizationInfo;
+import com.capstone.be.dto.request.auth.RegisterOrganizationRequest;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
-import com.capstone.be.dto.request.auth.RegisterReviewerInfo;
-import com.capstone.be.dto.request.auth.VerifyEmailRequest;
-import com.capstone.be.dto.response.auth.LoginResponse;
-import com.capstone.be.dto.response.auth.RegisterOrganizationResponse;
-import com.capstone.be.dto.response.auth.RegisterReaderResponse;
-import com.capstone.be.dto.response.auth.RegisterReviewerResponse;
+import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
+import com.capstone.be.dto.response.auth.AuthResponse;
 import java.util.List;
-import java.util.UUID;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface AuthService {
 
-  RegisterReaderResponse registerReader(RegisterReaderRequest request);
+  /**
+   * Register a new reader account
+   * Status will be PENDING_EMAIL_VERIFY until email is verified
+   *
+   * @param request Registration request
+   * @return Auth response with user info (no token until email verified)
+   */
+  AuthResponse registerReader(RegisterReaderRequest request);
 
-  RegisterReviewerResponse registerReviewer(RegisterReviewerInfo info,
-      List<MultipartFile> files);
+  /**
+   * Register a new reviewer account Status will be PENDING_EMAIL_VERIFY -> PENDING_APPROVE ->
+   * ACTIVE
+   *
+   * @param request         Registration request
+   * @param credentialFiles List of credential files (max 10 files)
+   * @return Auth response with user info (no token until email verified)
+   */
+  AuthResponse registerReviewer(RegisterReviewerRequest request,
+      List<MultipartFile> credentialFiles);
 
-  RegisterOrganizationResponse registerOrganization(RegisterOrganizationInfo info,
-      List<MultipartFile> files);
+  /**
+   * Verify email using token sent to user's email
+   *
+   * @param token Verification token
+   * @return Auth response with access token (or pending approve status for reviewers)
+   */
+  AuthResponse verifyEmail(String token);
 
-  void verifyEmail(VerifyEmailRequest request);
+  /**
+   * Register a new organization account Status will be PENDING_EMAIL_VERIFY -> PENDING_APPROVE ->
+   * ACTIVE
+   *
+   * @param request Registration request
+   * @param logoFile Optional logo file
+   * @return Auth response with user info (no token until email verified)
+   */
+  AuthResponse registerOrganization(RegisterOrganizationRequest request, MultipartFile logoFile);
 
-  LoginResponse login(LoginRequest request);
+  /**
+   * Login with email and password
+   * Only works for verified accounts
+   *
+   * @param request Login request
+   * @return Auth response with access token
+   */
+  AuthResponse login(LoginRequest request);
 
-  void changePassword(UUID subjectId, UserRole role, ChangePasswordRequest request);
-
-  void deleteAccount(UserRole role, UUID id, String passwordHash, DeleteAccountRequest request);
+  /**
+   * Resend email verification when the old code has expired
+   *
+   * @param email User's email address
+   */
+  void resendVerificationEmail(String email);
 }

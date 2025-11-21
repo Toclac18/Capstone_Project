@@ -1,98 +1,116 @@
 package com.capstone.be.controller;
 
-import com.capstone.be.dto.base.SuccessResponse;
-import com.capstone.be.dto.request.auth.ChangePasswordRequest;
-import com.capstone.be.dto.request.auth.DeleteAccountRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
-import com.capstone.be.dto.request.auth.RegisterOrganizationInfo;
+import com.capstone.be.dto.request.auth.RegisterOrganizationRequest;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
-import com.capstone.be.dto.request.auth.RegisterReviewerInfo;
+import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
+import com.capstone.be.dto.request.auth.ResendVerificationEmailRequest;
 import com.capstone.be.dto.request.auth.VerifyEmailRequest;
-import com.capstone.be.dto.response.auth.LoginResponse;
-import com.capstone.be.dto.response.auth.RegisterOrganizationResponse;
-import com.capstone.be.dto.response.auth.RegisterReaderResponse;
-import com.capstone.be.dto.response.auth.RegisterReviewerResponse;
-import com.capstone.be.security.model.UserPrincipal;
+import com.capstone.be.dto.request.user.RequestPasswordResetRequest;
+import com.capstone.be.dto.request.user.VerifyPasswordResetOtpRequest;
+import com.capstone.be.dto.response.auth.AuthResponse;
 import com.capstone.be.service.AuthService;
+import com.capstone.be.service.UserService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-@RestController
-@RequiredArgsConstructor
-@RequestMapping("/api/auth")
 @Slf4j
-
+@RestController
+@RequestMapping("/api/v1/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
   private final AuthService authService;
+  private final UserService userService;
 
-  @PostMapping("/register-reader")
-  public RegisterReaderResponse registerReader(
+  @PostMapping("/register/reader")
+  public ResponseEntity<AuthResponse> registerReader(
       @Valid @RequestBody RegisterReaderRequest request) {
-    return authService.registerReader(request);
+    log.info("Register reader request for email: {}", request.getEmail());
+    AuthResponse response = authService.registerReader(request);
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
-  @PostMapping(value = "/register-reviewer", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public RegisterReviewerResponse registerReviewer(
-      @Valid @RequestPart("info") RegisterReviewerInfo info,
-      @RequestPart("backgroundUploads") List<MultipartFile> files
-  ) {
-    return authService.registerReviewer(info, files);
+  @PostMapping(value = "/register/reviewer", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<AuthResponse> registerReviewer(
+      @Valid @RequestPart("data") RegisterReviewerRequest request,
+      @RequestPart("credentialFiles") List<MultipartFile> credentialFiles) {
+    log.info("Register reviewer request for email: {}", request.getEmail());
+    AuthResponse response = authService.registerReviewer(request, credentialFiles);
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
-  @PostMapping(value = "/register-organization", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public RegisterOrganizationResponse registerOrganization(
-      @Valid @RequestPart("info") RegisterOrganizationInfo info,
-      @RequestPart("certificateUploads") List<MultipartFile> files
-  ) {
-    return authService.registerOrganization(info, files);
-  }
-
-  @PreAuthorize("hasAnyRole('READER', 'REVIEWER', 'ORGANIZATION')")
-  @DeleteMapping("/delete-account")
-  public SuccessResponse<?> deleteAccount(@Valid @RequestBody DeleteAccountRequest request,
-      @AuthenticationPrincipal UserPrincipal principal) {
-    authService.deleteAccount(principal.getRole(), principal.getId(), principal.getPassword(),
-        request);
-    return SuccessResponse.ofMessage("Your account has been deleted");
+  @PostMapping(value = "/register/organization", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<AuthResponse> registerOrganization(
+      @Valid @RequestPart("data") RegisterOrganizationRequest request,
+      @RequestPart(value = "logoFile", required = false) MultipartFile logoFile) {
+    log.info("Register organization request for admin email: {}", request.getAdminEmail());
+    AuthResponse response = authService.registerOrganization(request, logoFile);
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
   @PostMapping("/verify-email")
-  public void verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
-    authService.verifyEmail(request);
+  public ResponseEntity<AuthResponse> verifyEmail(
+      @Valid @RequestBody VerifyEmailRequest request) {
+    log.info("Email verification request");
+    AuthResponse response = authService.verifyEmail(request.getToken());
+    return ResponseEntity.ok(response);
   }
 
   @PostMapping("/login")
-  public LoginResponse login(@Valid @RequestBody LoginRequest request) {
-    return authService.login(request);
+  public ResponseEntity<AuthResponse> login(
+      @Valid @RequestBody LoginRequest request) {
+    log.info("Login request for email: {}", request.getEmail());
+    AuthResponse response = authService.login(request);
+    return ResponseEntity.ok(response);
   }
 
-  @PostMapping("/change-password")
-  @PreAuthorize("isAuthenticated()")
-  @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void changePassword(@Valid @RequestBody ChangePasswordRequest request,
-      @AuthenticationPrincipal UserPrincipal principal) {
-    authService.changePassword(principal.getId(), principal.getRole(), request);
+  @PostMapping("/resend-verification-email")
+  public ResponseEntity<Void> resendVerificationEmail(
+      @Valid @RequestBody ResendVerificationEmailRequest request) {
+    log.info("Resend verification email request for: {}", request.getEmail());
+    authService.resendVerificationEmail(request.getEmail());
+    return ResponseEntity.ok().build();
   }
 
-  @GetMapping("/hello")
-  public SuccessResponse<?> test() {
-    return SuccessResponse.ofMessage("Hello World");
+  /**
+   * Request password reset - sends OTP to user's email
+   * POST /api/v1/auth/request-password-reset
+   *
+   * @param request Request password reset request (email)
+   * @return 200 OK with message
+   */
+  @PostMapping("/request-password-reset")
+  public ResponseEntity<String> requestPasswordReset(
+      @Valid @RequestBody RequestPasswordResetRequest request) {
+    log.info("Request password reset for email: {}", request.getEmail());
+    userService.requestPasswordReset(request.getEmail());
+    return ResponseEntity.ok("OTP has been sent to your email address");
   }
 
+  /**
+   * Verify OTP and reset password
+   * POST /api/v1/auth/reset-password
+   *
+   * @param request Verify password reset OTP request (email, otp, newPassword)
+   * @return 200 OK with message
+   */
+  @PostMapping("/reset-password")
+  public ResponseEntity<String> resetPassword(
+      @Valid @RequestBody VerifyPasswordResetOtpRequest request) {
+    log.info("Reset password for email: {}", request.getEmail());
+    userService.verifyPasswordResetOtp(request.getEmail(), request.getOtp(), request.getNewPassword());
+    return ResponseEntity.ok("Password reset successfully. You can now login with your new password");
+  }
 }

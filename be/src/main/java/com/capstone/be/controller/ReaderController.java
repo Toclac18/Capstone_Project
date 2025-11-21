@@ -1,56 +1,89 @@
 package com.capstone.be.controller;
 
-import com.capstone.be.dto.base.PageMeta;
-import com.capstone.be.dto.base.SuccessResponse;
-import com.capstone.be.dto.response.reader.JoinedOrganizationResponse;
+import com.capstone.be.dto.request.reader.UpdateReaderProfileRequest;
+import com.capstone.be.dto.response.reader.ReaderProfileResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.ReaderService;
-import com.capstone.be.util.ExceptionBuilder;
-import java.util.List;
+import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+/**
+ * Controller for Reader-specific operations
+ */
+@Slf4j
 @RestController
-@RequestMapping("/api/readers")
+@RequestMapping("/api/v1/reader")
 @RequiredArgsConstructor
 public class ReaderController {
 
-  private static final int MAX_PAGE_SIZE = 50;
-
   private final ReaderService readerService;
 
-  @GetMapping("/me/joined-organizations")
+  /**
+   * Get reader profile
+   * GET /api/v1/reader/profile
+   *
+   * @return ReaderProfileResponse
+   */
+  @GetMapping("/profile")
   @PreAuthorize("hasRole('READER')")
-  public SuccessResponse<List<JoinedOrganizationResponse>> getJoinedOrganizations(
-      @AuthenticationPrincipal UserPrincipal principal,
-      @RequestParam(name = "page", defaultValue = "0") int page,
-      @RequestParam(name = "size", defaultValue = "10") int size) {
+  public ResponseEntity<ReaderProfileResponse> getProfile(
+      @AuthenticationPrincipal UserPrincipal userPrincipal) {
+    UUID userId = userPrincipal.getId();
+    log.info("Get profile request for reader user ID: {}", userId);
 
-    if (page < 0) {
-      throw ExceptionBuilder.badRequest("Page index must be greater than or equal to 0");
-    }
-    if (size <= 0 || size > MAX_PAGE_SIZE) {
-      throw ExceptionBuilder.badRequest(
-          "Page size must be between 1 and " + MAX_PAGE_SIZE);
-    }
+    ReaderProfileResponse response = readerService.getProfile(userId);
 
-    Pageable pageable =
-        PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "addedAt"));
+    return ResponseEntity.ok(response);
+  }
 
-    Page<JoinedOrganizationResponse> result =
-        readerService.getJoinedOrganizations(principal.getId(), pageable);
+  /**
+   * Update reader profile PUT /api/v1/reader/profile
+   *
+   * @param request        Update profile request
+   * @return Updated ReaderProfileResponse
+   */
+  @PutMapping("/profile")
+  @PreAuthorize("hasRole('READER')")
+  public ResponseEntity<ReaderProfileResponse> updateProfile(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @Valid @RequestBody UpdateReaderProfileRequest request) {
+    UUID userId = userPrincipal.getId();
+    log.info("Update profile request for reader user ID: {}", userId);
 
-    PageMeta meta = PageMeta.from(result);
+    ReaderProfileResponse response = readerService.updateProfile(userId, request);
 
-    return SuccessResponse.of(result.getContent(), meta);
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Upload avatar for reader POST /api/v1/reader/profile/avatar
+   *
+   * @param file           Avatar image file
+   * @return Updated ReaderProfileResponse with new avatar URL
+   */
+  @PostMapping("/profile/avatar")
+  @PreAuthorize("hasRole('READER')")
+  public ResponseEntity<ReaderProfileResponse> uploadAvatar(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @RequestParam(value = "file") MultipartFile file) {
+    UUID userId = userPrincipal.getId();
+    log.info("Upload avatar request for reader user ID: {}", userId);
+
+    ReaderProfileResponse response = readerService.uploadAvatar(userId, file);
+
+    return ResponseEntity.ok(response);
   }
 }

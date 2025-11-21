@@ -1,71 +1,77 @@
 package com.capstone.be.domain.entity;
 
 import com.capstone.be.domain.entity.common.BaseEntity;
-import jakarta.persistence.CascadeType;
+import com.capstone.be.domain.enums.DocStatus;
+import com.capstone.be.domain.enums.DocType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
 @Entity
-@Table(name = "documents")
-@EqualsAndHashCode(callSuper = true)
-@Data
 public class Document extends BaseEntity {
-
-  @Id
-  @GeneratedValue(strategy = GenerationType.UUID)
-  private UUID id;
 
   @Column(nullable = false)
   private String title;
 
-  @Column()
+  @Column(nullable = false)
   private String description;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "uploader_id")
-  private Reader uploader;
+  @JoinColumn(name = "uploader_id") //user_id
+  private User uploader;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = true)
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "organization_id")
-  private Organization organization;
-
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "type_id")
-  private DocumentType type;
+  private OrganizationProfile organization;  //optional
 
   private Boolean isPublic;
+
+  @Column(name = "type_id")
+  private DocType type;
 
   private Boolean isPremium;
 
   private Integer price;
 
-  // -- Denormalized fields
-  private Integer viewCount = 0;
-  private Integer upvoteCount = 0;
-  private Integer voteScore = 0; //can calculate downvoteCount
+  private String thumbnail;
 
-  // Denormalized fields --
-  
   private String fileName;
 
   private String pageCount;
 
-  private Boolean deleted;
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
+  private DocStatus status;
 
-  @ManyToMany(mappedBy = "documents", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
-  private Set<Specialization> specializations = new HashSet<>();
+  // -- Denormalized fields
+  @Builder.Default
+  private Integer viewCount = 0;
+
+  @Builder.Default
+  private Integer upvoteCount = 0;
+
+  @Builder.Default
+  private Integer voteScore = 0; //can calculate downvoteCount
+  // Denormalized fields --
+
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "specialization_id")
+  private Specialization specialization;
+
 
 }

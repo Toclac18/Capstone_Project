@@ -1,11 +1,14 @@
 // src/app/docs-view/[id]/_components/HeaderBar.tsx
 "use client";
 
+import { useState } from "react";
 import { Eye, ThumbsUp, ThumbsDown } from "lucide-react";
 import Link from "next/link";
+
 import { useDocsView } from "../DocsViewProvider";
 import styles from "../styles.module.css";
 import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
+import SaveListModal from "@/components/SaveListModal/SaveListModal";
 
 export default function HeaderBar() {
   const {
@@ -28,15 +31,30 @@ export default function HeaderBar() {
     handleDownvote,
   } = useDocsView();
 
+  // ✅ state điều khiển SaveListModal – đúng tên, đúng import
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+
   if (!detail) return null;
 
+  // premium + chưa redeem => tài liệu vẫn bị khóa
   const isPremiumLocked = detail.isPremium && !redeemed;
-  const canDownload = !detail.isPremium;
+  // có thể download khi không bị khóa (free hoặc premium đã redeem)
+  const canDownload = !isPremiumLocked;
   const points = detail.points ?? 0;
+
+  const handleOpenSaveModal = () => {
+    if (isPremiumLocked) return;
+    setIsSaveModalOpen(true);
+  };
+
+  const handleCloseSaveModal = () => {
+    setIsSaveModalOpen(false);
+  };
 
   return (
     <>
       <div className={styles.headerBar}>
+        {/* LEFT: stats */}
         <div className={styles.headerLeft}>
           <div className={styles.stat2}>
             <Eye size={18} className={styles.statIcon} />
@@ -62,7 +80,7 @@ export default function HeaderBar() {
           </button>
         </div>
 
-        {/* zoom + search giữ nguyên */}
+        {/* CENTER: zoom + search */}
         <div className={styles.headerCenter}>
           <button
             className={styles.iconBtn}
@@ -106,11 +124,26 @@ export default function HeaderBar() {
           </div>
         </div>
 
+        {/* RIGHT: Save + Redeem / Download */}
         <div className={styles.headerRight}>
-          <button className={styles.btnGhost}>Save</button>
+          {/* Save – disable khi premium chưa redeem */}
+          <button
+            type="button"
+            className={`${styles.btnGhost} ${
+              isPremiumLocked ? styles.btnDisabled : ""
+            }`}
+            disabled={isPremiumLocked}
+            onClick={handleOpenSaveModal}
+          >
+            Save
+          </button>
 
           {isPremiumLocked ? (
-            <button className={styles.btnRedeem} onClick={openRedeemModal}>
+            <button
+              type="button"
+              className={styles.btnRedeem}
+              onClick={openRedeemModal}
+            >
               Redeem
             </button>
           ) : canDownload ? (
@@ -118,11 +151,14 @@ export default function HeaderBar() {
               Download
             </Link>
           ) : (
-            <button className={styles.btnDisabled}>Download</button>
+            <button type="button" className={styles.btnDisabled}>
+              Download
+            </button>
           )}
         </div>
       </div>
 
+      {/* Modal Redeem */}
       <ConfirmModal
         open={isPremiumLocked && isRedeemModalOpen}
         title="Redeem document"
@@ -134,6 +170,15 @@ export default function HeaderBar() {
         onConfirm={redeem}
         onCancel={closeRedeemModal}
       />
+
+      {/* Modal SaveList */}
+      {detail && (
+        <SaveListModal
+          isOpen={isSaveModalOpen}
+          onClose={handleCloseSaveModal}
+          docId={detail.id}
+        />
+      )}
     </>
   );
 }

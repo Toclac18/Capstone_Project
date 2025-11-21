@@ -383,6 +383,7 @@ export const mockOrganizationAdminDB = {
 import type { Tag as BusinessAdminTag, TagStatus } from "@/types/document-tag";
 import type { Domain as BusinessAdminDomain } from "@/types/document-domain";
 import type { DocumentType as BusinessAdminType } from "@/types/document-type";
+import type { Specialization as BusinessAdminSpecialization } from "@/types/document-specialization";
 
 const _businessAdminTags: BusinessAdminTag[] = [
   {
@@ -1171,6 +1172,252 @@ export const mockTypesDB = {
       {
         id: "type-10",
         name: "Conference Paper",
+        createdAt: "2025-01-19T19:00:00Z",
+        updatedAt: "2025-01-19T19:00:00Z",
+      }
+    );
+  },
+};
+
+// ---------------- Business Admin Specializations Mock ----------------
+const _businessAdminSpecializations: BusinessAdminSpecialization[] = [
+  {
+    id: "spec-1",
+    name: "Software Engineering",
+    domainId: "domain-1",
+    createdAt: "2025-01-10T10:00:00Z",
+    updatedAt: "2025-01-10T10:00:00Z",
+  },
+  {
+    id: "spec-2",
+    name: "Artificial Intelligence",
+    domainId: "domain-1",
+    createdAt: "2025-01-11T11:00:00Z",
+    updatedAt: "2025-01-11T11:00:00Z",
+  },
+  {
+    id: "spec-3",
+    name: "Data Science",
+    domainId: "domain-1",
+    createdAt: "2025-01-12T12:00:00Z",
+    updatedAt: "2025-01-12T12:00:00Z",
+  },
+  {
+    id: "spec-4",
+    name: "Cybersecurity",
+    domainId: "domain-1",
+    createdAt: "2025-01-13T13:00:00Z",
+    updatedAt: "2025-01-13T13:00:00Z",
+  },
+  {
+    id: "spec-5",
+    name: "Algebra",
+    domainId: "domain-2",
+    createdAt: "2025-01-14T14:00:00Z",
+    updatedAt: "2025-01-14T14:00:00Z",
+  },
+  {
+    id: "spec-6",
+    name: "Calculus",
+    domainId: "domain-2",
+    createdAt: "2025-01-15T15:00:00Z",
+    updatedAt: "2025-01-15T15:00:00Z",
+  },
+  {
+    id: "spec-7",
+    name: "Statistics",
+    domainId: "domain-2",
+    createdAt: "2025-01-16T16:00:00Z",
+    updatedAt: "2025-01-16T16:00:00Z",
+  },
+  {
+    id: "spec-8",
+    name: "Quantum Physics",
+    domainId: "domain-3",
+    createdAt: "2025-01-17T17:00:00Z",
+    updatedAt: "2025-01-17T17:00:00Z",
+  },
+  {
+    id: "spec-9",
+    name: "Thermodynamics",
+    domainId: "domain-3",
+    createdAt: "2025-01-18T18:00:00Z",
+    updatedAt: "2025-01-18T18:00:00Z",
+  },
+  {
+    id: "spec-10",
+    name: "Molecular Biology",
+    domainId: "domain-4",
+    createdAt: "2025-01-19T19:00:00Z",
+    updatedAt: "2025-01-19T19:00:00Z",
+  },
+];
+
+export const mockSpecializationsDB = {
+  list(params: { domainId: string; search?: string }): BusinessAdminSpecialization[] {
+    let filtered = _businessAdminSpecializations.filter(
+      (spec) => spec.domainId === params.domainId
+    );
+
+    // Filter by search
+    if (params?.search) {
+      const searchLower = params.search.toLowerCase().trim();
+      filtered = filtered.filter(
+        (spec) =>
+          spec.name.toLowerCase().includes(searchLower) ||
+          spec.id.toLowerCase().includes(searchLower)
+      );
+    }
+
+    return filtered;
+  },
+  get(id: string): BusinessAdminSpecialization | undefined {
+    return _businessAdminSpecializations.find((spec) => spec.id === id);
+  },
+  create(data: { name: string; domainId: string }): BusinessAdminSpecialization {
+    // Check for duplicate name in the same domain (case-insensitive)
+    const existingSpec = _businessAdminSpecializations.find(
+      (spec) =>
+        spec.domainId === data.domainId &&
+        spec.name.toLowerCase().trim() === data.name.toLowerCase().trim()
+    );
+
+    if (existingSpec) {
+      throw new Error("Specialization already exists in this domain.");
+    }
+
+    // Validate name is not empty
+    if (!data.name || !data.name.trim()) {
+      throw new Error("Specialization name cannot be empty.");
+    }
+
+    const now = new Date().toISOString();
+    const newSpec: BusinessAdminSpecialization = {
+      id: `spec-${Date.now()}`,
+      name: data.name.trim(),
+      domainId: data.domainId,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    _businessAdminSpecializations.unshift(newSpec);
+    return newSpec;
+  },
+  update(id: string, data: { name?: string }): BusinessAdminSpecialization {
+    const specIndex = _businessAdminSpecializations.findIndex((spec) => spec.id === id);
+
+    if (specIndex === -1) {
+      throw new Error(`Specialization with id ${id} not found`);
+    }
+
+    const existingSpec = _businessAdminSpecializations[specIndex];
+
+    // Check for duplicate name if name is being updated
+    if (data.name !== undefined) {
+      const trimmedName = data.name.trim();
+      if (trimmedName !== existingSpec.name) {
+        const duplicateSpec = _businessAdminSpecializations.find(
+          (spec) =>
+            spec.id !== id &&
+            spec.domainId === existingSpec.domainId &&
+            spec.name.toLowerCase().trim() === trimmedName.toLowerCase()
+        );
+
+        if (duplicateSpec) {
+          throw new Error("Specialization already exists in this domain.");
+        }
+      }
+
+      // Validate name is not empty
+      if (!trimmedName) {
+        throw new Error("Specialization name cannot be empty.");
+      }
+
+      existingSpec.name = trimmedName;
+      existingSpec.updatedAt = new Date().toISOString();
+    }
+
+    return existingSpec;
+  },
+  delete(id: string): void {
+    const specIndex = _businessAdminSpecializations.findIndex((spec) => spec.id === id);
+
+    if (specIndex === -1) {
+      throw new Error(`Specialization with id ${id} not found`);
+    }
+
+    _businessAdminSpecializations.splice(specIndex, 1);
+  },
+  reset(): void {
+    _businessAdminSpecializations.length = 0;
+    _businessAdminSpecializations.push(
+      {
+        id: "spec-1",
+        name: "Software Engineering",
+        domainId: "domain-1",
+        createdAt: "2025-01-10T10:00:00Z",
+        updatedAt: "2025-01-10T10:00:00Z",
+      },
+      {
+        id: "spec-2",
+        name: "Artificial Intelligence",
+        domainId: "domain-1",
+        createdAt: "2025-01-11T11:00:00Z",
+        updatedAt: "2025-01-11T11:00:00Z",
+      },
+      {
+        id: "spec-3",
+        name: "Data Science",
+        domainId: "domain-1",
+        createdAt: "2025-01-12T12:00:00Z",
+        updatedAt: "2025-01-12T12:00:00Z",
+      },
+      {
+        id: "spec-4",
+        name: "Cybersecurity",
+        domainId: "domain-1",
+        createdAt: "2025-01-13T13:00:00Z",
+        updatedAt: "2025-01-13T13:00:00Z",
+      },
+      {
+        id: "spec-5",
+        name: "Algebra",
+        domainId: "domain-2",
+        createdAt: "2025-01-14T14:00:00Z",
+        updatedAt: "2025-01-14T14:00:00Z",
+      },
+      {
+        id: "spec-6",
+        name: "Calculus",
+        domainId: "domain-2",
+        createdAt: "2025-01-15T15:00:00Z",
+        updatedAt: "2025-01-15T15:00:00Z",
+      },
+      {
+        id: "spec-7",
+        name: "Statistics",
+        domainId: "domain-2",
+        createdAt: "2025-01-16T16:00:00Z",
+        updatedAt: "2025-01-16T16:00:00Z",
+      },
+      {
+        id: "spec-8",
+        name: "Quantum Physics",
+        domainId: "domain-3",
+        createdAt: "2025-01-17T17:00:00Z",
+        updatedAt: "2025-01-17T17:00:00Z",
+      },
+      {
+        id: "spec-9",
+        name: "Thermodynamics",
+        domainId: "domain-3",
+        createdAt: "2025-01-18T18:00:00Z",
+        updatedAt: "2025-01-18T18:00:00Z",
+      },
+      {
+        id: "spec-10",
+        name: "Molecular Biology",
+        domainId: "domain-4",
         createdAt: "2025-01-19T19:00:00Z",
         updatedAt: "2025-01-19T19:00:00Z",
       }

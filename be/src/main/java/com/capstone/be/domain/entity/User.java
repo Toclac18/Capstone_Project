@@ -9,7 +9,6 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -39,8 +38,8 @@ public class User extends BaseEntity {
 
   private String avatarUrl;
 
-  @Builder.Default
-  private Integer point = 0;
+//  @Builder.Default
+//  private Integer point = 0;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)

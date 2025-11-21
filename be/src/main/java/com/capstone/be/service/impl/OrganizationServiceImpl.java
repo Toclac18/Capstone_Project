@@ -190,7 +190,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         .email(user.getEmail())
         .fullName(user.getFullName())
         .avatarUrl(user.getAvatarUrl())
-        .point(user.getPoint())
+//        .point(user.getPoint())
         .status(user.getStatus())
         .orgName(organizationProfile.getName())
         .orgType(organizationProfile.getType())

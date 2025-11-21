@@ -146,7 +146,7 @@ public class ReviewerServiceImpl implements ReviewerService {
         .email(user.getEmail())
         .fullName(user.getFullName())
         .avatarUrl(user.getAvatarUrl())
-        .point(user.getPoint())
+//        .point(user.getPoint())
         .status(user.getStatus())
         .dateOfBirth(reviewerProfile.getDateOfBirth())
         .ordid(reviewerProfile.getOrdid())

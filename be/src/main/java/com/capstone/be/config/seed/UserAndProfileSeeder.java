@@ -292,7 +292,7 @@ public class UserAndProfileSeeder {
         .fullName(fullName)
         .role(role)
         .status(status)
-        .point(0)
+//        .point(0)
         .build();
 
     userRepository.save(user);
@@ -307,7 +307,7 @@ public class UserAndProfileSeeder {
         .fullName(fullName)
         .role(UserRole.READER)
         .status(status)
-        .point(0)
+//        .point(0)
         .build();
 
     user = userRepository.save(user);
@@ -315,6 +315,7 @@ public class UserAndProfileSeeder {
     ReaderProfile profile = ReaderProfile.builder()
         .id(SeedUtil.generateUUID("reader-profile-" + seed)) // Offset for profile IDs
         .user(user)
+        .point(user.getEmail().equals("reader1@gmail.com") ? 1000 : 100)
         .dob(dob)
         .build();
 
@@ -332,7 +333,7 @@ public class UserAndProfileSeeder {
         .fullName(fullName)
         .role(UserRole.REVIEWER)
         .status(status)
-        .point(0)
+//        .point(0)
         .build();
 
     user = userRepository.save(user);
@@ -381,7 +382,7 @@ public class UserAndProfileSeeder {
         .fullName(adminFullName)
         .role(UserRole.ORGANIZATION_ADMIN)
         .status(status)
-        .point(0)
+//        .point(0)
         .build();
 
     admin = userRepository.save(admin);

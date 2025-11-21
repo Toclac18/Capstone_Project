@@ -56,7 +56,7 @@ public class Document extends BaseEntity {
 
   private String fileName;
 
-  private String pageCount;
+  private int pageCount;
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)

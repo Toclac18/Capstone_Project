@@ -10,6 +10,8 @@ import org.springframework.stereotype.Repository;
 public interface OrganizationProfileRepository extends
     JpaRepository<OrganizationProfile, UUID> {
 
+  Optional<OrganizationProfile> findByEmail(String email);
+
   Optional<OrganizationProfile> findByAdminId(UUID adminId);
 
   // Alias for findByAdminId (for consistency with other profile repositories)

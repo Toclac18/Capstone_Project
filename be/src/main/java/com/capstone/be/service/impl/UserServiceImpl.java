@@ -10,6 +10,7 @@ import com.capstone.be.domain.enums.UserStatus;
 import com.capstone.be.dto.request.admin.UpdateUserStatusRequest;
 import com.capstone.be.dto.request.user.ChangeEmailRequest;
 import com.capstone.be.dto.request.user.ChangePasswordRequest;
+import com.capstone.be.dto.response.admin.AdminOrganizationResponse;
 import com.capstone.be.dto.response.admin.AdminReaderResponse;
 import com.capstone.be.dto.response.admin.AdminReviewerResponse;
 import com.capstone.be.exception.BusinessException;
@@ -388,7 +389,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional(readOnly = true)
-  public com.capstone.be.dto.response.admin.AdminReaderResponse getReaderDetail(UUID userId) {
+  public AdminReaderResponse getReaderDetail(UUID userId) {
     log.info("Admin getting reader detail for ID: {}", userId);
 
     User user = userRepository.findById(userId)
@@ -456,7 +457,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional(readOnly = true)
-  public com.capstone.be.dto.response.admin.AdminReviewerResponse getReviewerDetail(UUID userId) {
+  public AdminReviewerResponse getReviewerDetail(UUID userId) {
     log.info("Admin getting reviewer detail for ID: {}", userId);
 
     User user = userRepository.findById(userId)
@@ -479,8 +480,8 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional
-  public com.capstone.be.dto.response.admin.AdminReviewerResponse updateReviewerStatus(
-      UUID userId, com.capstone.be.dto.request.admin.UpdateUserStatusRequest request) {
+  public AdminReviewerResponse updateReviewerStatus(
+      UUID userId, UpdateUserStatusRequest request) {
     log.info("Admin updating reviewer status for ID: {} to {}, reason: {}",
         userId, request.getStatus(), request.getReason());
 
@@ -512,7 +513,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional(readOnly = true)
-  public Page<com.capstone.be.dto.response.admin.AdminOrganizationResponse> getAllOrganizations(
+  public Page<AdminOrganizationResponse> getAllOrganizations(
       UserStatus status, String search, Pageable pageable) {
     log.info("Admin getting all organizations - status: {}, search: {}", status, search);
 
@@ -525,7 +526,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional(readOnly = true)
-  public com.capstone.be.dto.response.admin.AdminOrganizationResponse getOrganizationDetail(
+  public AdminOrganizationResponse getOrganizationDetail(
       UUID userId) {
     log.info("Admin getting organization detail for ID: {}", userId);
 
@@ -549,8 +550,8 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional
-  public com.capstone.be.dto.response.admin.AdminOrganizationResponse updateOrganizationStatus(
-      UUID userId, com.capstone.be.dto.request.admin.UpdateUserStatusRequest request) {
+  public AdminOrganizationResponse updateOrganizationStatus(
+      UUID userId, UpdateUserStatusRequest request) {
     log.info("Admin updating organization status for ID: {} to {}, reason: {}",
         userId, request.getStatus(), request.getReason());
 
@@ -580,15 +581,15 @@ public class UserServiceImpl implements UserService {
 
   // Helper methods
 
-  private com.capstone.be.dto.response.admin.AdminReaderResponse buildAdminReaderResponse(
+  private AdminReaderResponse buildAdminReaderResponse(
       User user) {
-    com.capstone.be.dto.response.admin.AdminReaderResponse.AdminReaderResponseBuilder builder =
-        com.capstone.be.dto.response.admin.AdminReaderResponse.builder()
+    AdminReaderResponse.AdminReaderResponseBuilder builder =
+        AdminReaderResponse.builder()
             .userId(user.getId())
             .email(user.getEmail())
             .fullName(user.getFullName())
             .avatarUrl(user.getAvatarUrl())
-            .point(user.getPoint())
+//            .point(user.getPoint())
             .status(user.getStatus())
             .createdAt(user.getCreatedAt())
             .updatedAt(user.getUpdatedAt());
@@ -600,15 +601,15 @@ public class UserServiceImpl implements UserService {
     return builder.build();
   }
 
-  private com.capstone.be.dto.response.admin.AdminReviewerResponse buildAdminReviewerResponse(
+  private AdminReviewerResponse buildAdminReviewerResponse(
       User user) {
-    com.capstone.be.dto.response.admin.AdminReviewerResponse.AdminReviewerResponseBuilder builder =
-        com.capstone.be.dto.response.admin.AdminReviewerResponse.builder()
+    AdminReviewerResponse.AdminReviewerResponseBuilder builder =
+        AdminReviewerResponse.builder()
             .userId(user.getId())
             .email(user.getEmail())
             .fullName(user.getFullName())
             .avatarUrl(user.getAvatarUrl())
-            .point(user.getPoint())
+//            .point(user.getPoint())
             .status(user.getStatus())
             .createdAt(user.getCreatedAt())
             .updatedAt(user.getUpdatedAt());
@@ -629,15 +630,15 @@ public class UserServiceImpl implements UserService {
     return builder.build();
   }
 
-  private com.capstone.be.dto.response.admin.AdminOrganizationResponse buildAdminOrganizationResponse(
+  private AdminOrganizationResponse buildAdminOrganizationResponse(
       User user) {
-    com.capstone.be.dto.response.admin.AdminOrganizationResponse.AdminOrganizationResponseBuilder builder =
-        com.capstone.be.dto.response.admin.AdminOrganizationResponse.builder()
+    AdminOrganizationResponse.AdminOrganizationResponseBuilder builder =
+        AdminOrganizationResponse.builder()
             .userId(user.getId())
             .email(user.getEmail())
             .fullName(user.getFullName())
             .avatarUrl(user.getAvatarUrl())
-            .point(user.getPoint())
+//            .point(user.getPoint())
             .status(user.getStatus())
             .createdAt(user.getCreatedAt())
             .updatedAt(user.getUpdatedAt());

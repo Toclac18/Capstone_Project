@@ -45,7 +45,7 @@ public interface AuthMapper {
   @Mapping(target = "passwordHash", ignore = true)
   @Mapping(target = "role", ignore = true)
   @Mapping(target = "status", ignore = true)
-  @Mapping(target = "point", constant = "0")
+//  @Mapping(target = "point", constant = "0")
   @Mapping(target = "avatarUrl", ignore = true)
   User toUserEntity(RegisterReaderRequest request);
 
@@ -56,7 +56,7 @@ public interface AuthMapper {
   @Mapping(target = "passwordHash", ignore = true)
   @Mapping(target = "role", ignore = true)
   @Mapping(target = "status", ignore = true)
-  @Mapping(target = "point", constant = "0")
+//  @Mapping(target = "point", constant = "0")
   @Mapping(target = "avatarUrl", ignore = true)
   User toUserEntity(RegisterReviewerRequest request);
 
@@ -86,7 +86,7 @@ public interface AuthMapper {
   @Mapping(target = "passwordHash", ignore = true)
   @Mapping(target = "role", ignore = true)
   @Mapping(target = "status", ignore = true)
-  @Mapping(target = "point", constant = "0")
+//  @Mapping(target = "point", constant = "0")
   @Mapping(target = "avatarUrl", ignore = true)
   User toOrganizationAdminEntity(RegisterOrganizationRequest request);
 

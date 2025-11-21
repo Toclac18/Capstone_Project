@@ -1,15 +1,9 @@
-import { cookies } from "next/headers";
 import { mockTypesDB } from "@/mock/db";
 import type { CreateTypeRequest, TypeQueryParams } from "@/types/document-type";
-
-const DEFAULT_BE_BASE = "http://localhost:8080";
+import { USE_MOCK, BE_BASE } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
 
 export async function GET(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   if (USE_MOCK) {
     const { searchParams } = new URL(request.url);
     const params: TypeQueryParams = {
@@ -21,8 +15,12 @@ export async function GET(request: Request) {
 
     try {
       const types = mockTypesDB.list(params);
-      const page = searchParams.get("page") ? Number(searchParams.get("page")) : 1;
-      const limit = searchParams.get("limit") ? Number(searchParams.get("limit")) : 10;
+      const page = searchParams.get("page")
+        ? Number(searchParams.get("page"))
+        : 1;
+      const limit = searchParams.get("limit")
+        ? Number(searchParams.get("limit"))
+        : 10;
       const total = types.length;
 
       const result = {
@@ -47,9 +45,7 @@ export async function GET(request: Request) {
   }
 
   // Get authentication from cookie
-  const cookieStore = await cookies();
-  const tokenFromCookie = cookieStore.get("access_token")?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
+  const bearerToken = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (bearerToken) {
@@ -76,11 +72,6 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   if (USE_MOCK) {
     const body = (await request.json()) as CreateTypeRequest;
     try {
@@ -101,9 +92,7 @@ export async function POST(request: Request) {
   }
 
   // Get authentication from cookie
-  const cookieStore = await cookies();
-  const tokenFromCookie = cookieStore.get("access_token")?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
+  const bearerToken = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (bearerToken) {
@@ -129,4 +118,3 @@ export async function POST(request: Request) {
     },
   });
 }
-

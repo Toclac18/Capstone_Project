@@ -1,18 +1,12 @@
-import { cookies } from "next/headers";
 import { mockTagsDB } from "@/mock/db";
 import type { UpdateTagRequest } from "@/types/document-tag";
-
-const DEFAULT_BE_BASE = "http://localhost:8080";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
 
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   const { id } = await params;
 
   if (USE_MOCK) {
@@ -35,9 +29,7 @@ export async function PUT(
   }
 
   // Get authentication from cookie
-  const cookieStore = await cookies();
-  const tokenFromCookie = cookieStore.get("access_token")?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
+  const bearerToken = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (bearerToken) {
@@ -66,25 +58,23 @@ export async function PUT(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   const { id } = await params;
 
   if (USE_MOCK) {
     try {
       mockTagsDB.delete(id);
-      return new Response(JSON.stringify({ message: "Tag deleted successfully." }), {
-        status: 200,
-        headers: {
-          "content-type": "application/json",
-          "x-mode": "mock",
+      return new Response(
+        JSON.stringify({ message: "Tag deleted successfully." }),
+        {
+          status: 200,
+          headers: {
+            "content-type": "application/json",
+            "x-mode": "mock",
+          },
         },
-      });
+      );
     } catch (error: any) {
       return new Response(JSON.stringify({ message: error.message }), {
         status: 400,
@@ -94,9 +84,7 @@ export async function DELETE(
   }
 
   // Get authentication from cookie
-  const cookieStore = await cookies();
-  const tokenFromCookie = cookieStore.get("access_token")?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
+  const bearerToken = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (bearerToken) {
@@ -124,13 +112,8 @@ export async function DELETE(
 
 export async function POST(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   const { id } = await params;
 
   if (USE_MOCK) {
@@ -152,9 +135,7 @@ export async function POST(
   }
 
   // Get authentication from cookie
-  const cookieStore = await cookies();
-  const tokenFromCookie = cookieStore.get("access_token")?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
+  const bearerToken = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (bearerToken) {
@@ -179,4 +160,3 @@ export async function POST(
     },
   });
 }
-

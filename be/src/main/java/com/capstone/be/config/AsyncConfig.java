@@ -24,6 +24,20 @@ public class AsyncConfig implements AsyncConfigurer {
     return executor;
   }
 
+  /**
+   * Separate executor for audit logging to avoid blocking email operations
+   */
+  @org.springframework.context.annotation.Bean(name = "auditLogExecutor")
+  public Executor auditLogExecutor() {
+    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+    executor.setCorePoolSize(2);
+    executor.setMaxPoolSize(5);
+    executor.setQueueCapacity(200);
+    executor.setThreadNamePrefix("AuditLog-");
+    executor.initialize();
+    return executor;
+  }
+
   @Override
   public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
     return (ex, method, params) ->

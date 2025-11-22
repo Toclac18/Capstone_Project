@@ -396,7 +396,7 @@ public class UserAndProfileSeeder {
         .hotline(hotline)
         .address(address)
         .registrationNumber(registrationNumber)
-        .logo(logoUrl)
+        .logoKey(logoUrl)
         .build();
 
     organizationProfileRepository.save(organizationProfile);

@@ -494,11 +494,11 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
       MultipartFile file) {
 
     // Upload Excel file to S3 if provided
-    String fileUrl = null;
+    String importFileKey = null;
     if (file != null && !file.isEmpty()) {
       try {
-        fileUrl = fileStorageService.uploadFile(file, "member-import-file", null);
-        log.info("Uploaded import Excel file to S3: {}", fileUrl);
+        importFileKey = fileStorageService.uploadFile(file, "member-import-file", null);
+        log.info("Uploaded import Excel file to S3: {}", importFileKey);
       } catch (Exception e) {
         log.error("Failed to upload Excel file to S3", e);
         // Continue without file URL
@@ -515,7 +515,7 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
         .failedCount(0)
         .skippedCount(0)
         .fileName(fileName)
-        .fileUrl(fileUrl)
+        .fileKey(importFileKey)
         .build();
 
     batch = memberImportBatchRepository.save(batch);

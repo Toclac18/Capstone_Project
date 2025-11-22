@@ -84,7 +84,7 @@ public class ReaderServiceImpl implements ReaderService {
         .userId(user.getId())
         .email(user.getEmail())
         .fullName(user.getFullName())
-        .avatarUrl(user.getAvatarUrl())
+        .avatarUrl(user.getAvatarKey())
 //        .point(user.getPoint())
         .status(user.getStatus())
         .dob(readerProfile.getDob())

@@ -141,9 +141,9 @@ public class UserServiceImpl implements UserService {
         .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
     // Delete old avatar if exists
-    if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
+    if (user.getAvatarKey() != null && !user.getAvatarKey().isEmpty()) {
       try {
-        fileStorageService.deleteFile(user.getAvatarUrl());
+        fileStorageService.deleteFile(user.getAvatarKey());
         log.info("Deleted old avatar for user ID: {}", userId);
       } catch (Exception e) {
         log.warn("Failed to delete old avatar, continuing with upload: {}", e.getMessage());
@@ -151,8 +151,8 @@ public class UserServiceImpl implements UserService {
     }
 
     // Upload new avatar to S3
-    String avatarUrl = fileStorageService.uploadFile(file, "public/avatars", null);
-    user.setAvatarUrl(avatarUrl);
+    String avatarKey = fileStorageService.uploadFile(file, "public/avatars", null);
+    user.setAvatarKey(avatarKey);
 
     // Save user
     userRepository.save(user);
@@ -622,7 +622,7 @@ public class UserServiceImpl implements UserService {
             .userId(user.getId())
             .email(user.getEmail())
             .fullName(user.getFullName())
-            .avatarUrl(user.getAvatarUrl())
+            .avatarUrl(user.getAvatarKey())
 //            .point(user.getPoint())
             .status(user.getStatus())
             .createdAt(user.getCreatedAt())
@@ -642,7 +642,7 @@ public class UserServiceImpl implements UserService {
             .userId(user.getId())
             .email(user.getEmail())
             .fullName(user.getFullName())
-            .avatarUrl(user.getAvatarUrl())
+            .avatarUrl(user.getAvatarKey())
 //            .point(user.getPoint())
             .status(user.getStatus())
             .createdAt(user.getCreatedAt())
@@ -671,7 +671,7 @@ public class UserServiceImpl implements UserService {
             .userId(user.getId())
             .email(user.getEmail())
             .fullName(user.getFullName())
-            .avatarUrl(user.getAvatarUrl())
+            .avatarUrl(user.getAvatarKey())
 //            .point(user.getPoint())
             .status(user.getStatus())
             .createdAt(user.getCreatedAt())
@@ -683,7 +683,7 @@ public class UserServiceImpl implements UserService {
           .orgType(profile.getType() != null ? profile.getType().name() : null)
           .orgEmail(profile.getEmail())
           .orgHotline(profile.getHotline())
-          .orgLogo(profile.getLogo())
+          .orgLogo(profile.getLogoKey())
           .orgAddress(profile.getAddress())
           .orgRegistrationNumber(profile.getRegistrationNumber());
     });

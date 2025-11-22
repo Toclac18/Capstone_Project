@@ -95,12 +95,12 @@ public class DocumentServiceImpl implements DocumentService {
     log.info("Uploaded document file to S3: {}", fileUrl);
 
     // 2) Generate thumbnail từ trang đầu tiên & upload lên S3
-    String thumbnailUrl = documentThumbnailService.generateAndUploadThumbnail(
+    String thumbnailKey = documentThumbnailService.generateAndUploadThumbnail(
         file,
         "public/document-thumbnail"
     );
-    if (thumbnailUrl != null) {
-      log.info("Generated thumbnail for document: {}", thumbnailUrl);
+    if (thumbnailKey != null) {
+      log.info("Generated thumbnail for document: {}", thumbnailKey);
     } else {
       log.warn("Thumbnail generation returned null. Document will be saved without thumbnail.");
     }
@@ -108,8 +108,8 @@ public class DocumentServiceImpl implements DocumentService {
     // Create and save document
     Document document = createDocument(request, uploader, docType, specialization, organization,
         fileUrl);
-    if (thumbnailUrl != null) {
-      document.setThumbnail(thumbnailUrl);
+    if (thumbnailKey != null) {
+      document.setThumbnailKey(thumbnailKey);
     }
 
     document = documentRepository.save(document);
@@ -345,7 +345,7 @@ public class DocumentServiceImpl implements DocumentService {
         .docType(docType)
         .isPremium(request.getIsPremium())
         .price(price)
-        .fileName(fileUrl)
+        .fileKey(fileUrl)
         .status(DocStatus.VERIFYING)
         .specialization(specialization)
         .viewCount(0)

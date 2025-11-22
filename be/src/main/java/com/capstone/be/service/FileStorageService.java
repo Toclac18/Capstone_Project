@@ -14,7 +14,7 @@ public interface FileStorageService {
    * @param file     The file to upload
    * @param folder   The folder/prefix in S3 bucket
    * @param filename Custom filename (optional, will use original if null)
-   * @return The URL of the uploaded file
+   * @return The Key of the uploaded file
    */
   String uploadFile(MultipartFile file, String folder, String filename);
 
@@ -25,7 +25,7 @@ public interface FileStorageService {
    * @param contentType MIME type, e.g. "image/png"
    * @param folder      Folder/prefix in S3 bucket
    * @param filename    Custom filename (optional)
-   * @return Public URL of uploaded file
+   * @return Key of uploaded file
    */
   String uploadFile(byte[] content, String contentType, String folder, String filename);
 
@@ -35,7 +35,7 @@ public interface FileStorageService {
    *
    * @param files  List of files to upload
    * @param folder The folder/prefix in S3 bucket
-   * @return List of URLs of uploaded files
+   * @return List of Keys of uploaded files
    */
   List<String> uploadFiles(List<MultipartFile> files, String folder);
 

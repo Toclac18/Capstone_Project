@@ -121,9 +121,9 @@ public class OrganizationServiceImpl implements OrganizationService {
             "Organization profile not found for user ID: " + userId));
 
     // Delete old logo if exists
-    if (organizationProfile.getLogo() != null && !organizationProfile.getLogo().isEmpty()) {
+    if (organizationProfile.getLogoKey() != null && !organizationProfile.getLogoKey().isEmpty()) {
       try {
-        fileStorageService.deleteFile(organizationProfile.getLogo());
+        fileStorageService.deleteFile(organizationProfile.getLogoKey());
         log.info("Deleted old logo for organization user ID: {}", userId);
       } catch (Exception e) {
         log.warn("Failed to delete old logo, continuing with upload: {}", e.getMessage());
@@ -131,8 +131,8 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     // Upload new logo to S3
-    String logoUrl = fileStorageService.uploadFile(file, "public/org-logo", null);
-    organizationProfile.setLogo(logoUrl);
+    String logoKey = fileStorageService.uploadFile(file, "public/org-logo", null);
+    organizationProfile.setLogoKey(logoKey);
 
     // Save organization profile
     organizationProfileRepository.save(organizationProfile);
@@ -152,14 +152,14 @@ public class OrganizationServiceImpl implements OrganizationService {
         .userId(user.getId())
         .email(user.getEmail())
         .fullName(user.getFullName())
-        .avatarUrl(user.getAvatarUrl())
+        .avatarUrl(user.getAvatarKey())
 //        .point(user.getPoint())
         .status(user.getStatus())
         .orgName(organizationProfile.getName())
         .orgType(organizationProfile.getType())
         .orgEmail(organizationProfile.getEmail())
         .orgHotline(organizationProfile.getHotline())
-        .orgLogo(organizationProfile.getLogo())
+        .orgLogo(organizationProfile.getLogoKey())
         .orgAddress(organizationProfile.getAddress())
         .orgRegistrationNumber(organizationProfile.getRegistrationNumber())
         .createdAt(organizationProfile.getCreatedAt())

@@ -84,7 +84,7 @@ public class AwsS3FileStorageService implements FileStorageService {
     try {
       String finalFilename = (filename != null && !filename.isBlank())
           ? filename
-          : generateUniqueFilename("thumbnail.png"); //for extension
+          : generateUniqueFilename("dump.png"); //for extension
 
       String key = folder + "/" + finalFilename;
 
@@ -96,9 +96,8 @@ public class AwsS3FileStorageService implements FileStorageService {
 
       s3Client.putObject(putObjectRequest, RequestBody.fromBytes(content));
 
-      String fileUrl = String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, key);
-      log.info("Successfully uploaded generated file to S3: {}", fileUrl);
-      return fileUrl;
+      log.info("Successfully uploaded generated file to S3: {}", key);
+      return key;
     } catch (Exception e) {
       log.error("Failed to upload generated file to S3", e);
       throw new FileStorageException("Failed to upload generated file to S3", e);
@@ -107,32 +106,32 @@ public class AwsS3FileStorageService implements FileStorageService {
 
   @Override
   public List<String> uploadFiles(List<MultipartFile> files, String folder) {
-    List<String> fileUrls = new ArrayList<>();
+    List<String> fileKeys = new ArrayList<>();
 
     for (MultipartFile file : files) {
       String fileUrl = uploadFile(file, folder, null);
-      fileUrls.add(fileUrl);
+      fileKeys.add(fileUrl);
     }
 
-    return fileUrls;
+    return fileKeys;
   }
 
   @Override
-  public void deleteFile(String fileUrl) {
+  public void deleteFile(String fileKey) {
     try {
-      String key = extractKeyFromUrl(fileUrl);
+//      String key = extractKeyFromUrl(fileUrl);
 
       DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
           .bucket(bucketName)
-          .key(key)
+          .key(fileKey)
           .build();
 
       s3Client.deleteObject(deleteObjectRequest);
-      log.info("Successfully deleted file from S3: {}", fileUrl);
+      log.info("Successfully deleted file from S3: {}", fileKey);
 
     } catch (Exception e) {
-      log.error("Failed to delete file: {}", fileUrl, e);
-      throw FileStorageException.deleteFailed(fileUrl, e);
+      log.error("Failed to delete file: {}", fileKey, e);
+      throw FileStorageException.deleteFailed(fileKey, e);
     }
   }
 
@@ -175,12 +174,12 @@ public class AwsS3FileStorageService implements FileStorageService {
     return UUID.randomUUID() + extension;
   }
 
-  private String extractKeyFromUrl(String fileUrl) {
-    // Extract key from URL format: https://bucket.s3.region.amazonaws.com/key
-    String prefix = String.format("https://%s.s3.%s.amazonaws.com/", bucketName, region);
-    if (fileUrl.startsWith(prefix)) {
-      return fileUrl.substring(prefix.length());
-    }
-    throw new IllegalArgumentException("Invalid S3 URL format: " + fileUrl);
-  }
+//  private String extractKeyFromUrl(String fileUrl) {
+//    // Extract key from URL format: https://bucket.s3.region.amazonaws.com/key
+//    String prefix = String.format("https://%s.s3.%s.amazonaws.com/", bucketName, region);
+//    if (fileUrl.startsWith(prefix)) {
+//      return fileUrl.substring(prefix.length());
+//    }
+//    throw new IllegalArgumentException("Invalid S3 URL format: " + fileUrl);
+//  }
 }

@@ -51,6 +51,11 @@ app:
   mail:
     from: ${MAIL_FROM:no-reply@capstone.com}
     verificationBaseUrl: ${MAIL_VERIFICATION_BASE_URL:http://localhost:3000/verify-email}
+  audit:
+    log:
+      retention-enabled: ${AUDIT_LOG_RETENTION_ENABLED:true}
+      retention-days: ${AUDIT_LOG_RETENTION_DAYS:180}  # 6 months
+      retention-cron: ${AUDIT_LOG_RETENTION_CRON:0 0 2 * * ?}  # Daily at 2:00 AM
 
 logging:
   level:

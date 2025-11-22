@@ -7,12 +7,14 @@ import com.capstone.be.domain.enums.EmailChangeStatus;
 import com.capstone.be.domain.enums.PasswordResetStatus;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.domain.enums.UserStatus;
+import com.capstone.be.dto.request.admin.ChangeRoleRequest;
 import com.capstone.be.dto.request.admin.UpdateUserStatusRequest;
 import com.capstone.be.dto.request.user.ChangeEmailRequest;
 import com.capstone.be.dto.request.user.ChangePasswordRequest;
 import com.capstone.be.dto.response.admin.AdminOrganizationResponse;
 import com.capstone.be.dto.response.admin.AdminReaderResponse;
 import com.capstone.be.dto.response.admin.AdminReviewerResponse;
+import com.capstone.be.dto.response.admin.UserManagementResponse;
 import com.capstone.be.exception.BusinessException;
 import com.capstone.be.exception.DuplicateResourceException;
 import com.capstone.be.exception.InvalidRequestException;
@@ -26,6 +28,7 @@ import com.capstone.be.repository.specification.UserSpecification;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.service.UserService;
 import com.capstone.be.util.OtpUtil;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -579,6 +582,72 @@ public class UserServiceImpl implements UserService {
     return buildAdminOrganizationResponse(user);
   }
 
+  // System Admin operations - Role management
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<UserManagementResponse> getAllUsersForRoleManagement(
+      String search, UserRole role, UserStatus status,
+      Instant dateFrom, Instant dateTo,
+      Pageable pageable) {
+    log.info("System admin getting all users for role management - search: {}, role: {}, status: {}, dateFrom: {}, dateTo: {}",
+        search, role, status, dateFrom, dateTo);
+
+    Specification<User> spec = UserSpecification
+        .withFilters(role, status, search, dateFrom, dateTo);
+
+    Page<User> users = userRepository.findAll(spec, pageable);
+
+    return users.map(this::buildUserManagementResponse);
+  }
+
+  @Override
+  @Transactional
+  public UserManagementResponse changeUserRole(
+      UUID userId, ChangeRoleRequest request, UUID changedBy) {
+    log.info("System admin {} changing role for user {} from {} to {}, reason: {}",
+        changedBy, userId, "current", request.getRole(), request.getReason());
+
+    // Prevent user from changing their own role
+    if (userId.equals(changedBy)) {
+      throw new BusinessException(
+          "You cannot change your own role",
+          HttpStatus.BAD_REQUEST,
+          "CANNOT_CHANGE_OWN_ROLE"
+      );
+    }
+
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new BusinessException(
+            "User not found with id: " + userId,
+            HttpStatus.NOT_FOUND,
+            "USER_NOT_FOUND"
+        ));
+
+    UserRole oldRole = user.getRole();
+
+    // Validate that role is actually changing
+    if (oldRole == request.getRole()) {
+      throw new BusinessException(
+          "User already has the role: " + request.getRole(),
+          HttpStatus.BAD_REQUEST,
+          "SAME_ROLE"
+      );
+    }
+
+    // Update role
+    user.setRole(request.getRole());
+    userRepository.save(user);
+
+    log.info("User role changed successfully - user: {}, oldRole: {}, newRole: {}, changedBy: {}, reason: {}",
+        userId, oldRole, request.getRole(), changedBy, request.getReason());
+
+    // TODO: Add audit logging here when audit log service is available
+    // auditLogService.logRoleChange(userId, oldRole, request.getRole(), changedBy, request.getReason());
+
+    return buildUserManagementResponse(user);
+  }
+
   // Helper methods
 
   private AdminReaderResponse buildAdminReaderResponse(
@@ -655,5 +724,18 @@ public class UserServiceImpl implements UserService {
     });
 
     return builder.build();
+  }
+
+  private UserManagementResponse buildUserManagementResponse(User user) {
+    return UserManagementResponse.builder()
+        .id(user.getId())
+        .email(user.getEmail())
+        .fullName(user.getFullName())
+        .avatarUrl(user.getAvatarUrl())
+        .role(user.getRole())
+        .status(user.getStatus())
+        .createdAt(user.getCreatedAt())
+        .updatedAt(user.getUpdatedAt())
+        .build();
   }
 }

@@ -123,7 +123,7 @@ public class ReaderServiceImpl implements ReaderService {
         .email(user.getEmail())
         .fullName(user.getFullName())
         .avatarUrl(user.getAvatarUrl())
-        .point(user.getPoint())
+//        .point(user.getPoint())
         .status(user.getStatus())
         .dob(readerProfile.getDob())
         .createdAt(readerProfile.getCreatedAt())

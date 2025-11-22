@@ -2,7 +2,10 @@ package com.capstone.be.service;
 
 import com.capstone.be.dto.request.organization.UpdateOrganizationProfileRequest;
 import com.capstone.be.dto.response.organization.OrganizationProfileResponse;
+import com.capstone.be.dto.response.organization.PublicOrganizationResponse;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface OrganizationService {
@@ -41,4 +44,27 @@ public interface OrganizationService {
    * @return Updated OrganizationProfileResponse with new logo URL
    */
   OrganizationProfileResponse uploadLogo(UUID userId, MultipartFile file);
+
+  /**
+   * Get public information of an organization (reader must be a member)
+   *
+   * @param readerId       Reader user ID
+   * @param organizationId Organization ID
+   * @return Public organization information
+   */
+  PublicOrganizationResponse getPublicOrganizationInfo(UUID readerId, UUID organizationId);
+
+  /**
+   * Get all joined organizations for a reader
+   *
+   * @param readerId Reader user ID
+   * @param search   Search by name (optional)
+   * @param pageable Pagination parameters
+   * @return Page of joined organizations
+   */
+  Page<PublicOrganizationResponse> getJoinedOrganizations(
+      UUID readerId,
+      String search,
+      Pageable pageable
+  );
 }

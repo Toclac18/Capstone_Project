@@ -401,4 +401,135 @@ public class EmailServiceImpl implements EmailService {
         </html>
         """.formatted(fullName, otp);
   }
+
+  @Override
+  @Async
+  public void sendPasswordResetConfirmation(String email, String fullName) {
+    try {
+      String subject = "Password Reset Successful - Capstone Platform";
+      String htmlContent = buildPasswordResetConfirmationHtml(fullName);
+
+      sendHtmlEmail(email, subject, htmlContent);
+      log.info("Sent password reset confirmation to: {}", email);
+
+    } catch (Exception e) {
+      log.error("Failed to send password reset confirmation to: {}", email, e);
+      // Don't throw exception - it's not critical
+    }
+  }
+
+  private String buildPasswordResetConfirmationHtml(String fullName) {
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
+                .content { padding: 20px; background-color: #f9f9f9; }
+                .success-box { background-color: #e8f5e9; border-left: 4px solid #4CAF50;
+                              padding: 15px; margin: 20px 0; }
+                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Password Reset Successful</h1>
+                </div>
+                <div class="content">
+                    <h2>Hello %s,</h2>
+                    <div class="success-box">
+                        <p style="margin: 0;"><strong>✓ Your password has been successfully reset.</strong></p>
+                    </div>
+                    <p>You can now log in to your Capstone Platform account using your new password.</p>
+                    <p><strong>Security Tips:</strong></p>
+                    <ul>
+                        <li>Keep your password secure and don't share it with anyone</li>
+                        <li>Use a unique password that you don't use on other websites</li>
+                        <li>Consider using a password manager for better security</li>
+                    </ul>
+                    <p>If you did not perform this password reset, please contact our support team immediately as your account may be compromised.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; 2025 Capstone Platform. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(fullName);
+  }
+
+  @Override
+  @Async
+  public void sendOrganizationInvitation(String email, String fullName, String organizationName,
+      UUID enrollmentId) {
+    try {
+      String subject = "Organization Invitation - " + organizationName;
+      String htmlContent = buildOrganizationInvitationHtml(fullName, organizationName,
+          enrollmentId);
+
+      sendHtmlEmail(email, subject, htmlContent);
+      log.info("Sent organization invitation to: {} for organization: {}", email,
+          organizationName);
+
+    } catch (Exception e) {
+      log.error("Failed to send organization invitation to: {}", email, e);
+      throw EmailException.sendFailed(email, e);
+    }
+  }
+
+  private String buildOrganizationInvitationHtml(String fullName, String organizationName,
+      UUID enrollmentId) {
+    // Note: In production, this should link to frontend acceptance page
+    String acceptanceUrl = String.format(
+        "https://capstone-platform.com/accept-invitation?enrollmentId=%s",
+        enrollmentId);
+
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #673AB7; color: white; padding: 20px; text-align: center; }
+                .content { padding: 20px; background-color: #f9f9f9; }
+                .invitation-box { background-color: #ede7f6; border-left: 4px solid #673AB7;
+                                 padding: 15px; margin: 20px 0; }
+                .button { display: inline-block; padding: 12px 30px; background-color: #673AB7;
+                         color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Organization Invitation</h1>
+                </div>
+                <div class="content">
+                    <h2>Hello %s,</h2>
+                    <p>You have been invited to join an organization on the Capstone Platform!</p>
+                    <div class="invitation-box">
+                        <p style="margin: 0;"><strong>Organization:</strong> %s</p>
+                    </div>
+                    <p>By accepting this invitation, you will become a member of <strong>%s</strong> and gain access to exclusive resources and collaboration opportunities.</p>
+                    <p style="text-align: center;">
+                        <a href="%s" class="button">Accept Invitation</a>
+                    </p>
+                    <p>Or copy and paste this link into your browser:</p>
+                    <p style="word-break: break-all; color: #673AB7;">%s</p>
+                    <p><strong>Note:</strong> If you did not expect this invitation, you can safely ignore this email.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; 2025 Capstone Platform. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(fullName, organizationName, organizationName, acceptanceUrl, acceptanceUrl);
+  }
 }

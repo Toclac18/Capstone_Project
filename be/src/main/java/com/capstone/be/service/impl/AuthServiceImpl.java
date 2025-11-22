@@ -1,5 +1,6 @@
 package com.capstone.be.service.impl;
 
+import com.capstone.be.config.constant.FileStorage;
 import com.capstone.be.domain.entity.Domain;
 import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.ReaderProfile;
@@ -214,7 +215,7 @@ public class AuthServiceImpl implements AuthService {
     // Upload logo if provided
     String logoKey = null;
     if (logoFile != null && !logoFile.isEmpty()) {
-      logoKey = fileStorageService.uploadFile(logoFile, "public/org-logo", null);
+      logoKey = fileStorageService.uploadFile(logoFile, FileStorage.ORG_LOGO_FOLDER, null);
       log.info("Uploaded organization logo to S3: {}", logoKey);
     }
 

@@ -1,5 +1,6 @@
 package com.capstone.be.service.impl;
 
+import com.capstone.be.config.constant.FileStorage;
 import com.capstone.be.domain.entity.EmailChangeRequest;
 import com.capstone.be.domain.entity.PasswordResetRequest;
 import com.capstone.be.domain.entity.User;
@@ -143,7 +144,8 @@ public class UserServiceImpl implements UserService {
     // Delete old avatar if exists
     if (user.getAvatarKey() != null && !user.getAvatarKey().isEmpty()) {
       try {
-        fileStorageService.deleteFile(user.getAvatarKey());
+        fileStorageService.deleteFile(
+            FileStorage.AVATAR_FOLDER, user.getAvatarKey());
         log.info("Deleted old avatar for user ID: {}", userId);
       } catch (Exception e) {
         log.warn("Failed to delete old avatar, continuing with upload: {}", e.getMessage());
@@ -151,7 +153,7 @@ public class UserServiceImpl implements UserService {
     }
 
     // Upload new avatar to S3
-    String avatarKey = fileStorageService.uploadFile(file, "public/avatars", null);
+    String avatarKey = fileStorageService.uploadFile(file, FileStorage.AVATAR_FOLDER, null);
     user.setAvatarKey(avatarKey);
 
     // Save user

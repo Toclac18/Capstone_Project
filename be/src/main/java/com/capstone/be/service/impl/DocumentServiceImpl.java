@@ -1,5 +1,6 @@
 package com.capstone.be.service.impl;
 
+import com.capstone.be.config.constant.FileStorage;
 import com.capstone.be.domain.entity.DocType;
 import com.capstone.be.domain.entity.Document;
 import com.capstone.be.domain.entity.DocumentRedemption;
@@ -91,13 +92,13 @@ public class DocumentServiceImpl implements DocumentService {
     Set<Tag> allTags = handleTags(request);
 
     // Upload file to S3
-    String fileUrl = fileStorageService.uploadFile(file, "documents", null);
-    log.info("Uploaded document file to S3: {}", fileUrl);
+    String fileKey = fileStorageService.uploadFile(file, FileStorage.DOCUMENT_FOLDER, null);
+    log.info("Uploaded document file to S3: {}", fileKey);
 
     // 2) Generate thumbnail từ trang đầu tiên & upload lên S3
     String thumbnailKey = documentThumbnailService.generateAndUploadThumbnail(
         file,
-        "public/document-thumbnail"
+        FileStorage.DOCUMENT_THUMB_FOLDER
     );
     if (thumbnailKey != null) {
       log.info("Generated thumbnail for document: {}", thumbnailKey);
@@ -107,7 +108,7 @@ public class DocumentServiceImpl implements DocumentService {
 
     // Create and save document
     Document document = createDocument(request, uploader, docType, specialization, organization,
-        fileUrl);
+        fileKey);
     if (thumbnailKey != null) {
       document.setThumbnailKey(thumbnailKey);
     }

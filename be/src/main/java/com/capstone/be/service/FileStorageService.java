@@ -41,15 +41,15 @@ public interface FileStorageService {
 
   /**
    * Delete a file from S3
-   *
-   * @param fileUrl The URL of the file to delete
+   * @param folder folder to delete file
+   * @param fileName name of the file to delete
    */
-  void deleteFile(String fileUrl);
+  void deleteFile(String folder, String fileName);
 
   /**
    * Delete multiple files from S3
-   *
+   * @param folder folder to delete file
    * @param fileUrls List of file URLs to delete
    */
-  void deleteFiles(List<String> fileUrls);
+  void deleteFiles(String folder, List<String> fileUrls);
 }

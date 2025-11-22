@@ -1,5 +1,6 @@
 package com.capstone.be.service.impl;
 
+import com.capstone.be.config.constant.FileStorage;
 import com.capstone.be.domain.entity.OrgEnrollment;
 import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.User;
@@ -123,7 +124,8 @@ public class OrganizationServiceImpl implements OrganizationService {
     // Delete old logo if exists
     if (organizationProfile.getLogoKey() != null && !organizationProfile.getLogoKey().isEmpty()) {
       try {
-        fileStorageService.deleteFile(organizationProfile.getLogoKey());
+        fileStorageService.deleteFile(
+            FileStorage.ORG_LOGO_FOLDER, organizationProfile.getLogoKey());
         log.info("Deleted old logo for organization user ID: {}", userId);
       } catch (Exception e) {
         log.warn("Failed to delete old logo, continuing with upload: {}", e.getMessage());
@@ -131,7 +133,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     // Upload new logo to S3
-    String logoKey = fileStorageService.uploadFile(file, "public/org-logo", null);
+    String logoKey = fileStorageService.uploadFile(file, FileStorage.ORG_LOGO_FOLDER, null);
     organizationProfile.setLogoKey(logoKey);
 
     // Save organization profile

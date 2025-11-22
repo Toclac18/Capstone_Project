@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Bold, Italic, Underline, List, ListOrdered, Link, Eye, Code } from "lucide-react";
 import styles from "./styles.module.css";
 

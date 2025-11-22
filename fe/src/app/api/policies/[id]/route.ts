@@ -10,7 +10,7 @@ function beBase() {
   return (
     process.env.BE_BASE_URL?.replace(/\/$/, "") ||
     process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    "http://localhost:8081"
+    "http://localhost:8080"
   );
 }
 
@@ -56,19 +56,28 @@ export async function GET(
 
 // ---------- Helpers ----------
 async function forward(path: string) {
-  const h = headers();
-  const cookieStore = cookies();
-  const headerAuth = (await h).get("authorization") || "";
-  const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
-  const effectiveAuth = headerAuth || cookieAuth;
+  const h = await headers();
+  const cookieStore = await cookies();
+  const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+  
+  // Get token from cookie and convert to Bearer format
+  const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
+  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
+  
+  // Also check if Authorization header is already present
+  const headerAuth = h.get("authorization") || "";
 
   const upstreamUrl = beBase() + path;
   const passHeaders: Record<string, string> = {
-    ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
+    "Content-Type": "application/json",
   };
-
-  const cookieHeader = (await h).get("cookie");
-  if (cookieHeader) passHeaders["cookie"] = cookieHeader;
+  
+  // Use Bearer token from cookie or existing Authorization header
+  if (bearerToken) {
+    passHeaders["Authorization"] = bearerToken;
+  } else if (headerAuth) {
+    passHeaders["Authorization"] = headerAuth;
+  }
 
   const upstream = await fetch(upstreamUrl, {
     headers: passHeaders,

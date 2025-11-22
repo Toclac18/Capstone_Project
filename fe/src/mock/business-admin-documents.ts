@@ -239,25 +239,21 @@ let _documents: DocumentListItem[] = [...seedDocuments];
 let _documentDetails: Record<string, DocumentDetail> = { ...seedDocumentDetails };
 
 // ---------- Helper Functions ----------
-function isoWithOffset(d: Date) {
-  const pad = (n: number, l = 2) => String(n).padStart(l, "0");
-  const y = d.getFullYear();
-  const m = pad(d.getMonth() + 1);
-  const day = pad(d.getDate());
-  const hh = pad(d.getHours());
-  const mm = pad(d.getMinutes());
-  const ss = pad(d.getSeconds());
-  const ms = pad(d.getMilliseconds(), 3);
-  const tzo = -d.getTimezoneOffset();
-  const sign = tzo >= 0 ? "+" : "-";
-  const oh = pad(Math.floor(Math.abs(tzo) / 60));
-  const om = pad(Math.abs(tzo) % 60);
-  return `${y}-${m}-${day}T${hh}:${mm}:${ss}.${ms}${sign}${oh}:${om}`;
-}
-
-function nowIso() {
-  return isoWithOffset(new Date());
-}
+// function isoWithOffset(d: Date) {
+//   const pad = (n: number, l = 2) => String(n).padStart(l, "0");
+//   const y = d.getFullYear();
+//   const m = pad(d.getMonth() + 1);
+//   const day = pad(d.getDate());
+//   const hh = pad(d.getHours());
+//   const mm = pad(d.getMinutes());
+//   const ss = pad(d.getSeconds());
+//   const ms = pad(d.getMilliseconds(), 3);
+//   const tzo = -d.getTimezoneOffset();
+//   const sign = tzo >= 0 ? "+" : "-";
+//   const oh = pad(Math.floor(Math.abs(tzo) / 60));
+//   const om = pad(Math.abs(tzo) % 60);
+//   return `${y}-${m}-${day}T${hh}:${mm}:${ss}.${ms}${sign}${oh}:${om}`;
+// }
 
 // ---------- Public API ----------
 

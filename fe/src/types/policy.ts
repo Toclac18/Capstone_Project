@@ -1,5 +1,3 @@
-import { BaseEntity } from './base';
-
 /**
  * Policy types - các loại policy trong hệ thống
  */

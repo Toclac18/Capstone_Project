@@ -34,10 +34,6 @@ export function PolicyList({
     return TYPE_LABELS[type] || type;
   };
 
-  const getStatusLabel = (status: PolicyStatus | string) => {
-    return status === PolicyStatus.ACTIVE ? "Active" : "Inactive";
-  };
-
   if (loading) {
     return (
       <div className={styles.tableContainer}>

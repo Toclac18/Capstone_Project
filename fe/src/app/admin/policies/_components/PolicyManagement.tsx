@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import type { Policy } from "@/types/policy";
 import { getAllPolicies, updatePolicyByType } from "@/services/policyService";
 import { useToast, toast } from "@/components/ui/toast";
-import { Eye } from "lucide-react";
 import PolicyViewer from "@/components/PolicyViewer/PolicyViewer";
 import { EditPolicyModal } from "./EditPolicyModal";
 import { PolicyType, PolicyStatus } from "@/types/policy";

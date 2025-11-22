@@ -6,12 +6,13 @@ import { useForm } from "react-hook-form";
 import { PolicyEditor } from "./PolicyEditor";
 import { updatePolicyByType } from "@/services/policyService";
 import { useToast, toast } from "@/components/ui/toast";
-import type { Policy, UpdatePolicyRequest, PolicyStatus } from "@/types/policy";
+import type { Policy, UpdatePolicyRequest } from "@/types/policy";
+import { PolicyStatus } from "@/types/policy";
 import styles from "./styles.module.css";
 
 const STATUS_OPTIONS: { value: PolicyStatus; label: string }[] = [
-  { value: "ACTIVE", label: "Active" },
-  { value: "INACTIVE", label: "Inactive" },
+  { value: PolicyStatus.ACTIVE, label: "Active" },
+  { value: PolicyStatus.INACTIVE, label: "Inactive" },
 ];
 
 interface EditPolicyModalProps {

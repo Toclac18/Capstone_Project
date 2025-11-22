@@ -1,514 +1,1089 @@
-/* ---------- Page shell ---------- */
+/* ---------------------------------------------------------------------
+   THEME TOKENS – LIGHT & DARK (SYSTEM / TOGGLE)
+   --------------------------------------------------------------------- */
+
+/* DARK THEME (html.dark) */
+:global(html.dark) [data-search-scope] {
+  --search-bg: radial-gradient(circle at top, #1f2937 0, #020617 60%);
+  --search-page-bg: #020617;
+
+  --search-surface: #020617;
+  --search-surface-elevated: #020617;
+  --search-surface-soft: #0b1120;
+  --search-toolbar: linear-gradient(
+    135deg,
+    rgba(15, 23, 42, 0.96),
+    rgba(30, 64, 175, 0.9)
+  );
+
+  --search-border-subtle: rgba(148, 163, 184, 0.35);
+  --search-border-strong: #38bdf8;
+
+  --search-text-main: #e5e7eb;
+  --search-text-soft: #cbd5f5;
+  --search-text-muted: #94a3b8;
+  --search-text-contrast: #020617;
+
+  --search-primary: #38bdf8;
+  --search-primary-soft: rgba(56, 189, 248, 0.12);
+  --search-primary-strong: #0ea5e9;
+
+  --search-accent-badge-bg: radial-gradient(
+    circle at 10% 0,
+    rgba(245, 158, 11, 0.18),
+    rgba(30, 64, 175, 0.9)
+  );
+  --search-accent-badge-border: rgba(248, 250, 252, 0.18);
+  --search-accent-badge-text: #fbbf24;
+
+  --search-shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.9);
+  --search-shadow-subtle: 0 8px 24px rgba(15, 23, 42, 0.9);
+
+  --search-chip-bg: rgba(15, 23, 42, 0.96);
+}
+
+/* LIGHT THEME (html:not(.dark)) */
+:global(html:not(.dark)) [data-search-scope] {
+  --search-bg: radial-gradient(circle at top, #e5f0ff 0, #f8fafc 70%);
+  --search-page-bg: #f1f5f9;
+
+  --search-surface: #ffffff;
+  --search-surface-elevated: #ffffff;
+  --search-surface-soft: #eef2ff;
+  --search-toolbar: linear-gradient(135deg, #eff6ff, #1d4ed8);
+
+  --search-border-subtle: rgba(148, 163, 184, 0.35);
+  --search-border-strong: #2563eb;
+
+  --search-text-main: #0f172a;
+  --search-text-soft: #334155;
+  --search-text-muted: #64748b;
+  --search-text-contrast: #ffffff;
+
+  --search-primary: #2563eb;
+  --search-primary-soft: rgba(37, 99, 235, 0.08);
+  --search-primary-strong: #1d4ed8;
+
+  /* Brighter, higher-contrast year badge for light mode */
+  --search-accent-badge-bg: linear-gradient(135deg, #fef3c7, #fbbf24);
+  --search-accent-badge-border: rgba(148, 163, 184, 0.7);
+  --search-accent-badge-text: #1f2937;
+
+  --search-shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.15);
+  --search-shadow-subtle: 0 8px 24px rgba(15, 23, 42, 0.18);
+
+  --search-chip-bg: #e5edff;
+}
+
+/* BASE ROOT FOR THIS PAGE SCOPE (BOTH THEMES) */
+:global([data-search-scope]) {
+  --search-radius-lg: 24px;
+  --search-radius-md: 14px;
+  --search-radius-pill: 999px;
+
+  --search-font-sans: system-ui, -apple-system, BlinkMacSystemFont,
+    "SF Pro Text", "Segoe UI", sans-serif;
+
+  font-family: var(--search-font-sans);
+  background: var(--search-bg);
+  color: var(--search-text-main);
+  padding: 32px 16px 40px;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------------------
+   PAGE CONTAINER + HEADER
+   --------------------------------------------------------------------- */
+
 [data-search-scope] .container {
-  @apply mx-auto max-w-6xl px-4 py-8;
+  max-width: 1160px;
+  margin: 0 auto;
+  background: var(--search-page-bg);
+  border-radius: var(--search-radius-lg);
+  border: 1px solid var(--search-border-subtle);
+  box-shadow: var(--search-shadow-soft);
+  padding: 26px 26px 30px;
+  box-sizing: border-box;
 }
 
-/* Header */
 [data-search-scope] .header {
-  @apply mb-6;
-}
-[data-search-scope] .title {
-  @apply text-3xl font-extrabold text-gray-900;
-}
-[data-search-scope] .subtitle {
-  @apply text-gray-500;
-}
-:global(html.dark) [data-search-scope] .title {
-  color: #f9fafb !important;
-}
-:global(html.dark) [data-search-scope] .subtitle {
-  color: #9ca3af !important;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 22px;
 }
 
-/* ======================================================================
-   SEARCH TOOLBAR
-   ====================================================================== */
+[data-search-scope] .title {
+  font-size: 26px;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+  color: var(--search-text-main);
+}
+
+[data-search-scope] .subtitle {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--search-text-soft);
+}
+
+/* ---------------------------------------------------------------------
+   TOOLBAR (SEARCH + CONTROLS)
+   --------------------------------------------------------------------- */
+
 [data-search-scope] .toolbar {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border-radius: 16px;
-  border: 1px solid rgb(229 231 235);
-  background: #ffffff;
-  padding: 12px;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-}
-:global(html.dark) [data-search-scope] .toolbar {
-  background: #0f1a2a !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-  box-shadow: none !important;
+  gap: 14px;
+  padding: 12px 14px;
+  background: var(--search-toolbar);
+  border-radius: 18px;
+  border: 1px solid var(--search-border-subtle);
+  box-shadow: var(--search-shadow-subtle);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(18px);
 }
 
+/* Search input */
 [data-search-scope] .searchInput {
-  flex: 1 1 250px;
-  min-width: 250px;
-  border-radius: 12px;
-  border: 1px solid rgb(229 231 235);
-  background: #ffffff;
-  padding: 12px 16px;
-  color: #111827;
+  flex: 1;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  padding: 10px 14px 10px 16px;
+  background: var(--search-chip-bg);
+  color: var(--search-text-main);
+  font-size: 13px;
   outline: none;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease,
-    background-color 0.15s ease;
-}
-[data-search-scope] .searchInput::placeholder {
-  color: #9ca3af;
-}
-[data-search-scope] .searchInput:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-}
-:global(html.dark) [data-search-scope] .searchInput {
-  background: #111827 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: #e5e7eb !important;
-}
-:global(html.dark) [data-search-scope] .searchInput::placeholder {
-  color: #9ca3af !important;
+    background-color 0.15s ease,
+    transform 0.07s ease;
 }
 
+[data-search-scope] .searchInput::placeholder {
+  color: rgba(148, 163, 184, 0.88);
+}
+
+[data-search-scope] .searchInput:focus {
+  border-color: var(--search-primary-strong);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.35),
+    0 0 0 5px var(--search-primary-soft);
+  background: var(--search-surface-elevated);
+  transform: translateY(-0.5px);
+}
+
+/* Right section: per page + filter button */
 [data-search-scope] .right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
+/* Per page label + select */
 [data-search-scope] .perPageLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-:global(html.dark) [data-search-scope] .perPageLabel {
-  color: #9ca3af;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--search-text-soft);
 }
 
 [data-search-scope] .perPageSelect {
-  border-radius: 10px;
-  border: 1px solid rgb(229 231 235);
-  background: #ffffff;
-  padding: 6px 8px;
-  font-size: 0.875rem;
-  color: #111827;
+  min-width: 72px;
+  padding: 7px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  background: var(--search-chip-bg);
+  color: var(--search-text-main);
+  font-size: 12px;
   outline: none;
+  appearance: none;
+  background-image: linear-gradient(
+    45deg,
+    transparent 50%,
+    rgba(148, 163, 184, 0.9) 50%
+  );
+  background-position: calc(100% - 10px) 52%;
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 24px;
+  cursor: pointer;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease,
-    background-color 0.15s ease;
-}
-[data-search-scope] .perPageSelect:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-}
-:global(html.dark) [data-search-scope] .perPageSelect {
-  background: #111827 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: #e5e7eb !important;
+    background-color 0.15s ease,
+    transform 0.07s ease;
 }
 
+[data-search-scope] .perPageSelect:focus {
+  border-color: var(--search-primary-strong);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.35),
+    0 0 0 5px var(--search-primary-soft);
+  transform: translateY(-0.5px);
+}
+
+/* Filter button */
 [data-search-scope] .filterButton {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(99, 102, 241, 0.7);
-  background: transparent;
-  color: #4f46e5;
-  font-weight: 600;
-  font-size: 0.875rem;
+  border-radius: 999px;
+  border: 1px solid var(--search-primary);
+  background: radial-gradient(
+    circle at 20% 20%,
+    rgba(56, 189, 248, 0.3),
+    rgba(15, 23, 42, 0.98)
+  );
+  color: #e0f2fe;
+  font-size: 12px;
+  font-weight: 520;
+  cursor: pointer;
   transition:
-    background-color 0.2s ease,
-    transform 0.05s ease,
-    border-color 0.15s ease;
-}
-[data-search-scope] .filterButton:hover {
-  background: rgba(79, 70, 229, 0.08);
-}
-[data-search-scope] .filterButton:active {
-  transform: scale(0.97);
-}
-:global(html.dark) [data-search-scope] .filterButton {
-  border-color: rgba(255, 255, 255, 0.22) !important;
-  color: #f3f4f6 !important;
-  background: transparent !important;
-}
-:global(html.dark) [data-search-scope] .filterButton:hover {
-  background: rgba(99, 102, 241, 0.2) !important;
+    background-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.08s ease,
+    border-color 0.16s ease;
 }
 
-/* Mobile */
-@media (max-width: 640px) {
+:global(html:not(.dark)) [data-search-scope] .filterButton {
+  background: linear-gradient(135deg, #eff6ff, #1d4ed8);
+  color: #eff6ff;
+}
+
+[data-search-scope] .filterButton svg {
+  flex-shrink: 0;
+}
+
+[data-search-scope] .filterButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(56, 189, 248, 0.3);
+  border-color: var(--search-primary-strong);
+}
+
+[data-search-scope] .filterButton:active {
+  transform: translateY(0px) scale(0.98);
+  box-shadow: none;
+}
+
+/* ---------------------------------------------------------------------
+   LIST / CARD GRID
+   --------------------------------------------------------------------- */
+
+[data-search-scope] .listWrapper {
+  margin-top: 20px;
+}
+
+/* Empty state */
+[data-search-scope] .empty {
+  padding: 24px 20px 22px;
+  border-radius: var(--search-radius-md);
+  border: 1px dashed var(--search-border-subtle);
+  background: radial-gradient(
+    circle at top left,
+    var(--search-primary-soft),
+    var(--search-surface-soft)
+  );
+  color: var(--search-text-soft);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+[data-search-scope] .empty strong {
+  color: var(--search-text-main);
+}
+
+/* Card grid */
+[data-search-scope] .cardGrid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1.6fr 1.6fr;
+  gap: 14px;
+  padding: 0;
+  margin: 0;
+}
+
+/* Card */
+[data-search-scope] .card {
+  background: var(--search-surface-elevated);
+  border-radius: 18px;
+  border: 1px solid var(--search-border-subtle);
+  padding: 13px 14px 14px;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    border-color 0.16s ease,
+    background-position 0.2s ease,
+    background-color 0.2s ease;
+  background-position: 0 0;
+  background-size: 200% 200%;
+}
+
+[data-search-scope] .card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 0% 0%,
+    var(--search-primary-soft),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+[data-search-scope] .card:hover {
+  transform: translateY(-4px);
+  border-color: var(--search-primary-strong);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.22);
+  background-color: var(--search-surface-soft);
+}
+
+[data-search-scope] .card:hover::before {
+  opacity: 1;
+}
+
+/* Card header */
+[data-search-scope] .cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Card title */
+[data-search-scope] .cardTitle {
+  font-size: 14px;
+  font-weight: 620;
+  line-height: 1.5;
+  color: var(--search-text-main);
+  word-break: break-word;
+}
+
+[data-search-scope] .cardTitle span {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Badge (year / premium) */
+[data-search-scope] .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--search-radius-pill);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--search-accent-badge-bg);
+  border: 1px solid var(--search-accent-badge-border);
+  color: var(--search-accent-badge-text);
+  white-space: nowrap;
+}
+
+/* Meta block */
+[data-search-scope] .cardMeta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 8px;
+  font-size: 11px;
+  color: var(--search-text-soft);
+}
+
+[data-search-scope] .metaLabel {
+  font-weight: 550;
+  color: var(--search-text-muted);
+}
+
+/* Skeleton loading cards */
+[data-search-scope] .skeleton {
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: linear-gradient(
+      120deg,
+      rgba(148, 163, 184, 0.15),
+      rgba(148, 163, 184, 0.35),
+      rgba(148, 163, 184, 0.15)
+    )
+    0 0 / 200% 100%;
+  height: 90px;
+  animation: search-skeleton-wave 1.1s ease-in-out infinite;
+}
+
+@keyframes search-skeleton-wave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   PAGINATION – CENTERED, ROUND, ACTIVE HIGHLIGHT
+   --------------------------------------------------------------------- */
+
+[data-search-scope] .paginationBar {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--search-border-subtle);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 13px;
+  color: var(--search-text-soft);
+}
+
+/* Page info line */
+[data-search-scope] .pageInfo {
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--search-text-muted);
+}
+
+/* Pagination list */
+[data-search-scope] .paginationNav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Shared page button style */
+[data-search-scope] .pageBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--search-border-subtle);
+  background: var(--search-chip-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--search-text-main);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease,
+    border-color 0.16s ease,
+    transform 0.09s ease,
+    box-shadow 0.16s ease;
+}
+
+/* Hover state */
+[data-search-scope] .pageBtn:hover:not(:disabled) {
+  border-color: var(--search-primary);
+  color: var(--search-primary);
+  transform: translateY(-2px);
+}
+
+/* Disabled */
+[data-search-scope] .pageBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* CURRENT PAGE – ensure circle even if component only uses this class */
+[data-search-scope] .pageBtnActive {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--search-primary);
+  background: var(--search-primary);
+  color: var(--search-text-contrast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  box-shadow: 0 6px 16px rgba(56, 189, 248, 0.45);
+  transform: translateY(-2px);
+}
+
+/* Wider buttons for "First" / "Last" but aligned with row */
+[data-search-scope] .pageBtnLabel {
+  min-width: 48px;
+  padding: 0 10px;
+  height: 32px;
+  border-radius: 999px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------------------------------------------------------------------
+   FILTER MODAL – BACKDROP & SHELL
+   --------------------------------------------------------------------- */
+
+[data-search-scope] .modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    circle at top,
+    rgba(56, 189, 248, 0.18),
+    rgba(15, 23, 42, 0.88)
+  );
+  backdrop-filter: blur(18px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+}
+
+[data-search-scope] .modal {
+  width: min(880px, 96vw);
+  max-height: 88vh;
+  background: var(--search-surface);
+  border-radius: 20px;
+  border: 1px solid var(--search-border-subtle);
+  box-shadow: 0 24px 72px rgba(15, 23, 42, 0.45);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+[data-search-scope] .modalHeader {
+  padding: 16px 20px 10px;
+  border-bottom: 1px solid var(--search-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+[data-search-scope] .modalTitle {
+  font-size: 16px;
+  font-weight: 650;
+  color: var(--search-text-main);
+}
+
+/* children: Org, Domain, Specialization, Public year, Premium/Points */
+[data-search-scope] .modalBody {
+  padding: 16px 20px 12px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 18px 28px;
+  align-items: flex-start;
+}
+
+/* Footer with Reset / Apply */
+[data-search-scope] .modalFooter {
+  padding: 12px 18px 12px;
+  border-top: 1px solid var(--search-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+[data-search-scope] .spacer {
+  flex: 1 1 auto;
+}
+
+/* small help text under Premium when disabled */
+[data-search-scope] .inlineHelp {
+  font-size: 11px;
+  color: var(--search-text-muted);
+  margin-top: 4px;
+}
+
+/* ---------------------------------------------------------------------
+   GENERAL FIELDS & SELECTS
+   --------------------------------------------------------------------- */
+
+[data-search-scope] .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+[data-search-scope] .fieldLabel,
+[data-search-scope] .fieldLabelInline {
+  font-size: 12px;
+  color: var(--search-text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+[data-search-scope] .fieldLabelInline {
+  justify-content: space-between;
+}
+
+[data-search-scope] .select {
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.65);
+  background: var(--search-chip-bg);
+  color: var(--search-text-main);
+  padding: 8px 10px;
+  font-size: 12px;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+[data-search-scope] .select:focus {
+  border-color: var(--search-primary-strong);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.35),
+    0 0 0 5px var(--search-primary-soft);
+}
+
+/* Year range row (From / To) */
+[data-search-scope] .rangeGroup {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 6px;
+}
+
+[data-search-scope] .rangeSep {
+  font-size: 11px;
+  color: var(--search-text-muted);
+}
+
+/* ---------------------------------------------------------------------
+   DOMAIN CHECKBOX LIST (matches FilterModal.tsx)
+   --------------------------------------------------------------------- */
+
+/* grid container around the label.checkbox items */
+[data-search-scope] .checkboxGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+  column-gap: 16px;
+  row-gap: 6px;
+  margin-top: 6px;
+}
+
+/* each domain option = <label className={styles.checkbox}> */
+[data-search-scope] .checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--search-text-soft);
+  line-height: 1.4;
+}
+
+/* the actual checkbox element inside the label */
+[data-search-scope] .checkbox input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  border-radius: 5px;
+  border: 1px solid rgba(148, 163, 184, 0.85);
+  background: var(--search-surface);
+  appearance: none;
+  cursor: pointer;
+  margin: 2px 0 0;
+  flex-shrink: 0;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+[data-search-scope] .checkbox input[type="checkbox"]:checked {
+  background: var(--search-primary);
+  border-color: var(--search-primary);
+  box-shadow: 0 0 0 3px var(--search-primary-soft);
+}
+
+[data-search-scope] .checkbox input[type="checkbox"]:checked::after {
+  content: "✓";
+  color: var(--search-text-contrast);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* label text */
+[data-search-scope] .checkbox span {
+  flex: 1;
+  word-break: break-word;
+}
+
+/* Premium-only row label */
+[data-search-scope] .checkboxInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--search-text-soft);
+}
+
+/* native checkbox for Premium line */
+[data-search-scope] .checkboxInline input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.85);
+  appearance: none;
+  background: var(--search-surface);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+[data-search-scope] .checkboxInline input[type="checkbox"]:checked {
+  background: var(--search-primary);
+  border-color: var(--search-primary);
+}
+
+/* ---------------------------------------------------------------------
+   RESPONSIVE – MODAL
+   --------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  [data-search-scope] .modalBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-search-scope] .checkboxGrid {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  [data-search-scope] .checkboxGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   POINTS SECTION (PREMIUM POINTS / SLIDER AREA)
+   --------------------------------------------------------------------- */
+
+[data-search-scope] .pointsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+[data-search-scope] .pointsLabel {
+  font-size: 12px;
+  color: var(--search-text-main);
+}
+
+[data-search-scope] .pointsPill {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.08);
+  color: #16a34a;
+  border: 1px solid rgba(34, 197, 94, 0.6);
+  white-space: nowrap;
+}
+
+[data-search-scope] .pointsSliderBlock {
+  margin-top: 10px;
+}
+
+[data-search-scope] .pointsCurrent {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--search-text-muted);
+  display: flex;
+  gap: 8px;
+}
+
+/* min / max labels on the right side */
+[data-search-scope] .pointsEnds {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Dual slider container                                              */
+/* ------------------------------------------------------------------ */
+
+[data-search-scope] .dualSlider {
+  position: relative;
+  height: 32px;
+  margin-top: 6px;
+}
+
+/* Visual track underneath both inputs – uses CSS vars from inline style */
+[data-search-scope] .dualSliderTrack {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 4px;
+  border-radius: 999px;
+
+  /* compute relative positions */
+  --span: calc(var(--max) - var(--min));
+  --from-pct: calc((var(--from) - var(--min)) / var(--span) * 100%);
+  --to-pct: calc((var(--to) - var(--min)) / var(--span) * 100%);
+
+  background: linear-gradient(
+    to right,
+    rgba(148, 163, 184, 0.35) 0%,
+    rgba(148, 163, 184, 0.35) var(--from-pct),
+    var(--search-primary) var(--from-pct),
+    var(--search-primary) var(--to-pct),
+    rgba(148, 163, 184, 0.35) var(--to-pct),
+    rgba(148, 163, 184, 0.35) 100%
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* RANGE INPUTS INSIDE DUAL SLIDER                                    */
+/* (override generic .range styles so they behave as sliders here)    */
+/* ------------------------------------------------------------------ */
+
+[data-search-scope] .dualSlider .range {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  height: 0; /* height is controlled by track & thumb */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* WebKit track */
+[data-search-scope] .dualSlider .range::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent; /* hide native track, we use dualSliderTrack */
+}
+
+/* WebKit thumb */
+[data-search-scope] .dualSlider .range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--search-primary);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
+  margin-top: -6px; /* center over 4px track */
+}
+
+/* Firefox track */
+[data-search-scope] .dualSlider .range::-moz-range-track {
+  height: 4px;
+  background: transparent;
+}
+
+/* Firefox thumb */
+[data-search-scope] .dualSlider .range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--search-primary);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
+}
+
+/* IE/Edge (old) */
+[data-search-scope] .dualSlider .range::-ms-track {
+  height: 4px;
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+[data-search-scope] .dualSlider .range::-ms-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--search-primary);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
+}
+
+/* ---------------------------------------------------------------------
+   BUTTONS (PRIMARY / GHOST / ICON / LINK)
+   --------------------------------------------------------------------- */
+
+[data-search-scope] .primaryBtn {
+  border: none;
+  border-radius: var(--search-radius-pill);
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #22d3ee, #0ea5e9);
+  color: #0b1120;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 14px 32px rgba(34, 211, 238, 0.55);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    filter 0.12s ease,
+    opacity 0.12s ease;
+}
+
+:global(html:not(.dark)) [data-search-scope] .primaryBtn {
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  color: #eff6ff;
+}
+
+[data-search-scope] .primaryBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow: 0 18px 40px rgba(56, 189, 248, 0.7);
+}
+
+[data-search-scope] .primaryBtn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 8px 20px rgba(56, 189, 248, 0.6);
+}
+
+[data-search-scope] .primaryBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Ghost button (outline) */
+[data-search-scope] .ghostBtn {
+  border-radius: var(--search-radius-pill);
+  padding: 7px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  background: transparent;
+  color: var(--search-text-main);
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition:
+    background-color 0.13s ease,
+    border-color 0.13s ease,
+    transform 0.08s ease;
+}
+
+[data-search-scope] .ghostBtn:hover {
+  background: var(--search-chip-bg);
+  border-color: var(--search-primary-strong);
+  transform: translateY(-1px);
+}
+
+/* Icon button (for close, etc.) */
+[data-search-scope] .iconBtn {
+  border-radius: 999px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: var(--search-chip-bg);
+  color: var(--search-text-main);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    transform 0.08s ease;
+}
+
+[data-search-scope] .iconBtn:hover {
+  background: var(--search-surface-soft);
+  border-color: var(--search-primary-strong);
+  transform: translateY(-1px);
+}
+
+/* Link-styled button */
+[data-search-scope] .linkBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--search-primary-strong);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+[data-search-scope] .linkBtn:hover {
+  text-decoration: underline;
+}
+
+/* ---------------------------------------------------------------------
+   RESPONSIVE
+   --------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  [data-search-scope] .container {
+    padding: 20px 16px 24px;
+    border-radius: 18px;
+  }
+
+  [data-search-scope] .modalBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
   [data-search-scope] .toolbar {
     flex-direction: column;
     align-items: stretch;
   }
+
   [data-search-scope] .right {
     justify-content: space-between;
   }
+
+  [data-search-scope] .cardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  [data-search-scope] .paginationBar {
+    align-items: center;
+  }
 }
 
-/* ======================================================================
-   LIST / CARD GRID
-   ====================================================================== */
-[data-search-scope] .listWrapper {
-  @apply mt-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm;
-}
-:global(html.dark) [data-search-scope] .listWrapper {
-  background: transparent !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-  box-shadow: none !important;
-}
-[data-search-scope] .cardGrid {
-  @apply grid grid-cols-1 gap-4 md:grid-cols-2;
-}
+@media (max-width: 520px) {
+  :global([data-search-scope]) {
+    padding: 20px 10px 24px;
+  }
 
-[data-search-scope] .card {
-  @apply rounded-2xl border border-gray-200 bg-white p-5 transition;
-}
-:global(html.dark) [data-search-scope] .card {
-  background: #111827 !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
-}
-[data-search-scope] .card:hover {
-  transform: translateY(-2px);
-}
-:global(html.dark) [data-search-scope] .card:hover {
-  background: #162135 !important;
-  border-color: rgba(99, 102, 241, 0.25) !important;
-  transform: translateY(-3px) scale(1.01);
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.4),
-    inset 0 0 0 1px rgba(99, 102, 241, 0.2);
-}
+  [data-search-scope] .container {
+    padding: 16px 12px 20px;
+  }
 
-[data-search-scope] .cardHeader {
-  @apply mb-2 flex items-start justify-between gap-3;
-}
-[data-search-scope] .cardTitle {
-  @apply text-lg font-bold leading-snug text-gray-900;
-}
-:global(html.dark) [data-search-scope] .cardTitle,
-:global(html.dark) [data-search-scope] .cardTitle a {
-  color: #f9fafb !important;
-}
+  [data-search-scope] .header {
+    margin-bottom: 16px;
+  }
 
-[data-search-scope] .badge {
-  @apply shrink-0 rounded-md bg-indigo-600 px-2 py-0.5 text-xs font-semibold text-white;
-}
-[data-search-scope] .tag {
-  @apply rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700;
-}
-:global(html.dark) [data-search-scope] .tag {
-  background: rgba(255, 255, 255, 0.06);
-  color: #e5e7eb;
-}
-
-[data-search-scope] .cardMeta {
-  @apply grid gap-1 text-sm text-gray-600;
-}
-:global(html.dark) [data-search-scope] .cardMeta {
-  color: #9ca3af;
-}
-[data-search-scope] .metaLabel {
-  @apply font-medium text-gray-700;
-}
-:global(html.dark) [data-search-scope] .metaLabel {
-  color: #d1d5db;
-}
-
-[data-search-scope] .desc {
-  @apply mt-2 text-sm text-gray-700;
-}
-:global(html.dark) [data-search-scope] .desc {
-  color: #d1d5db;
-}
-
-[data-search-scope] .empty {
-  @apply py-12 text-center text-gray-500;
-}
-:global(html.dark) [data-search-scope] .empty {
-  color: #9ca3af;
-}
-[data-search-scope] .skeleton {
-  @apply animate-pulse rounded-xl border border-gray-200 bg-white p-6 text-gray-500;
-}
-:global(html.dark) [data-search-scope] .skeleton {
-  background: #111827;
-  border-color: rgba(255, 255, 255, 0.08);
-  color: #9ca3af;
-}
-
-/* ======================================================================
-   PAGINATION
-   ====================================================================== */
-[data-search-scope] .paginationBar {
-  @apply mt-6 flex items-center justify-between;
-}
-[data-search-scope] .pageInfo {
-  @apply text-sm text-gray-500;
-}
-:global(html.dark) [data-search-scope] .pageInfo {
-  color: #9ca3af;
-}
-
-[data-search-scope] .paginationNav {
-  @apply mt-4 flex flex-wrap items-center justify-center gap-2;
-}
-[data-search-scope] .pageBtn {
-  @apply rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-900 hover:bg-gray-100 disabled:opacity-50;
-}
-:global(html.dark) [data-search-scope] .pageBtn {
-  background: #0f1a2a;
-  border-color: rgba(255, 255, 255, 0.08);
-  color: #e5e7eb;
-}
-[data-search-scope] .pageBtnActive {
-  @apply rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white;
-}
-
-/* ======================================================================
-   FILTERS MODAL
-   ====================================================================== */
-[data-search-scope] .modalBackdrop {
-  @apply fixed inset-0 z-50 grid place-items-center bg-black/40 p-4;
-}
-[data-search-scope] .modal {
-  @apply w-full max-w-2xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl;
-}
-:global(html.dark) [data-search-scope] .modal {
-  background: #111827 !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-}
-
-[data-search-scope] .modalHeader {
-  @apply flex items-center justify-between border-b border-gray-200 p-4;
-}
-[data-search-scope] .modalTitle {
-  @apply text-xl font-bold text-gray-900;
-}
-:global(html.dark) [data-search-scope] .modalHeader {
-  border-color: rgba(255, 255, 255, 0.08) !important;
-}
-:global(html.dark) [data-search-scope] .modalTitle {
-  color: #f9fafb !important;
-}
-
-[data-search-scope] .modalBody {
-  @apply grid gap-5 p-4;
-}
-[data-search-scope] .modalFooter {
-  @apply flex items-center gap-3 border-t border-gray-200 p-4;
-}
-:global(html.dark) [data-search-scope] .modalFooter {
-  border-color: rgba(255, 255, 255, 0.08) !important;
-}
-
-[data-search-scope] .field {
-  @apply grid gap-1;
-}
-[data-search-scope] .fieldLabel {
-  @apply text-sm font-medium text-gray-700;
-}
-:global(html.dark) [data-search-scope] .fieldLabel {
-  color: #d1d5db;
-}
-
-/* Inputs in modal */
-[data-search-scope] .textInput,
-[data-search-scope] .numberInput,
-[data-search-scope] .select {
-  @apply rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-300/60;
-}
-:global(html.dark) [data-search-scope] :is(.textInput, .numberInput, .select) {
-  background: #0f1a2a !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-  color: #e5e7eb !important;
-}
-
-/* Buttons */
-[data-search-scope] .iconBtn {
-  @apply rounded-md p-2 hover:bg-gray-100 dark:text-white dark:hover:bg-white/10;
-}
-[data-search-scope] .primaryBtn {
-  @apply rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 active:scale-95;
-}
-[data-search-scope] .ghostBtn {
-  @apply rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-100;
-}
-:global(html.dark) [data-search-scope] .ghostBtn {
-  border-color: rgba(255, 255, 255, 0.18);
-  color: #f3f4f6;
-  background: transparent;
-}
-
-/* Domain chips & grids */
-[data-search-scope] .checkboxGrid {
-  @apply grid grid-cols-3 gap-2;
-}
-[data-search-scope] .checkbox {
-  @apply inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50;
-}
-:global(html.dark) [data-search-scope] .checkbox {
-  border-color: rgba(255, 255, 255, 0.12);
-  color: #e5e7eb;
-  background: transparent;
-}
-[data-search-scope] .checkbox input[type="checkbox"] {
-  accent-color: #4f46e5;
-}
-:global(html.dark) [data-search-scope] .checkbox input[type="checkbox"] {
-  accent-color: #6366f1;
-}
-
-[data-search-scope] .seeToggle {
-  @apply text-sm font-medium text-indigo-600 hover:underline;
-}
-:global(html.dark) [data-search-scope] .seeToggle {
-  color: #a5b4fc !important;
-}
-
-/* Year & points sections */
-[data-search-scope] .rangeGroup {
-  @apply flex items-center gap-2;
-}
-[data-search-scope] .rangeSep {
-  @apply text-sm text-gray-500;
-}
-:global(html.dark) [data-search-scope] .rangeSep {
-  color: #9ca3af;
-}
-[data-search-scope] .inlineHelp {
-  @apply text-xs text-gray-500;
-}
-:global(html.dark) [data-search-scope] .inlineHelp {
-  color: #9ca3af;
-}
-
-/* Points dual slider visuals */
-[data-search-scope] .pointsSliderBlock {
-  @apply grid gap-2;
-}
-[data-search-scope] .pointsHeader {
-  @apply flex items-center justify-between;
-}
-[data-search-scope] .pointsLabel {
-  @apply text-sm font-medium text-gray-700;
-}
-:global(html.dark) [data-search-scope] .pointsLabel {
-  color: #d1d5db;
-}
-[data-search-scope] .pointsCurrent {
-  @apply mt-1 flex items-center justify-between;
-}
-[data-search-scope] .pointsPill {
-  @apply rounded-xl border border-gray-200 bg-white px-4 py-1 text-sm font-semibold text-gray-800 shadow-sm;
-}
-:global(html.dark) [data-search-scope] .pointsPill {
-  background: #111827;
-  border-color: rgba(255, 255, 255, 0.08);
-  color: #f3f4f6;
-}
-
-/* Dual slider track */
-[data-search-scope] .dualSlider {
-  position: relative;
-  height: 28px;
-  display: grid;
-  align-items: center;
-}
-[data-search-scope] .dualSliderTrack {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(
-    to right,
-    rgba(0, 0, 0, 0.08) 0%,
-    rgba(0, 0, 0, 0.08)
-      calc((var(--from) - var(--min)) / (var(--max) - var(--min)) * 100%),
-    #4f86ff calc((var(--from) - var(--min)) / (var(--max) - var(--min)) * 100%),
-    #4f86ff calc((var(--to) - var(--min)) / (var(--max) - var(--min)) * 100%),
-    rgba(0, 0, 0, 0.08)
-      calc((var(--to) - var(--min)) / (var(--max) - var(--min)) * 100%),
-    rgba(0, 0, 0, 0.08) 100%
-  );
-}
-:global(html.dark) [data-search-scope] .dualSliderTrack {
-  background: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0.15) 0%,
-    rgba(255, 255, 255, 0.15)
-      calc((var(--from) - var(--min)) / (var(--max) - var(--min)) * 100%),
-    #467cff calc((var(--from) - var(--min)) / (var(--max) - var(--min)) * 100%),
-    #467cff calc((var(--to) - var(--min)) / (var(--max) - var(--min)) * 100%),
-    rgba(255, 255, 255, 0.15)
-      calc((var(--to) - var(--min)) / (var(--max) - var(--min)) * 100%),
-    rgba(255, 255, 255, 0.15) 100%
-  );
-}
-[data-search-scope] .range {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  background: transparent;
-  position: absolute;
-  height: 28px;
-  margin: 0;
-  pointer-events: none;
-}
-[data-search-scope] .range::-webkit-slider-runnable-track {
-  -webkit-appearance: none;
-  height: 6px;
-  background: transparent;
-}
-[data-search-scope] .range::-moz-range-track {
-  height: 6px;
-  background: transparent;
-}
-[data-search-scope] .range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  background: #4f86ff;
-  border: 3px solid white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
-  pointer-events: auto;
-  margin-top: -8px;
-}
-:global(html.dark) [data-search-scope] .range::-webkit-slider-thumb {
-  border-color: #111827;
-  background: #467cff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-[data-search-scope] .range::-moz-range-thumb {
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  background: #4f86ff;
-  border: 3px solid white;
-  cursor: pointer;
-  pointer-events: auto;
-}
-:global(html.dark) [data-search-scope] .range::-moz-range-thumb {
-  border-color: #111827;
-  background: #467cff;
-}
-
-/* Helpers */
-[data-search-scope] .mt6 {
-  @apply mt-6;
-}
-[data-search-scope] .mb6 {
-  @apply mb-6;
+  [data-search-scope] .toolbar {
+    padding: 10px 10px;
+  }
 }

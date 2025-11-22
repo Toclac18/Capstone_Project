@@ -40,7 +40,7 @@ export default function Pagination() {
           disabled={page === 1}
           aria-label="First page"
         >
-          « First
+          «
         </button>
 
         {/* ‹ Prev */}
@@ -81,7 +81,7 @@ export default function Pagination() {
           disabled={page >= totalPages}
           aria-label="Last page"
         >
-          Last »
+          »
         </button>
       </nav>
     </>

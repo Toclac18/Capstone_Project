@@ -13,8 +13,10 @@ import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.TagStatus;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
+import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
 import com.capstone.be.exception.BusinessException;
+import com.capstone.be.exception.ForbiddenException;
 import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.mapper.DocumentMapper;
@@ -27,6 +29,7 @@ import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.repository.SpecializationRepository;
 import com.capstone.be.repository.TagRepository;
 import com.capstone.be.repository.UserRepository;
+import com.capstone.be.service.DocumentAccessService;
 import com.capstone.be.service.DocumentService;
 import com.capstone.be.service.DocumentThumbnailService;
 import com.capstone.be.service.FileStorageService;
@@ -67,9 +70,13 @@ public class DocumentServiceImpl implements DocumentService {
   private final FileStorageService fileStorageService;
   private final DocumentThumbnailService documentThumbnailService;
   private final DocumentMapper documentMapper;
+  private final DocumentAccessService documentAccessService;
 
-  @Value("${app.premium-doc-price:100}")
+  @Value("${app.document.defaultPremiumPrice:120}")
   private Integer premiumDocPrice;
+
+  @Value("${app.s3.document.presignedExpInMinutes:60}")
+  private Integer presignedUrlExpirationMinutes;
 
   @Override
   @Transactional
@@ -366,5 +373,36 @@ public class DocumentServiceImpl implements DocumentService {
           .build();
       documentTagLinkRepository.save(link);
     }
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public DocumentPresignedUrlResponse getDocumentPresignedUrl(UUID userId, UUID documentId) {
+    log.info("User {} requesting presigned URL for document {}", userId, documentId);
+
+    // Check if document exists
+    Document document = documentRepository.findById(documentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+
+    // Check access control
+    boolean hasAccess = documentAccessService.hasAccess(userId, documentId);
+    if (!hasAccess) {
+      log.warn("User {} does not have access to document {}", userId, documentId);
+      throw new ForbiddenException("You do not have access to this document");
+    }
+
+    // Generate presigned URL
+    String presignedUrl = fileStorageService.generatePresignedUrl(
+        FileStorage.DOCUMENT_FOLDER,
+        document.getFileKey(),
+        presignedUrlExpirationMinutes
+    );
+
+    log.info("Generated presigned URL for document {} for user {}", documentId, userId);
+
+    return DocumentPresignedUrlResponse.builder()
+        .presignedUrl(presignedUrl)
+        .expiresInMinutes(presignedUrlExpirationMinutes)
+        .build();
   }
 }

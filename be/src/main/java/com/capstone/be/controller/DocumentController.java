@@ -1,6 +1,7 @@
 package com.capstone.be.controller;
 
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
+import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.DocumentService;
@@ -13,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -73,5 +75,27 @@ public class DocumentController {
     return ResponseEntity.noContent().build();
   }
 
+  /**
+   * Get presigned URL for document access Access is granted if: - Document is PUBLIC, OR - User is
+   * the uploader, OR - User is a member of the document's organization (for INTERNAL documents), OR
+   * - User has redeemed/purchased the document
+   *
+   * @param userPrincipal Authenticated user
+   * @param documentId    Document ID
+   * @return Presigned URL response with expiration time
+   */
+  @GetMapping(value = "/{id}/presigned-url")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
+  public ResponseEntity<DocumentPresignedUrlResponse> getDocumentPresignedUrl(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "id") UUID documentId) {
+    UUID userId = userPrincipal.getId();
+    log.info("User {} requesting presigned URL for document: {}", userId, documentId);
+
+    DocumentPresignedUrlResponse response = documentService.getDocumentPresignedUrl(userId,
+        documentId);
+
+    return ResponseEntity.ok(response);
+  }
 
 }

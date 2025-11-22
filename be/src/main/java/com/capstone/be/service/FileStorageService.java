@@ -52,4 +52,14 @@ public interface FileStorageService {
    * @param fileUrls List of file URLs to delete
    */
   void deleteFiles(String folder, List<String> fileUrls);
+
+  /**
+   * Generate a presigned URL for downloading a file from S3
+   *
+   * @param folder            Folder/prefix in S3 bucket
+   * @param filename          Name of the file
+   * @param expirationMinutes URL expiration time in minutes
+   * @return Presigned URL as string
+   */
+  String generatePresignedUrl(String folder, String filename, int expirationMinutes);
 }

@@ -4,6 +4,7 @@ import com.capstone.be.exception.FileStorageException;
 import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.service.FileStorageService;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -15,7 +16,11 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 @Slf4j
 @Service
@@ -23,6 +28,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 public class AwsS3FileStorageService implements FileStorageService {
 
   private final S3Client s3Client;
+  private final S3Presigner s3Presigner;
 
   @Value("${aws.s3.bucket}")
   private String bucketName;
@@ -168,6 +174,34 @@ public class AwsS3FileStorageService implements FileStorageService {
       extension = originalFilename.substring(originalFilename.lastIndexOf("."));
     }
     return UUID.randomUUID() + extension;
+  }
+
+  @Override
+  public String generatePresignedUrl(String folder, String filename, int expirationMinutes) {
+    try {
+      String key = folder + "/" + filename;
+
+      GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+          .bucket(bucketName)
+          .key(key)
+          .build();
+
+      GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+          .signatureDuration(Duration.ofMinutes(expirationMinutes))
+          .getObjectRequest(getObjectRequest)
+          .build();
+
+      PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+
+      String url = presignedRequest.url().toString();
+      log.info("Generated presigned URL for key: {}, expires in {} minutes", key,
+          expirationMinutes);
+
+      return url;
+    } catch (Exception e) {
+      log.error("Failed to generate presigned URL for {}/{}", folder, filename, e);
+      throw new FileStorageException("Failed to generate presigned URL", e);
+    }
   }
 
 }

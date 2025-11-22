@@ -1,4 +1,4 @@
-import { mockTypesDB } from "./db";
+import { mockTypesDB } from "./dbMock";
 
 /**
  * Mock API for manage-types domain.
@@ -12,9 +12,12 @@ export function setupMockManageTypes() {
 
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
-    
+
     // Handle GET /api/business-admin/types
-    if (url.includes("/api/business-admin/types") && !url.match(/\/api\/business-admin\/types\/[^/]+$/)) {
+    if (
+      url.includes("/api/business-admin/types") &&
+      !url.match(/\/api\/business-admin\/types\/[^/]+$/)
+    ) {
       if (init?.method === "GET" || !init?.method) {
         const urlObj = new URL(url, "http://localhost");
         const params = {
@@ -36,7 +39,7 @@ export function setupMockManageTypes() {
           {
             status: 200,
             headers: { "content-type": "application/json" },
-          }
+          },
         );
       }
 
@@ -58,13 +61,10 @@ export function setupMockManageTypes() {
             headers: { "content-type": "application/json" },
           });
         } catch (error: any) {
-          return new Response(
-            JSON.stringify({ message: error.message }),
-            {
-              status: 400,
-              headers: { "content-type": "application/json" },
-            }
-          );
+          return new Response(JSON.stringify({ message: error.message }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
         }
       }
     }
@@ -92,13 +92,10 @@ export function setupMockManageTypes() {
             headers: { "content-type": "application/json" },
           });
         } catch (error: any) {
-          return new Response(
-            JSON.stringify({ message: error.message }),
-            {
-              status: 400,
-              headers: { "content-type": "application/json" },
-            }
-          );
+          return new Response(JSON.stringify({ message: error.message }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
         }
       }
     }
@@ -109,4 +106,3 @@ export function setupMockManageTypes() {
 
   console.info("[MOCK] Manage Types API enabled (fetch intercepted)");
 }
-

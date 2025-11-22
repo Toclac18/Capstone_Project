@@ -1,5 +1,5 @@
 // src/app/api/docs-view/[id]/downvote/route.ts
-import { mockDownvoteDoc } from "@/mock/docsDetail";
+import { mockDownvoteDoc } from "@/mock/docsDetailMock";
 import { buildForwardHeaders } from "../../_utils";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";

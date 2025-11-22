@@ -1,10 +1,10 @@
 "use client";
 
-import { setupMocks } from "@/mock";
+import { setupMocks } from "@/mock/indexMock";
 setupMocks();
-import { SidebarProvider } from "@/components/Layouts/sidebar/sidebar-context";
 import { ThemeProvider } from "next-themes";
 import { ToastProvider } from "@/components/ui/toast";
+import { SidebarProvider } from "@/components/layouts/sidebar/sidebar-context";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (

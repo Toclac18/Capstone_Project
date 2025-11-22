@@ -1,4 +1,4 @@
-import { mockDB, type ContactAdminPayload } from "./db";
+import { mockDB, type ContactAdminPayload } from "./dbMock";
 
 /**
  * Mock API for contact-admin domain.

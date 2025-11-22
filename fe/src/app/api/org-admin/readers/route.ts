@@ -1,5 +1,5 @@
 // src/app/api/org-admin/readers/route.ts
-import { mockReaders } from "@/mock/readers";
+import { mockReaders } from "@/mock/readersMock";
 import { headers, cookies } from "next/headers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
@@ -83,7 +83,8 @@ async function handleGET(req: Request) {
   upstreamUrl.searchParams.set("page", String(page));
   upstreamUrl.searchParams.set("pageSize", String(pageSize));
   if (q) upstreamUrl.searchParams.set("q", q);
-  if (status && status !== "ALL") upstreamUrl.searchParams.set("status", status);
+  if (status && status !== "ALL")
+    upstreamUrl.searchParams.set("status", status);
 
   const upstream = await fetch(upstreamUrl.toString(), {
     method: "GET",
@@ -106,7 +107,7 @@ async function handleGET(req: Request) {
   const currentPage =
     (typeof payload?.number === "number"
       ? payload.number + 1
-      : payload?.page ?? page) || page;
+      : (payload?.page ?? page)) || page;
   const size =
     payload?.size ??
     payload?.pageSize ??

@@ -1,6 +1,6 @@
 // app/api/contact-admin/route.ts
 import { headers } from "next/headers";
-import { mockDB, type ContactAdminPayload } from "@/mock/db";
+import { mockDB, type ContactAdminPayload } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { badRequest } from "@/server/response";

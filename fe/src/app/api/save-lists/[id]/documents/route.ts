@@ -1,6 +1,6 @@
 // src/app/api/save-lists/[id]/documents/route.ts
 import { headers } from "next/headers";
-import { mockAddDocToSaveList } from "@/mock/saveList";
+import { mockAddDocToSaveList } from "@/mock/saveListMock";
 
 const DEFAULT_BE_BASE = "http://localhost:8081";
 

@@ -4,7 +4,7 @@ import {
   mockCreateImport,
   mockFetchImportDetail,
   mockFetchImports,
-} from "@/mock/imports";
+} from "@/mock/importsMock";
 import { NextRequest } from "next/server";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";

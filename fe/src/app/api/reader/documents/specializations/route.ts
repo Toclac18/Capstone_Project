@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { mockDocumentsDB } from "@/mock/db";
+import { mockDocumentsDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
 
@@ -30,7 +30,7 @@ async function handleGET(request: Request) {
   if (cookieHeader) fh.set("Cookie", cookieHeader);
 
   const url = domainIdsParam
-      ? `${BE_BASE}/api/reader/documents/specializations?domainIds=${encodeURIComponent(domainIdsParam)}`
+    ? `${BE_BASE}/api/reader/documents/specializations?domainIds=${encodeURIComponent(domainIdsParam)}`
     : `${BE_BASE}/api/reader/documents/specializations`;
 
   const upstream = await fetch(url, {

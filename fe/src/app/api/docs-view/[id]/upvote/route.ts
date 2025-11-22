@@ -1,5 +1,5 @@
 // src/app/api/docs-view/[id]/upvote/route.ts
-import { mockUpvoteDoc } from "@/mock/docsDetail";
+import { mockUpvoteDoc } from "@/mock/docsDetailMock";
 import { buildForwardHeaders } from "../../_utils";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";

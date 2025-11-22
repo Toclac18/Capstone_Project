@@ -1,12 +1,12 @@
 // app/api/notifications/[id]/read/route.ts
 import { headers } from "next/headers";
-import { mockNotificationDB } from "@/mock/db";
+import { mockNotificationDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handlePOST(
   _req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
 

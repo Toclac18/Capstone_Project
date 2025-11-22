@@ -1,6 +1,6 @@
 // app/api/profile/change-email/route.ts
 import { headers } from "next/headers";
-import { mockProfileDB } from "@/mock/db";
+import { mockProfileDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
 
@@ -29,7 +29,7 @@ async function handlePOST(req: Request) {
           "content-type": "application/json",
           "x-mode": "mock",
         },
-      }
+      },
     );
   }
 

@@ -1,4 +1,4 @@
-import { mockSpecializationsDB } from "@/mock/db";
+import { mockSpecializationsDB } from "@/mock/dbMock";
 import type { UpdateSpecializationRequest } from "@/types/document-specialization";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";

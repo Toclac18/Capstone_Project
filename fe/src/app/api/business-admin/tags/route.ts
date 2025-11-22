@@ -1,4 +1,4 @@
-import { mockTagsDB } from "@/mock/db";
+import { mockTagsDB } from "@/mock/dbMock";
 import { getAuthHeader } from "@/server/auth";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 

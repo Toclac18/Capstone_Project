@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { getReviewHistory } from "@/mock/review-list";
+import { getReviewHistory } from "@/mock/reviewListMock";
 import type { ReviewHistoryQueryParams } from "@/types/review";
 
 const DEFAULT_BE_BASE = "http://localhost:8080";
@@ -18,10 +18,24 @@ export async function GET(request: Request) {
   const type = searchParams.get("type") || undefined;
   const domain = searchParams.get("domain") || undefined;
   const specialization = searchParams.get("specialization") || undefined;
-  const active = searchParams.get("active") === "true" ? true : searchParams.get("active") === "false" ? false : undefined;
-  const rejected = searchParams.get("rejected") === "true" ? true : searchParams.get("rejected") === "false" ? false : undefined;
-  const page = searchParams.get("page") ? parseInt(searchParams.get("page")!) : 1;
-  const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 12;
+  const active =
+    searchParams.get("active") === "true"
+      ? true
+      : searchParams.get("active") === "false"
+        ? false
+        : undefined;
+  const rejected =
+    searchParams.get("rejected") === "true"
+      ? true
+      : searchParams.get("rejected") === "false"
+        ? false
+        : undefined;
+  const page = searchParams.get("page")
+    ? parseInt(searchParams.get("page")!)
+    : 1;
+  const limit = searchParams.get("limit")
+    ? parseInt(searchParams.get("limit")!)
+    : 12;
 
   if (USE_MOCK) {
     const params: ReviewHistoryQueryParams = {
@@ -79,4 +93,3 @@ export async function GET(request: Request) {
     },
   });
 }
-

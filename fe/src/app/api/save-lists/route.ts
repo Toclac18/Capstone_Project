@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import {
   mockFetchSaveLists,
   mockCreateSaveListAndAddDoc,
-} from "@/mock/saveList";
+} from "@/mock/saveListMock";
 
 // Cấu trúc giống contact-admin/route.ts
 const DEFAULT_BE_BASE = "http://localhost:8081";

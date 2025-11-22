@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { mockDocumentsDB } from "@/mock/db";
+import { mockDocumentsDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
 

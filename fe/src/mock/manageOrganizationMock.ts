@@ -1,4 +1,4 @@
-import { mockOrganizationAdminDB } from "./db";
+import { mockOrganizationAdminDB } from "./dbMock";
 
 /**
  * Mock API for manage-organization domain.
@@ -12,19 +12,19 @@ export function setupMockManageOrganization() {
 
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
-    
+
     if (url.includes("/api/organization-admin/manage-organization")) {
       if (init?.method === "GET") {
-      const orgInfo = mockOrganizationAdminDB.get();
-      return new Response(JSON.stringify(orgInfo), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
+        const orgInfo = mockOrganizationAdminDB.get();
+        return new Response(JSON.stringify(orgInfo), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
       }
-      
+
       if (init?.method === "PUT") {
         let body: any = {};
-        
+
         if (init.body instanceof FormData) {
           // Handle FormData
           init.body.forEach((value, key) => {
@@ -43,14 +43,14 @@ export function setupMockManageOrganization() {
             body = {};
           }
         }
-        
+
         const updated = mockOrganizationAdminDB.update(body);
         return new Response(JSON.stringify(updated), {
           status: 200,
           headers: { "content-type": "application/json" },
         });
       }
-      
+
       if (init?.method === "DELETE") {
         mockOrganizationAdminDB.delete();
         return new Response(
@@ -58,7 +58,7 @@ export function setupMockManageOrganization() {
           {
             status: 200,
             headers: { "content-type": "application/json" },
-          }
+          },
         );
       }
     }
@@ -69,4 +69,3 @@ export function setupMockManageOrganization() {
 
   console.info("[MOCK] Manage Organization API enabled (fetch intercepted)");
 }
-

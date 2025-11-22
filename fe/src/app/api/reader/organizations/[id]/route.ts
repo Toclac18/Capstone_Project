@@ -1,12 +1,9 @@
 import { headers } from "next/headers";
-import { mockOrganizationsDB } from "@/mock/db";
+import { mockOrganizationsDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
 
-async function handleGET(
-  _: Request,
-  ctx: { params: Promise<{ id: string }> },
-) {
+async function handleGET(_: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
 
   if (USE_MOCK) {
@@ -41,7 +38,8 @@ async function handleGET(
   return new Response(text, {
     status: upstream.status,
     headers: {
-      "content-type": upstream.headers.get("content-type") ?? "application/json",
+      "content-type":
+        upstream.headers.get("content-type") ?? "application/json",
       "x-mode": "real",
     },
   });

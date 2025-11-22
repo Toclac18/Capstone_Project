@@ -1,5 +1,5 @@
 // src/app/api/docs-view/[id]/redeem/route.ts
-import { mockRedeemDoc } from "@/mock/docsDetail";
+import { mockRedeemDoc } from "@/mock/docsDetailMock";
 import { buildForwardHeaders } from "../../_utils";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";

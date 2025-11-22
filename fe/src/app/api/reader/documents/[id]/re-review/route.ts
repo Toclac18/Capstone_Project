@@ -1,6 +1,6 @@
 // app/api/reader/documents/[id]/re-review/route.ts
 
-import { mockDocumentsDB } from "@/mock/db";
+import { mockDocumentsDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, parseError } from "@/server/response";

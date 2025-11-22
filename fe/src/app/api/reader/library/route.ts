@@ -1,4 +1,4 @@
-import { mockLibraryDB } from "@/mock/db";
+import { mockLibraryDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { withErrorBoundary } from "@/server/withErrorBoundary";

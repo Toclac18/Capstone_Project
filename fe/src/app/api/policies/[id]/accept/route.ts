@@ -1,6 +1,7 @@
-// app/api/users/[id]/status/route.ts
+// app/api/policies/[id]/accept/route.ts
 import { headers, cookies } from "next/headers";
 import { NextRequest } from "next/server";
+import { acceptPolicy } from "@/mock/policies";
 
 function beBase() {
   return (
@@ -10,45 +11,40 @@ function beBase() {
   );
 }
 
-export async function PATCH(
+export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const USE_MOCK = process.env.USE_MOCK === "true";
   const { id } = await params;
 
-  const body = await req.json().catch(() => null);
-  if (!body) {
-    return json({ error: "Invalid JSON" }, 400);
-  }
-
-  if (!body.status) {
-    return json({ error: "Status is required" }, 400);
-  }
-
   if (USE_MOCK) {
-    const { updateUserStatus } = await import("@/mock/business-admin-users");
-    const updated = updateUserStatus(id, body.status);
-    if (!updated) {
-      return json({ error: "User not found" }, 404, { "x-mode": "mock" });
+    // Mock: get user from cookie (in real app, decode JWT)
+    const cookieStore = await cookies();
+    const userId = cookieStore.get("access_token")?.value || "user-1";
+    const success = acceptPolicy(id, userId);
+    if (!success) {
+      return json({ error: "Policy not found" }, 404, { "x-mode": "mock" });
     }
-    return json({ data: updated }, 200, { "x-mode": "mock" });
+    return json({ message: "Policy accepted successfully" }, 200, {
+      "x-mode": "mock",
+    });
   }
 
   try {
-    const { upstream } = await forwardJson(`/api/users/${id}/status`, body);
+    const { upstream } = await forwardPost(`/api/policies/${id}/accept`);
     const raw = await upstream.json().catch(() => ({}));
     return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
   } catch (e: any) {
     return json(
-      { message: "User status update failed", error: String(e) },
+      { message: "Policy acceptance failed", error: String(e) },
       502
     );
   }
 }
 
 // ---------- Helpers ----------
-async function forwardJson(path: string, body: any) {
+async function forwardPost(path: string) {
   const h = headers();
   const cookieStore = cookies();
   const headerAuth = (await h).get("authorization") || "";
@@ -65,9 +61,8 @@ async function forwardJson(path: string, body: any) {
   if (cookieHeader) passHeaders["cookie"] = cookieHeader;
 
   const upstream = await fetch(upstreamUrl, {
-    method: "PATCH",
+    method: "POST",
     headers: passHeaders,
-    body: JSON.stringify(body),
     cache: "no-store",
   });
 

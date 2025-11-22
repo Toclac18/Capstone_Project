@@ -1,6 +1,10 @@
-// app/api/users/[id]/status/route.ts
+// app/api/policies/[id]/route.ts
 import { headers, cookies } from "next/headers";
 import { NextRequest } from "next/server";
+import {
+  getPolicyById,
+  getPolicyView,
+} from "@/mock/policies";
 
 function beBase() {
   return (
@@ -10,45 +14,48 @@ function beBase() {
   );
 }
 
-export async function PATCH(
+export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const USE_MOCK = process.env.USE_MOCK === "true";
   const { id } = await params;
-
-  const body = await req.json().catch(() => null);
-  if (!body) {
-    return json({ error: "Invalid JSON" }, 400);
-  }
-
-  if (!body.status) {
-    return json({ error: "Status is required" }, 400);
-  }
+  const url = new URL(req.url);
+  const userId = url.searchParams.get("userId"); // For checking acceptance
+  const view = url.searchParams.get("view") === "true"; // Get with acceptance status
 
   if (USE_MOCK) {
-    const { updateUserStatus } = await import("@/mock/business-admin-users");
-    const updated = updateUserStatus(id, body.status);
-    if (!updated) {
-      return json({ error: "User not found" }, 404, { "x-mode": "mock" });
+    if (view) {
+      const result = getPolicyView(id, userId || undefined);
+      if (!result) {
+        return json({ error: "Policy not found" }, 404, { "x-mode": "mock" });
+      }
+      return json({ data: result }, 200, { "x-mode": "mock" });
     }
-    return json({ data: updated }, 200, { "x-mode": "mock" });
+
+    const policy = getPolicyById(id);
+    if (!policy) {
+      return json({ error: "Policy not found" }, 404, { "x-mode": "mock" });
+    }
+    return json({ data: policy }, 200, { "x-mode": "mock" });
   }
 
+  const queryString = url.searchParams.toString();
+  const path = queryString
+    ? `/api/policies/${id}?${queryString}`
+    : `/api/policies/${id}`;
+
   try {
-    const { upstream } = await forwardJson(`/api/users/${id}/status`, body);
+    const { upstream } = await forward(path);
     const raw = await upstream.json().catch(() => ({}));
     return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
   } catch (e: any) {
-    return json(
-      { message: "User status update failed", error: String(e) },
-      502
-    );
+    return json({ message: "Policy fetch failed", error: String(e) }, 502);
   }
 }
 
 // ---------- Helpers ----------
-async function forwardJson(path: string, body: any) {
+async function forward(path: string) {
   const h = headers();
   const cookieStore = cookies();
   const headerAuth = (await h).get("authorization") || "";
@@ -57,7 +64,6 @@ async function forwardJson(path: string, body: any) {
 
   const upstreamUrl = beBase() + path;
   const passHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
     ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
   };
 
@@ -65,9 +71,7 @@ async function forwardJson(path: string, body: any) {
   if (cookieHeader) passHeaders["cookie"] = cookieHeader;
 
   const upstream = await fetch(upstreamUrl, {
-    method: "PATCH",
     headers: passHeaders,
-    body: JSON.stringify(body),
     cache: "no-store",
   });
 
@@ -84,4 +88,3 @@ function json(
     headers: { "content-type": "application/json", ...extraHeaders },
   });
 }
-

@@ -16,23 +16,11 @@ import { LogOutIcon, SettingsIcon, UserIcon } from "./icons";
 export function UserInfo() {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
-  const [user, setUser] = useState(() => {
-    if (typeof window === "undefined") {
-      return {
-        name: "",
-        email: "",
-        role: "",
-      };
-    }
-    const userRole = localStorage.getItem("userRole") || "";
-    const userEmail = localStorage.getItem("userEmail") || "";
-    const userName = localStorage.getItem("userName") || "";
-
-    return {
-      name: userName || "User",
-      email: userEmail || "",
-      role: userRole,
-    };
+  // Initialize with consistent default values for SSR and client
+  const [user, setUser] = useState({
+    name: "User",
+    email: "",
+    role: "",
   });
 
   useLayoutEffect(() => {
@@ -47,11 +35,12 @@ export function UserInfo() {
         role: userRole,
       });
     };
+    
+    // Initial update
+    updateUser();
+    
+    // Listen for storage changes
     window.addEventListener("storage", updateUser);
-
-    queueMicrotask(() => {
-      updateUser();
-    });
 
     return () => {
       window.removeEventListener("storage", updateUser);

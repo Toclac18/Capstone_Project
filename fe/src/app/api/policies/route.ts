@@ -1,8 +1,16 @@
-// app/api/organizations/route.ts
+// app/api/policies/route.ts
 import { headers, cookies } from "next/headers";
 import { NextRequest } from "next/server";
-import { getOrganizations, createOrganization } from "@/mock/business-admin-organizations";
-import type { OrganizationQueryParams } from "@/types/organization";
+import {
+  getAllPolicies,
+  getActivePolicyByType,
+  getPolicyByType,
+  updatePolicyByType,
+} from "@/mock/policies";
+import type {
+  PolicyType,
+  UpdatePolicyRequest,
+} from "@/types/policy";
 
 function beBase() {
   return (
@@ -15,68 +23,87 @@ function beBase() {
 export async function GET(req: NextRequest) {
   const USE_MOCK = process.env.USE_MOCK === "true";
   const url = new URL(req.url);
-  const queryString = url.searchParams.toString();
-  const path = queryString
-    ? `/api/organizations?${queryString}`
-    : `/api/organizations`;
+  const type = url.searchParams.get("type") as PolicyType | null;
+  const active = url.searchParams.get("active") === "true";
 
+  // Get active policy by type (for users to view)
+  if (active && type) {
+    if (USE_MOCK) {
+      const policy = getActivePolicyByType(type);
+      if (!policy) {
+        return json({ error: "Policy not found" }, 404, { "x-mode": "mock" });
+      }
+      return json({ data: policy }, 200, { "x-mode": "mock" });
+    }
+
+    try {
+      const { upstream } = await forward(`/api/policies?type=${type}&active=true`);
+      const raw = await upstream.json().catch(() => ({}));
+      return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
+    } catch (e: any) {
+      return json(
+        { message: "Policy fetch failed", error: String(e) },
+        502
+      );
+    }
+  }
+
+  // Get all policies (for admin)
   if (USE_MOCK) {
-    // Parse query params from URL
-    const params: OrganizationQueryParams = {};
-    if (url.searchParams.get("page")) params.page = parseInt(url.searchParams.get("page")!);
-    if (url.searchParams.get("limit")) params.limit = parseInt(url.searchParams.get("limit")!);
-    if (url.searchParams.get("search")) params.search = url.searchParams.get("search")!;
-    if (url.searchParams.get("status")) params.status = url.searchParams.get("status")!;
-    if (url.searchParams.get("sortBy")) params.sortBy = url.searchParams.get("sortBy")!;
-    if (url.searchParams.get("sortOrder")) params.sortOrder = url.searchParams.get("sortOrder") as "asc" | "desc";
-    if (url.searchParams.get("dateFrom")) params.dateFrom = url.searchParams.get("dateFrom")!;
-    if (url.searchParams.get("dateTo")) params.dateTo = url.searchParams.get("dateTo")!;
-
-    const result = getOrganizations(params);
-    return json({ data: result }, 200, { "x-mode": "mock" });
+    try {
+      const policies = getAllPolicies();
+      return json({ data: policies }, 200, { "x-mode": "mock" });
+    } catch (e: any) {
+      console.error("[MOCK] Error in policies GET:", e);
+      return json(
+        { error: "Failed to fetch policies", message: String(e) },
+        500,
+        { "x-mode": "mock" }
+      );
+    }
   }
 
   try {
-    const { upstream } = await forward(path);
+    const { upstream } = await forward("/api/policies");
     const raw = await upstream.json().catch(() => ({}));
     return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
   } catch (e: any) {
-    return json(
-      { message: "Organizations fetch failed", error: String(e) },
-      502
-    );
+    return json({ message: "Policies fetch failed", error: String(e) }, 502);
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function PATCH(req: NextRequest) {
   const USE_MOCK = process.env.USE_MOCK === "true";
+  const url = new URL(req.url);
+  const type = url.searchParams.get("type") as PolicyType | null;
   const body = await req.json().catch(() => null);
 
   if (!body) {
     return json({ error: "Invalid JSON" }, 400);
   }
 
+  if (!type) {
+    return json({ error: "Type parameter is required" }, 400);
+  }
+
   if (USE_MOCK) {
-    // Check if this is a list request (has query params in body) or create request
-    if (body.page !== undefined || body.search !== undefined || body.status !== undefined) {
-      // This is a list request (POST with query params)
-      const params: OrganizationQueryParams = body;
-      const result = getOrganizations(params);
-      return json({ data: result }, 200, { "x-mode": "mock" });
-    } else {
-      // This is a create request
-      const org = createOrganization(body);
-      return json({ data: org }, 201, { "x-mode": "mock" });
+    const data = body as UpdatePolicyRequest;
+    const policy = updatePolicyByType(type, data);
+
+    if (!policy) {
+      return json({ error: "Policy not found" }, 404, { "x-mode": "mock" });
     }
+
+    return json({ data: policy }, 200, { "x-mode": "mock" });
   }
 
   try {
-    const { upstream } = await forwardJson("/api/organizations", body);
+    const { upstream } = await forwardJson(`/api/policies?type=${type}`, body, "PATCH");
     const raw = await upstream.json().catch(() => ({}));
     return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
   } catch (e: any) {
     return json(
-      { message: "Organization creation failed", error: String(e) },
+      { message: "Policy update failed", error: String(e) },
       502
     );
   }
@@ -106,7 +133,7 @@ async function forward(path: string) {
   return { upstream, status: upstream.status, headers: upstream.headers };
 }
 
-async function forwardJson(path: string, body: any) {
+async function forwardJson(path: string, body: any, method: "PATCH" | "PUT" = "PATCH") {
   const h = headers();
   const cookieStore = cookies();
   const headerAuth = (await h).get("authorization") || "";
@@ -123,7 +150,7 @@ async function forwardJson(path: string, body: any) {
   if (cookieHeader) passHeaders["cookie"] = cookieHeader;
 
   const upstream = await fetch(upstreamUrl, {
-    method: "POST",
+    method,
     headers: passHeaders,
     body: JSON.stringify(body),
     cache: "no-store",
@@ -142,4 +169,3 @@ function json(
     headers: { "content-type": "application/json", ...extraHeaders },
   });
 }
-

@@ -1,103 +1,156 @@
 // app/api/documents/route.ts
-import { cookies } from "next/headers";
+import { headers, cookies } from "next/headers";
+import { NextRequest } from "next/server";
+import { getDocuments, getDocumentById } from "@/mock/business-admin-documents";
+import type { DocumentQueryParams } from "@/types/document-management";
 
-const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
-
-async function getAuthHeader(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (process.env.NODE_ENV === "development") {
-    console.log(`[documents] Cookie name: ${COOKIE_NAME}`);
-    console.log(`[documents] Token found: ${token ? "YES" : "NO"}`);
-    if (token) {
-      console.log(`[documents] Token length: ${token.length}`);
-    }
-  }
-  return token ? `Bearer ${token}` : null;
+function beBase() {
+  return (
+    process.env.BE_BASE_URL?.replace(/\/$/, "") ||
+    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
+    "http://localhost:8081"
+  );
 }
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
-  
-  if (!id) {
-    return Response.json({ error: "Document ID is required" }, { status: 400 });
+export async function GET(req: NextRequest) {
+  const USE_MOCK = process.env.USE_MOCK === "true";
+  const url = new URL(req.url);
+  const id = url.searchParams.get("id");
+
+  if (USE_MOCK) {
+    if (id) {
+      // Get single document by ID
+      const doc = getDocumentById(id);
+      if (!doc) {
+        return json({ error: "Document not found" }, 404, { "x-mode": "mock" });
+      }
+      return json({ data: doc }, 200, { "x-mode": "mock" });
+    } else {
+      // List documents - parse query params from URL
+      const params: DocumentQueryParams = {};
+      if (url.searchParams.get("page")) params.page = parseInt(url.searchParams.get("page")!);
+      if (url.searchParams.get("limit")) params.limit = parseInt(url.searchParams.get("limit")!);
+      if (url.searchParams.get("search")) params.search = url.searchParams.get("search")!;
+      if (url.searchParams.get("organizationId")) params.organizationId = url.searchParams.get("organizationId")!;
+      if (url.searchParams.get("typeId")) params.typeId = url.searchParams.get("typeId")!;
+      if (url.searchParams.get("isPublic") !== null) params.isPublic = url.searchParams.get("isPublic") === "true";
+      if (url.searchParams.get("isPremium") !== null) params.isPremium = url.searchParams.get("isPremium") === "true";
+      if (url.searchParams.get("deleted") !== null) params.deleted = url.searchParams.get("deleted") === "true";
+      if (url.searchParams.get("sortBy")) params.sortBy = url.searchParams.get("sortBy")!;
+      if (url.searchParams.get("sortOrder")) params.sortOrder = url.searchParams.get("sortOrder") as "asc" | "desc";
+      if (url.searchParams.get("dateFrom")) params.dateFrom = url.searchParams.get("dateFrom")!;
+      if (url.searchParams.get("dateTo")) params.dateTo = url.searchParams.get("dateTo")!;
+
+      const result = getDocuments(params);
+      return json({ data: result }, 200, { "x-mode": "mock" });
+    }
   }
 
-  const authHeader = await getAuthHeader();
-
-  const fh = new Headers({ "Content-Type": "application/json" });
-  if (authHeader) fh.set("Authorization", authHeader);
-
-  const upstream = await fetch(`${BE_BASE}/api/documents/${id}`, {
-    method: "GET",
-    headers: fh,
-    cache: "no-store",
-  });
-
-  const text = await upstream.text();
-  if (!upstream.ok) {
-    return Response.json(
-      { error: parseError(text) },
-      { status: upstream.status }
-    );
+  if (!id) {
+    return json({ error: "Document ID is required for GET" }, 400);
   }
 
   try {
-    const response = JSON.parse(text);
-    return Response.json(response);
-  } catch {
-    return Response.json(
-      { error: "Failed to process response" },
-      { status: 500 }
-    );
+    const { upstream } = await forward(`/api/documents/${id}`);
+    const raw = await upstream.json().catch(() => ({}));
+    return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
+  } catch (e: any) {
+    return json({ message: "Document fetch failed", error: String(e) }, 502);
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const USE_MOCK = process.env.USE_MOCK === "true";
   const body = await req.json().catch(() => null);
+
   if (!body) {
-    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+    return json({ error: "Invalid JSON" }, 400);
   }
 
-  const authHeader = await getAuthHeader();
+  if (USE_MOCK) {
+    // Check if this is a list request (has query params in body) or create request
+    if (body.page !== undefined || body.search !== undefined || body.organizationId !== undefined) {
+      // This is a list request (POST with query params)
+      const params: DocumentQueryParams = body;
+      const result = getDocuments(params);
+      return json({ data: result }, 200, { "x-mode": "mock" });
+    } else {
+      // This is a create request - not implemented in mock yet
+      return json(
+        { error: "Document creation not implemented in mock mode" },
+        501,
+        { "x-mode": "mock" }
+      );
+    }
+  }
 
-  const fh = new Headers({ "Content-Type": "application/json" });
-  if (authHeader) fh.set("Authorization", authHeader);
+  try {
+    const { upstream } = await forwardJson("/api/documents", body);
+    const raw = await upstream.json().catch(() => ({}));
+    return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
+  } catch (e: any) {
+    return json({ message: "Document creation failed", error: String(e) }, 502);
+  }
+}
 
-  const upstream = await fetch(`${BE_BASE}/api/documents`, {
+// ---------- Helpers ----------
+async function forward(path: string) {
+  const h = headers();
+  const cookieStore = cookies();
+  const headerAuth = (await h).get("authorization") || "";
+  const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
+  const effectiveAuth = headerAuth || cookieAuth;
+
+  const upstreamUrl = beBase() + path;
+  const passHeaders: Record<string, string> = {
+    ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
+  };
+
+  const cookieHeader = (await h).get("cookie");
+  if (cookieHeader) passHeaders["cookie"] = cookieHeader;
+
+  const upstream = await fetch(upstreamUrl, {
+    headers: passHeaders,
+    cache: "no-store",
+  });
+
+  return { upstream, status: upstream.status, headers: upstream.headers };
+}
+
+async function forwardJson(path: string, body: any) {
+  const h = headers();
+  const cookieStore = cookies();
+  const headerAuth = (await h).get("authorization") || "";
+  const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
+  const effectiveAuth = headerAuth || cookieAuth;
+
+  const upstreamUrl = beBase() + path;
+  const passHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
+  };
+
+  const cookieHeader = (await h).get("cookie");
+  if (cookieHeader) passHeaders["cookie"] = cookieHeader;
+
+  const upstream = await fetch(upstreamUrl, {
     method: "POST",
-    headers: fh,
+    headers: passHeaders,
     body: JSON.stringify(body),
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  if (!upstream.ok) {
-    return Response.json(
-      { error: parseError(text) },
-      { status: upstream.status }
-    );
-  }
-
-  try {
-    const response = JSON.parse(text);
-    return Response.json(response);
-  } catch {
-    return Response.json(
-      { error: "Failed to process response" },
-      { status: 500 }
-    );
-  }
+  return { upstream, status: upstream.status, headers: upstream.headers };
 }
 
-function parseError(text: string): string {
-  try {
-    const json = JSON.parse(text);
-    return json?.error || json?.message || "Request failed";
-  } catch {
-    return text || "Request failed";
-  }
+function json(
+  data: any,
+  status = 200,
+  extraHeaders: Record<string, string> = {},
+) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "content-type": "application/json", ...extraHeaders },
+  });
 }
 

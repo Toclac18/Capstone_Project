@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const upstream = await fetch(`${BE_BASE}/api/auth/login`, {
+  const upstream = await fetch(`${BE_BASE}/api/v1/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password, role }),

@@ -497,7 +497,7 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
     String fileUrl = null;
     if (file != null && !file.isEmpty()) {
       try {
-        fileUrl = fileStorageService.uploadFile(file, "import-batches", null);
+        fileUrl = fileStorageService.uploadFile(file, "member-import-file", null);
         log.info("Uploaded import Excel file to S3: {}", fileUrl);
       } catch (Exception e) {
         log.error("Failed to upload Excel file to S3", e);

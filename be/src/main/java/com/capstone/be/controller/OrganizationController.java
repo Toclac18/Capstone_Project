@@ -71,26 +71,6 @@ public class OrganizationController {
   }
 
   /**
-   * Upload avatar for organization admin
-   * POST /api/v1/organization/profile/avatar
-   *
-   * @param file           Avatar image file
-   * @return Updated OrganizationProfileResponse with new avatar URL
-   */
-  @PostMapping("/profile/avatar")
-  @PreAuthorize("hasRole('ORGANIZATION_ADMIN')")
-  public ResponseEntity<OrganizationProfileResponse> uploadAvatar(
-      @AuthenticationPrincipal UserPrincipal userPrincipal,
-      @RequestParam(name = "file") MultipartFile file) {
-    UUID userId = userPrincipal.getId();
-    log.info("Upload avatar request for organization user ID: {}", userId);
-
-    OrganizationProfileResponse response = organizationService.uploadAvatar(userId, file);
-
-    return ResponseEntity.ok(response);
-  }
-
-  /**
    * Upload logo for organization
    * POST /api/v1/organization/profile/logo
    *

@@ -10,6 +10,7 @@ import com.capstone.be.dto.response.admin.AdminReviewerResponse;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Service for user-related operations
@@ -62,6 +63,8 @@ public interface UserService {
    * @param userId User ID
    */
   void deleteAccount(UUID userId);
+
+  void uploadAvatar(UUID userId, MultipartFile file);
 
   // Admin operations - Reader management
 

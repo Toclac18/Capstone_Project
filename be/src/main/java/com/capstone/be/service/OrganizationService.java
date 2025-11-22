@@ -28,15 +28,6 @@ public interface OrganizationService {
   OrganizationProfileResponse updateProfile(UUID userId, UpdateOrganizationProfileRequest request);
 
   /**
-   * Upload avatar for organization admin
-   *
-   * @param userId User ID
-   * @param file   Avatar image file
-   * @return Updated OrganizationProfileResponse with new avatar URL
-   */
-  OrganizationProfileResponse uploadAvatar(UUID userId, MultipartFile file);
-
-  /**
    * Upload logo for organization
    *
    * @param userId User ID

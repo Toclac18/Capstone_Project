@@ -108,43 +108,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   @Override
   @Transactional
-  public OrganizationProfileResponse uploadAvatar(UUID userId, MultipartFile file) {
-    log.info("Uploading avatar for organization admin user ID: {}", userId);
-
-    // Get user
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
-
-    // Get organization profile
-    OrganizationProfile organizationProfile = organizationProfileRepository.findByUserId(userId)
-        .orElseThrow(() -> new ResourceNotFoundException(
-            "Organization profile not found for user ID: " + userId));
-
-    // Delete old avatar if exists
-    if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
-      try {
-        fileStorageService.deleteFile(user.getAvatarUrl());
-        log.info("Deleted old avatar for user ID: {}", userId);
-      } catch (Exception e) {
-        log.warn("Failed to delete old avatar, continuing with upload: {}", e.getMessage());
-      }
-    }
-
-    // Upload new avatar to S3
-    String avatarUrl = fileStorageService.uploadFile(file, "avatars", null);
-    user.setAvatarUrl(avatarUrl);
-
-    // Save user
-    userRepository.save(user);
-
-    log.info("Successfully uploaded avatar for user ID: {}", userId);
-
-    // Return updated profile
-    return buildProfileResponse(user, organizationProfile);
-  }
-
-  @Override
-  @Transactional
   public OrganizationProfileResponse uploadLogo(UUID userId, MultipartFile file) {
     log.info("Uploading logo for organization user ID: {}", userId);
 
@@ -168,7 +131,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     // Upload new logo to S3
-    String logoUrl = fileStorageService.uploadFile(file, "logos", null);
+    String logoUrl = fileStorageService.uploadFile(file, "public/org-logo", null);
     organizationProfile.setLogo(logoUrl);
 
     // Save organization profile

@@ -97,7 +97,7 @@ public class DocumentServiceImpl implements DocumentService {
     // 2) Generate thumbnail từ trang đầu tiên & upload lên S3
     String thumbnailUrl = documentThumbnailService.generateAndUploadThumbnail(
         file,
-        "documents/thumbnails"
+        "public/document-thumbnail"
     );
     if (thumbnailUrl != null) {
       log.info("Generated thumbnail for document: {}", thumbnailUrl);

@@ -214,7 +214,7 @@ public class AuthServiceImpl implements AuthService {
     // Upload logo if provided
     String logoUrl = null;
     if (logoFile != null && !logoFile.isEmpty()) {
-      logoUrl = fileStorageService.uploadFile(logoFile, "organization-logos", null);
+      logoUrl = fileStorageService.uploadFile(logoFile, "public/org-logo", null);
       log.info("Uploaded organization logo to S3: {}", logoUrl);
     }
 

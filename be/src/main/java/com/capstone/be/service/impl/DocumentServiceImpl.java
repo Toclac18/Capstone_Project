@@ -16,6 +16,7 @@ import com.capstone.be.domain.enums.TagStatus;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
+import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
 import com.capstone.be.exception.BusinessException;
 import com.capstone.be.exception.ForbiddenException;
@@ -48,6 +49,8 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -472,5 +475,40 @@ public class DocumentServiceImpl implements DocumentService {
 
     log.info("Successfully retrieved document detail for document {}", documentId);
     return response;
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<DocumentUploadHistoryResponse> getUploadHistory(UUID uploaderId, Pageable pageable) {
+    log.info("User {} requesting upload history with pagination: {}", uploaderId, pageable);
+
+    // Verify user exists
+    if (!userRepository.existsById(uploaderId)) {
+      throw ResourceNotFoundException.userById(uploaderId);
+    }
+
+    // Fetch documents uploaded by this user with pagination
+    Page<Document> documentsPage = documentRepository.findByUploader_Id(uploaderId, pageable);
+
+    // Map to response DTO
+    Page<DocumentUploadHistoryResponse> responsePage = documentsPage.map(document -> {
+      DocumentUploadHistoryResponse response = documentMapper.toUploadHistoryResponse(document);
+
+      // Get redemption count for this document
+      if (document.getIsPremium()){
+        long redemptionCount = documentRedemptionRepository.countByDocument_Id(document.getId());
+        response.setRedemptionCount((int) redemptionCount);
+      }
+
+      return response;
+    });
+
+    log.info("Retrieved {} documents for user {} (page {}/{})",
+        responsePage.getNumberOfElements(),
+        uploaderId,
+        responsePage.getNumber() + 1,
+        responsePage.getTotalPages());
+
+    return responsePage;
   }
 }

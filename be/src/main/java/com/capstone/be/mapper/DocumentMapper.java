@@ -3,6 +3,7 @@ package com.capstone.be.mapper;
 import com.capstone.be.domain.entity.Document;
 import com.capstone.be.domain.entity.Tag;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
+import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
 import java.util.List;
 import java.util.Set;
@@ -80,4 +81,19 @@ public interface DocumentMapper {
   default Integer calculateDownvotes(Integer voteScore) {
     return 0; // Will be calculated in service layer with upvoteCount
   }
+
+  /**
+   * Convert Document entity to DocumentUploadHistoryResponse DTO
+   * This is a lightweight mapping for list view
+   *
+   * @param document Document entity
+   * @return DocumentUploadHistoryResponse DTO
+   */
+  @Mapping(source = "thumbnailKey", target = "thumbnailUrl")
+  @Mapping(source = "docType.name", target = "docTypeName")
+  @Mapping(source = "specialization.name", target = "specializationName")
+  @Mapping(source = "specialization.domain.name", target = "domainName")
+  @Mapping(source = "organization.name", target = "organizationName")
+  @Mapping(target = "redemptionCount", ignore = true)
+  DocumentUploadHistoryResponse toUploadHistoryResponse(Document document);
 }

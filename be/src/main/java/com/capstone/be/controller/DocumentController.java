@@ -1,8 +1,10 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
+import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.DocumentService;
@@ -10,6 +12,8 @@ import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -118,6 +122,28 @@ public class DocumentController {
     DocumentDetailResponse response = documentService.getDocumentDetail(userId, documentId);
 
     return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Get upload history for the authenticated user
+   * Returns paginated list of all documents uploaded by the user
+   *
+   * @param userPrincipal Authenticated user
+   * @param pageable Pagination parameters (page, size, sort)
+   * @return Paged response of document upload history
+   */
+  @GetMapping(value = "/my-uploads")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
+  public ResponseEntity<PagedResponse<DocumentUploadHistoryResponse>> getMyUploadHistory(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      Pageable pageable) {
+    UUID uploaderId = userPrincipal.getId();
+    log.info("User {} requesting upload history (page: {}, size: {})",
+        uploaderId, pageable.getPageNumber(), pageable.getPageSize());
+
+    Page<DocumentUploadHistoryResponse> historyPage = documentService.getUploadHistory(uploaderId, pageable);
+
+    return ResponseEntity.ok(PagedResponse.of(historyPage));
   }
 
 }

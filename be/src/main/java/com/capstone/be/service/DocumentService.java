@@ -3,8 +3,11 @@ package com.capstone.be.service;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
+import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -47,5 +50,15 @@ public interface DocumentService {
    * @return Document detail response with all metadata
    */
   DocumentDetailResponse getDocumentDetail(UUID userId, UUID documentId);
+
+  /**
+   * Get upload history for a user
+   * Returns paginated list of all documents uploaded by the user
+   *
+   * @param uploaderId User ID who uploaded the documents
+   * @param pageable Pagination parameters
+   * @return Page of document upload history
+   */
+  Page<DocumentUploadHistoryResponse> getUploadHistory(UUID uploaderId, Pageable pageable);
 
 }

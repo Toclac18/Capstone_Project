@@ -1,6 +1,7 @@
 package com.capstone.be.controller;
 
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
+import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
 import com.capstone.be.security.model.UserPrincipal;
@@ -94,6 +95,27 @@ public class DocumentController {
 
     DocumentPresignedUrlResponse response = documentService.getDocumentPresignedUrl(userId,
         documentId);
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Get detailed information about a document Includes comprehensive metadata, uploader info,
+   * organization, specialization, tags, and user-specific data
+   *
+   * @param userPrincipal Authenticated user (optional - can be null for public documents)
+   * @param documentId    Document ID
+   * @return Document detail response with all metadata
+   */
+  @GetMapping(value = "/{id}")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
+  public ResponseEntity<DocumentDetailResponse> getDocumentDetail(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "id") UUID documentId) {
+    UUID userId = userPrincipal != null ? userPrincipal.getId() : null;
+    log.info("User {} requesting document detail for document: {}", userId, documentId);
+
+    DocumentDetailResponse response = documentService.getDocumentDetail(userId, documentId);
 
     return ResponseEntity.ok(response);
   }

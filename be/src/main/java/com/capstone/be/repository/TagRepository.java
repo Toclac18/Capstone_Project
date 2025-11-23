@@ -37,6 +37,8 @@ public interface TagRepository extends JpaRepository<Tag, UUID> {
 
   List<Tag> findAllByNameIn(Collection<String> names);
 
+  Optional<Tag> findByCode(Long code);
+
   @Query("select t.code from Tag t where t.code in :codes and t.status = ACTIVE")
   Set<Long> findValidActiveTagCodes(@Param("codes") List<Long> codes);
 //

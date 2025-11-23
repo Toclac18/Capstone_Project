@@ -11,8 +11,10 @@ import com.capstone.be.domain.entity.Specialization;
 import com.capstone.be.domain.entity.Tag;
 import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.DocStatus;
+import com.capstone.be.domain.enums.OrgEnrollStatus;
 import com.capstone.be.domain.enums.TagStatus;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
+import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
 import com.capstone.be.exception.BusinessException;
@@ -24,6 +26,7 @@ import com.capstone.be.repository.DocTypeRepository;
 import com.capstone.be.repository.DocumentRedemptionRepository;
 import com.capstone.be.repository.DocumentRepository;
 import com.capstone.be.repository.DocumentTagLinkRepository;
+import com.capstone.be.repository.OrgEnrollmentRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.repository.SpecializationRepository;
@@ -71,6 +74,7 @@ public class DocumentServiceImpl implements DocumentService {
   private final DocumentThumbnailService documentThumbnailService;
   private final DocumentMapper documentMapper;
   private final DocumentAccessService documentAccessService;
+  private final OrgEnrollmentRepository orgEnrollmentRepository;
 
   @Value("${app.document.defaultPremiumPrice:120}")
   private Integer premiumDocPrice;
@@ -404,5 +408,69 @@ public class DocumentServiceImpl implements DocumentService {
         .presignedUrl(presignedUrl)
         .expiresInMinutes(presignedUrlExpirationMinutes)
         .build();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public DocumentDetailResponse getDocumentDetail(UUID userId, UUID documentId) {
+    log.info("User {} requesting document detail for document {}", userId, documentId);
+
+    // Fetch document with all required relationships
+    Document document = documentRepository.findById(documentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+
+    // Use mapper for base mapping
+    DocumentDetailResponse response = documentMapper.toDetailResponse(document);
+
+    // Calculate downvotes
+    Integer downvoteCount = document.getUpvoteCount() - document.getVoteScore();
+    response.setDownvoteCount(Math.max(0, downvoteCount));
+
+    // Fetch and map tags
+    List<DocumentTagLink> tagLinks = documentTagLinkRepository.findByDocument(document);
+    List<DocumentDetailResponse.TagInfo> tagInfos = tagLinks.stream()
+        .map(link -> {
+          Tag tag = link.getTag();
+          return DocumentDetailResponse.TagInfo.builder()
+              .id(tag.getId())
+              .code(tag.getCode())
+              .name(tag.getName())
+              .build();
+        })
+        .toList();
+    response.setTags(tagInfos);
+
+    // Build user-specific information if userId is provided
+    if (userId != null) {
+      User user = userRepository.findById(userId).orElse(null);
+
+      boolean hasAccess = documentAccessService.hasAccess(userId, documentId);
+      boolean isUploader = document.getUploader().getId().equals(userId);
+      boolean hasRedeemed = false;
+      if (document.getIsPremium()) {
+        hasRedeemed = documentRedemptionRepository.existsByReader_IdAndDocument_Id(userId,
+            documentId);
+      }
+
+      boolean isMemberOfOrganization = false;
+      if (document.getOrganization() != null && user != null) {
+        isMemberOfOrganization = orgEnrollmentRepository.findByOrganizationAndMember(
+                document.getOrganization(), user)
+            .map(enrollment -> enrollment.getStatus() == OrgEnrollStatus.JOINED)
+            .orElse(false);
+      }
+
+      DocumentDetailResponse.UserDocumentInfo userInfo = DocumentDetailResponse.UserDocumentInfo.builder()
+          .hasAccess(hasAccess)
+          .isUploader(isUploader)
+          .hasRedeemed(hasRedeemed)
+          .isMemberOfOrganization(isMemberOfOrganization)
+          .build();
+
+      response.setUserInfo(userInfo);
+    }
+
+    log.info("Successfully retrieved document detail for document {}", documentId);
+    return response;
   }
 }

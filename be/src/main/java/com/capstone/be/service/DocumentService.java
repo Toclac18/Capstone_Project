@@ -1,6 +1,7 @@
 package com.capstone.be.service;
 
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
+import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
 import java.util.UUID;
@@ -36,5 +37,15 @@ public interface DocumentService {
    * @return Presigned URL response with expiration time
    */
   DocumentPresignedUrlResponse getDocumentPresignedUrl(UUID userId, UUID documentId);
+
+  /**
+   * Get detailed information about a document Includes comprehensive metadata, uploader info,
+   * organization, tags, and user-specific data
+   *
+   * @param userId     User ID requesting the document detail (can be null for public access)
+   * @param documentId Document ID
+   * @return Document detail response with all metadata
+   */
+  DocumentDetailResponse getDocumentDetail(UUID userId, UUID documentId);
 
 }

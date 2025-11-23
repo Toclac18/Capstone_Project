@@ -38,8 +38,8 @@ public class DocumentAccessServiceImpl implements DocumentAccessService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> ResourceNotFoundException.userById(userId));
 
-    // Check 1: Document is PUBLIC
-    if (document.getVisibility() == DocVisibility.PUBLIC) {
+    // Check 1: Document is PUBLIC and not Premium
+    if (!document.getIsPremium() && document.getVisibility() == DocVisibility.PUBLIC) {
       log.debug("Access granted: Document {} is PUBLIC", documentId);
       return true;
     }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import VerifyEmailContent from "./_components";
+import VerifyEmailContent from "./_components/VerifyEmailInner";
 import styles from "./styles.module.css";
 
 export default function VerifyEmailPage() {
@@ -14,9 +14,7 @@ export default function VerifyEmailPage() {
               <div className="mb-6 flex justify-center">
                 <div className={styles["spinner-lg"]}></div>
               </div>
-              <h2 className={styles.title}>
-                Loading...
-              </h2>
+              <h2 className={styles.title}>Loading...</h2>
             </div>
           </div>
         </div>

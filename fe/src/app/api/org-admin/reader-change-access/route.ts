@@ -2,7 +2,7 @@
 import { mockChangeReaderAccess } from "@/mock/readersMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
-import { badRequest } from "@/server/response";
+import { badRequest, proxyJsonResponse, jsonResponse } from "@/server/response";
 import { getAuthHeader } from "@/server/auth";
 
 async function handlePOST(req: Request) {
@@ -23,7 +23,7 @@ async function handlePOST(req: Request) {
   // MOCK path
   if (USE_MOCK) {
     const result = mockChangeReaderAccess(body.userId, body.enable);
-    return new Response(JSON.stringify(result), {
+    return jsonResponse(result, {
       status: result.success ? 200 : 404,
       headers: { "content-type": "application/json", "x-mode": "mock" },
     });
@@ -48,15 +48,7 @@ async function handlePOST(req: Request) {
     },
   );
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 export const POST = (...args: Parameters<typeof handlePOST>) =>

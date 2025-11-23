@@ -1,12 +1,12 @@
 // src/app/api/save-lists/[id]/documents/route.ts
 import { headers } from "next/headers";
 import { mockAddDocToSaveList } from "@/mock/saveListMock";
-import { getAuthHeader } from "@/server/auth";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 const DEFAULT_BE_BASE = "http://localhost:8081";
 
 function badRequest(msg: string, status = 400) {
-  return new Response(JSON.stringify({ error: msg }), {
+  return jsonResponse({ error: msg }, {
     status,
     headers: { "content-type": "application/json" },
   });
@@ -49,7 +49,7 @@ export async function POST(
       return badRequest("SaveList not found", 404);
     }
 
-    return new Response(JSON.stringify(saved), {
+    return jsonResponse(saved, {
       status: 200,
       headers: {
         "content-type": "application/json",
@@ -60,8 +60,7 @@ export async function POST(
 
   // ---- REAL MODE ----
   const h = await headers();
-  const jwtAuth = (await getAuthHeader("api/save-lists/[id]/documents/route.ts")) || "";
-  const authHeader = jwtAuth || h.get("authorization") || "";
+  const authHeader = h.get("authorization") || "";
   const cookieHeader = h.get("cookie") || "";
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
 
@@ -80,14 +79,5 @@ export async function POST(
     },
   );
 
-  const text = await upstream.text();
-
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+    return proxyJsonResponse(upstream, { mode: "real" });
 }

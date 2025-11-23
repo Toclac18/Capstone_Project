@@ -1,21 +1,15 @@
-import { cookies } from "next/headers";
 import type { ReviewAction } from "@/types/review";
 import { submitReview } from "@/mock/reviewListMock";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
 import { getAuthHeader } from "@/server/auth";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 
-const DEFAULT_BE_BASE = "http://localhost:8080";
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
 const MAX_REPORT_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   const { id } = await params;
 
   if (USE_MOCK) {
@@ -48,7 +42,7 @@ export async function POST(
 
     const result = submitReview(id, action);
 
-    return new Response(JSON.stringify(result), {
+    return jsonResponse(result, {
       status: 200,
       headers: {
         "content-type": "application/json",
@@ -58,15 +52,11 @@ export async function POST(
   }
 
   // Get authentication from cookie
-  const cookieStore = await cookies();
-  const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
+  const bearerToken = await getAuthHeader();
 
-  const authHeader = (await getAuthHeader("api/reviewer/review-list/[id]/review/route.ts")) || bearerToken;
-
-  const fh = new Headers();
-  if (authHeader) {
-    fh.set("Authorization", authHeader);
+  const fh = new Headers({ "Content-Type": "application/json" });
+  if (bearerToken) {
+    fh.set("Authorization", bearerToken);
   }
 
   const upstream = await fetch(
@@ -79,13 +69,5 @@ export async function POST(
     },
   );
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }

@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { mockOrganizationsDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
-import { getAuthHeader } from "@/server/auth";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handleGET(_: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
@@ -10,21 +10,22 @@ async function handleGET(_: Request, ctx: { params: Promise<{ id: string }> }) {
   if (USE_MOCK) {
     const detail = mockOrganizationsDB.get(id);
     if (!detail) {
-      return new Response(JSON.stringify({ error: "Organization not found" }), {
-        status: 404,
-        headers: { "content-type": "application/json", "x-mode": "mock" },
-      });
+      return jsonResponse(
+        { error: "Organization not found" },
+        {
+          status: 404,
+          headers: { "content-type": "application/json", "x-mode": "mock" },
+        },
+      );
     }
-    return new Response(JSON.stringify(detail), {
+    return jsonResponse(detail, {
       status: 200,
       headers: { "content-type": "application/json", "x-mode": "mock" },
     });
   }
 
   const h = await headers();
-  const jwtAuth =
-    (await getAuthHeader("api/reader/organizations/[id]/route.ts")) || "";
-  const authHeader = jwtAuth || h.get("authorization") || "";
+  const authHeader = h.get("authorization") || "";
   const cookieHeader = h.get("cookie") || "";
 
   const fh = new Headers({ "Content-Type": "application/json" });
@@ -37,15 +38,7 @@ async function handleGET(_: Request, ctx: { params: Promise<{ id: string }> }) {
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 export const GET = (...args: Parameters<typeof handleGET>) =>

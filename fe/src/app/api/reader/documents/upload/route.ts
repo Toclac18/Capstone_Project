@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
-import { getAuthHeader } from "@/server/auth";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handlePOST(request: Request) {
   try {
@@ -10,13 +10,16 @@ async function handlePOST(request: Request) {
       const file = formData.get("file") as File;
 
       if (!file) {
-        return new Response(JSON.stringify({ error: "File is required" }), {
-          status: 400,
-          headers: {
-            "content-type": "application/json",
-            "x-mode": "mock",
+        return jsonResponse(
+          { error: "File is required" },
+          {
+            status: 400,
+            headers: {
+              "content-type": "application/json",
+              "x-mode": "mock",
+            },
           },
-        });
+        );
       }
 
       return new Response(
@@ -35,9 +38,7 @@ async function handlePOST(request: Request) {
     }
 
     const h = await headers();
-    const jwtAuth =
-      (await getAuthHeader("api/reader/documents/upload/route.ts")) || "";
-    const authHeader = jwtAuth || h.get("authorization") || "";
+    const authHeader = h.get("authorization") || "";
     const cookieHeader = h.get("cookie") || "";
 
     const fh = new Headers();
@@ -58,15 +59,7 @@ async function handlePOST(request: Request) {
       cache: "no-store",
     });
 
-    const text = await upstream.text();
-    return new Response(text, {
-      status: upstream.status,
-      headers: {
-        "content-type":
-          upstream.headers.get("content-type") ?? "application/json",
-        "x-mode": "real",
-      },
-    });
+    return proxyJsonResponse(upstream, { mode: "real" });
   } catch (error) {
     console.error("Upload error:", error);
     return new Response(

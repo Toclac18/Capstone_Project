@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { mockDB, type ContactAdminPayload } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
-import { badRequest } from "@/server/response";
+import { badRequest, proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handlePOST(req: Request) {
   let body: ContactAdminPayload;
@@ -38,7 +38,7 @@ async function handlePOST(req: Request) {
       message: "Your message has been received. (mock)",
       meta: { ip },
     };
-    return new Response(JSON.stringify(response), {
+    return jsonResponse(response, {
       status: 201,
       headers: {
         "content-type": "application/json",
@@ -64,15 +64,7 @@ async function handlePOST(req: Request) {
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 export const POST = (...args: Parameters<typeof handlePOST>) =>

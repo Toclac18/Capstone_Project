@@ -1,8 +1,10 @@
 package com.capstone.be.controller;
 
 import com.capstone.be.dto.common.PagedResponse;
+import com.capstone.be.dto.request.document.DocumentLibraryFilter;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
+import com.capstone.be.dto.response.document.DocumentLibraryResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
 import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
@@ -20,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -144,6 +147,31 @@ public class DocumentController {
     Page<DocumentUploadHistoryResponse> historyPage = documentService.getUploadHistory(uploaderId, pageable);
 
     return ResponseEntity.ok(PagedResponse.of(historyPage));
+  }
+
+  /**
+   * Get user's document library with filtering and search Returns documents uploaded by user OR
+   * purchased/redeemed by user Supports various filters and search by keyword
+   *
+   * @param userPrincipal Authenticated user
+   * @param filter        Filter criteria (all optional)
+   * @param pageable      Pagination parameters (page, size, sort)
+   * @return Paged response of library documents
+   */
+  @GetMapping(value = "/library")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
+  public ResponseEntity<PagedResponse<DocumentLibraryResponse>> getLibrary(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @ModelAttribute DocumentLibraryFilter filter,
+      Pageable pageable) {
+    UUID userId = userPrincipal.getId();
+    log.info("User {} requesting library (page: {}, size: {}, filter: {})",
+        userId, pageable.getPageNumber(), pageable.getPageSize(), filter);
+
+    Page<DocumentLibraryResponse> libraryPage = documentService.getLibrary(userId, filter,
+        pageable);
+
+    return ResponseEntity.ok(PagedResponse.of(libraryPage));
   }
 
 }

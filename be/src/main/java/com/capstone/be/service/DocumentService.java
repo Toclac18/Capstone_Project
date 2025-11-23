@@ -1,7 +1,9 @@
 package com.capstone.be.service;
 
+import com.capstone.be.dto.request.document.DocumentLibraryFilter;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
+import com.capstone.be.dto.response.document.DocumentLibraryResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
 import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
@@ -60,5 +62,17 @@ public interface DocumentService {
    * @return Page of document upload history
    */
   Page<DocumentUploadHistoryResponse> getUploadHistory(UUID uploaderId, Pageable pageable);
+
+  /**
+   * Get user's document library with filtering and search Returns documents uploaded by user OR
+   * purchased/redeemed by user
+   *
+   * @param userId   User ID
+   * @param filter   Filter criteria (search, filters)
+   * @param pageable Pagination parameters
+   * @return Page of document library
+   */
+  Page<DocumentLibraryResponse> getLibrary(UUID userId, DocumentLibraryFilter filter,
+      Pageable pageable);
 
 }

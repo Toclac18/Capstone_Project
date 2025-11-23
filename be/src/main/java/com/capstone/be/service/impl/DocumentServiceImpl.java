@@ -13,8 +13,10 @@ import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.OrgEnrollStatus;
 import com.capstone.be.domain.enums.TagStatus;
+import com.capstone.be.dto.request.document.DocumentLibraryFilter;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
+import com.capstone.be.dto.response.document.DocumentLibraryResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
 import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
@@ -33,6 +35,7 @@ import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.repository.SpecializationRepository;
 import com.capstone.be.repository.TagRepository;
 import com.capstone.be.repository.UserRepository;
+import com.capstone.be.repository.specification.DocumentLibrarySpecification;
 import com.capstone.be.service.DocumentAccessService;
 import com.capstone.be.service.DocumentService;
 import com.capstone.be.service.DocumentThumbnailService;
@@ -506,6 +509,63 @@ public class DocumentServiceImpl implements DocumentService {
     log.info("Retrieved {} documents for user {} (page {}/{})",
         responsePage.getNumberOfElements(),
         uploaderId,
+        responsePage.getNumber() + 1,
+        responsePage.getTotalPages());
+
+    return responsePage;
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<DocumentLibraryResponse> getLibrary(UUID userId, DocumentLibraryFilter filter,
+      Pageable pageable) {
+    log.info("User {} requesting library with filter: {}, pagination: {}", userId, filter,
+        pageable);
+
+    // Verify user exists
+    if (!userRepository.existsById(userId)) {
+      throw ResourceNotFoundException.userById(userId);
+    }
+
+    // Build specification based on filter
+    var spec = DocumentLibrarySpecification.buildLibrarySpec(userId, filter);
+
+    // Fetch documents with specification
+    Page<Document> documentsPage = documentRepository.findAll(spec, pageable);
+
+    // Map to response DTO
+    Page<DocumentLibraryResponse> responsePage = documentsPage.map(document -> {
+      DocumentLibraryResponse response = documentMapper.toLibraryResponse(document);
+
+      // Get tags for this document
+      List<DocumentTagLink> tagLinks = documentTagLinkRepository.findByDocument(document);
+      List<String> tagNames = tagLinks.stream()
+          .map(link -> link.getTag().getName())
+          .sorted()
+          .toList();
+      response.setTagNames(tagNames);
+
+      // Build user relation info
+      boolean isOwned = document.getUploader().getId().equals(userId);
+      DocumentRedemption redemption = documentRedemptionRepository
+          .findByReader_IdAndDocument_Id(userId, document.getId())
+          .orElse(null);
+      boolean isPurchased = redemption != null;
+
+      DocumentLibraryResponse.UserRelationInfo userRelation = DocumentLibraryResponse.UserRelationInfo.builder()
+          .isOwned(isOwned)
+          .isPurchased(isPurchased)
+          .purchasedAt(isPurchased ? redemption.getCreatedAt() : null)
+          .build();
+
+      response.setUserRelation(userRelation);
+
+      return response;
+    });
+
+    log.info("Retrieved {} documents for user {} library (page {}/{})",
+        responsePage.getNumberOfElements(),
+        userId,
         responsePage.getNumber() + 1,
         responsePage.getTotalPages());
 

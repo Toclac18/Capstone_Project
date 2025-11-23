@@ -3,6 +3,7 @@ package com.capstone.be.mapper;
 import com.capstone.be.domain.entity.Document;
 import com.capstone.be.domain.entity.Tag;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
+import com.capstone.be.dto.response.document.DocumentLibraryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
 import java.util.List;
@@ -96,4 +97,22 @@ public interface DocumentMapper {
   @Mapping(source = "organization.name", target = "organizationName")
   @Mapping(target = "redemptionCount", ignore = true)
   DocumentUploadHistoryResponse toUploadHistoryResponse(Document document);
+
+  /**
+   * Convert Document entity to DocumentLibraryResponse DTO Base mapping for library view
+   *
+   * @param document Document entity
+   * @return DocumentLibraryResponse DTO
+   */
+  @Mapping(source = "thumbnailKey", target = "thumbnailUrl")
+  @Mapping(source = "docType.name", target = "docTypeName")
+  @Mapping(source = "specialization.name", target = "specializationName")
+  @Mapping(source = "specialization.domain.name", target = "domainName")
+  @Mapping(source = "organization.name", target = "organizationName")
+  @Mapping(source = "uploader.id", target = "uploader.id")
+  @Mapping(source = "uploader.fullName", target = "uploader.fullName")
+  @Mapping(source = "uploader.avatarKey", target = "uploader.avatarUrl")
+  @Mapping(target = "tagNames", ignore = true)
+  @Mapping(target = "userRelation", ignore = true)
+  DocumentLibraryResponse toLibraryResponse(Document document);
 }

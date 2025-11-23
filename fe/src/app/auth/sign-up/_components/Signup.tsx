@@ -7,7 +7,7 @@ import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
 import Image from "next/image";
 import { useToast } from "@/components/ui/toast";
-import { 
+import {
   registerReader,
   registerReviewer,
   registerOrgAdmin,
@@ -17,12 +17,12 @@ import {
 } from "../api";
 import styles from "../styles.module.css";
 import { getDomains, getSpecializations } from "@/services/uploadDocuments";
-import { 
-  validateField as validateFieldHelper, 
+import {
+  validateField as validateFieldHelper,
   getFieldsToValidate,
   validateFileSize,
   validateFileUploadRequired,
-} from "./validation";
+} from "./useSignupValidation";
 
 type UserType = "reader" | "reviewer" | "org-admin";
 
@@ -125,8 +125,12 @@ export default function Signup() {
   const [certificateFiles, setCertificateFiles] = useState<File[]>([]);
 
   // Options for reviewer
-  const [domainOptions, setDomainOptions] = useState<Array<{ id: string; name: string }>>([]);
-  const [specializationOptions, setSpecializationOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [domainOptions, setDomainOptions] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [specializationOptions, setSpecializationOptions] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
 
   const loadReviewerOptions = useCallback(async () => {
     try {
@@ -142,19 +146,22 @@ export default function Signup() {
     }
   }, [showToast]);
 
-  const loadSpecializations = useCallback(async (domainIds: string[]) => {
-    try {
-      const specs = await getSpecializations(domainIds);
-      setSpecializationOptions(specs);
-    } catch (error) {
-      showToast({
-        type: "error",
-        title: VALIDATION_MESSAGES.loadFailed.title,
-        message: "Failed to load specializations",
-        duration: 5000,
-      });
-    }
-  }, [showToast]);
+  const loadSpecializations = useCallback(
+    async (domainIds: string[]) => {
+      try {
+        const specs = await getSpecializations(domainIds);
+        setSpecializationOptions(specs);
+      } catch (error) {
+        showToast({
+          type: "error",
+          title: VALIDATION_MESSAGES.loadFailed.title,
+          message: "Failed to load specializations",
+          duration: 5000,
+        });
+      }
+    },
+    [showToast],
+  );
 
   React.useEffect(() => {
     if (userType === "reviewer") {
@@ -170,96 +177,123 @@ export default function Signup() {
     }
   }, [data.domains, userType, loadSpecializations]);
 
-  const validateAll = useCallback((form: Partial<FormData>) => {
-    const nextErrors: { [k: string]: string } = {};
-    const fieldsToValidate = getFieldsToValidate(userType);
+  const validateAll = useCallback(
+    (form: Partial<FormData>) => {
+      const nextErrors: { [k: string]: string } = {};
+      const fieldsToValidate = getFieldsToValidate(userType);
 
-    fieldsToValidate.forEach((key) => {
-      const msg = validateFieldHelper(
-        key, 
-        form[key as keyof FormData] as string | string[], 
-        userType,
-        form as Record<string, string | string[] | undefined>
-      );
-      if (msg) nextErrors[key] = msg;
-    });
-
-    setErrors(nextErrors);
-    return nextErrors;
-  }, [userType]);
-
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setData((prev) => ({ ...prev, [name]: value }));
-    const msg = validateFieldHelper(name, value, userType, { ...data, [name]: value });
-    setErrors((prev) => ({ ...prev, [name]: msg }));
-  }, [data, userType]);
-
-  const handleMultiSelectChange = useCallback((name: string, value: string, checked: boolean) => {
-    setData((prev) => {
-      const currentValues = (prev[name as keyof FormData] as string[]) || [];
-      const newValues = checked
-        ? [...currentValues, value]
-        : currentValues.filter((v) => v !== value);
-      
-      const msg = validateFieldHelper(name, newValues, userType, { ...prev, [name]: newValues });
-      setErrors((prevErrors) => ({ ...prevErrors, [name]: msg }));
-      
-      return { ...prev, [name]: newValues };
-    });
-  }, [userType]);
-
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, fieldType: "background" | "certificate") => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    // Validate file size
-    const sizeError = validateFileSize(files);
-    if (sizeError) {
-      showToast({
-        type: "error",
-        title: "File Too Large",
-        message: sizeError,
-        duration: 5000,
+      fieldsToValidate.forEach((key) => {
+        const msg = validateFieldHelper(
+          key,
+          form[key as keyof FormData] as string | string[],
+          userType,
+          form as Record<string, string | string[] | undefined>,
+        );
+        if (msg) nextErrors[key] = msg;
       });
-      // Clear the input
-      e.target.value = "";
-      return;
-    }
-    
-    if (fieldType === "background") {
-      setBackgroundFiles(files);
-      // Clear error when file is uploaded
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors.backgroundFiles;
-        return newErrors;
+
+      setErrors(nextErrors);
+      return nextErrors;
+    },
+    [userType],
+  );
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const { name, value } = e.target;
+      setData((prev) => ({ ...prev, [name]: value }));
+      const msg = validateFieldHelper(name, value, userType, {
+        ...data,
+        [name]: value,
       });
-    } else {
-      setCertificateFiles(files);
-      // Clear error when file is uploaded
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors.certificateFiles;
-        return newErrors;
+      setErrors((prev) => ({ ...prev, [name]: msg }));
+    },
+    [data, userType],
+  );
+
+  const handleMultiSelectChange = useCallback(
+    (name: string, value: string, checked: boolean) => {
+      setData((prev) => {
+        const currentValues = (prev[name as keyof FormData] as string[]) || [];
+        const newValues = checked
+          ? [...currentValues, value]
+          : currentValues.filter((v) => v !== value);
+
+        const msg = validateFieldHelper(name, newValues, userType, {
+          ...prev,
+          [name]: newValues,
+        });
+        setErrors((prevErrors) => ({ ...prevErrors, [name]: msg }));
+
+        return { ...prev, [name]: newValues };
       });
-    }
-  }, [showToast]);
+    },
+    [userType],
+  );
+
+  const handleFileUpload = useCallback(
+    (
+      e: React.ChangeEvent<HTMLInputElement>,
+      fieldType: "background" | "certificate",
+    ) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length === 0) return;
+
+      // Validate file size
+      const sizeError = validateFileSize(files);
+      if (sizeError) {
+        showToast({
+          type: "error",
+          title: "File Too Large",
+          message: sizeError,
+          duration: 5000,
+        });
+        // Clear the input
+        e.target.value = "";
+        return;
+      }
+
+      if (fieldType === "background") {
+        setBackgroundFiles(files);
+        // Clear error when file is uploaded
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.backgroundFiles;
+          return newErrors;
+        });
+      } else {
+        setCertificateFiles(files);
+        // Clear error when file is uploaded
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.certificateFiles;
+          return newErrors;
+        });
+      }
+    },
+    [showToast],
+  );
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     try {
       const errs = validateAll(data);
-      
+
       // Validate file uploads for reviewer and org-admin
-      const fileErrors = validateFileUploadRequired(userType, backgroundFiles, certificateFiles);
+      const fileErrors = validateFileUploadRequired(
+        userType,
+        backgroundFiles,
+        certificateFiles,
+      );
       Object.assign(errs, fileErrors);
-      
+
       if (Object.keys(errs).length > 0) {
         const firstKey = Object.keys(errs)[0];
         const group = refs.current[firstKey];
-        const input = group?.querySelector("input, select") as HTMLInputElement | undefined;
+        const input = group?.querySelector("input, select") as
+          | HTMLInputElement
+          | undefined;
         input?.focus();
         showToast({
           type: "error",
@@ -320,7 +354,10 @@ export default function Signup() {
         window.location.href = "/auth/sign-in";
       }, 3000);
     } catch (error) {
-      const msg = error instanceof Error ? error.message : VALIDATION_MESSAGES.failed.message;
+      const msg =
+        error instanceof Error
+          ? error.message
+          : VALIDATION_MESSAGES.failed.message;
       showToast({
         type: "error",
         title: VALIDATION_MESSAGES.failed.title,
@@ -360,8 +397,20 @@ export default function Signup() {
   return (
     <>
       <div className={styles["logo-row"]}>
-        <Image src={Logo} alt="Logo" width={100} height={100} className="dark:hidden"/>
-        <Image src={LogoDark} alt="Logo" width={100} height={100} className="hidden dark:block"/>
+        <Image
+          src={Logo}
+          alt="Logo"
+          width={100}
+          height={100}
+          className="dark:hidden"
+        />
+        <Image
+          src={LogoDark}
+          alt="Logo"
+          width={100}
+          height={100}
+          className="hidden dark:block"
+        />
       </div>
 
       <button className={styles["oauth-btn"]}>
@@ -371,16 +420,14 @@ export default function Signup() {
 
       <div className={styles.divider}>
         <span className={styles["divider-line"]}></span>
-        <div className={styles["divider-text"]}>
-          Or sign up with email
-        </div>
+        <div className={styles["divider-text"]}>Or sign up with email</div>
         <span className={styles["divider-line"]}></span>
       </div>
 
       <div>
         <form onSubmit={handleSubmit}>
           {/* Base Fields */}
-            <InputGroup
+          <InputGroup
             type="string"
             label="Full Name"
             className={styles["input-group"]}
@@ -389,11 +436,11 @@ export default function Signup() {
             handleChange={handleChange}
             value={data.name}
             icon={<UserIcon />}
-              error={errors.name}
-            />
-            {errors.name && <p className={styles["error-text"]}>{errors.name}</p>}
+            error={errors.name}
+          />
+          {errors.name && <p className={styles["error-text"]}>{errors.name}</p>}
 
-            <InputGroup
+          <InputGroup
             type="date"
             label="Date of Birth"
             className={styles["input-group"]}
@@ -401,11 +448,13 @@ export default function Signup() {
             name="date_of_birth"
             handleChange={handleChange}
             value={data.date_of_birth}
-              error={errors.date_of_birth}
-            />
-            {errors.date_of_birth && <p className={styles["error-text"]}>{errors.date_of_birth}</p>}
+            error={errors.date_of_birth}
+          />
+          {errors.date_of_birth && (
+            <p className={styles["error-text"]}>{errors.date_of_birth}</p>
+          )}
 
-            <InputGroup
+          <InputGroup
             type="string"
             label="Username"
             className={styles["input-group"]}
@@ -414,11 +463,13 @@ export default function Signup() {
             handleChange={handleChange}
             value={data.username}
             icon={<UserIcon />}
-              error={errors.username}
-            />
-            {errors.username && <p className={styles["error-text"]}>{errors.username}</p>}
+            error={errors.username}
+          />
+          {errors.username && (
+            <p className={styles["error-text"]}>{errors.username}</p>
+          )}
 
-            <InputGroup
+          <InputGroup
             type="email"
             label="Email"
             className={styles["input-group-tight"]}
@@ -427,11 +478,13 @@ export default function Signup() {
             handleChange={handleChange}
             value={data.email}
             icon={<EmailIcon />}
-              error={errors.email}
-            />
-            {errors.email && <p className={styles["error-text-slight"]}>{errors.email}</p>}
+            error={errors.email}
+          />
+          {errors.email && (
+            <p className={styles["error-text-slight"]}>{errors.email}</p>
+          )}
 
-            <InputGroup
+          <InputGroup
             type="password"
             label="Password"
             className={styles["input-group"]}
@@ -440,11 +493,13 @@ export default function Signup() {
             handleChange={handleChange}
             value={data.password}
             icon={<PasswordIcon />}
-              error={errors.password}
-            />
-            {errors.password && <p className={styles["error-text"]}>{errors.password}</p>}
+            error={errors.password}
+          />
+          {errors.password && (
+            <p className={styles["error-text"]}>{errors.password}</p>
+          )}
 
-            <InputGroup
+          <InputGroup
             type="password"
             label="Confirm Password"
             className={styles["input-group"]}
@@ -453,15 +508,15 @@ export default function Signup() {
             handleChange={handleChange}
             value={data.repassword}
             icon={<PasswordIcon />}
-              error={errors.repassword}
-            />
-            {errors.repassword && <p className={styles["error-text"]}>{errors.repassword}</p>}
+            error={errors.repassword}
+          />
+          {errors.repassword && (
+            <p className={styles["error-text"]}>{errors.repassword}</p>
+          )}
 
           {/* User Type Selection */}
           <div className={styles["user-type-container"]}>
-            <label className={styles["user-type-label"]}>
-              Register as
-            </label>
+            <label className={styles["user-type-label"]}>Register as</label>
             <div className={styles["user-type-options"]}>
               <label className={styles["user-type-option"]}>
                 <input
@@ -473,9 +528,7 @@ export default function Signup() {
                   className={styles["user-type-radio"]}
                   disabled={loading}
                 />
-                <span className={styles["user-type-text"]}>
-                  Reader
-                </span>
+                <span className={styles["user-type-text"]}>Reader</span>
               </label>
               <label className={styles["user-type-option"]}>
                 <input
@@ -487,9 +540,7 @@ export default function Signup() {
                   className={styles["user-type-radio"]}
                   disabled={loading}
                 />
-                <span className={styles["user-type-text"]}>
-                  Reviewer
-                </span>
+                <span className={styles["user-type-text"]}>Reviewer</span>
               </label>
               <label className={styles["user-type-option"]}>
                 <input
@@ -516,8 +567,12 @@ export default function Signup() {
               </h3>
 
               <div className="mb-4">
-                <label htmlFor="educationLevel" className={styles["form-label"]}>
-                  Education Level <span className={styles["form-label-required"]}>*</span>
+                <label
+                  htmlFor="educationLevel"
+                  className={styles["form-label"]}
+                >
+                  Education Level{" "}
+                  <span className={styles["form-label-required"]}>*</span>
                 </label>
                 <select
                   id="educationLevel"
@@ -533,65 +588,117 @@ export default function Signup() {
                     </option>
                   ))}
                 </select>
-                {errors.educationLevel && <p className={styles["form-error"]}>{errors.educationLevel}</p>}
+                {errors.educationLevel && (
+                  <p className={styles["form-error"]}>
+                    {errors.educationLevel}
+                  </p>
+                )}
               </div>
 
               <div className="mb-4">
                 <label className={styles["form-label"]}>
-                  Domains <span className={styles["form-label-required"]}>*</span>
-                  <span className={styles["form-label-hint"]}>(Max 3, Min 1)</span>
+                  Domains{" "}
+                  <span className={styles["form-label-required"]}>*</span>
+                  <span className={styles["form-label-hint"]}>
+                    (Max 3, Min 1)
+                  </span>
                 </label>
                 <div className={styles["checkbox-list-container"]}>
                   {domainOptions.length === 0 ? (
-                    <p className={styles["checkbox-list-empty"]}>Loading domains...</p>
+                    <p className={styles["checkbox-list-empty"]}>
+                      Loading domains...
+                    </p>
                   ) : (
                     <div className={styles["checkbox-list"]}>
                       {domainOptions.map((domain) => (
-                        <label key={domain.id} className={styles["checkbox-item"]}>
+                        <label
+                          key={domain.id}
+                          className={styles["checkbox-item"]}
+                        >
                           <input
                             type="checkbox"
                             checked={(data.domains || []).includes(domain.id)}
-                            onChange={(e) => handleMultiSelectChange("domains", domain.id, e.target.checked)}
+                            onChange={(e) =>
+                              handleMultiSelectChange(
+                                "domains",
+                                domain.id,
+                                e.target.checked,
+                              )
+                            }
                             className={styles["checkbox-input"]}
-                            disabled={loading || ((data.domains || []).length >= 3 && !((data.domains || []).includes(domain.id)))}
+                            disabled={
+                              loading ||
+                              ((data.domains || []).length >= 3 &&
+                                !(data.domains || []).includes(domain.id))
+                            }
                           />
-                          <span className={styles["checkbox-label"]}>{domain.name}</span>
+                          <span className={styles["checkbox-label"]}>
+                            {domain.name}
+                          </span>
                         </label>
                       ))}
                     </div>
                   )}
                 </div>
-                {errors.domains && <p className={styles["form-error"]}>{errors.domains}</p>}
+                {errors.domains && (
+                  <p className={styles["form-error"]}>{errors.domains}</p>
+                )}
               </div>
 
               <div className="mb-4">
                 <label className={styles["form-label"]}>
-                  Review Specializations <span className={styles["form-label-required"]}>*</span>
-                  <span className={styles["form-label-hint"]}>(Max 5, Min 1 per Domain)</span>
+                  Review Specializations{" "}
+                  <span className={styles["form-label-required"]}>*</span>
+                  <span className={styles["form-label-hint"]}>
+                    (Max 5, Min 1 per Domain)
+                  </span>
                 </label>
                 <div className={styles["checkbox-list-container"]}>
                   {specializationOptions.length === 0 ? (
                     <p className={styles["checkbox-list-empty"]}>
-                      {(data.domains || []).length === 0 ? "Please select domains first" : "Loading specializations..."}
+                      {(data.domains || []).length === 0
+                        ? "Please select domains first"
+                        : "Loading specializations..."}
                     </p>
                   ) : (
                     <div className={styles["checkbox-list"]}>
                       {specializationOptions.map((spec) => (
-                        <label key={spec.id} className={styles["checkbox-item"]}>
+                        <label
+                          key={spec.id}
+                          className={styles["checkbox-item"]}
+                        >
                           <input
                             type="checkbox"
-                            checked={(data.specializations || []).includes(spec.id)}
-                            onChange={(e) => handleMultiSelectChange("specializations", spec.id, e.target.checked)}
+                            checked={(data.specializations || []).includes(
+                              spec.id,
+                            )}
+                            onChange={(e) =>
+                              handleMultiSelectChange(
+                                "specializations",
+                                spec.id,
+                                e.target.checked,
+                              )
+                            }
                             className={styles["checkbox-input"]}
-                            disabled={loading || ((data.specializations || []).length >= 5 && !((data.specializations || []).includes(spec.id)))}
+                            disabled={
+                              loading ||
+                              ((data.specializations || []).length >= 5 &&
+                                !(data.specializations || []).includes(spec.id))
+                            }
                           />
-                          <span className={styles["checkbox-label"]}>{spec.name}</span>
+                          <span className={styles["checkbox-label"]}>
+                            {spec.name}
+                          </span>
                         </label>
                       ))}
                     </div>
                   )}
                 </div>
-                {errors.specializations && <p className={styles["form-error"]}>{errors.specializations}</p>}
+                {errors.specializations && (
+                  <p className={styles["form-error"]}>
+                    {errors.specializations}
+                  </p>
+                )}
               </div>
 
               <InputGroup
@@ -604,7 +711,11 @@ export default function Signup() {
                 value={data.referenceOrgName}
                 error={errors.referenceOrgName}
               />
-              {errors.referenceOrgName && <p className={styles["error-text"]}>{errors.referenceOrgName}</p>}
+              {errors.referenceOrgName && (
+                <p className={styles["error-text"]}>
+                  {errors.referenceOrgName}
+                </p>
+              )}
 
               <InputGroup
                 type="email"
@@ -617,12 +728,22 @@ export default function Signup() {
                 icon={<EmailIcon />}
                 error={errors.referenceOrgEmail}
               />
-              {errors.referenceOrgEmail && <p className={styles["error-text"]}>{errors.referenceOrgEmail}</p>}
+              {errors.referenceOrgEmail && (
+                <p className={styles["error-text"]}>
+                  {errors.referenceOrgEmail}
+                </p>
+              )}
 
               <div className="mb-4">
-                <label htmlFor="backgroundUpload" className={styles["form-label"]}>
-                  Verified Background Upload <span className={styles["form-label-required"]}>*</span>
-                  <span className={styles["form-label-hint"]}>(PDF, DOC, DOCX)</span>
+                <label
+                  htmlFor="backgroundUpload"
+                  className={styles["form-label"]}
+                >
+                  Verified Background Upload{" "}
+                  <span className={styles["form-label-required"]}>*</span>
+                  <span className={styles["form-label-hint"]}>
+                    (PDF, DOC, DOCX)
+                  </span>
                 </label>
                 <input
                   id="backgroundUpload"
@@ -642,7 +763,11 @@ export default function Signup() {
                     ))}
                   </div>
                 ) : (
-                  errors.backgroundFiles && <p className={styles["form-error"]}>{errors.backgroundFiles}</p>
+                  errors.backgroundFiles && (
+                    <p className={styles["form-error"]}>
+                      {errors.backgroundFiles}
+                    </p>
+                  )
                 )}
               </div>
             </div>
@@ -665,11 +790,19 @@ export default function Signup() {
                 value={data.organizationName}
                 error={errors.organizationName}
               />
-              {errors.organizationName && <p className={styles["error-text"]}>{errors.organizationName}</p>}
+              {errors.organizationName && (
+                <p className={styles["error-text"]}>
+                  {errors.organizationName}
+                </p>
+              )}
 
               <div className="mb-4">
-                <label htmlFor="organizationType" className={styles["form-label"]}>
-                  Organization Type <span className={styles["form-label-required"]}>*</span>
+                <label
+                  htmlFor="organizationType"
+                  className={styles["form-label"]}
+                >
+                  Organization Type{" "}
+                  <span className={styles["form-label-required"]}>*</span>
                 </label>
                 <select
                   id="organizationType"
@@ -685,7 +818,11 @@ export default function Signup() {
                     </option>
                   ))}
                 </select>
-                {errors.organizationType && <p className={styles["form-error"]}>{errors.organizationType}</p>}
+                {errors.organizationType && (
+                  <p className={styles["form-error"]}>
+                    {errors.organizationType}
+                  </p>
+                )}
               </div>
 
               <InputGroup
@@ -698,7 +835,11 @@ export default function Signup() {
                 value={data.registrationNumber}
                 error={errors.registrationNumber}
               />
-              {errors.registrationNumber && <p className={styles["error-text"]}>{errors.registrationNumber}</p>}
+              {errors.registrationNumber && (
+                <p className={styles["error-text"]}>
+                  {errors.registrationNumber}
+                </p>
+              )}
 
               <InputGroup
                 type="email"
@@ -711,12 +852,22 @@ export default function Signup() {
                 icon={<EmailIcon />}
                 error={errors.organizationEmail}
               />
-              {errors.organizationEmail && <p className={styles["error-text"]}>{errors.organizationEmail}</p>}
+              {errors.organizationEmail && (
+                <p className={styles["error-text"]}>
+                  {errors.organizationEmail}
+                </p>
+              )}
 
               <div className="mb-4">
-                <label htmlFor="certificateUpload" className={styles["form-label"]}>
-                  Organization Certificate Upload <span className={styles["form-label-required"]}>*</span>
-                  <span className={styles["form-label-hint"]}>(PDF, DOC, Images)</span>
+                <label
+                  htmlFor="certificateUpload"
+                  className={styles["form-label"]}
+                >
+                  Organization Certificate Upload{" "}
+                  <span className={styles["form-label-required"]}>*</span>
+                  <span className={styles["form-label-hint"]}>
+                    (PDF, DOC, Images)
+                  </span>
                 </label>
                 <input
                   id="certificateUpload"
@@ -736,7 +887,11 @@ export default function Signup() {
                     ))}
                   </div>
                 ) : (
-                  errors.certificateFiles && <p className={styles["form-error"]}>{errors.certificateFiles}</p>
+                  errors.certificateFiles && (
+                    <p className={styles["form-error"]}>
+                      {errors.certificateFiles}
+                    </p>
+                  )
                 )}
               </div>
             </div>
@@ -745,7 +900,10 @@ export default function Signup() {
           <div className="mb-4.5 mt-6">
             <p className={styles["terms-text"]}>
               By clicking Create Account, you agree to our{" "}
-              <Link href="/terms-of-use" className="text-primary hover:underline">
+              <Link
+                href="/terms-of-use"
+                className="text-primary hover:underline"
+              >
                 Terms Of Use
               </Link>
             </p>

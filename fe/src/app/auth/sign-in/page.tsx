@@ -1,4 +1,4 @@
-import Signin from "@/app/auth/sign-in/_components";
+import Signin from "@/app/auth/sign-in/_components/Signin";
 import styles from "./styles.module.css";
 import type { Metadata } from "next";
 

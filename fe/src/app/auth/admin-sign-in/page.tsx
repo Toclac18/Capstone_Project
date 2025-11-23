@@ -1,4 +1,4 @@
-import AdminSignin from "@/app/auth/admin-sign-in/_components";
+import AdminSignin from "@/app/auth/admin-sign-in/_components/AdminSignin";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -20,4 +20,3 @@ export default function AdminSignIn() {
     </>
   );
 }
-

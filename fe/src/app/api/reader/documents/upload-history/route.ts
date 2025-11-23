@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { mockDocumentsDB } from "@/mock/dbMock";
 import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
 async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -44,9 +45,11 @@ async function handleGET(request: Request) {
   const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
 
   // Backend chỉ nhận Authorization header, không nhận cookie
+  const authHeader = (await getAuthHeader("api/reader/documents/upload-history/route.ts")) || bearerToken;
+
   const fh = new Headers();
-  if (bearerToken) {
-    fh.set("Authorization", bearerToken);
+  if (authHeader) {
+    fh.set("Authorization", authHeader);
   }
 
   const queryParams = new URLSearchParams();

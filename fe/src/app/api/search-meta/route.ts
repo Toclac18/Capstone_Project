@@ -5,6 +5,7 @@ import { headers, cookies } from "next/headers";
 import { mockLibraryDocs } from "@/mock/documentsMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
 function beBase() {
   return BE_BASE;
@@ -15,8 +16,9 @@ async function forward(path: string) {
   const cookieStore = cookies();
 
   const headerAuth = (await h).get("authorization") || "";
+  const jwtAuth = (await getAuthHeader("api/search-meta/route.ts")) || "";
   const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
-  const effectiveAuth = headerAuth || cookieAuth;
+  const effectiveAuth = jwtAuth || headerAuth || cookieAuth;
 
   const upstreamUrl = beBase() + path;
   const passHeaders: Record<string, string> = {

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { getReviewHistory } from "@/mock/reviewListMock";
 import type { ReviewHistoryQueryParams } from "@/types/review";
+import { getAuthHeader } from "@/server/auth";
 
 const DEFAULT_BE_BASE = "http://localhost:8080";
 const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
@@ -65,9 +66,11 @@ export async function GET(request: Request) {
   const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
   const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
 
+  const authHeader = (await getAuthHeader("api/reviewer/review-list/history/route.ts")) || bearerToken;
+
   const fh = new Headers();
-  if (bearerToken) {
-    fh.set("Authorization", bearerToken);
+  if (authHeader) {
+    fh.set("Authorization", authHeader);
   }
 
   const queryParams = new URLSearchParams();

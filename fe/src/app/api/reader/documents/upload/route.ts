@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
 async function handlePOST(request: Request) {
   try {
@@ -34,7 +35,8 @@ async function handlePOST(request: Request) {
     }
 
     const h = await headers();
-    const authHeader = h.get("authorization") || "";
+    const jwtAuth = (await getAuthHeader("api/reader/documents/upload/route.ts")) || "";
+  const authHeader = jwtAuth || h.get("authorization") || "";
     const cookieHeader = h.get("cookie") || "";
 
     const fh = new Headers();

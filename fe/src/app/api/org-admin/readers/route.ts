@@ -3,6 +3,7 @@ import { mockReaders } from "@/mock/readersMock";
 import { headers, cookies } from "next/headers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
 type Reader = {
   id: string;
@@ -75,8 +76,9 @@ async function handleGET(req: Request) {
   const h = await headers();
   const cookieStore = cookies();
   const headerAuth = h.get("authorization") || "";
+  const jwtAuth = (await getAuthHeader("api/org-admin/readers/route.ts")) || "";
   const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
-  const effectiveAuth = headerAuth || cookieAuth;
+  const effectiveAuth = jwtAuth || headerAuth || cookieAuth;
 
   // build upstream URL
   const upstreamUrl = new URL(`${BE_BASE}/api/org-admin/readers`);

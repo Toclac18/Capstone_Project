@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { mockOrganizationsDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
 async function handlePOST(
   req: Request,
@@ -38,7 +39,8 @@ async function handlePOST(
   }
 
   const h = await headers();
-  const authHeader = h.get("authorization") || "";
+  const jwtAuth = (await getAuthHeader("api/reader/organizations/[id]/leave/route.ts")) || "";
+  const authHeader = jwtAuth || h.get("authorization") || "";
   const cookieHeader = h.get("cookie") || "";
   const fh = new Headers({ "Content-Type": "application/json" });
   if (authHeader) fh.set("Authorization", authHeader);

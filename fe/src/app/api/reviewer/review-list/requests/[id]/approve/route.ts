@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import type { ReviewAction } from "@/types/review";
 import { approveReviewRequest } from "@/mock/reviewListMock";
+import { getAuthHeader } from "@/server/auth";
 
 const DEFAULT_BE_BASE = "http://localhost:8080";
 const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
@@ -36,9 +37,11 @@ export async function POST(
   const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
   const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
 
+  const authHeader = (await getAuthHeader("api/reviewer/review-list/requests/[id]/approve/route.ts")) || bearerToken;
+
   const fh = new Headers();
-  if (bearerToken) {
-    fh.set("Authorization", bearerToken);
+  if (authHeader) {
+    fh.set("Authorization", authHeader);
   }
 
   const upstream = await fetch(

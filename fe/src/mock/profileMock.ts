@@ -1,4 +1,4 @@
-import { mockProfileDB, type ProfileData } from "./db";
+import { mockProfileDB, type ProfileData } from "./dbMock";
 
 /**
  * Mock API for profile domain.
@@ -14,7 +14,10 @@ export function setupMockProfile() {
     const url = typeof input === "string" ? input : input.toString();
 
     // GET /api/profile/get
-    if (url.includes("/api/profile/get") && (!init?.method || init?.method === "GET")) {
+    if (
+      url.includes("/api/profile/get") &&
+      (!init?.method || init?.method === "GET")
+    ) {
       const u = new URL(url, globalThis.location?.origin || "http://localhost");
       const role = u.searchParams.get("role") || "READER";
       const profile = mockProfileDB.get(role);
@@ -54,8 +57,11 @@ export function setupMockProfile() {
           JSON.stringify({ message: "Email changed successfully. (mock)" }),
           {
             status: 200,
-            headers: { "content-type": "application/json", "x-mock": "profile" },
-          }
+            headers: {
+              "content-type": "application/json",
+              "x-mock": "profile",
+            },
+          },
         );
       } catch {
         return new Response(JSON.stringify({ error: "Invalid JSON" }), {
@@ -66,7 +72,10 @@ export function setupMockProfile() {
     }
 
     // POST /api/profile/change-password
-    if (url.includes("/api/profile/change-password") && init?.method === "POST") {
+    if (
+      url.includes("/api/profile/change-password") &&
+      init?.method === "POST"
+    ) {
       try {
         const text = init.body ? (init.body as string) : "{}";
         // Validate JSON format (body intentionally unused in mock)
@@ -75,8 +84,11 @@ export function setupMockProfile() {
           JSON.stringify({ message: "Password changed successfully. (mock)" }),
           {
             status: 200,
-            headers: { "content-type": "application/json", "x-mock": "profile" },
-          }
+            headers: {
+              "content-type": "application/json",
+              "x-mock": "profile",
+            },
+          },
         );
       } catch {
         return new Response(JSON.stringify({ error: "Invalid JSON" }), {
@@ -87,7 +99,10 @@ export function setupMockProfile() {
     }
 
     // POST /api/profile/delete-account
-    if (url.includes("/api/profile/delete-account") && init?.method === "POST") {
+    if (
+      url.includes("/api/profile/delete-account") &&
+      init?.method === "POST"
+    ) {
       try {
         const text = init.body ? (init.body as string) : "{}";
         // Validate JSON format (body intentionally unused in mock)
@@ -97,8 +112,11 @@ export function setupMockProfile() {
           JSON.stringify({ message: "Account deleted successfully. (mock)" }),
           {
             status: 200,
-            headers: { "content-type": "application/json", "x-mock": "profile" },
-          }
+            headers: {
+              "content-type": "application/json",
+              "x-mock": "profile",
+            },
+          },
         );
       } catch {
         return new Response(JSON.stringify({ error: "Invalid JSON" }), {

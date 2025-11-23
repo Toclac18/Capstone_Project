@@ -1,14 +1,10 @@
 import { headers } from "next/headers";
-import { mockDocumentsDB } from "@/mock/db";
+import { mockDocumentsDB } from "@/mock/dbMock";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
-const DEFAULT_BE_BASE = "http://localhost:8080";
-
-export async function GET(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
+async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);
   const domainIdsParam = searchParams.get("domainIds");
   const domainIds = domainIdsParam
@@ -27,7 +23,10 @@ export async function GET(request: Request) {
   }
 
   const h = await headers();
-  const authHeader = h.get("authorization") || "";
+  const jwtAuth =
+    (await getAuthHeader("api/reader/documents/specializations/route.ts")) ||
+    "";
+  const authHeader = jwtAuth || h.get("authorization") || "";
   const cookieHeader = h.get("cookie") || "";
 
   const fh = new Headers({ "Content-Type": "application/json" });
@@ -35,7 +34,7 @@ export async function GET(request: Request) {
   if (cookieHeader) fh.set("Cookie", cookieHeader);
 
   const url = domainIdsParam
-      ? `${BE_BASE}/api/reader/documents/specializations?domainIds=${encodeURIComponent(domainIdsParam)}`
+    ? `${BE_BASE}/api/reader/documents/specializations?domainIds=${encodeURIComponent(domainIdsParam)}`
     : `${BE_BASE}/api/reader/documents/specializations`;
 
   const upstream = await fetch(url, {
@@ -55,3 +54,7 @@ export async function GET(request: Request) {
   });
 }
 
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/reader/documents/specializations/route.ts/GET",
+  });

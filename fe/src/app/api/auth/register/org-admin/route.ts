@@ -1,11 +1,13 @@
-const USE_MOCK = process.env.USE_MOCK === "true";
-const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-export async function POST(req: Request) {
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+async function handlePOST(req: Request) {
   const contentType = req.headers.get("content-type") || "";
-  
+
   if (!contentType.includes("multipart/form-data")) {
-    return Response.json({ error: "Content-Type must be multipart/form-data" }, { status: 400 });
+    return Response.json(
+      { error: "Content-Type must be multipart/form-data" },
+      { status: 400 },
+    );
   }
 
   const formData = await req.formData().catch(() => null);
@@ -39,18 +41,33 @@ export async function POST(req: Request) {
   }
 
   // Validate required fields
-  const { fullName, dateOfBirth, username, email, password, organizationName, organizationType, registrationNumber, organizationEmail } = info;
+  const {
+    fullName,
+    dateOfBirth,
+    username,
+    email,
+    password,
+    organizationName,
+    organizationType,
+    registrationNumber,
+    organizationEmail,
+  } = info;
   if (!fullName || !dateOfBirth || !username || !email || !password) {
     return Response.json(
       { error: "Missing required basic fields" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  if (!organizationName || !organizationType || !registrationNumber || !organizationEmail) {
+  if (
+    !organizationName ||
+    !organizationType ||
+    !registrationNumber ||
+    !organizationEmail
+  ) {
     return Response.json(
       { error: "Missing required organization fields" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -59,7 +76,7 @@ export async function POST(req: Request) {
   if (!files || files.length === 0) {
     return Response.json(
       { error: "Organization certificate upload is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -69,7 +86,7 @@ export async function POST(req: Request) {
     if (file instanceof File && file.size > MAX_FILE_SIZE) {
       return Response.json(
         { error: `File "${file.name}" exceeds 10MB limit` },
-        { status: 400 }
+        { status: 400 },
       );
     }
   }
@@ -82,7 +99,8 @@ export async function POST(req: Request) {
       fullName,
       role: "ORGANIZATION",
       status: "PENDING_VERIFICATION",
-      message: "Organization registration successful! Admin will verify your information.",
+      message:
+        "Organization registration successful! Admin will verify your information.",
     };
     return Response.json(mockUser, { status: 201 });
   }
@@ -95,7 +113,8 @@ export async function POST(req: Request) {
   });
 
   const text = await upstream.text();
-  const responseContentType = upstream.headers.get("content-type") ?? "application/json";
+  const responseContentType =
+    upstream.headers.get("content-type") ?? "application/json";
 
   if (!upstream.ok) {
     let errorMsg = "Registration failed";
@@ -113,3 +132,8 @@ export async function POST(req: Request) {
     headers: { "content-type": responseContentType },
   });
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/auth/register/org-admin/route.ts/POST",
+  });

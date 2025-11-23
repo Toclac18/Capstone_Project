@@ -1,18 +1,12 @@
-import { cookies } from "next/headers";
-import { mockTypesDB } from "@/mock/db";
+import { mockTypesDB } from "@/mock/dbMock";
 import type { UpdateTypeRequest } from "@/types/document-type";
-
-const DEFAULT_BE_BASE = "http://localhost:8080";
+import { USE_MOCK, BE_BASE } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
 
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   const { id } = await params;
 
   if (USE_MOCK) {
@@ -35,9 +29,7 @@ export async function PUT(
   }
 
   // Get authentication from cookie
-  const cookieStore = await cookies();
-  const tokenFromCookie = cookieStore.get("access_token")?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
+  const bearerToken = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (bearerToken) {
@@ -63,4 +55,3 @@ export async function PUT(
     },
   });
 }
-

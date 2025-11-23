@@ -1,7 +1,6 @@
-const USE_MOCK = process.env.USE_MOCK === "true";
-const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-export async function GET(req: Request) {
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+async function handleGET(req: Request) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");
 
@@ -17,7 +16,7 @@ export async function GET(req: Request) {
         organizationName: "Tech Innovation Hub",
         success: true,
       },
-      { status: 200 }
+      { status: 200 },
     );
   }
 
@@ -27,7 +26,7 @@ export async function GET(req: Request) {
     {
       method: "GET",
       cache: "no-store",
-    }
+    },
   );
 
   const text = await upstream.text();
@@ -48,11 +47,12 @@ export async function GET(req: Request) {
     const json = JSON.parse(text);
     return Response.json(
       {
-        message: json?.message || "You have successfully joined the organization",
+        message:
+          json?.message || "You have successfully joined the organization",
         organizationName: json?.organizationName,
         success: true,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch {
     return Response.json(
@@ -60,8 +60,12 @@ export async function GET(req: Request) {
         message: text || "You have successfully joined the organization",
         success: true,
       },
-      { status: 200 }
+      { status: 200 },
     );
   }
 }
 
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/organizations/join/route.ts/GET",
+  });

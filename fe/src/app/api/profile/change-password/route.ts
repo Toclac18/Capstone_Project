@@ -1,16 +1,12 @@
 // app/api/profile/change-password/route.ts
 import { headers } from "next/headers";
-
-const DEFAULT_BE_BASE = "http://localhost:8080";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
+async function handlePOST(req: Request) {
   let body: { currentPassword: string; newPassword: string };
   try {
     body = await req.json();
@@ -32,12 +28,14 @@ export async function POST(req: Request) {
           "content-type": "application/json",
           "x-mode": "mock",
         },
-      }
+      },
     );
   }
 
   const h = await headers();
-  const authHeader = h.get("authorization") || "";
+  const jwtAuth =
+    (await getAuthHeader("api/profile/change-password/route.ts")) || "";
+  const authHeader = jwtAuth || h.get("authorization") || "";
   const cookieHeader = h.get("cookie") || "";
 
   const fh = new Headers({ "Content-Type": "application/json" });
@@ -62,3 +60,7 @@ export async function POST(req: Request) {
   });
 }
 
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/profile/change-password/route.ts/POST",
+  });

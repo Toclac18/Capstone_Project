@@ -1,6 +1,6 @@
 "use client";
 
-import { useSidebarContext } from "../sidebar/sidebar-context";
+import { useSidebarContext } from "../sidebar/SidebarContext";
 import { AnimatedMenuIcon } from "./icons";
 import { Notification } from "./notification";
 import { ThemeToggleSwitch } from "./theme-toggle";

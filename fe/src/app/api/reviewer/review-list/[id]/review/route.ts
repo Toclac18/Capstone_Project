@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import type { ReviewAction } from "@/types/review";
-import { submitReview } from "@/mock/review-list";
+import { submitReview } from "@/mock/reviewListMock";
+import { getAuthHeader } from "@/server/auth";
 
 const DEFAULT_BE_BASE = "http://localhost:8080";
 const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
@@ -8,7 +9,7 @@ const MAX_REPORT_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const USE_MOCK = process.env.USE_MOCK === "true";
   const BE_BASE =
@@ -26,7 +27,10 @@ export async function POST(
     const contentLengthHeader = request.headers.get("content-length");
     if (contentLengthHeader) {
       const contentLength = Number(contentLengthHeader);
-      if (!Number.isNaN(contentLength) && contentLength > MAX_REPORT_SIZE_BYTES) {
+      if (
+        !Number.isNaN(contentLength) &&
+        contentLength > MAX_REPORT_SIZE_BYTES
+      ) {
         return new Response(
           JSON.stringify({
             message: "Report file must be 10MB or smaller.",
@@ -37,7 +41,7 @@ export async function POST(
               "content-type": "application/json",
               "x-mode": "mock",
             },
-          }
+          },
         );
       }
     }
@@ -58,9 +62,11 @@ export async function POST(
   const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
   const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
 
+  const authHeader = (await getAuthHeader("api/reviewer/review-list/[id]/review/route.ts")) || bearerToken;
+
   const fh = new Headers();
-  if (bearerToken) {
-    fh.set("Authorization", bearerToken);
+  if (authHeader) {
+    fh.set("Authorization", authHeader);
   }
 
   const upstream = await fetch(
@@ -70,7 +76,7 @@ export async function POST(
       headers: fh,
       cache: "no-store",
       body: request.body,
-    }
+    },
   );
 
   const text = await upstream.text();
@@ -83,5 +89,3 @@ export async function POST(
     },
   });
 }
-
-

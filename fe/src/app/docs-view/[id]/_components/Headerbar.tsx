@@ -31,7 +31,6 @@ export default function HeaderBar() {
     handleDownvote,
   } = useDocsView();
 
-  // ✅ state điều khiển SaveListModal – đúng tên, đúng import
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
 
   if (!detail) return null;

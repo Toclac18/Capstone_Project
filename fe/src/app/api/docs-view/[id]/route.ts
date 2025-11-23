@@ -1,10 +1,11 @@
 // src/app/api/docs-view/[id]/route.ts
-import { mockGetDocDetail } from "@/mock/docsDetail";
-import { badRequest, getBeBase, buildForwardHeaders } from "../_utils";
+import { mockGetDocDetail } from "@/mock/docsDetailMock";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { badRequest } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { buildForwardHeaders } from "../_utils";
 
-const USE_MOCK = process.env.USE_MOCK === "true";
-
-export async function GET(
+async function handleGET(
   _req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
@@ -25,7 +26,6 @@ export async function GET(
   }
 
   // REAL: forward sang BE
-  const BE_BASE = getBeBase();
   const fh = await buildForwardHeaders();
 
   const upstream = await fetch(`${BE_BASE}/api/docs-view/${id}`, {
@@ -44,3 +44,8 @@ export async function GET(
     },
   });
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/docs-view/[id]/route.ts/GET",
+  });

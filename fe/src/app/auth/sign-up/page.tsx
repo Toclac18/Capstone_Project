@@ -1,4 +1,4 @@
-import Signup from "@/app/auth/sign-up/_components";
+import Signup from "@/app/auth/sign-up/_components/Signup";
 import styles from "./styles.module.css";
 import type { Metadata } from "next";
 

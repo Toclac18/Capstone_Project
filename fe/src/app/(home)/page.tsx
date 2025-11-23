@@ -1,9 +1,12 @@
 "use client";
 
-import { FeaturedCarousel } from "./_components/featured-carousel";
-import { SystemDescription } from "./_components/system-description";
-import { ContentCards } from "./_components/content-cards";
-import { mockFeaturedCards, mockContentCards } from "./_components/mock-data";
+import { FeaturedCarousel } from "./_components/FeaturedCarousel";
+import { SystemDescription } from "./_components/SystemDescription";
+import { ContentCards } from "./_components/ContentCard";
+import {
+  mockFeaturedCards,
+  mockContentCards,
+} from "./_components/featured-carousel-mock";
 import { useToast } from "@/components/ui/toast";
 
 const Home = () => {
@@ -11,24 +14,24 @@ const Home = () => {
 
   const handleFeaturedCardClick = (card: any) => {
     showToast({
-      type: 'info',
-      title: 'Featured Course',
+      type: "info",
+      title: "Featured Course",
       message: `You clicked on "${card.title}"`,
-      duration: 3000
+      duration: 3000,
     });
   };
 
   const handleContentCardClick = (card: any) => {
     showToast({
-      type: 'info',
-      title: 'Course Selected',
+      type: "info",
+      title: "Course Selected",
       message: `You selected "${card.title}"`,
-      duration: 3000
+      duration: 3000,
     });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 rounded-2xl">
+    <div className="min-h-screen rounded-2xl bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
         {/* System Description */}
         <SystemDescription />
@@ -43,8 +46,8 @@ const Home = () => {
               Discover our most popular and trending courses
             </p>
           </div> */}
-          
-          <FeaturedCarousel 
+
+          <FeaturedCarousel
             cards={mockFeaturedCards}
             onCardClick={handleFeaturedCardClick}
           />
@@ -52,31 +55,32 @@ const Home = () => {
 
         {/* Content Cards */}
         <div className="mb-12">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          <div className="mb-8 text-center">
+            <h2 className="mb-4 text-3xl font-bold text-gray-900 dark:text-white">
               Popular Learning Paths
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300">
               Comprehensive courses designed to advance your career
             </p>
           </div>
-          
-          <ContentCards 
+
+          <ContentCards
             cards={mockContentCards}
             onCardClick={handleContentCardClick}
           />
         </div>
 
         {/* Additional Info Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 text-white shadow-xl hover:shadow-2xl transition-all duration-500">
+        <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 p-8 text-white shadow-xl transition-all duration-500 hover:shadow-2xl">
           <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4">
+            <h3 className="mb-4 text-2xl font-bold">
               Ready to Start Learning?
             </h3>
-            <p className="text-lg mb-6 opacity-90">
-              Join thousands of students who are already advancing their careers with our courses
+            <p className="mb-6 text-lg opacity-90">
+              Join thousands of students who are already advancing their careers
+              with our courses
             </p>
-            <button className="bg-white text-blue-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+            <button className="rounded-full bg-white px-8 py-3 font-semibold text-blue-600 shadow-lg transition-all duration-300 hover:scale-105 hover:bg-gray-100 hover:shadow-xl">
               Get Started Today
             </button>
           </div>

@@ -1,18 +1,28 @@
 import { headers } from "next/headers";
-import { mockOrganizationAdminDB } from "@/mock/db";
-
-const DEFAULT_BE_BASE = "http://localhost:8080";
+import { mockOrganizationAdminDB } from "@/mock/dbMock";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
 // Helper function to create forward headers
 async function createForwardHeaders(): Promise<Headers> {
-  const h = await headers();
-  const authHeader = h.get("authorization") || "";
-  const cookieHeader = h.get("cookie") || "";
+  const incomingHeaders = await headers();
 
-  const fh = new Headers();
-  if (authHeader) fh.set("Authorization", authHeader);
-  if (cookieHeader) fh.set("Cookie", cookieHeader);
-  return fh;
+  const authHeader = (await getAuthHeader("forwarding")) || "";
+
+  const cookieHeader = incomingHeaders.get("cookie") || "";
+
+  const forwardHeaders = new Headers();
+
+  if (authHeader) {
+    forwardHeaders.set("Authorization", authHeader);
+  }
+
+  if (cookieHeader) {
+    forwardHeaders.set("Cookie", cookieHeader);
+  }
+
+  return forwardHeaders;
 }
 
 // Helper function to forward request to backend
@@ -20,11 +30,8 @@ async function forwardRequest(
   url: string,
   method: string,
   headers: Headers,
-  body?: FormData | string
+  body?: FormData | string,
 ) {
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") || DEFAULT_BE_BASE;
-
   const upstream = await fetch(`${BE_BASE}${url}`, {
     method,
     headers,
@@ -36,15 +43,14 @@ async function forwardRequest(
   return new Response(text, {
     status: upstream.status,
     headers: {
-      "content-type": upstream.headers.get("content-type") ?? "application/json",
+      "content-type":
+        upstream.headers.get("content-type") ?? "application/json",
       "x-mode": "real",
     },
   });
 }
 
-export async function GET() {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-
+async function handleGET() {
   if (USE_MOCK) {
     const orgInfo = mockOrganizationAdminDB.get();
     return new Response(JSON.stringify(orgInfo), {
@@ -62,16 +68,14 @@ export async function GET() {
   return forwardRequest(
     "/api/organization-admin/manage-organization",
     "GET",
-    fh
+    fh,
   );
 }
 
-export async function PUT(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-
+async function handlePUT(request: Request) {
   if (USE_MOCK) {
     let body: any = {};
-    
+
     try {
       // Try to parse as FormData first
       const formData = await request.formData();
@@ -91,7 +95,7 @@ export async function PUT(request: Request) {
         body = {};
       }
     }
-    
+
     const updated = mockOrganizationAdminDB.update(body);
     return new Response(JSON.stringify(updated), {
       status: 200,
@@ -126,13 +130,10 @@ export async function PUT(request: Request) {
       body = JSON.stringify(jsonBody);
       fh.set("Content-Type", "application/json");
     } catch {
-      return new Response(
-        JSON.stringify({ error: "Invalid request body" }),
-        {
-          status: 400,
-          headers: { "content-type": "application/json" },
-        }
-      );
+      return new Response(JSON.stringify({ error: "Invalid request body" }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
     }
   }
 
@@ -140,13 +141,11 @@ export async function PUT(request: Request) {
     "/api/organization-admin/manage-organization",
     "PUT",
     fh,
-    body
+    body,
   );
 }
 
-export async function DELETE() {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-
+async function handleDELETE() {
   if (USE_MOCK) {
     mockOrganizationAdminDB.delete();
     return new Response(
@@ -157,7 +156,7 @@ export async function DELETE() {
           "content-type": "application/json",
           "x-mode": "mock",
         },
-      }
+      },
     );
   }
 
@@ -167,7 +166,21 @@ export async function DELETE() {
   return forwardRequest(
     "/api/organization-admin/manage-organization",
     "DELETE",
-    fh
+    fh,
   );
 }
 
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/organization-admin/manage-organization/route.ts/GET",
+  });
+
+export const PUT = (...args: Parameters<typeof handlePUT>) =>
+  withErrorBoundary(() => handlePUT(...args), {
+    context: "api/organization-admin/manage-organization/route.ts/PUT",
+  });
+
+export const DELETE = (...args: Parameters<typeof handleDELETE>) =>
+  withErrorBoundary(() => handleDELETE(...args), {
+    context: "api/organization-admin/manage-organization/route.ts/DELETE",
+  });

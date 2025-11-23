@@ -1,11 +1,13 @@
-const USE_MOCK = process.env.USE_MOCK === "true";
-const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-export async function POST(req: Request) {
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+async function handlePOST(req: Request) {
   const contentType = req.headers.get("content-type") || "";
-  
+
   if (!contentType.includes("multipart/form-data")) {
-    return Response.json({ error: "Content-Type must be multipart/form-data" }, { status: 400 });
+    return Response.json(
+      { error: "Content-Type must be multipart/form-data" },
+      { status: 400 },
+    );
   }
 
   const formData = await req.formData().catch(() => null);
@@ -40,18 +42,35 @@ export async function POST(req: Request) {
   }
 
   // Validate required fields
-  const { fullName, dateOfBirth, username, email, password, educationLevel, domains, specializations, referenceOrgName, referenceOrgEmail } = info;
+  const {
+    fullName,
+    dateOfBirth,
+    username,
+    email,
+    password,
+    educationLevel,
+    domains,
+    specializations,
+    referenceOrgName,
+    referenceOrgEmail,
+  } = info;
   if (!fullName || !dateOfBirth || !username || !email || !password) {
     return Response.json(
       { error: "Missing required basic fields" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  if (!educationLevel || !domains || !specializations || !referenceOrgName || !referenceOrgEmail) {
+  if (
+    !educationLevel ||
+    !domains ||
+    !specializations ||
+    !referenceOrgName ||
+    !referenceOrgEmail
+  ) {
     return Response.json(
       { error: "Missing required reviewer fields" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -59,14 +78,18 @@ export async function POST(req: Request) {
   if (!Array.isArray(domains) || domains.length < 1 || domains.length > 3) {
     return Response.json(
       { error: "Domains must be between 1 and 3" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  if (!Array.isArray(specializations) || specializations.length < 1 || specializations.length > 5) {
+  if (
+    !Array.isArray(specializations) ||
+    specializations.length < 1 ||
+    specializations.length > 5
+  ) {
     return Response.json(
       { error: "Specializations must be between 1 and 5" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -75,7 +98,7 @@ export async function POST(req: Request) {
   if (!files || files.length === 0) {
     return Response.json(
       { error: "Verified background upload is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -85,7 +108,7 @@ export async function POST(req: Request) {
     if (file instanceof File && file.size > MAX_FILE_SIZE) {
       return Response.json(
         { error: `File "${file.name}" exceeds 10MB limit` },
-        { status: 400 }
+        { status: 400 },
       );
     }
   }
@@ -98,7 +121,8 @@ export async function POST(req: Request) {
       fullName,
       role: "REVIEWER",
       status: "PENDING_VERIFICATION",
-      message: "Reviewer registration successful! Please check your email to verify your account.",
+      message:
+        "Reviewer registration successful! Please check your email to verify your account.",
     };
     return Response.json(mockUser, { status: 201 });
   }
@@ -111,7 +135,8 @@ export async function POST(req: Request) {
   });
 
   const text = await upstream.text();
-  const responseContentType = upstream.headers.get("content-type") ?? "application/json";
+  const responseContentType =
+    upstream.headers.get("content-type") ?? "application/json";
 
   if (!upstream.ok) {
     let errorMsg = "Registration failed";
@@ -129,3 +154,8 @@ export async function POST(req: Request) {
     headers: { "content-type": responseContentType },
   });
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/auth/register/reviewer/route.ts/POST",
+  });

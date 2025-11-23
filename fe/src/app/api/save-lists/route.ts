@@ -1,9 +1,10 @@
 // src/app/api/save-lists/route.ts
 import { headers } from "next/headers";
+import { getAuthHeader } from "@/server/auth";
 import {
-  mockFetchSaveLists,
   mockCreateSaveListAndAddDoc,
-} from "@/mock/saveList";
+  mockFetchSaveLists,
+} from "@/mock/saveListMock";
 
 // Cấu trúc giống contact-admin/route.ts
 const DEFAULT_BE_BASE = "http://localhost:8081";
@@ -48,7 +49,8 @@ export async function GET(req: Request) {
 
   // ---- REAL MODE ----
   const h = await headers();
-  const authHeader = h.get("authorization") || "";
+  const jwtAuth = (await getAuthHeader("api/save-lists/route.ts")) || "";
+  const authHeader = jwtAuth || h.get("authorization") || "";
   const cookieHeader = h.get("cookie") || "";
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
 
@@ -121,7 +123,8 @@ export async function POST(req: Request) {
 
   // ---- REAL MODE ----
   const h = await headers();
-  const authHeader = h.get("authorization") || "";
+  const jwtAuth = (await getAuthHeader("api/save-lists/route.ts")) || "";
+  const authHeader = jwtAuth || h.get("authorization") || "";
   const cookieHeader = h.get("cookie") || "";
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
 

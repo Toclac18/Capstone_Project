@@ -1,6 +1,6 @@
 import { MessageOutlineIcon, SearchIcon } from "@/assets/icons";
 import Breadcrumb from "@/components/(template)/Breadcrumbs/Breadcrumb";
-import { ShowcaseSection } from "@/components/Layouts/showcase-section";
+import { ShowcaseSection } from "@/components/layouts/showcase-section";
 import { Button } from "@/components/(template)/ui-elements/button";
 import { Metadata } from "next";
 

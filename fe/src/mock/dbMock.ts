@@ -8,10 +8,15 @@ import {
   type LibraryQueryParams,
   type LibraryResponse,
   type UpdateDocumentRequest,
-} from "./library";
+} from "./libraryMock";
 
 // Re-export library types and data for backward compatibility
-export type { LibraryDocument, LibraryQueryParams, LibraryResponse, UpdateDocumentRequest };
+export type {
+  LibraryDocument,
+  LibraryQueryParams,
+  LibraryResponse,
+  UpdateDocumentRequest,
+};
 export { mockLibraryDocuments };
 
 // Re-export reviewer functions only (types are exported from types/review.ts)
@@ -20,7 +25,7 @@ export {
   getReviewRequests,
   getReviewHistory,
   resetMockReviewData,
-} from "./review-list";
+} from "./reviewListMock";
 
 export type TicketCategory =
   | "PAYMENT"
@@ -89,7 +94,8 @@ const _notifications: Notification[] = [
     id: "1",
     type: "DOCUMENT_APPROVAL",
     title: "Document Approval Required",
-    summary: "Your document 'Project Proposal.pdf' is pending approval from John Doe.",
+    summary:
+      "Your document 'Project Proposal.pdf' is pending approval from John Doe.",
     timestamp: new Date(Date.now() - 300000).toISOString(), // 5 min ago
     isRead: false,
   },
@@ -97,7 +103,8 @@ const _notifications: Notification[] = [
     id: "2",
     type: "COMMENT",
     title: "New Comment on Your Post",
-    summary: "Jane Smith commented on your article 'Getting Started with React'.",
+    summary:
+      "Jane Smith commented on your article 'Getting Started with React'.",
     timestamp: new Date(Date.now() - 1800000).toISOString(), // 30 min ago
     isRead: false,
   },
@@ -113,7 +120,8 @@ const _notifications: Notification[] = [
     id: "4",
     type: "PURCHASE",
     title: "Purchase Successful",
-    summary: "Your purchase of 'Premium Membership' ($29.99) has been completed.",
+    summary:
+      "Your purchase of 'Premium Membership' ($29.99) has been completed.",
     timestamp: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
     isRead: true,
   },
@@ -129,7 +137,8 @@ const _notifications: Notification[] = [
     id: "6",
     type: "DOCUMENT_APPROVAL",
     title: "Document Approved",
-    summary: "Your document 'Quarterly Report Q4' has been approved by the review team.",
+    summary:
+      "Your document 'Quarterly Report Q4' has been approved by the review team.",
     timestamp: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
     isRead: true,
   },
@@ -137,7 +146,8 @@ const _notifications: Notification[] = [
     id: "7",
     type: "REVIEW_REQUEST",
     title: "Review Request Received",
-    summary: "New review request for 'Machine Learning Basics' from Tech Publications.",
+    summary:
+      "New review request for 'Machine Learning Basics' from Tech Publications.",
     timestamp: new Date(Date.now() - 600000).toISOString(), // 10 min ago
     isRead: false,
   },
@@ -145,7 +155,8 @@ const _notifications: Notification[] = [
     id: "8",
     type: "REVIEW_ASSIGNED",
     title: "Review Assigned to You",
-    summary: "You have been assigned to review 'Advanced React Patterns' document.",
+    summary:
+      "You have been assigned to review 'Advanced React Patterns' document.",
     timestamp: new Date(Date.now() - 900000).toISOString(), // 15 min ago
     isRead: false,
   },
@@ -153,7 +164,8 @@ const _notifications: Notification[] = [
     id: "9",
     type: "REVIEW_COMPLETED",
     title: "Review Completed",
-    summary: "Your review of 'Node.js Best Practices' has been completed and published.",
+    summary:
+      "Your review of 'Node.js Best Practices' has been completed and published.",
     timestamp: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
     isRead: true,
   },
@@ -161,7 +173,8 @@ const _notifications: Notification[] = [
     id: "10",
     type: "ORGANIZATION_INVITATION",
     title: "Organization Invitation",
-    summary: "You have been invited to join 'Tech Innovation Hub' organization.",
+    summary:
+      "You have been invited to join 'Tech Innovation Hub' organization.",
     timestamp: new Date(Date.now() - 10800000).toISOString(), // 3 hours ago
     isRead: false,
   },
@@ -169,7 +182,8 @@ const _notifications: Notification[] = [
     id: "11",
     type: "ORGANIZATION_MEMBER_ADDED",
     title: "New Member Added",
-    summary: "Alice Johnson has been added to your organization 'Digital Solutions Inc'.",
+    summary:
+      "Alice Johnson has been added to your organization 'Digital Solutions Inc'.",
     timestamp: new Date(Date.now() - 14400000).toISOString(), // 4 hours ago
     isRead: true,
   },
@@ -177,7 +191,8 @@ const _notifications: Notification[] = [
     id: "12",
     type: "ORGANIZATION_DOCUMENT_SUBMITTED",
     title: "Document Submitted for Review",
-    summary: "New document 'Annual Financial Report 2024' submitted by Finance Team.",
+    summary:
+      "New document 'Annual Financial Report 2024' submitted by Finance Team.",
     timestamp: new Date(Date.now() - 18000000).toISOString(), // 5 hours ago
     isRead: false,
   },
@@ -359,7 +374,8 @@ const _organizationInfo: OrganizationInfo = {
   name: "Tech Innovation Hub",
   type: "NON-PROFIT",
   registrationNumber: "REG-2024-001234",
-  certificateUpload: "https://example.com/certificates/tech-innovation-hub-cert.pdf",
+  certificateUpload:
+    "https://example.com/certificates/tech-innovation-hub-cert.pdf",
   email: "admin@innovation.example.org",
   createdAt: "2024-01-15T10:30:00Z",
   logo: null,
@@ -493,7 +509,7 @@ export const mockTagsDB = {
       filtered = filtered.filter(
         (tag) =>
           tag.name.toLowerCase().includes(searchLower) ||
-          tag.id.toLowerCase().includes(searchLower)
+          tag.id.toLowerCase().includes(searchLower),
       );
     }
 
@@ -531,11 +547,13 @@ export const mockTagsDB = {
   create(data: { name: string }): BusinessAdminTag {
     // Check for duplicate name (case-insensitive)
     const existingTag = _businessAdminTags.find(
-      (tag) => tag.name.toLowerCase().trim() === data.name.toLowerCase().trim()
+      (tag) => tag.name.toLowerCase().trim() === data.name.toLowerCase().trim(),
     );
 
     if (existingTag) {
-      throw new Error("This tag name already exists. Please choose another name.");
+      throw new Error(
+        "This tag name already exists. Please choose another name.",
+      );
     }
 
     // Validate name is not empty
@@ -553,7 +571,10 @@ export const mockTagsDB = {
     _businessAdminTags.unshift(newTag);
     return newTag;
   },
-  update(id: string, data: { name?: string; status?: TagStatus }): BusinessAdminTag {
+  update(
+    id: string,
+    data: { name?: string; status?: TagStatus },
+  ): BusinessAdminTag {
     const tagIndex = _businessAdminTags.findIndex((tag) => tag.id === id);
 
     if (tagIndex === -1) {
@@ -569,11 +590,13 @@ export const mockTagsDB = {
         const duplicateTag = _businessAdminTags.find(
           (tag) =>
             tag.id !== id &&
-            tag.name.toLowerCase().trim() === trimmedName.toLowerCase()
+            tag.name.toLowerCase().trim() === trimmedName.toLowerCase(),
         );
 
         if (duplicateTag) {
-          throw new Error("This tag name already exists. Please choose another name.");
+          throw new Error(
+            "This tag name already exists. Please choose another name.",
+          );
         }
       }
     }
@@ -714,7 +737,7 @@ export const mockTagsDB = {
         name: "Internet of Things",
         status: "PENDING",
         createdDate: "2025-01-29T12:00:00Z",
-      }
+      },
     );
   },
 };
@@ -787,7 +810,7 @@ export const mockDomainsDB = {
       filtered = filtered.filter(
         (domain) =>
           domain.name.toLowerCase().includes(searchLower) ||
-          domain.id.toLowerCase().includes(searchLower)
+          domain.id.toLowerCase().includes(searchLower),
       );
     }
 
@@ -820,11 +843,14 @@ export const mockDomainsDB = {
   create(data: { name: string }): BusinessAdminDomain {
     // Check for duplicate name (case-insensitive)
     const existingDomain = _businessAdminDomains.find(
-      (domain) => domain.name.toLowerCase().trim() === data.name.toLowerCase().trim()
+      (domain) =>
+        domain.name.toLowerCase().trim() === data.name.toLowerCase().trim(),
     );
 
     if (existingDomain) {
-      throw new Error("Domain name already in use. Please choose another name.");
+      throw new Error(
+        "Domain name already in use. Please choose another name.",
+      );
     }
 
     // Validate name is not empty
@@ -842,7 +868,9 @@ export const mockDomainsDB = {
     return newDomain;
   },
   update(id: string, data: { name?: string }): BusinessAdminDomain {
-    const domainIndex = _businessAdminDomains.findIndex((domain) => domain.id === id);
+    const domainIndex = _businessAdminDomains.findIndex(
+      (domain) => domain.id === id,
+    );
 
     if (domainIndex === -1) {
       throw new Error(`Domain with id ${id} not found`);
@@ -857,11 +885,13 @@ export const mockDomainsDB = {
         const duplicateDomain = _businessAdminDomains.find(
           (domain) =>
             domain.id !== id &&
-            domain.name.toLowerCase().trim() === trimmedName.toLowerCase()
+            domain.name.toLowerCase().trim() === trimmedName.toLowerCase(),
         );
 
         if (duplicateDomain) {
-          throw new Error("Domain name already in use. Please choose another name.");
+          throw new Error(
+            "Domain name already in use. Please choose another name.",
+          );
         }
       }
 
@@ -876,7 +906,9 @@ export const mockDomainsDB = {
     return existingDomain;
   },
   delete(id: string): void {
-    const domainIndex = _businessAdminDomains.findIndex((domain) => domain.id === id);
+    const domainIndex = _businessAdminDomains.findIndex(
+      (domain) => domain.id === id,
+    );
 
     if (domainIndex === -1) {
       throw new Error(`Domain with id ${id} not found`);
@@ -936,7 +968,7 @@ export const mockDomainsDB = {
         id: "domain-10",
         name: "Literature",
         createdDate: "2025-01-19T19:00:00Z",
-      }
+      },
     );
   },
 };
@@ -1019,7 +1051,7 @@ export const mockTypesDB = {
       filtered = filtered.filter(
         (type) =>
           type.name.toLowerCase().includes(searchLower) ||
-          type.id.toLowerCase().includes(searchLower)
+          type.id.toLowerCase().includes(searchLower),
       );
     }
 
@@ -1054,7 +1086,8 @@ export const mockTypesDB = {
   create(data: { name: string }): BusinessAdminType {
     // Check for duplicate name (case-insensitive)
     const existingType = _businessAdminTypes.find(
-      (type) => type.name.toLowerCase().trim() === data.name.toLowerCase().trim()
+      (type) =>
+        type.name.toLowerCase().trim() === data.name.toLowerCase().trim(),
     );
 
     if (existingType) {
@@ -1093,11 +1126,13 @@ export const mockTypesDB = {
         const duplicateType = _businessAdminTypes.find(
           (type) =>
             type.id !== id &&
-            type.name.toLowerCase().trim() === trimmedName.toLowerCase()
+            type.name.toLowerCase().trim() === trimmedName.toLowerCase(),
         );
 
         if (duplicateType) {
-          throw new Error("Type name already in use. Please choose another name.");
+          throw new Error(
+            "Type name already in use. Please choose another name.",
+          );
         }
       }
 
@@ -1174,7 +1209,7 @@ export const mockTypesDB = {
         name: "Conference Paper",
         createdAt: "2025-01-19T19:00:00Z",
         updatedAt: "2025-01-19T19:00:00Z",
-      }
+      },
     );
   },
 };
@@ -1254,9 +1289,12 @@ const _businessAdminSpecializations: BusinessAdminSpecialization[] = [
 ];
 
 export const mockSpecializationsDB = {
-  list(params: { domainId: string; search?: string }): BusinessAdminSpecialization[] {
+  list(params: {
+    domainId: string;
+    search?: string;
+  }): BusinessAdminSpecialization[] {
     let filtered = _businessAdminSpecializations.filter(
-      (spec) => spec.domainId === params.domainId
+      (spec) => spec.domainId === params.domainId,
     );
 
     // Filter by search
@@ -1265,7 +1303,7 @@ export const mockSpecializationsDB = {
       filtered = filtered.filter(
         (spec) =>
           spec.name.toLowerCase().includes(searchLower) ||
-          spec.id.toLowerCase().includes(searchLower)
+          spec.id.toLowerCase().includes(searchLower),
       );
     }
 
@@ -1274,12 +1312,15 @@ export const mockSpecializationsDB = {
   get(id: string): BusinessAdminSpecialization | undefined {
     return _businessAdminSpecializations.find((spec) => spec.id === id);
   },
-  create(data: { name: string; domainId: string }): BusinessAdminSpecialization {
+  create(data: {
+    name: string;
+    domainId: string;
+  }): BusinessAdminSpecialization {
     // Check for duplicate name in the same domain (case-insensitive)
     const existingSpec = _businessAdminSpecializations.find(
       (spec) =>
         spec.domainId === data.domainId &&
-        spec.name.toLowerCase().trim() === data.name.toLowerCase().trim()
+        spec.name.toLowerCase().trim() === data.name.toLowerCase().trim(),
     );
 
     if (existingSpec) {
@@ -1304,7 +1345,9 @@ export const mockSpecializationsDB = {
     return newSpec;
   },
   update(id: string, data: { name?: string }): BusinessAdminSpecialization {
-    const specIndex = _businessAdminSpecializations.findIndex((spec) => spec.id === id);
+    const specIndex = _businessAdminSpecializations.findIndex(
+      (spec) => spec.id === id,
+    );
 
     if (specIndex === -1) {
       throw new Error(`Specialization with id ${id} not found`);
@@ -1320,7 +1363,7 @@ export const mockSpecializationsDB = {
           (spec) =>
             spec.id !== id &&
             spec.domainId === existingSpec.domainId &&
-            spec.name.toLowerCase().trim() === trimmedName.toLowerCase()
+            spec.name.toLowerCase().trim() === trimmedName.toLowerCase(),
         );
 
         if (duplicateSpec) {
@@ -1340,7 +1383,9 @@ export const mockSpecializationsDB = {
     return existingSpec;
   },
   delete(id: string): void {
-    const specIndex = _businessAdminSpecializations.findIndex((spec) => spec.id === id);
+    const specIndex = _businessAdminSpecializations.findIndex(
+      (spec) => spec.id === id,
+    );
 
     if (specIndex === -1) {
       throw new Error(`Specialization with id ${id} not found`);
@@ -1420,7 +1465,7 @@ export const mockSpecializationsDB = {
         domainId: "domain-4",
         createdAt: "2025-01-19T19:00:00Z",
         updatedAt: "2025-01-19T19:00:00Z",
-      }
+      },
     );
   },
 };
@@ -1471,13 +1516,15 @@ const _organizations: OrganizationDetail[] = [
 
 export const mockOrganizationsDB = {
   list(): { items: OrganizationSummary[]; total: number } {
-    const items: OrganizationSummary[] = _organizations.map(({ id, name, type, joinDate, logo }) => ({
-      id,
-      name,
-      type,
-      joinDate,
-      logo,
-    }));
+    const items: OrganizationSummary[] = _organizations.map(
+      ({ id, name, type, joinDate, logo }) => ({
+        id,
+        name,
+        type,
+        joinDate,
+        logo,
+      }),
+    );
     return { items, total: items.length };
   },
   get(id: string): OrganizationDetail | undefined {
@@ -1546,9 +1593,19 @@ export type Specialization = {
 const _specializations: Specialization[] = [
   // Computer Science specializations
   { id: "spec-1", name: "Machine Learning", code: 101, domainId: "domain-1" },
-  { id: "spec-2", name: "Artificial Intelligence", code: 102, domainId: "domain-1" },
+  {
+    id: "spec-2",
+    name: "Artificial Intelligence",
+    code: 102,
+    domainId: "domain-1",
+  },
   { id: "spec-3", name: "Web Development", code: 103, domainId: "domain-1" },
-  { id: "spec-4", name: "Software Engineering", code: 104, domainId: "domain-1" },
+  {
+    id: "spec-4",
+    name: "Software Engineering",
+    code: 104,
+    domainId: "domain-1",
+  },
   { id: "spec-5", name: "Cybersecurity", code: 105, domainId: "domain-1" },
   // Mathematics specializations
   { id: "spec-6", name: "Algebra", code: 201, domainId: "domain-2" },
@@ -1565,12 +1622,32 @@ const _specializations: Specialization[] = [
   { id: "spec-15", name: "Ecology", code: 403, domainId: "domain-4" },
   // Chemistry specializations
   { id: "spec-16", name: "Organic Chemistry", code: 501, domainId: "domain-5" },
-  { id: "spec-17", name: "Inorganic Chemistry", code: 502, domainId: "domain-5" },
-  { id: "spec-18", name: "Physical Chemistry", code: 503, domainId: "domain-5" },
+  {
+    id: "spec-17",
+    name: "Inorganic Chemistry",
+    code: 502,
+    domainId: "domain-5",
+  },
+  {
+    id: "spec-18",
+    name: "Physical Chemistry",
+    code: 503,
+    domainId: "domain-5",
+  },
   // Engineering specializations
   { id: "spec-19", name: "Civil Engineering", code: 601, domainId: "domain-6" },
-  { id: "spec-20", name: "Mechanical Engineering", code: 602, domainId: "domain-6" },
-  { id: "spec-21", name: "Electrical Engineering", code: 603, domainId: "domain-6" },
+  {
+    id: "spec-20",
+    name: "Mechanical Engineering",
+    code: 602,
+    domainId: "domain-6",
+  },
+  {
+    id: "spec-21",
+    name: "Electrical Engineering",
+    code: 603,
+    domainId: "domain-6",
+  },
 ];
 
 export type DocumentHistoryStatus = "PENDING" | "APPROVED" | "REJECTED";
@@ -1680,9 +1757,7 @@ export const mockDocumentsDB = {
   getTags(search?: string): Tag[] {
     if (!search) return [..._tags];
     const searchLower = search.toLowerCase();
-    return _tags.filter((tag) =>
-      tag.name.toLowerCase().includes(searchLower)
-    );
+    return _tags.filter((tag) => tag.name.toLowerCase().includes(searchLower));
   },
   getSpecializations(domainIds: string[]): Specialization[] {
     if (domainIds.length === 0) return [];
@@ -1697,14 +1772,20 @@ export const mockDocumentsDB = {
     status?: DocumentHistoryStatus;
     page?: number;
     limit?: number;
-  }): { documents: DocumentHistory[]; total: number; page: number; limit: number; totalPages: number } {
+  }): {
+    documents: DocumentHistory[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  } {
     let filtered = [..._uploadHistory];
 
     // Filter by search (document name)
     if (params?.search) {
       const searchLower = params.search.toLowerCase();
       filtered = filtered.filter((doc) =>
-        doc.documentName.toLowerCase().includes(searchLower)
+        doc.documentName.toLowerCase().includes(searchLower),
       );
     }
 
@@ -1751,7 +1832,10 @@ export const mockDocumentsDB = {
       totalPages,
     };
   },
-  requestReReview(documentId: string, _reason: string): { error?: string; status?: number; message?: string } {
+  requestReReview(
+    documentId: string,
+    _reason: string,
+  ): { error?: string; status?: number; message?: string } {
     // Check if document exists and is rejected
     const document = _uploadHistory.find((doc) => doc.id === documentId);
     if (!document) {
@@ -1786,7 +1870,7 @@ export const mockDocumentsDB = {
 
     // Add re-review request
     _reReviewRequests.add(documentId);
-    
+
     // Update document status to PENDING (as per use case: "document status is updated to 'Pending Re-Review'")
     // Note: In a real app, you might want a separate status like "PENDING_RE_REVIEW"
     document.status = "PENDING";
@@ -1827,7 +1911,7 @@ export const mockLibraryDB = {
       tagIds: string[];
       newTags?: string[];
       organizationId?: string;
-    }
+    },
   ): { message: string } {
     return updateLibraryDoc(
       documentId,
@@ -1836,7 +1920,7 @@ export const mockLibraryDB = {
       _domains,
       _specializations,
       _tags,
-      _organizations
+      _organizations,
     );
   },
 

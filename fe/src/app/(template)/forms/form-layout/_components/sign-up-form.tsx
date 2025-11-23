@@ -1,5 +1,5 @@
 import InputGroup from "@/components/(template)/FormElements/InputGroup";
-import { ShowcaseSection } from "@/components/Layouts/showcase-section";
+import { ShowcaseSection } from "@/components/layouts/showcase-section";
 
 export function SignUpForm() {
   return (

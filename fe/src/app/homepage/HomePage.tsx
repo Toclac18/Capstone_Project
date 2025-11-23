@@ -1,7 +1,7 @@
 "use client";
 
 import styles from "./styles.module.css";
-import { useHomepage } from "./HomepageProvider";
+import { useHomepage } from "./provider";
 import SearchBar from "./_components/SearchBar";
 import ActionButtons from "./_components/ActionButtons";
 import Section from "./_components/Section";

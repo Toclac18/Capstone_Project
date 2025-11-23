@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { SearchProvider } from "./SearchProvider";
+import { SearchProvider } from "./provider";
 import styles from "./styles.module.css";
 import SearchToolbar from "./_components/SearchToolbar";
 import DocumentList from "./_components/DocumentList";

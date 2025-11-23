@@ -1,6 +1,6 @@
 "use client";
 
-import { HomepageProvider } from "./HomepageProvider";
+import { HomepageProvider } from "./provider";
 
 export default function HomepageLayout({
   children,

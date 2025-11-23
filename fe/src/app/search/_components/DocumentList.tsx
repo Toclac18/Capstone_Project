@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { useSearch } from "../SearchProvider";
+import { useSearch } from "../provider";
 import styles from "../styles.module.css";
 
 export default function DocumentList() {

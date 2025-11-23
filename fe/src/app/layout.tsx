@@ -3,7 +3,7 @@ import "@/css/satoshi.css";
 import "@/css/style.css";
 import "flatpickr/dist/flatpickr.min.css";
 
-import ConditionalLayout from "@/app/ConditionalLayout";
+import ConditionalLayout from "@/app/conditional-layouts";
 import type { Metadata } from "next";
 import NextTopLoader from "nextjs-toploader";
 import type { PropsWithChildren } from "react";

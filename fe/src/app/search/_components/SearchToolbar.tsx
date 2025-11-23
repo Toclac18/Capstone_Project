@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useSearch } from "../SearchProvider";
+import { useSearch } from "../provider";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Filter } from "lucide-react";
 import styles from "../styles.module.css";

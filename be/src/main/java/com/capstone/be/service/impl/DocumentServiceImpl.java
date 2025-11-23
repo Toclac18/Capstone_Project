@@ -14,6 +14,7 @@ import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.OrgEnrollStatus;
 import com.capstone.be.domain.enums.TagStatus;
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
+import com.capstone.be.dto.request.document.DocumentUploadHistoryFilter;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
@@ -36,6 +37,7 @@ import com.capstone.be.repository.SpecializationRepository;
 import com.capstone.be.repository.TagRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.repository.specification.DocumentLibrarySpecification;
+import com.capstone.be.repository.specification.DocumentUploadHistorySpecification;
 import com.capstone.be.service.DocumentAccessService;
 import com.capstone.be.service.DocumentService;
 import com.capstone.be.service.DocumentThumbnailService;
@@ -54,6 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -482,23 +485,29 @@ public class DocumentServiceImpl implements DocumentService {
 
   @Override
   @Transactional(readOnly = true)
-  public Page<DocumentUploadHistoryResponse> getUploadHistory(UUID uploaderId, Pageable pageable) {
-    log.info("User {} requesting upload history with pagination: {}", uploaderId, pageable);
+  public Page<DocumentUploadHistoryResponse> getUploadHistory(UUID uploaderId,
+      DocumentUploadHistoryFilter filter, Pageable pageable) {
+    log.info("User {} requesting upload history with filter: {} and pagination: {}",
+        uploaderId, filter, pageable);
 
     // Verify user exists
     if (!userRepository.existsById(uploaderId)) {
       throw ResourceNotFoundException.userById(uploaderId);
     }
 
-    // Fetch documents uploaded by this user with pagination
-    Page<Document> documentsPage = documentRepository.findByUploader_Id(uploaderId, pageable);
+    // Build specification with filter
+    Specification<Document> spec = DocumentUploadHistorySpecification.buildUploadHistorySpec(
+        uploaderId, filter);
+
+    // Fetch documents with specification and pagination
+    Page<Document> documentsPage = documentRepository.findAll(spec, pageable);
 
     // Map to response DTO
     Page<DocumentUploadHistoryResponse> responsePage = documentsPage.map(document -> {
       DocumentUploadHistoryResponse response = documentMapper.toUploadHistoryResponse(document);
 
       // Get redemption count for this document
-      if (document.getIsPremium()){
+      if (document.getIsPremium()) {
         long redemptionCount = documentRedemptionRepository.countByDocument_Id(document.getId());
         response.setRedemptionCount((int) redemptionCount);
       }

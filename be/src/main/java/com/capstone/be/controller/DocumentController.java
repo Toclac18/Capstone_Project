@@ -2,6 +2,7 @@ package com.capstone.be.controller;
 
 import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
+import com.capstone.be.dto.request.document.DocumentUploadHistoryFilter;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
@@ -128,10 +129,12 @@ public class DocumentController {
   }
 
   /**
-   * Get upload history for the authenticated user
+   * Get upload history for the authenticated user with filtering and search
    * Returns paginated list of all documents uploaded by the user
+   * Supports filtering by search keyword and premium status
    *
    * @param userPrincipal Authenticated user
+   * @param filter Filter criteria (all optional)
    * @param pageable Pagination parameters (page, size, sort)
    * @return Paged response of document upload history
    */
@@ -139,12 +142,14 @@ public class DocumentController {
   @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
   public ResponseEntity<PagedResponse<DocumentUploadHistoryResponse>> getMyUploadHistory(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @ModelAttribute DocumentUploadHistoryFilter filter,
       Pageable pageable) {
     UUID uploaderId = userPrincipal.getId();
-    log.info("User {} requesting upload history (page: {}, size: {})",
-        uploaderId, pageable.getPageNumber(), pageable.getPageSize());
+    log.info("User {} requesting upload history (page: {}, size: {}, filter: {})",
+        uploaderId, pageable.getPageNumber(), pageable.getPageSize(), filter);
 
-    Page<DocumentUploadHistoryResponse> historyPage = documentService.getUploadHistory(uploaderId, pageable);
+    Page<DocumentUploadHistoryResponse> historyPage = documentService.getUploadHistory(uploaderId,
+        filter, pageable);
 
     return ResponseEntity.ok(PagedResponse.of(historyPage));
   }

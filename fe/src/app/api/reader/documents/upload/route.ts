@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";
 
 async function handlePOST(request: Request) {
@@ -30,13 +30,14 @@ async function handlePOST(request: Request) {
             "content-type": "application/json",
             "x-mode": "mock",
           },
-        }
+        },
       );
     }
 
     const h = await headers();
-    const jwtAuth = (await getAuthHeader("api/reader/documents/upload/route.ts")) || "";
-  const authHeader = jwtAuth || h.get("authorization") || "";
+    const jwtAuth =
+      (await getAuthHeader("api/reader/documents/upload/route.ts")) || "";
+    const authHeader = jwtAuth || h.get("authorization") || "";
     const cookieHeader = h.get("cookie") || "";
 
     const fh = new Headers();
@@ -70,14 +71,15 @@ async function handlePOST(request: Request) {
     console.error("Upload error:", error);
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : "Failed to upload document",
+        error:
+          error instanceof Error ? error.message : "Failed to upload document",
       }),
       {
         status: 500,
         headers: {
           "content-type": "application/json",
         },
-      }
+      },
     );
   }
 }

@@ -9,7 +9,7 @@ import { NextRequest } from "next/server";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
 async function handleGET(req: NextRequest): Promise<Response> {
   const url = new URL(req.url);

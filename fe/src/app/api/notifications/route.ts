@@ -4,7 +4,7 @@ import { mockNotificationDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, proxyJsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
 async function handleGET(): Promise<Response> {
   if (USE_MOCK) {

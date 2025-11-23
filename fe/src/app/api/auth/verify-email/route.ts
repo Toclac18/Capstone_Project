@@ -1,5 +1,5 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 async function handleGET(req: Request) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");
@@ -15,7 +15,7 @@ async function handleGET(req: Request) {
         message: "Email has been verified successfully (mock)",
         success: true,
       },
-      { status: 200 }
+      { status: 200 },
     );
   }
 
@@ -25,7 +25,7 @@ async function handleGET(req: Request) {
     {
       method: "GET",
       cache: "no-store",
-    }
+    },
   );
 
   const text = await upstream.text();
@@ -47,7 +47,7 @@ async function handleGET(req: Request) {
       message: text || "Email has been verified successfully",
       success: true,
     },
-    { status: 200 }
+    { status: 200 },
   );
 }
 

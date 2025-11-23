@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { mockOrganizationAdminDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";
 
 // Helper function to create forward headers

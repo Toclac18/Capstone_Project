@@ -2,7 +2,7 @@
 import { cookies } from "next/headers";
 import { mockProfileDB } from "@/mock/dbMock";
 import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +29,8 @@ async function handleGET(request: Request) {
   }
 
   // Backend chỉ nhận Authorization header, không nhận cookie
-  const authHeader = (await getAuthHeader("api/profile/get/route.ts")) || bearerToken;
+  const authHeader =
+    (await getAuthHeader("api/profile/get/route.ts")) || bearerToken;
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (authHeader) {

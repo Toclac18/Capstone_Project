@@ -1,5 +1,5 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 async function handleGET(req: Request) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");
@@ -16,7 +16,7 @@ async function handleGET(req: Request) {
         organizationName: "Tech Innovation Hub",
         success: true,
       },
-      { status: 200 }
+      { status: 200 },
     );
   }
 
@@ -26,7 +26,7 @@ async function handleGET(req: Request) {
     {
       method: "GET",
       cache: "no-store",
-    }
+    },
   );
 
   const text = await upstream.text();
@@ -47,11 +47,12 @@ async function handleGET(req: Request) {
     const json = JSON.parse(text);
     return Response.json(
       {
-        message: json?.message || "You have successfully joined the organization",
+        message:
+          json?.message || "You have successfully joined the organization",
         organizationName: json?.organizationName,
         success: true,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch {
     return Response.json(
@@ -59,7 +60,7 @@ async function handleGET(req: Request) {
         message: text || "You have successfully joined the organization",
         success: true,
       },
-      { status: 200 }
+      { status: 200 },
     );
   }
 }

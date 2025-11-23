@@ -2,7 +2,7 @@
 import { mockRedeemDoc } from "@/mock/docsDetailMock";
 import { buildForwardHeaders } from "../../_utils";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { badRequest } from "@/server/response";
 
 async function handlePOST(

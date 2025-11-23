@@ -3,7 +3,7 @@
 import { BE_BASE } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { parseError } from "@/server/response";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
 /**
  * Update user status by id. Proxies to BE_BASE/api/users/{id}/status with PATCH.

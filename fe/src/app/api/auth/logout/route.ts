@@ -1,11 +1,11 @@
 // src/app/api/auth/logout/route.ts
 import { cookies } from "next/headers";
 import { COOKIE_NAME } from "@/server/config";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
 async function handlePOST() {
   const cookieStore = await cookies();
-  
+
   // Delete the access_token cookie
   cookieStore.delete(COOKIE_NAME);
 

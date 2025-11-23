@@ -2,7 +2,7 @@
 import { headers } from "next/headers";
 import { mockProfileDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +35,8 @@ async function handlePOST(req: Request) {
   }
 
   const h = await headers();
-  const jwtAuth = (await getAuthHeader("api/profile/delete-account/route.ts")) || "";
+  const jwtAuth =
+    (await getAuthHeader("api/profile/delete-account/route.ts")) || "";
   const authHeader = jwtAuth || h.get("authorization") || "";
   const cookieHeader = h.get("cookie") || "";
 

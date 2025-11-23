@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { mockDocumentsDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";
 
 async function handleGET() {
@@ -17,7 +17,8 @@ async function handleGET() {
   }
 
   const h = await headers();
-  const jwtAuth = (await getAuthHeader("api/reader/documents/domains/route.ts")) || "";
+  const jwtAuth =
+    (await getAuthHeader("api/reader/documents/domains/route.ts")) || "";
   const authHeader = jwtAuth || h.get("authorization") || "";
   const cookieHeader = h.get("cookie") || "";
 

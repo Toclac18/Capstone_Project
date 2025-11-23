@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { headers, cookies } from "next/headers";
 import { mockLibraryDocs } from "@/mock/documentsMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";
 
 function beBase() {

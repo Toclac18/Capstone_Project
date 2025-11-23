@@ -1,7 +1,7 @@
 // app/api/profile/change-password/route.ts
 import { headers } from "next/headers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";
 
 export const dynamic = "force-dynamic";
@@ -28,12 +28,13 @@ async function handlePOST(req: Request) {
           "content-type": "application/json",
           "x-mode": "mock",
         },
-      }
+      },
     );
   }
 
   const h = await headers();
-  const jwtAuth = (await getAuthHeader("api/profile/change-password/route.ts")) || "";
+  const jwtAuth =
+    (await getAuthHeader("api/profile/change-password/route.ts")) || "";
   const authHeader = jwtAuth || h.get("authorization") || "";
   const cookieHeader = h.get("cookie") || "";
 

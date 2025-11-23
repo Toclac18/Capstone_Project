@@ -4,7 +4,7 @@ import { mockDocumentsDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, parseError } from "@/server/response";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { badRequest } from "@/server/response";
 
 /**

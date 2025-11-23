@@ -2,7 +2,7 @@
 import { headers } from "next/headers";
 import { mockNotificationDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";
 
 async function handlePOST(
@@ -23,7 +23,8 @@ async function handlePOST(
   }
 
   const h = await headers();
-  const jwtAuth = (await getAuthHeader("api/notifications/[id]/read/route.ts")) || "";
+  const jwtAuth =
+    (await getAuthHeader("api/notifications/[id]/read/route.ts")) || "";
   const authHeader = jwtAuth || h.get("authorization") || "";
   const cookieHeader = h.get("cookie") || "";
 

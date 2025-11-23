@@ -1,7 +1,7 @@
 import { mockLibraryDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
 async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);

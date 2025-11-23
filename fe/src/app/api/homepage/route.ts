@@ -10,7 +10,7 @@ import { NextRequest } from "next/server";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, parseError } from "@/server/response";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
 type GroupType = "continueReading" | "topUpvoted" | "bySpecialization" | "all";
 

@@ -1,5 +1,5 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 async function handlePOST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body) {
@@ -9,10 +9,7 @@ async function handlePOST(req: Request) {
   // Validate required fields for Reader
   const { fullName, dateOfBirth, username, email, password } = body;
   if (!fullName || !dateOfBirth || !username || !email || !password) {
-    return Response.json(
-      { error: "Missing required fields" },
-      { status: 400 }
-    );
+    return Response.json({ error: "Missing required fields" }, { status: 400 });
   }
 
   if (USE_MOCK) {
@@ -23,7 +20,8 @@ async function handlePOST(req: Request) {
       fullName,
       role: "READER",
       status: "PENDING_VERIFICATION",
-      message: "Registration successful! Please check your email to verify your account.",
+      message:
+        "Registration successful! Please check your email to verify your account.",
     };
     return Response.json(mockUser, { status: 201 });
   }
@@ -37,7 +35,8 @@ async function handlePOST(req: Request) {
   });
 
   const text = await upstream.text();
-  const contentType = upstream.headers.get("content-type") ?? "application/json";
+  const contentType =
+    upstream.headers.get("content-type") ?? "application/json";
 
   if (!upstream.ok) {
     let errorMsg = "Registration failed";

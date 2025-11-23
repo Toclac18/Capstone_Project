@@ -2,7 +2,7 @@
 import { mockGetDocDetail } from "@/mock/docsDetailMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { badRequest } from "@/server/response";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { buildForwardHeaders } from "../_utils";
 
 async function handleGET(

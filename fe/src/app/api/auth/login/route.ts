@@ -2,7 +2,7 @@
 import { cookies } from "next/headers";
 import { BE_BASE, COOKIE_NAME } from "@/server/config";
 import { parseError } from "@/server/response";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
 async function handlePOST(req: Request) {
   const body = await req.json().catch(() => null);

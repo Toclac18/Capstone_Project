@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 import { headers } from "next/headers";
 import { BE_BASE } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { withErrorBoundary } from "@/server/withErrorBoundary";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
 export const runtime = "nodejs";
 

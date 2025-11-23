@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/(template)/FormElements/checkbox";
 import { RadioInput } from "@/components/(template)/FormElements/radio";
 import { Select } from "@/components/(template)/FormElements/select";
 import { Switch } from "@/components/(template)/FormElements/switch";
-import { ShowcaseSection } from "@/components/Layouts/showcase-section";
+import { ShowcaseSection } from "@/components/layouts/showcase-section";
 
 export const metadata: Metadata = {
   title: "Form Elements",

@@ -4,7 +4,7 @@ import { setupMocks } from "@/mock/indexMock";
 setupMocks();
 import { ThemeProvider } from "next-themes";
 import { ToastProvider } from "@/components/ui/toast";
-import { SidebarProvider } from "@/components/layouts/sidebar/sidebar-context";
+import { SidebarProvider } from "@/components/layouts/sidebar/SidebarContext";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (

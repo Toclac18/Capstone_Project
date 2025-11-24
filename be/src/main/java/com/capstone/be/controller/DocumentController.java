@@ -8,6 +8,7 @@ import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
+import com.capstone.be.dto.response.document.DocumentReadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
 import com.capstone.be.security.model.UserPrincipal;
@@ -226,6 +227,29 @@ public class DocumentController {
     documentService.deleteDocument(uploaderId, documentId);
 
     return ResponseEntity.noContent().build();
+  }
+
+  /**
+   * Get read history for the authenticated user
+   * Returns paginated list of documents the user has accessed
+   *
+   * @param userPrincipal Authenticated user
+   * @param pageable Pagination parameters (page, size, sort)
+   * @return Paged response of read history
+   */
+  @GetMapping(value = "/read-history")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
+  public ResponseEntity<PagedResponse<DocumentReadHistoryResponse>> getReadHistory(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      Pageable pageable) {
+    UUID userId = userPrincipal.getId();
+    log.info("User {} requesting read history (page: {}, size: {})",
+        userId, pageable.getPageNumber(), pageable.getPageSize());
+
+    Page<DocumentReadHistoryResponse> historyPage = documentService.getReadHistory(userId,
+        pageable);
+
+    return ResponseEntity.ok(PagedResponse.of(historyPage));
   }
 
 }

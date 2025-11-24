@@ -7,6 +7,7 @@ import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
+import com.capstone.be.dto.response.document.DocumentReadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
 import java.util.UUID;
@@ -97,5 +98,15 @@ public interface DocumentService {
    * @param documentId Document ID to delete
    */
   void deleteDocument(UUID uploaderId, UUID documentId);
+
+  /**
+   * Get read history for a user
+   * Returns paginated list of documents the user has accessed
+   *
+   * @param userId User ID
+   * @param pageable Pagination parameters
+   * @return Page of read history
+   */
+  Page<DocumentReadHistoryResponse> getReadHistory(UUID userId, Pageable pageable);
 
 }

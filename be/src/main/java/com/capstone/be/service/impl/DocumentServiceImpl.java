@@ -3,6 +3,7 @@ package com.capstone.be.service.impl;
 import com.capstone.be.config.constant.FileStorage;
 import com.capstone.be.domain.entity.DocType;
 import com.capstone.be.domain.entity.Document;
+import com.capstone.be.domain.entity.DocumentReadHistory;
 import com.capstone.be.domain.entity.DocumentRedemption;
 import com.capstone.be.domain.entity.DocumentTagLink;
 import com.capstone.be.domain.entity.OrganizationProfile;
@@ -20,6 +21,7 @@ import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
+import com.capstone.be.dto.response.document.DocumentReadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
 import com.capstone.be.exception.BusinessException;
@@ -28,6 +30,7 @@ import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.mapper.DocumentMapper;
 import com.capstone.be.repository.DocTypeRepository;
+import com.capstone.be.repository.DocumentReadHistoryRepository;
 import com.capstone.be.repository.DocumentRedemptionRepository;
 import com.capstone.be.repository.DocumentRepository;
 import com.capstone.be.repository.DocumentTagLinkRepository;
@@ -80,6 +83,7 @@ public class DocumentServiceImpl implements DocumentService {
   private final DocumentRepository documentRepository;
   private final DocumentTagLinkRepository documentTagLinkRepository;
   private final DocumentRedemptionRepository documentRedemptionRepository;
+  private final DocumentReadHistoryRepository documentReadHistoryRepository;
   private final FileStorageService fileStorageService;
   private final DocumentThumbnailService documentThumbnailService;
   private final DocumentMapper documentMapper;
@@ -392,7 +396,7 @@ public class DocumentServiceImpl implements DocumentService {
   }
 
   @Override
-  @Transactional(readOnly = true)
+  @Transactional
   public DocumentPresignedUrlResponse getDocumentPresignedUrl(UUID userId, UUID documentId) {
     log.info("User {} requesting presigned URL for document {}", userId, documentId);
 
@@ -405,6 +409,30 @@ public class DocumentServiceImpl implements DocumentService {
     if (!hasAccess) {
       log.warn("User {} does not have access to document {}", userId, documentId);
       throw new ForbiddenException("You do not have access to this document");
+    }
+
+    // Create read history record (if user is authenticated)
+    if (userId != null) {
+      User user = userRepository.findById(userId)
+          .orElseThrow(() -> ResourceNotFoundException.userById(userId));
+
+      // Delete old read history records for this user and document
+      List<DocumentReadHistory> oldHistories = documentReadHistoryRepository.findByUser_IdAndDocument_Id(
+          userId, documentId);
+      if (!oldHistories.isEmpty()) {
+        documentReadHistoryRepository.deleteAll(oldHistories);
+        log.info("Deleted {} old read history records for user {} and document {}",
+            oldHistories.size(), userId, documentId);
+      }
+
+      // Create new read history record with current timestamp
+      DocumentReadHistory readHistory = DocumentReadHistory.builder()
+          .user(user)
+          .document(document)
+          .build();
+      documentReadHistoryRepository.save(readHistory);
+
+      log.info("Created new read history for user {} and document {}", userId, documentId);
     }
 
     // Generate presigned URL
@@ -681,5 +709,65 @@ public class DocumentServiceImpl implements DocumentService {
     documentRepository.save(document);
 
     log.info("Soft deleted document with ID: {} (status changed to DELETED)", documentId);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<DocumentReadHistoryResponse> getReadHistory(UUID userId, Pageable pageable) {
+    log.info("User {} requesting read history with pagination: {}", userId, pageable);
+
+    // Verify user exists
+    if (!userRepository.existsById(userId)) {
+      throw ResourceNotFoundException.userById(userId);
+    }
+
+    // Fetch read history with pagination
+    Page<DocumentReadHistory> historyPage = documentReadHistoryRepository.findByUser_Id(userId,
+        pageable);
+
+    // Map to response DTO
+    Page<DocumentReadHistoryResponse> responsePage = historyPage.map(history -> {
+      Document document = history.getDocument();
+
+      // Fetch tags for this document
+      List<DocumentTagLink> tagLinks = documentTagLinkRepository.findByDocument_Id(
+          document.getId());
+      List<String> tagNames = tagLinks.stream()
+          .map(link -> link.getTag().getName())
+          .sorted()
+          .toList();
+
+      // Build document info
+      DocumentReadHistoryResponse.DocumentInfo documentInfo = DocumentReadHistoryResponse.DocumentInfo.builder()
+          .id(document.getId())
+          .title(document.getTitle())
+          .description(document.getDescription())
+          .isPremium(document.getIsPremium())
+          .thumbnailUrl(document.getThumbnailKey())
+          .docTypeName(document.getDocType().getName())
+          .specializationName(document.getSpecialization().getName())
+          .domainName(document.getSpecialization().getDomain().getName())
+          .tagNames(tagNames)
+          .uploader(DocumentReadHistoryResponse.UploaderInfo.builder()
+              .id(document.getUploader().getId())
+              .fullName(document.getUploader().getFullName())
+              .avatarUrl(document.getUploader().getAvatarKey())
+              .build())
+          .build();
+
+      return DocumentReadHistoryResponse.builder()
+          .id(history.getId())
+          .readAt(history.getCreatedAt())
+          .document(documentInfo)
+          .build();
+    });
+
+    log.info("Retrieved {} read history records for user {} (page {}/{})",
+        responsePage.getNumberOfElements(),
+        userId,
+        responsePage.getNumber() + 1,
+        responsePage.getTotalPages());
+
+    return responsePage;
   }
 }

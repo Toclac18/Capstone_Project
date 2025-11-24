@@ -3,6 +3,9 @@ server:
   shutdown: graceful
 
 spring:
+  mvc:
+    servlet:
+      path: /api  #prefix for endpoints
   profiles:
     active: dev
   datasource:

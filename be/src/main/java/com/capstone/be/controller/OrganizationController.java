@@ -25,7 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/organization")
+@RequestMapping("/organization")
 @RequiredArgsConstructor
 public class OrganizationController {
 

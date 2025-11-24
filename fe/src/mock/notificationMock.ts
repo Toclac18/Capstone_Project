@@ -1,4 +1,4 @@
-import { mockNotificationDB } from "./db";
+import { mockNotificationDB } from "./dbMock";
 
 /**
  * Mock API for notification domain.
@@ -12,7 +12,7 @@ export function setupMockNotification() {
 
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
-    
+
     if (url.endsWith("/api/notifications") && init?.method === "GET") {
       const notifications = mockNotificationDB.list();
       const unreadCount = mockNotificationDB.getUnreadCount();
@@ -29,7 +29,11 @@ export function setupMockNotification() {
       );
     }
 
-    if (url.includes("/api/notifications/") && url.endsWith("/read") && init?.method === "POST") {
+    if (
+      url.includes("/api/notifications/") &&
+      url.endsWith("/read") &&
+      init?.method === "POST"
+    ) {
       const match = url.match(/\/api\/notifications\/(.+)\/read$/);
       if (match) {
         const id = match[1];
@@ -47,4 +51,3 @@ export function setupMockNotification() {
 
   console.info("[MOCK] Notification API enabled (fetch intercepted)");
 }
-

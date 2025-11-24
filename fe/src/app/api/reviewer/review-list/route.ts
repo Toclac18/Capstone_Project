@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
-import { getReviewDocuments } from "@/mock/review-list";
+import { getReviewDocuments } from "@/mock/reviewListMock";
+import { getAuthHeader } from "@/server/auth";
 
 const DEFAULT_BE_BASE = "http://localhost:8080";
 const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
@@ -12,9 +13,14 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") || undefined;
-  const status = (searchParams.get("status") as "PENDING" | undefined) || "PENDING";
-  const page = searchParams.get("page") ? parseInt(searchParams.get("page")!) : 1;
-  const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 12;
+  const status =
+    (searchParams.get("status") as "PENDING" | undefined) || "PENDING";
+  const page = searchParams.get("page")
+    ? parseInt(searchParams.get("page")!)
+    : 1;
+  const limit = searchParams.get("limit")
+    ? parseInt(searchParams.get("limit")!)
+    : 12;
 
   if (USE_MOCK) {
     const result = getReviewDocuments({
@@ -37,9 +43,11 @@ export async function GET(request: Request) {
   const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
   const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
 
+  const authHeader = (await getAuthHeader("api/reviewer/review-list/route.ts")) || bearerToken;
+
   const fh = new Headers();
-  if (bearerToken) {
-    fh.set("Authorization", bearerToken);
+  if (authHeader) {
+    fh.set("Authorization", authHeader);
   }
 
   const queryParams = new URLSearchParams();
@@ -66,4 +74,3 @@ export async function GET(request: Request) {
     },
   });
 }
-

@@ -1,7 +1,6 @@
-const USE_MOCK = process.env.USE_MOCK === "true";
-const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-export async function GET(req: Request) {
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+async function handleGET(req: Request) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");
 
@@ -16,7 +15,7 @@ export async function GET(req: Request) {
         message: "Email has been verified successfully (mock)",
         success: true,
       },
-      { status: 200 }
+      { status: 200 },
     );
   }
 
@@ -26,7 +25,7 @@ export async function GET(req: Request) {
     {
       method: "GET",
       cache: "no-store",
-    }
+    },
   );
 
   const text = await upstream.text();
@@ -48,6 +47,11 @@ export async function GET(req: Request) {
       message: text || "Email has been verified successfully",
       success: true,
     },
-    { status: 200 }
+    { status: 200 },
   );
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/auth/verify-email/route.ts/GET",
+  });

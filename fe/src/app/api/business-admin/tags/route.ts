@@ -1,19 +1,18 @@
-import { cookies } from "next/headers";
-import { mockTagsDB } from "@/mock/db";
-
-const DEFAULT_BE_BASE = "http://localhost:8080";
+import { mockTagsDB } from "@/mock/dbMock";
+import { getAuthHeader } from "@/server/auth";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 
 export async function GET(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   if (USE_MOCK) {
     const { searchParams } = new URL(request.url);
     const params = {
       search: searchParams.get("search") || undefined,
-      status: (searchParams.get("status") as "ACTIVE" | "INACTIVE" | "PENDING" | null) || undefined,
+      status:
+        (searchParams.get("status") as
+          | "ACTIVE"
+          | "INACTIVE"
+          | "PENDING"
+          | null) || undefined,
       dateFrom: searchParams.get("dateFrom") || undefined,
       dateTo: searchParams.get("dateTo") || undefined,
       // Note: sortBy and sortOrder are handled in FE, not sent to BE
@@ -21,8 +20,12 @@ export async function GET(request: Request) {
 
     try {
       const tags = mockTagsDB.list(params);
-      const page = searchParams.get("page") ? Number(searchParams.get("page")) : 1;
-      const limit = searchParams.get("limit") ? Number(searchParams.get("limit")) : 10;
+      const page = searchParams.get("page")
+        ? Number(searchParams.get("page"))
+        : 1;
+      const limit = searchParams.get("limit")
+        ? Number(searchParams.get("limit"))
+        : 10;
       const total = tags.length;
 
       const result = {
@@ -47,9 +50,7 @@ export async function GET(request: Request) {
   }
 
   // Get authentication from cookie
-  const cookieStore = await cookies();
-  const tokenFromCookie = cookieStore.get("access_token")?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
+  const bearerToken = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (bearerToken) {
@@ -76,11 +77,6 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   if (USE_MOCK) {
     const body = (await request.json()) as { name: string };
     try {
@@ -101,9 +97,7 @@ export async function POST(request: Request) {
   }
 
   // Get authentication from cookie
-  const cookieStore = await cookies();
-  const tokenFromCookie = cookieStore.get("access_token")?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
+  const bearerToken = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (bearerToken) {
@@ -129,4 +123,3 @@ export async function POST(request: Request) {
     },
   });
 }
-

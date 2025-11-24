@@ -1,18 +1,12 @@
 // app/api/profile/update/route.ts
-import { cookies } from "next/headers";
-import { mockProfileDB, type ProfileData } from "@/mock/db";
-
-const DEFAULT_BE_BASE = "http://localhost:8080";
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+import { mockProfileDB, type ProfileData } from "@/mock/dbMock";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function PUT(req: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
+async function handlePUT(req: Request) {
   let body: Partial<ProfileData>;
   try {
     body = await req.json();
@@ -35,13 +29,7 @@ export async function PUT(req: Request) {
     });
   }
 
-  const cookieStore = await cookies();
-  
-  // TẠI SAO PHẢI CONVERT COOKIE → BEARER TOKEN?
-  // Backend CHỈ nhận Authorization header, KHÔNG đọc cookie
-  // (Xem: JwtAuthenticationFilter.java - chỉ check Authorization header)
-  const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
+  const bearerToken = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (bearerToken) {
@@ -66,3 +54,7 @@ export async function PUT(req: Request) {
   });
 }
 
+export const PUT = (...args: Parameters<typeof handlePUT>) =>
+  withErrorBoundary(() => handlePUT(...args), {
+    context: "api/profile/update/route.ts/PUT",
+  });

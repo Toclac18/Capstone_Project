@@ -1,18 +1,14 @@
 // app/api/notifications/[id]/read/route.ts
 import { headers } from "next/headers";
-import { mockNotificationDB } from "@/mock/db";
+import { mockNotificationDB } from "@/mock/dbMock";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
-const DEFAULT_BE_BASE = "http://localhost:8080";
-
-export async function POST(
+async function handlePOST(
   _req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   const { id } = await params;
 
   if (USE_MOCK) {
@@ -27,7 +23,9 @@ export async function POST(
   }
 
   const h = await headers();
-  const authHeader = h.get("authorization") || "";
+  const jwtAuth =
+    (await getAuthHeader("api/notifications/[id]/read/route.ts")) || "";
+  const authHeader = jwtAuth || h.get("authorization") || "";
   const cookieHeader = h.get("cookie") || "";
 
   const fh = new Headers({ "Content-Type": "application/json" });
@@ -51,4 +49,7 @@ export async function POST(
   });
 }
 
-
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/notifications/[id]/read/route.ts/POST",
+  });

@@ -1,4 +1,4 @@
-import { mockDocumentsDB } from "./db";
+import { mockDocumentsDB } from "./dbMock";
 
 /**
  * Mock API for documents upload and related endpoints.
@@ -23,7 +23,10 @@ export function setupMockDocuments() {
     }
 
     // Domains endpoint
-    if (url.includes("/api/reader/documents/domains") && init?.method === "GET") {
+    if (
+      url.includes("/api/reader/documents/domains") &&
+      init?.method === "GET"
+    ) {
       const domains = mockDocumentsDB.getDomains();
       return new Response(JSON.stringify(domains), {
         status: 200,
@@ -41,10 +44,15 @@ export function setupMockDocuments() {
     }
 
     // Specializations endpoint
-    if (url.includes("/api/reader/documents/specializations") && init?.method === "GET") {
+    if (
+      url.includes("/api/reader/documents/specializations") &&
+      init?.method === "GET"
+    ) {
       const urlObj = new URL(url, "http://localhost");
       const domainIdsParam = urlObj.searchParams.get("domainIds");
-      const domainIds = domainIdsParam ? domainIdsParam.split(",").filter(Boolean) : [];
+      const domainIds = domainIdsParam
+        ? domainIdsParam.split(",").filter(Boolean)
+        : [];
       const specializations = mockDocumentsDB.getSpecializations(domainIds);
       return new Response(JSON.stringify(specializations), {
         status: 200,
@@ -53,18 +61,18 @@ export function setupMockDocuments() {
     }
 
     // Upload document endpoint
-    if (url.includes("/api/reader/documents/upload") && init?.method === "POST") {
+    if (
+      url.includes("/api/reader/documents/upload") &&
+      init?.method === "POST"
+    ) {
       if (init.body instanceof FormData) {
         const file = init.body.get("file") as File;
-        
+
         if (!file) {
-          return new Response(
-            JSON.stringify({ error: "File is required" }),
-            {
-              status: 400,
-              headers: { "content-type": "application/json" },
-            }
-          );
+          return new Response(JSON.stringify({ error: "File is required" }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
         }
 
         // Mock successful upload
@@ -76,21 +84,21 @@ export function setupMockDocuments() {
           {
             status: 200,
             headers: { "content-type": "application/json" },
-          }
+          },
         );
       }
 
-      return new Response(
-        JSON.stringify({ error: "Invalid request body" }),
-        {
-          status: 400,
-          headers: { "content-type": "application/json" },
-        }
-      );
+      return new Response(JSON.stringify({ error: "Invalid request body" }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // Upload history endpoint
-    if (url.includes("/api/reader/documents/upload-history") && init?.method === "GET") {
+    if (
+      url.includes("/api/reader/documents/upload-history") &&
+      init?.method === "GET"
+    ) {
       const urlObj = new URL(url, "http://localhost");
       const dateFrom = urlObj.searchParams.get("dateFrom") || undefined;
       const dateTo = urlObj.searchParams.get("dateTo") || undefined;
@@ -121,7 +129,10 @@ export function setupMockDocuments() {
     }
 
     // Re-review endpoint
-    if (url.match(/\/api\/reader\/documents\/.+\/re-review$/) && init?.method === "POST") {
+    if (
+      url.match(/\/api\/reader\/documents\/.+\/re-review$/) &&
+      init?.method === "POST"
+    ) {
       const documentId = url.split("/").slice(-2, -1)[0]; // Extract ID from URL
       const body = init.body ? JSON.parse(init.body as string) : {};
       const reason = body.reason?.trim() || "";
@@ -135,7 +146,7 @@ export function setupMockDocuments() {
           {
             status: 400,
             headers: { "content-type": "application/json" },
-          }
+          },
         );
       }
 
@@ -147,7 +158,7 @@ export function setupMockDocuments() {
           {
             status: 400,
             headers: { "content-type": "application/json" },
-          }
+          },
         );
       }
 
@@ -162,18 +173,20 @@ export function setupMockDocuments() {
           {
             status: result.status || 400,
             headers: { "content-type": "application/json" },
-          }
+          },
         );
       }
 
       return new Response(
         JSON.stringify({
-          message: result.message || "Your request has been submitted and is under review.",
+          message:
+            result.message ||
+            "Your request has been submitted and is under review.",
         }),
         {
           status: 200,
           headers: { "content-type": "application/json" },
-        }
+        },
       );
     }
 
@@ -182,4 +195,3 @@ export function setupMockDocuments() {
 
   console.info("[MOCK] Documents API enabled (fetch intercepted)");
 }
-

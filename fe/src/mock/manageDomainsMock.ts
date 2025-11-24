@@ -1,4 +1,4 @@
-import { mockDomainsDB } from "./db";
+import { mockDomainsDB } from "./dbMock";
 
 /**
  * Mock API for manage-domains domain.
@@ -12,9 +12,12 @@ export function setupMockManageDomains() {
 
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
-    
+
     // Handle GET /api/business-admin/domains
-    if (url.includes("/api/business-admin/domains") && !url.match(/\/api\/business-admin\/domains\/[^/]+$/)) {
+    if (
+      url.includes("/api/business-admin/domains") &&
+      !url.match(/\/api\/business-admin\/domains\/[^/]+$/)
+    ) {
       if (init?.method === "GET" || !init?.method) {
         const urlObj = new URL(url, "http://localhost");
         const params = {
@@ -36,7 +39,7 @@ export function setupMockManageDomains() {
           {
             status: 200,
             headers: { "content-type": "application/json" },
-          }
+          },
         );
       }
 
@@ -58,13 +61,10 @@ export function setupMockManageDomains() {
             headers: { "content-type": "application/json" },
           });
         } catch (error: any) {
-          return new Response(
-            JSON.stringify({ message: error.message }),
-            {
-              status: 400,
-              headers: { "content-type": "application/json" },
-            }
-          );
+          return new Response(JSON.stringify({ message: error.message }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
         }
       }
     }
@@ -92,13 +92,10 @@ export function setupMockManageDomains() {
             headers: { "content-type": "application/json" },
           });
         } catch (error: any) {
-          return new Response(
-            JSON.stringify({ message: error.message }),
-            {
-              status: 400,
-              headers: { "content-type": "application/json" },
-            }
-          );
+          return new Response(JSON.stringify({ message: error.message }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
         }
       }
 
@@ -110,16 +107,13 @@ export function setupMockManageDomains() {
             {
               status: 200,
               headers: { "content-type": "application/json" },
-            }
+            },
           );
         } catch (error: any) {
-          return new Response(
-            JSON.stringify({ message: error.message }),
-            {
-              status: 400,
-              headers: { "content-type": "application/json" },
-            }
-          );
+          return new Response(JSON.stringify({ message: error.message }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
         }
       }
     }
@@ -130,4 +124,3 @@ export function setupMockManageDomains() {
 
   console.info("[MOCK] Manage Domains API enabled (fetch intercepted)");
 }
-

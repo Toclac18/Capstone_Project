@@ -1,10 +1,11 @@
 // src/app/api/docs-view/[id]/comments/route.ts
-import { mockAddComment, mockGetDocDetail } from "@/mock/docsDetail";
-import { badRequest, getBeBase, buildForwardHeaders } from "../../_utils";
+import { mockAddComment, mockGetDocDetail } from "@/mock/docsDetailMock";
+import { buildForwardHeaders } from "../../_utils";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { badRequest } from "@/server/response";
 
-const USE_MOCK = process.env.USE_MOCK === "true";
-
-export async function GET(
+async function handleGET(
   _req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
@@ -23,7 +24,6 @@ export async function GET(
     });
   }
 
-  const BE_BASE = getBeBase();
   const fh = await buildForwardHeaders();
 
   const upstream = await fetch(`${BE_BASE}/api/docs-view/${id}/comments`, {
@@ -43,7 +43,7 @@ export async function GET(
   });
 }
 
-export async function POST(
+async function handlePOST(
   req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
@@ -73,7 +73,6 @@ export async function POST(
     });
   }
 
-  const BE_BASE = getBeBase();
   const fh = await buildForwardHeaders();
   const raw = await req.text(); // forward nguyên body
 
@@ -94,3 +93,13 @@ export async function POST(
     },
   });
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/docs-view/[id]/comments/route.ts/GET",
+  });
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/docs-view/[id]/comments/route.ts/POST",
+  });

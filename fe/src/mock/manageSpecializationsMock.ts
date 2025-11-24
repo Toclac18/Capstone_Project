@@ -1,4 +1,4 @@
-import { mockSpecializationsDB } from "./db";
+import { mockSpecializationsDB } from "./dbMock";
 
 /**
  * Mock API for manage-specializations domain.
@@ -12,20 +12,23 @@ export function setupMockManageSpecializations() {
 
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
-    
+
     // Handle GET /api/business-admin/specializations
-    if (url.includes("/api/business-admin/specializations") && !url.match(/\/api\/business-admin\/specializations\/[^/]+$/)) {
+    if (
+      url.includes("/api/business-admin/specializations") &&
+      !url.match(/\/api\/business-admin\/specializations\/[^/]+$/)
+    ) {
       if (init?.method === "GET" || !init?.method) {
         const urlObj = new URL(url, "http://localhost");
         const domainId = urlObj.searchParams.get("domainId");
-        
+
         if (!domainId) {
           return new Response(
             JSON.stringify({ message: "domainId is required" }),
             {
               status: 400,
               headers: { "content-type": "application/json" },
-            }
+            },
           );
         }
 
@@ -47,7 +50,7 @@ export function setupMockManageSpecializations() {
           {
             status: 200,
             headers: { "content-type": "application/json" },
-          }
+          },
         );
       }
 
@@ -69,19 +72,18 @@ export function setupMockManageSpecializations() {
             headers: { "content-type": "application/json" },
           });
         } catch (error: any) {
-          return new Response(
-            JSON.stringify({ message: error.message }),
-            {
-              status: 400,
-              headers: { "content-type": "application/json" },
-            }
-          );
+          return new Response(JSON.stringify({ message: error.message }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
         }
       }
     }
 
     // Handle /api/business-admin/specializations/[id]
-    const idMatch = url.match(/\/api\/business-admin\/specializations\/([^/]+)$/);
+    const idMatch = url.match(
+      /\/api\/business-admin\/specializations\/([^/]+)$/,
+    );
     if (idMatch) {
       const id = idMatch[1];
 
@@ -103,13 +105,10 @@ export function setupMockManageSpecializations() {
             headers: { "content-type": "application/json" },
           });
         } catch (error: any) {
-          return new Response(
-            JSON.stringify({ message: error.message }),
-            {
-              status: 400,
-              headers: { "content-type": "application/json" },
-            }
-          );
+          return new Response(JSON.stringify({ message: error.message }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
         }
       }
     }
@@ -120,4 +119,3 @@ export function setupMockManageSpecializations() {
 
   console.info("[MOCK] Manage Specializations API enabled (fetch intercepted)");
 }
-

@@ -2,9 +2,9 @@
 
 import { usePathname } from "next/navigation";
 import type { PropsWithChildren } from "react";
-import { Header } from "@/components/Layouts/header";
-import { useSidebarContext } from "@/components/Layouts/sidebar/sidebar-context";
-import { Sidebar } from "@/components/Layouts/sidebar/Sidebar";
+import { Header } from "@/components/layouts/header";
+import { Sidebar } from "@/components/layouts/sidebar/Sidebar";
+import { useSidebarContext } from "@/components/layouts/sidebar/SidebarContext";
 
 export default function ConditionalLayout({ children }: PropsWithChildren) {
   const pathname = usePathname();

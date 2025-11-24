@@ -1,27 +1,15 @@
 // app/api/profile/get/route.ts
 import { cookies } from "next/headers";
-import { mockProfileDB } from "@/mock/db";
-
-const DEFAULT_BE_BASE = "http://localhost:8080";
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+import { mockProfileDB } from "@/mock/dbMock";
+import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
+async function handleGET(request: Request) {
   const cookieStore = await cookies();
-  
-  // TẠI SAO PHẢI CONVERT COOKIE → BEARER TOKEN?
-  // 1. Client gửi cookie (httpOnly) đến Next.js API route ✅
-  // 2. Backend CHỈ nhận Authorization header, KHÔNG đọc cookie ❌
-  //    (Xem: JwtAuthenticationFilter.java line 55 - chỉ check Authorization header)
-  // 3. Server-to-server call (Next.js → Backend) không tự động forward cookie
-  // 4. → Route handler phải đọc cookie và convert thành Authorization header
-  
+
   const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
   const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
 
@@ -41,9 +29,12 @@ export async function GET(request: Request) {
   }
 
   // Backend chỉ nhận Authorization header, không nhận cookie
+  const authHeader =
+    (await getAuthHeader("api/profile/get/route.ts")) || bearerToken;
+
   const fh = new Headers({ "Content-Type": "application/json" });
-  if (bearerToken) {
-    fh.set("Authorization", bearerToken);
+  if (authHeader) {
+    fh.set("Authorization", authHeader);
   }
 
   const upstream = await fetch(`${BE_BASE}/api/profile`, {
@@ -63,3 +54,7 @@ export async function GET(request: Request) {
   });
 }
 
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/profile/get/route.ts/GET",
+  });

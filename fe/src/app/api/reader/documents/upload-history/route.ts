@@ -1,15 +1,10 @@
 import { cookies } from "next/headers";
-import { mockDocumentsDB } from "@/mock/db";
+import { mockDocumentsDB } from "@/mock/dbMock";
+import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
-const DEFAULT_BE_BASE = "http://localhost:8080";
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
-
-export async function GET(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
+async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") || undefined;
   const dateFrom = searchParams.get("dateFrom") || undefined;
@@ -17,8 +12,12 @@ export async function GET(request: Request) {
   const type = searchParams.get("type") || undefined;
   const domain = searchParams.get("domain") || undefined;
   const status = searchParams.get("status") || undefined;
-  const page = searchParams.get("page") ? parseInt(searchParams.get("page")!) : 1;
-  const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 10;
+  const page = searchParams.get("page")
+    ? parseInt(searchParams.get("page")!)
+    : 1;
+  const limit = searchParams.get("limit")
+    ? parseInt(searchParams.get("limit")!)
+    : 10;
 
   if (USE_MOCK) {
     const result = mockDocumentsDB.getUploadHistory({
@@ -46,9 +45,13 @@ export async function GET(request: Request) {
   const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
 
   // Backend chỉ nhận Authorization header, không nhận cookie
+  const authHeader =
+    (await getAuthHeader("api/reader/documents/upload-history/route.ts")) ||
+    bearerToken;
+
   const fh = new Headers();
-  if (bearerToken) {
-    fh.set("Authorization", bearerToken);
+  if (authHeader) {
+    fh.set("Authorization", authHeader);
   }
 
   const queryParams = new URLSearchParams();
@@ -81,3 +84,7 @@ export async function GET(request: Request) {
   });
 }
 
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/reader/documents/upload-history/route.ts/GET",
+  });

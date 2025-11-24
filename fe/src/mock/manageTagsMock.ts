@@ -1,4 +1,4 @@
-import { mockTagsDB } from "./db";
+import { mockTagsDB } from "./dbMock";
 
 /**
  * Mock API for manage-tags domain.
@@ -12,14 +12,22 @@ export function setupMockManageTags() {
 
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
-    
+
     // Handle GET /api/business-admin/tags
-    if (url.includes("/api/business-admin/tags") && !url.match(/\/api\/business-admin\/tags\/[^/]+$/)) {
+    if (
+      url.includes("/api/business-admin/tags") &&
+      !url.match(/\/api\/business-admin\/tags\/[^/]+$/)
+    ) {
       if (init?.method === "GET" || !init?.method) {
         const urlObj = new URL(url, "http://localhost");
         const params = {
           search: urlObj.searchParams.get("search") || undefined,
-          status: (urlObj.searchParams.get("status") as "ACTIVE" | "INACTIVE" | "PENDING" | null) || undefined,
+          status:
+            (urlObj.searchParams.get("status") as
+              | "ACTIVE"
+              | "INACTIVE"
+              | "PENDING"
+              | null) || undefined,
           dateFrom: urlObj.searchParams.get("dateFrom") || undefined,
           dateTo: urlObj.searchParams.get("dateTo") || undefined,
         };
@@ -37,7 +45,7 @@ export function setupMockManageTags() {
           {
             status: 200,
             headers: { "content-type": "application/json" },
-          }
+          },
         );
       }
 
@@ -59,13 +67,10 @@ export function setupMockManageTags() {
             headers: { "content-type": "application/json" },
           });
         } catch (error: any) {
-          return new Response(
-            JSON.stringify({ message: error.message }),
-            {
-              status: 400,
-              headers: { "content-type": "application/json" },
-            }
-          );
+          return new Response(JSON.stringify({ message: error.message }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
         }
       }
     }
@@ -93,13 +98,10 @@ export function setupMockManageTags() {
             headers: { "content-type": "application/json" },
           });
         } catch (error: any) {
-          return new Response(
-            JSON.stringify({ message: error.message }),
-            {
-              status: 400,
-              headers: { "content-type": "application/json" },
-            }
-          );
+          return new Response(JSON.stringify({ message: error.message }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
         }
       }
 
@@ -111,16 +113,13 @@ export function setupMockManageTags() {
             {
               status: 200,
               headers: { "content-type": "application/json" },
-            }
+            },
           );
         } catch (error: any) {
-          return new Response(
-            JSON.stringify({ message: error.message }),
-            {
-              status: 400,
-              headers: { "content-type": "application/json" },
-            }
-          );
+          return new Response(JSON.stringify({ message: error.message }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
         }
       }
 
@@ -132,13 +131,10 @@ export function setupMockManageTags() {
             headers: { "content-type": "application/json" },
           });
         } catch (error: any) {
-          return new Response(
-            JSON.stringify({ message: error.message }),
-            {
-              status: 400,
-              headers: { "content-type": "application/json" },
-            }
-          );
+          return new Response(JSON.stringify({ message: error.message }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
         }
       }
     }
@@ -149,4 +145,3 @@ export function setupMockManageTags() {
 
   console.info("[MOCK] Manage Tags API enabled (fetch intercepted)");
 }
-

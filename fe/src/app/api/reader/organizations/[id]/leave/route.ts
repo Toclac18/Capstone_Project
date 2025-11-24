@@ -1,9 +1,10 @@
 import { headers } from "next/headers";
-import { mockOrganizationsDB } from "@/mock/db";
+import { mockOrganizationsDB } from "@/mock/dbMock";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
-const DEFAULT_BE_BASE = "http://localhost:8080";
-
-export async function POST(
+async function handlePOST(
   req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
@@ -16,10 +17,6 @@ export async function POST(
   } catch {
     // ignore; will handle as validation error below
   }
-
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") || DEFAULT_BE_BASE;
 
   if (USE_MOCK) {
     if (!password) {
@@ -42,7 +39,9 @@ export async function POST(
   }
 
   const h = await headers();
-  const authHeader = h.get("authorization") || "";
+  const jwtAuth =
+    (await getAuthHeader("api/reader/organizations/[id]/leave/route.ts")) || "";
+  const authHeader = jwtAuth || h.get("authorization") || "";
   const cookieHeader = h.get("cookie") || "";
   const fh = new Headers({ "Content-Type": "application/json" });
   if (authHeader) fh.set("Authorization", authHeader);
@@ -59,10 +58,14 @@ export async function POST(
   return new Response(text, {
     status: upstream.status,
     headers: {
-      "content-type": upstream.headers.get("content-type") ?? "application/json",
+      "content-type":
+        upstream.headers.get("content-type") ?? "application/json",
       "x-mode": "real",
     },
   });
 }
 
-
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/reader/organizations/[id]/leave/route.ts/POST",
+  });

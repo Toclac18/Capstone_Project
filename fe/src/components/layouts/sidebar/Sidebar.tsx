@@ -7,11 +7,11 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { NAV_DATA, BUSINESS_ADMIN_NAV_DATA } from "./data";
 import { ArrowLeftIcon, ChevronUp } from "@/components/icons";
-import { MenuItem } from "./menu-item";
-import { useSidebarContext } from "./sidebar-context";
+import { useSidebarContext } from "./SidebarContext";
 import type * as React from "react";
+import { MenuItem } from "./MenuItem";
 
-/* ---------- Public types (export để nơi khác tái sử dụng) ---------- */
+/* --------------------------- Types ------------------------------ */
 export type NavLinkItem = {
   title: string;
   url: string;

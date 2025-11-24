@@ -2,14 +2,13 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { headers, cookies } from "next/headers";
-import { mockLibraryDocs } from "@/mock/documents";
+import { mockLibraryDocs } from "@/mock/documentsMock";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
 function beBase() {
-  return (
-    process.env.BE_BASE_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    "http://localhost:8081"
-  );
+  return BE_BASE;
 }
 
 async function forward(path: string) {
@@ -17,8 +16,9 @@ async function forward(path: string) {
   const cookieStore = cookies();
 
   const headerAuth = (await h).get("authorization") || "";
+  const jwtAuth = (await getAuthHeader("api/search/route.ts")) || "";
   const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
-  const effectiveAuth = headerAuth || cookieAuth;
+  const effectiveAuth = jwtAuth || headerAuth || cookieAuth;
 
   const upstreamUrl = beBase() + path;
   const passHeaders: Record<string, string> = {
@@ -76,8 +76,7 @@ function matchDocWithPriority(doc: any, q: string) {
   return other.some((v) => contains(v, q));
 }
 
-export async function GET(req: NextRequest) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
+async function handleGET(req: NextRequest) {
   const sp = new URL(req.url).searchParams;
 
   // pagination
@@ -199,3 +198,8 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/search/route.ts/GET",
+  });

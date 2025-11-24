@@ -1,1 +1,1 @@
-export * from "./Layouts/sidebar/icons";
+export * from "./layouts/sidebar/icons";

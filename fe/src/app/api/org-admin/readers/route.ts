@@ -1,8 +1,9 @@
 // src/app/api/org-admin/readers/route.ts
-import { mockReaders } from "@/mock/readers";
+import { mockReaders } from "@/mock/readersMock";
 import { headers, cookies } from "next/headers";
-
-const DEFAULT_BE_BASE = "http://localhost:8081";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
 type Reader = {
   id: string;
@@ -54,12 +55,7 @@ function filterSortPaginate(
   return { items, total, page, pageSize };
 }
 
-export async function GET(req: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
+async function handleGET(req: Request) {
   const url = new URL(req.url);
   const { page, pageSize, q, status } = normalizeParams(url);
 
@@ -80,15 +76,17 @@ export async function GET(req: Request) {
   const h = await headers();
   const cookieStore = cookies();
   const headerAuth = h.get("authorization") || "";
+  const jwtAuth = (await getAuthHeader("api/org-admin/readers/route.ts")) || "";
   const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
-  const effectiveAuth = headerAuth || cookieAuth;
+  const effectiveAuth = jwtAuth || headerAuth || cookieAuth;
 
   // build upstream URL
   const upstreamUrl = new URL(`${BE_BASE}/api/org-admin/readers`);
   upstreamUrl.searchParams.set("page", String(page));
   upstreamUrl.searchParams.set("pageSize", String(pageSize));
   if (q) upstreamUrl.searchParams.set("q", q);
-  if (status && status !== "ALL") upstreamUrl.searchParams.set("status", status);
+  if (status && status !== "ALL")
+    upstreamUrl.searchParams.set("status", status);
 
   const upstream = await fetch(upstreamUrl.toString(), {
     method: "GET",
@@ -111,7 +109,7 @@ export async function GET(req: Request) {
   const currentPage =
     (typeof payload?.number === "number"
       ? payload.number + 1
-      : payload?.page ?? page) || page;
+      : (payload?.page ?? page)) || page;
   const size =
     payload?.size ??
     payload?.pageSize ??
@@ -133,3 +131,8 @@ export async function GET(req: Request) {
     },
   );
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/org-admin/readers/route.ts/GET",
+  });

@@ -1,7 +1,6 @@
-const USE_MOCK = process.env.USE_MOCK === "true";
-const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-export async function POST(req: Request) {
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+async function handlePOST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body) {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
@@ -10,10 +9,7 @@ export async function POST(req: Request) {
   // Validate required fields for Reader
   const { fullName, dateOfBirth, username, email, password } = body;
   if (!fullName || !dateOfBirth || !username || !email || !password) {
-    return Response.json(
-      { error: "Missing required fields" },
-      { status: 400 }
-    );
+    return Response.json({ error: "Missing required fields" }, { status: 400 });
   }
 
   if (USE_MOCK) {
@@ -24,7 +20,8 @@ export async function POST(req: Request) {
       fullName,
       role: "READER",
       status: "PENDING_VERIFICATION",
-      message: "Registration successful! Please check your email to verify your account.",
+      message:
+        "Registration successful! Please check your email to verify your account.",
     };
     return Response.json(mockUser, { status: 201 });
   }
@@ -38,7 +35,8 @@ export async function POST(req: Request) {
   });
 
   const text = await upstream.text();
-  const contentType = upstream.headers.get("content-type") ?? "application/json";
+  const contentType =
+    upstream.headers.get("content-type") ?? "application/json";
 
   if (!upstream.ok) {
     let errorMsg = "Registration failed";
@@ -56,3 +54,8 @@ export async function POST(req: Request) {
     headers: { "content-type": contentType },
   });
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/auth/register/reader/route.ts/POST",
+  });

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchMeta } from "@/services/searchDocumentService";
 import type { SearchFilters, SearchMeta } from "@/types/documentResponse";
-import { useSearch } from "../SearchProvider";
+import { useSearch } from "../provider";
 import styles from "../styles.module.css";
 
 type LocalFilters = SearchFilters & {

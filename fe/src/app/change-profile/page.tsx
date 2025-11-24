@@ -1,7 +1,7 @@
 import Breadcrumb from "@/components/(template)/Breadcrumbs/Breadcrumb";
 import type { Metadata } from "next";
-import { PersonalInfoForm } from "./_components/personal-info";
-import { UploadPhotoForm } from "./_components/upload-photo";
+import { PersonalInfoForm } from "./_components/PersonalInfor";
+import { UploadPhotoForm } from "./_components/UploadPhoto";
 
 export const metadata: Metadata = {
   title: "Settings Page",
@@ -22,5 +22,4 @@ export default function SettingsPage() {
       </div>
     </div>
   );
-};
-
+}

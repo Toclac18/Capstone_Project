@@ -3,6 +3,7 @@ package com.capstone.be.controller;
 import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
 import com.capstone.be.dto.request.document.DocumentUploadHistoryFilter;
+import com.capstone.be.dto.request.document.UpdateDocumentRequest;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
@@ -22,10 +23,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -177,6 +181,51 @@ public class DocumentController {
         pageable);
 
     return ResponseEntity.ok(PagedResponse.of(libraryPage));
+  }
+
+  /**
+   * Update document metadata Only the uploader can update their own document Does not update the
+   * document file itself, only metadata
+   *
+   * @param userPrincipal Authenticated user (must be the uploader)
+   * @param documentId    Document ID to update
+   * @param request       Update request with new metadata
+   * @return Updated document response
+   */
+  @PutMapping(value = "/{id}")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
+  public ResponseEntity<DocumentUploadResponse> updateDocument(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "id") UUID documentId,
+      @Valid @RequestBody UpdateDocumentRequest request) {
+    UUID uploaderId = userPrincipal.getId();
+    log.info("User {} updating document {}", uploaderId, documentId);
+
+    DocumentUploadResponse response = documentService.updateDocument(uploaderId, documentId,
+        request);
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Delete a document Only the uploader can delete their own document Also deletes the document
+   * file from S3
+   *
+   * @param userPrincipal Authenticated user (must be the uploader)
+   * @param documentId    Document ID to delete
+   * @return No content response
+   */
+  @DeleteMapping(value = "/{id}")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
+  public ResponseEntity<Void> deleteDocument(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "id") UUID documentId) {
+    UUID uploaderId = userPrincipal.getId();
+    log.info("User {} deleting document {}", uploaderId, documentId);
+
+    documentService.deleteDocument(uploaderId, documentId);
+
+    return ResponseEntity.noContent().build();
   }
 
 }

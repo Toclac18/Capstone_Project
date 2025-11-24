@@ -15,6 +15,7 @@ import com.capstone.be.domain.enums.OrgEnrollStatus;
 import com.capstone.be.domain.enums.TagStatus;
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
 import com.capstone.be.dto.request.document.DocumentUploadHistoryFilter;
+import com.capstone.be.dto.request.document.UpdateDocumentRequest;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
@@ -109,7 +110,7 @@ public class DocumentServiceImpl implements DocumentService {
     OrganizationProfile organization = getOrganizationIfProvided(request.getOrganizationId());
 
     // Handle tags (existing and new)
-    Set<Tag> allTags = handleTags(request);
+    Set<Tag> allTags = handleTags(request.getTagCodes(), request.getNewTags());
 
     // Upload file to S3
     String fileKey = fileStorageService.uploadFile(file, FileStorage.DOCUMENT_FOLDER, null);
@@ -244,15 +245,13 @@ public class DocumentServiceImpl implements DocumentService {
   /**
    * Handle existing tags and create new tags with PENDING status
    *
-   * @param request Upload request containing tag codes and new tag names
    * @return Set of all tags (existing + newly created)
    */
-  private Set<Tag> handleTags(UploadDocumentInfoRequest request) {
+  private Set<Tag> handleTags(List<Long> tagCodes, List<String> newTags) {
     Set<Tag> allTags = new HashSet<>();
 
     // ===== 1. Handle existing tags by codes =====
-    if (request.getTagCodes() != null && !request.getTagCodes().isEmpty()) {
-      List<Long> tagCodes = request.getTagCodes();
+    if (tagCodes != null && !tagCodes.isEmpty()) {
 
       // Fetch all ACTIVE tags by code (single query)
       Set<Tag> existingTags = tagRepository.findAllByStatusAndCodeIn(TagStatus.ACTIVE, tagCodes);
@@ -279,11 +278,11 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     // ===== 2. Handle new tags (by name) =====
-    if (request.getNewTags() != null && !request.getNewTags().isEmpty()) {
+    if (newTags != null && !newTags.isEmpty()) {
       // Map normalizedName -> originalName (keep original name for display)
       Map<String, String> normalizedToOriginal = new HashMap<>();
 
-      for (String rawName : request.getNewTags()) {
+      for (String rawName : newTags) {
         if (rawName == null) {
           continue;
         }
@@ -306,9 +305,9 @@ public class DocumentServiceImpl implements DocumentService {
 
         // Find existing tags by normalizedName (single query)
         Set<Tag> existingTags = tagRepository.findAllByNormalizedNameIn(normalizedNames);
-        Set<String> existedNormalizedNames = existingTags.stream()
-            .map(Tag::getNormalizedName)
-            .collect(Collectors.toSet());
+
+        Map<String, Tag> existinTagMap = existingTags.stream()
+            .collect(Collectors.toMap(Tag::getNormalizedName, tag -> tag));
 
         // Create new tags for names that do not exist
         List<Tag> tagsToCreate = new ArrayList<>();
@@ -316,9 +315,12 @@ public class DocumentServiceImpl implements DocumentService {
           String normalized = entry.getKey();
           String originalName = entry.getValue();
 
-          if (existedNormalizedNames.contains(normalized)) {
+          if (existinTagMap.containsKey(normalized)) {
             log.warn("Tag with name '{}' already exists (normalized: '{}'), skipping creation",
                 originalName, normalized);
+
+            //Add to result
+            allTags.add(existinTagMap.get(normalized));
             continue;
           }
 
@@ -379,13 +381,14 @@ public class DocumentServiceImpl implements DocumentService {
    * Save document-tag relationships
    */
   private void saveDocumentTagLinks(Document document, Set<Tag> tags) {
-    for (Tag tag : tags) {
-      DocumentTagLink link = DocumentTagLink.builder()
-          .document(document)
-          .tag(tag)
-          .build();
-      documentTagLinkRepository.save(link);
-    }
+    Set<DocumentTagLink> links = tags.stream()
+        .map(tag -> DocumentTagLink.builder()
+            .document(document)
+            .tag(tag)
+            .build())
+        .collect(Collectors.toSet());
+
+    documentTagLinkRepository.saveAll(links);
   }
 
   @Override
@@ -579,5 +582,104 @@ public class DocumentServiceImpl implements DocumentService {
         responsePage.getTotalPages());
 
     return responsePage;
+  }
+
+  @Override
+  @Transactional
+  public DocumentUploadResponse updateDocument(UUID uploaderId, UUID documentId,
+      UpdateDocumentRequest request) {
+    log.info("User {} updating document {}", uploaderId, documentId);
+
+    // Fetch and verify document ownership
+    Document document = documentRepository.findById(documentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+
+    if (!document.getUploader().getId().equals(uploaderId)) {
+      throw new ForbiddenException("You can only update your own documents");
+    }
+
+    // Verify user exists
+    User uploader = userRepository.findById(uploaderId)
+        .orElseThrow(() -> ResourceNotFoundException.userById(uploaderId));
+
+    // Validate and fetch DocType
+    DocType docType = docTypeRepository.findById(request.getDocTypeId())
+        .orElseThrow(() -> new ResourceNotFoundException("DocType", "id", request.getDocTypeId()));
+
+    // Validate and fetch Specialization
+    Specialization specialization = specializationRepository.findById(request.getSpecializationId())
+        .orElseThrow(() -> new ResourceNotFoundException("Specialization", "id",
+            request.getSpecializationId()));
+
+    // Validate and fetch Organization (optional)
+    OrganizationProfile organization = null;
+    if (request.getOrganizationId() != null) {
+      organization = organizationProfileRepository.findById(request.getOrganizationId())
+          .orElseThrow(() -> new ResourceNotFoundException("Organization", "id",
+              request.getOrganizationId()));
+
+      // Verify user belongs to the organization
+      boolean isMember = orgEnrollmentRepository.findByOrganizationAndMember(organization, uploader)
+          .map(enrollment -> enrollment.getStatus() == OrgEnrollStatus.JOINED)
+          .orElse(false);
+
+      if (!isMember) {
+        throw new ForbiddenException(
+            "You must be a member of the organization to assign documents to it");
+      }
+    }
+
+    // Process tags
+    Set<Tag> allTags = handleTags(request.getTagCodes(), request.getNewTags());
+
+    // Update document fields
+    document.setTitle(request.getTitle());
+    document.setDescription(request.getDescription());
+    document.setVisibility(request.getVisibility());
+    document.setIsPremium(request.getIsPremium());
+    document.setDocType(docType);
+    document.setSpecialization(specialization);
+    document.setOrganization(organization);
+
+    // Update price based on premium status
+    Integer price = Boolean.TRUE.equals(request.getIsPremium()) ? premiumDocPrice : 0;
+    document.setPrice(price);
+
+    document = documentRepository.save(document);
+    log.info("Updated document with ID: {}", document.getId());
+
+    // Update document-tag relationships
+    // Remove existing links
+//    List<DocumentTagLink> existingLinks = documentTagLinkRepository.findByDocument_Id(
+//        document.getId());
+//    documentTagLinkRepository.deleteAll(existingLinks);
+    documentTagLinkRepository.deleteAllByDocumentId(document.getId());
+
+    // Save new links
+    saveDocumentTagLinks(document, allTags);
+    log.info("Updated {} document-tag relationships", allTags.size());
+
+    // Build and return response using mapper
+    return documentMapper.toUploadResponse(document, allTags);
+  }
+
+  @Override
+  @Transactional
+  public void deleteDocument(UUID uploaderId, UUID documentId) {
+    log.info("User {} soft deleting document {}", uploaderId, documentId);
+
+    // Fetch and verify document ownership
+    Document document = documentRepository.findById(documentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+
+    if (!document.getUploader().getId().equals(uploaderId)) {
+      throw new ForbiddenException("You can only delete your own documents");
+    }
+
+    // Soft delete: set status to DELETED
+    document.setStatus(DocStatus.DELETED);
+    documentRepository.save(document);
+
+    log.info("Soft deleted document with ID: {} (status changed to DELETED)", documentId);
   }
 }

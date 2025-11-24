@@ -13,4 +13,6 @@ public interface DocumentTagLinkRepository extends JpaRepository<DocumentTagLink
   List<DocumentTagLink> findByDocument(Document document);
 
   List<DocumentTagLink> findByDocument_Id(UUID documentId);
+
+  void deleteAllByDocumentId(UUID documentId);
 }

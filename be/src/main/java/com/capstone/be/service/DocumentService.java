@@ -2,6 +2,7 @@ package com.capstone.be.service;
 
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
 import com.capstone.be.dto.request.document.DocumentUploadHistoryFilter;
+import com.capstone.be.dto.request.document.UpdateDocumentRequest;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
@@ -77,5 +78,24 @@ public interface DocumentService {
    */
   Page<DocumentLibraryResponse> getLibrary(UUID userId, DocumentLibraryFilter filter,
       Pageable pageable);
+
+  /**
+   * Update document metadata Only the uploader can update their own document
+   *
+   * @param uploaderId User ID of the uploader (for authorization)
+   * @param documentId Document ID to update
+   * @param request    Update request with new metadata
+   * @return Updated document response
+   */
+  DocumentUploadResponse updateDocument(UUID uploaderId, UUID documentId,
+      UpdateDocumentRequest request);
+
+  /**
+   * Delete a document Only the uploader can delete their own document
+   *
+   * @param uploaderId User ID of the uploader (for authorization)
+   * @param documentId Document ID to delete
+   */
+  void deleteDocument(UUID uploaderId, UUID documentId);
 
 }

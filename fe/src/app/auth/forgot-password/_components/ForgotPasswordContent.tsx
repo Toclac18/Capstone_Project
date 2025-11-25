@@ -8,8 +8,8 @@ import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
 import { EmailIcon } from "@/assets/icons";
 import { useToast } from "@/components/ui/toast";
-import { requestPasswordReset } from "@/services/authService";
 import styles from "../styles.module.css";
+import { requestPasswordReset } from "@/services/auth.service";
 
 type Step = "email" | "otp" | "reset";
 
@@ -23,7 +23,14 @@ export default function ForgotPasswordContent() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [otpInputs, setOtpInputs] = useState<string[]>(["", "", "", "", "", ""]);
+  const [otpInputs, setOtpInputs] = useState<string[]>([
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ]);
   const [canResend, setCanResend] = useState(true);
   const [resendCountdown, setResendCountdown] = useState(0);
   const [otpAttempts, setOtpAttempts] = useState(0);
@@ -79,14 +86,17 @@ export default function ForgotPasswordContent() {
         e instanceof Error
           ? e.message
           : "Failed to send OTP. Please try again.";
-      
+
       // Check for email not found error
-      if (msg.toLowerCase().includes("does not exist") || msg.toLowerCase().includes("not found")) {
+      if (
+        msg.toLowerCase().includes("does not exist") ||
+        msg.toLowerCase().includes("not found")
+      ) {
         setError("Email does not exist in the system");
       } else {
         setError(msg);
       }
-      
+
       showToast({
         type: "error",
         title: "Error",
@@ -162,7 +172,7 @@ export default function ForgotPasswordContent() {
 
   const handleOtpKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
-    index: number
+    index: number,
   ) => {
     if (e.key === "Backspace" && !otpInputs[index] && index > 0) {
       const prevInput = document.getElementById(`otp-${index - 1}`);
@@ -192,7 +202,10 @@ export default function ForgotPasswordContent() {
     return "";
   };
 
-  const validateConfirmPassword = (password: string, confirm: string): string => {
+  const validateConfirmPassword = (
+    password: string,
+    confirm: string,
+  ): string => {
     if (!confirm) return "Please confirm your password";
     if (password !== confirm) return "Passwords do not match";
     return "";
@@ -231,8 +244,11 @@ export default function ForgotPasswordContent() {
 
     // Validate passwords
     const newPasswordError = validatePassword(newPassword);
-    const confirmPasswordError = validateConfirmPassword(newPassword, confirmPassword);
-    
+    const confirmPasswordError = validateConfirmPassword(
+      newPassword,
+      confirmPassword,
+    );
+
     setPasswordErrors({
       newPassword: newPasswordError,
       confirmPassword: confirmPasswordError,
@@ -244,7 +260,7 @@ export default function ForgotPasswordContent() {
     }
 
     try {
-      const { resetPassword } = await import("@/services/authService");
+      const { resetPassword } = await import("@/services/auth.service");
       await resetPassword({ email, otp, newPassword });
       showToast({
         type: "success",
@@ -259,23 +275,33 @@ export default function ForgotPasswordContent() {
         e instanceof Error
           ? e.message
           : "Failed to reset password. Please try again.";
-      
+
       // Check for account locked error
-      if (msg.toLowerCase().includes("locked") || msg.toLowerCase().includes("too many")) {
-        setError("Your account is locked because of too many times trying. Please contact admin if needed.");
+      if (
+        msg.toLowerCase().includes("locked") ||
+        msg.toLowerCase().includes("too many")
+      ) {
+        setError(
+          "Your account is locked because of too many times trying. Please contact admin if needed.",
+        );
         setStep("email"); // Reset to email step
       } else {
         setError(msg);
         // Increment OTP attempts if OTP is incorrect
-        if (msg.toLowerCase().includes("otp") || msg.toLowerCase().includes("incorrect")) {
+        if (
+          msg.toLowerCase().includes("otp") ||
+          msg.toLowerCase().includes("incorrect")
+        ) {
           setOtpAttempts((prev) => prev + 1);
           if (otpAttempts + 1 >= 4) {
             // After 4 failed attempts, show warning
-            setError("You have one more attempt. After 5 failed attempts, your account will be locked.");
+            setError(
+              "You have one more attempt. After 5 failed attempts, your account will be locked.",
+            );
           }
         }
       }
-      
+
       showToast({
         type: "error",
         title: "Error",
@@ -312,9 +338,7 @@ export default function ForgotPasswordContent() {
           {step === "email" && (
             <>
               <h2 className={styles.title}>Forgot Password - Enter Email</h2>
-              {error && (
-                <div className={styles["alert-error"]}>{error}</div>
-              )}
+              {error && <div className={styles["alert-error"]}>{error}</div>}
               <form onSubmit={handleSendOTP}>
                 <div className="mb-4">
                   <label
@@ -328,7 +352,7 @@ export default function ForgotPasswordContent() {
                       id="email"
                       type="email"
                       placeholder="Enter your email"
-                      className="w-full rounded-lg border-[1.5px] bg-transparent px-5.5 py-[15px] pr-12.5 outline-none transition placeholder:text-dark-6 dark:bg-dark-2 dark:text-white border-stroke dark:border-dark-3 focus:border-primary"
+                      className="w-full rounded-lg border-[1.5px] border-stroke bg-transparent px-5.5 py-[15px] pr-12.5 outline-none transition placeholder:text-dark-6 focus:border-primary dark:border-dark-3 dark:bg-dark-2 dark:text-white"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
@@ -357,9 +381,7 @@ export default function ForgotPasswordContent() {
               <p className={styles["body-text"]}>
                 Please check your email. We have sent an OTP for you.
               </p>
-              {error && (
-                <div className={styles["alert-error"]}>{error}</div>
-              )}
+              {error && <div className={styles["alert-error"]}>{error}</div>}
               <form onSubmit={handleVerifyOTP}>
                 <div className={styles["otp-container"]}>
                   {otpInputs.map((value, index) => (
@@ -373,7 +395,10 @@ export default function ForgotPasswordContent() {
                       className={styles["otp-input"]}
                       value={value}
                       onChange={(e) =>
-                        handleOtpChange(index, e.target.value.replace(/\D/g, ""))
+                        handleOtpChange(
+                          index,
+                          e.target.value.replace(/\D/g, ""),
+                        )
                       }
                       onKeyDown={(e) => handleOtpKeyDown(e, index)}
                       disabled={loading}
@@ -410,9 +435,7 @@ export default function ForgotPasswordContent() {
           {step === "reset" && (
             <>
               <h2 className={styles.title}>Reset Password</h2>
-              {error && (
-                <div className={styles["alert-error"]}>{error}</div>
-              )}
+              {error && <div className={styles["alert-error"]}>{error}</div>}
               <form onSubmit={handleResetPassword}>
                 <div className="mb-4">
                   <label
@@ -428,7 +451,7 @@ export default function ForgotPasswordContent() {
                     className={`w-full rounded-lg border-[1.5px] bg-transparent px-5.5 py-[15px] outline-none transition placeholder:text-dark-6 dark:bg-dark-2 dark:text-white ${
                       passwordErrors.newPassword
                         ? "border-red focus:border-red dark:border-red"
-                        : "border-stroke dark:border-dark-3 focus:border-primary"
+                        : "border-stroke focus:border-primary dark:border-dark-3"
                     }`}
                     value={newPassword}
                     onChange={(e) => handleNewPasswordChange(e.target.value)}
@@ -454,10 +477,12 @@ export default function ForgotPasswordContent() {
                     className={`w-full rounded-lg border-[1.5px] bg-transparent px-5.5 py-[15px] outline-none transition placeholder:text-dark-6 dark:bg-dark-2 dark:text-white ${
                       passwordErrors.confirmPassword
                         ? "border-red focus:border-red dark:border-red"
-                        : "border-stroke dark:border-dark-3 focus:border-primary"
+                        : "border-stroke focus:border-primary dark:border-dark-3"
                     }`}
                     value={confirmPassword}
-                    onChange={(e) => handleConfirmPasswordChange(e.target.value)}
+                    onChange={(e) =>
+                      handleConfirmPasswordChange(e.target.value)
+                    }
                     required
                     disabled={loading}
                     minLength={8}
@@ -493,4 +518,3 @@ export default function ForgotPasswordContent() {
     </div>
   );
 }
-

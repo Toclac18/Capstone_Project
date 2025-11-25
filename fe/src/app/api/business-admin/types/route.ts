@@ -2,6 +2,7 @@ import { mockTypesDB } from "@/mock/db.mock";
 import type { CreateTypeRequest, TypeQueryParams } from "@/types/document-type";
 import { USE_MOCK, BE_BASE } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 export async function GET(request: Request) {
   if (USE_MOCK) {
@@ -29,7 +30,7 @@ export async function GET(request: Request) {
         page,
         limit,
       };
-      return new Response(JSON.stringify(result), {
+      return jsonResponse(result, {
         status: 200,
         headers: {
           "content-type": "application/json",
@@ -37,7 +38,7 @@ export async function GET(request: Request) {
         },
       });
     } catch (error: any) {
-      return new Response(JSON.stringify({ message: error.message }), {
+      return jsonResponse({ message: error.message }, {
         status: 400,
         headers: { "content-type": "application/json", "x-mode": "mock" },
       });
@@ -60,15 +61,7 @@ export async function GET(request: Request) {
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+    return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 export async function POST(request: Request) {
@@ -76,7 +69,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as CreateTypeRequest;
     try {
       const result = mockTypesDB.create(body);
-      return new Response(JSON.stringify(result), {
+      return jsonResponse(result, {
         status: 201,
         headers: {
           "content-type": "application/json",
@@ -84,7 +77,7 @@ export async function POST(request: Request) {
         },
       });
     } catch (error: any) {
-      return new Response(JSON.stringify({ message: error.message }), {
+      return jsonResponse({ message: error.message }, {
         status: 400,
         headers: { "content-type": "application/json", "x-mode": "mock" },
       });
@@ -108,13 +101,5 @@ export async function POST(request: Request) {
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+    return proxyJsonResponse(upstream, { mode: "real" });
 }

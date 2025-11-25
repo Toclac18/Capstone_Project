@@ -1,16 +1,9 @@
-import { cookies } from "next/headers";
 import { getReviewDocuments } from "@/mock/review-list.mock";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 
-const DEFAULT_BE_BASE = "http://localhost:8080";
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
-
 export async function GET(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") || undefined;
   const status =
@@ -29,7 +22,7 @@ export async function GET(request: Request) {
       status,
       search,
     });
-    return new Response(JSON.stringify(result), {
+    return jsonResponse(result, {
       status: 200,
       headers: {
         "content-type": "application/json",
@@ -39,18 +32,12 @@ export async function GET(request: Request) {
   }
 
   // Get authentication from cookie
-  const cookieStore = await cookies();
-  const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
-
-  const authHeader =
-    (await getAuthHeader("api/reviewer/review-list/route.ts")) || bearerToken;
+  const bearerToken = await getAuthHeader();
 
   const fh = new Headers();
-  if (authHeader) {
-    fh.set("Authorization", authHeader);
+  if (bearerToken) {
+    fh.set("Authorization", bearerToken);
   }
-
   const queryParams = new URLSearchParams();
   if (search) queryParams.append("search", search);
   if (status) queryParams.append("status", status);
@@ -65,13 +52,5 @@ export async function GET(request: Request) {
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }

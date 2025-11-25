@@ -3,7 +3,7 @@ import { mockReaders } from "@/mock/readers.mock";
 import { headers, cookies } from "next/headers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
-import { getAuthHeader } from "@/server/auth";
+import { jsonResponse } from "@/server/response";
 
 type Reader = {
   id: string;
@@ -66,19 +66,21 @@ async function handleGET(req: Request) {
       q,
       status,
     });
-    return new Response(JSON.stringify({ items, total, page, pageSize }), {
-      status: 200,
-      headers: { "content-type": "application/json", "x-mode": "mock" },
-    });
+    return jsonResponse(
+      { items, total, page, pageSize },
+      {
+        status: 200,
+        headers: { "content-type": "application/json", "x-mode": "mock" },
+      },
+    );
   }
 
   // headers → build Authorization
   const h = await headers();
   const cookieStore = cookies();
   const headerAuth = h.get("authorization") || "";
-  const jwtAuth = (await getAuthHeader("api/org-admin/readers/route.ts")) || "";
   const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
-  const effectiveAuth = jwtAuth || headerAuth || cookieAuth;
+  const effectiveAuth = headerAuth || cookieAuth;
 
   // build upstream URL
   const upstreamUrl = new URL(`${BE_BASE}/api/org-admin/readers`);

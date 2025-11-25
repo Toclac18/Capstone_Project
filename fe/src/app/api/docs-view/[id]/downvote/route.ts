@@ -3,7 +3,7 @@ import { mockDownvoteDoc } from "@/mock/docs-detail.mock";
 import { buildForwardHeaders } from "../../_utils";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
-import { badRequest } from "@/server/response";
+import { badRequest, proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handlePOST(
   _req: Request,
@@ -15,7 +15,7 @@ async function handlePOST(
   if (USE_MOCK) {
     const result = mockDownvoteDoc(id);
     if (!result) return badRequest("Not found", 404);
-    return new Response(JSON.stringify(result), {
+    return jsonResponse(result, {
       status: 200,
       headers: {
         "content-type": "application/json",
@@ -32,15 +32,7 @@ async function handlePOST(
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 export const POST = (...args: Parameters<typeof handlePOST>) =>

@@ -2,6 +2,7 @@ import { mockLibraryDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handlePUT(
   request: Request,
@@ -13,7 +14,7 @@ async function handlePUT(
   if (USE_MOCK) {
     try {
       const result = mockLibraryDB.updateDocument(documentId, body);
-      return new Response(JSON.stringify(result), {
+      return jsonResponse(result, {
         status: 200,
         headers: {
           "content-type": "application/json",
@@ -23,13 +24,16 @@ async function handlePUT(
     } catch (e: unknown) {
       const message =
         e instanceof Error ? e.message : "Failed to update document";
-      return new Response(JSON.stringify({ error: message }), {
-        status: 400,
-        headers: {
-          "content-type": "application/json",
-          "x-mode": "mock",
+      return jsonResponse(
+        { error: message },
+        {
+          status: 400,
+          headers: {
+            "content-type": "application/json",
+            "x-mode": "mock",
+          },
         },
-      });
+      );
     }
   }
 
@@ -48,15 +52,7 @@ async function handlePUT(
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 async function handleDELETE(
@@ -68,7 +64,7 @@ async function handleDELETE(
   if (USE_MOCK) {
     try {
       const result = mockLibraryDB.deleteDocument(documentId);
-      return new Response(JSON.stringify(result), {
+      return jsonResponse(result, {
         status: 200,
         headers: {
           "content-type": "application/json",
@@ -78,13 +74,16 @@ async function handleDELETE(
     } catch (e: unknown) {
       const message =
         e instanceof Error ? e.message : "Failed to delete document";
-      return new Response(JSON.stringify({ error: message }), {
-        status: 400,
-        headers: {
-          "content-type": "application/json",
-          "x-mode": "mock",
+      return jsonResponse(
+        { error: message },
+        {
+          status: 400,
+          headers: {
+            "content-type": "application/json",
+            "x-mode": "mock",
+          },
         },
-      });
+      );
     }
   }
 
@@ -102,15 +101,7 @@ async function handleDELETE(
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 export const PUT = (...args: Parameters<typeof handlePUT>) =>

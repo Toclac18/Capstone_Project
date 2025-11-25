@@ -2,12 +2,12 @@ import { headers } from "next/headers";
 import { mockDocumentsDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
-import { getAuthHeader } from "@/server/auth";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handleGET() {
   if (USE_MOCK) {
     const tags = mockDocumentsDB.getTags();
-    return new Response(JSON.stringify(tags), {
+    return jsonResponse(tags, {
       status: 200,
       headers: {
         "content-type": "application/json",
@@ -17,9 +17,7 @@ async function handleGET() {
   }
 
   const h = await headers();
-  const jwtAuth =
-    (await getAuthHeader("api/reader/documents/tags/route.ts")) || "";
-  const authHeader = jwtAuth || h.get("authorization") || "";
+  const authHeader = h.get("authorization") || "";
   const cookieHeader = h.get("cookie") || "";
 
   const fh = new Headers({ "Content-Type": "application/json" });
@@ -32,15 +30,7 @@ async function handleGET() {
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 export const GET = (...args: Parameters<typeof handleGET>) =>

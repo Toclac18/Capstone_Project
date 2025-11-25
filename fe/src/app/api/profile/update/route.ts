@@ -3,6 +3,7 @@ import { mockProfileDB, type ProfileData } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 export const dynamic = "force-dynamic";
 
@@ -11,22 +12,28 @@ async function handlePUT(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
-      status: 400,
-      headers: { "content-type": "application/json" },
-    });
+    return jsonResponse(
+      { error: "Invalid JSON body" },
+      {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      },
+    );
   }
 
   if (USE_MOCK) {
     const updated = mockProfileDB.update(body);
     // Backend response format: { data: ProfileResponse }
-    return new Response(JSON.stringify({ data: updated }), {
-      status: 200,
-      headers: {
-        "content-type": "application/json",
-        "x-mode": "mock",
+    return jsonResponse(
+      { data: updated },
+      {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+          "x-mode": "mock",
+        },
       },
-    });
+    );
   }
 
   const bearerToken = await getAuthHeader();
@@ -43,15 +50,7 @@ async function handlePUT(req: Request) {
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 export const PUT = (...args: Parameters<typeof handlePUT>) =>

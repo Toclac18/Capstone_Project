@@ -1,7 +1,7 @@
-import { cookies } from "next/headers";
 import { mockDocumentsDB } from "@/mock/db.mock";
-import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
 import { getAuthHeader } from "@/server/auth";
 
 async function handleGET(request: Request) {
@@ -30,7 +30,7 @@ async function handleGET(request: Request) {
       page,
       limit,
     });
-    return new Response(JSON.stringify(result), {
+    return jsonResponse(result, {
       status: 200,
       headers: {
         "content-type": "application/json",
@@ -39,19 +39,11 @@ async function handleGET(request: Request) {
     });
   }
 
-  // Lấy authentication từ cookie
-  const cookieStore = await cookies();
-  const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
+  const bearerToken = await getAuthHeader();
 
-  // Backend chỉ nhận Authorization header, không nhận cookie
-  const authHeader =
-    (await getAuthHeader("api/reader/documents/upload-history/route.ts")) ||
-    bearerToken;
-
-  const fh = new Headers();
-  if (authHeader) {
-    fh.set("Authorization", authHeader);
+  const fh = new Headers({ "Content-Type": "application/json" });
+  if (bearerToken) {
+    fh.set("Authorization", bearerToken);
   }
 
   const queryParams = new URLSearchParams();
@@ -73,15 +65,7 @@ async function handleGET(request: Request) {
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 export const GET = (...args: Parameters<typeof handleGET>) =>

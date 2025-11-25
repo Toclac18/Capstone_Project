@@ -1,17 +1,19 @@
 // app/api/profile/get/route.ts
-import { cookies } from "next/headers";
 import { mockProfileDB } from "@/mock/db.mock";
-import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
 import { getAuthHeader } from "@/server/auth";
 
 export const dynamic = "force-dynamic";
 
 async function handleGET(request: Request) {
-  const cookieStore = await cookies();
+  const bearerToken = await getAuthHeader();
 
-  const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
+  const fh = new Headers({ "Content-Type": "application/json" });
+  if (bearerToken) {
+    fh.set("Authorization", bearerToken);
+  }
 
   if (USE_MOCK) {
     // Extract role from query param or default to READER
@@ -19,22 +21,16 @@ async function handleGET(request: Request) {
     const role = searchParams.get("role") || "READER";
     const profile = mockProfileDB.get(role);
     // Backend response format: { data: ProfileResponse }
-    return new Response(JSON.stringify({ data: profile }), {
-      status: 200,
-      headers: {
-        "content-type": "application/json",
-        "x-mode": "mock",
+    return jsonResponse(
+      { data: profile },
+      {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+          "x-mode": "mock",
+        },
       },
-    });
-  }
-
-  // Backend chỉ nhận Authorization header, không nhận cookie
-  const authHeader =
-    (await getAuthHeader("api/profile/get/route.ts")) || bearerToken;
-
-  const fh = new Headers({ "Content-Type": "application/json" });
-  if (authHeader) {
-    fh.set("Authorization", authHeader);
+    );
   }
 
   const upstream = await fetch(`${BE_BASE}/api/profile`, {
@@ -43,15 +39,7 @@ async function handleGET(request: Request) {
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 export const GET = (...args: Parameters<typeof handleGET>) =>

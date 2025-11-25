@@ -4,7 +4,6 @@ type UserType = "reader" | "reviewer" | "org-admin";
 
 // Constants
 const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
-const USERNAME_REGEX = /^[a-zA-Z0-9_.-]+$/;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 
 /**

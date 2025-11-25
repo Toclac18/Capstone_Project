@@ -145,7 +145,7 @@ export default function Signup() {
       await new Promise((resolve) => setTimeout(resolve, 500));
       const domains = await getDomains();
       setDomainOptions(domains);
-    } catch (error) {
+    } catch {
       showToast({
         type: "error",
         title: VALIDATION_MESSAGES.loadFailed.title,
@@ -162,7 +162,7 @@ export default function Signup() {
         await new Promise((resolve) => setTimeout(resolve, 500));
         const specs = await getSpecializations(domainIds);
         setSpecializationOptions(specs);
-      } catch (error) {
+      } catch {
         showToast({
           type: "error",
           title: VALIDATION_MESSAGES.loadFailed.title,

@@ -30,7 +30,7 @@ function VerifyEmailInner() {
 
     const run = async () => {
       try {
-        const [result] = await Promise.all([
+        await Promise.all([
           verifyEmail(token),
           new Promise((resolve) => setTimeout(resolve, 3000)),
         ]);

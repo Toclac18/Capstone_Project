@@ -7,7 +7,6 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import {
   login,
   type LoginPayload,
-  type LoginResponse,
 } from "../api";
 import { EmailIcon, GoogleIcon, PasswordIcon } from "@/assets/icons";
 import { useToast } from "@/components/ui/toast";
@@ -54,7 +53,7 @@ export default function Signin() {
     };
 
     try {
-      const result: LoginResponse = await login(payload);
+      await login(payload);
 
       showToast({ type: 'success', title: 'Login Successful' });
 

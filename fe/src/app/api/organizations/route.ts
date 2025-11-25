@@ -1,145 +1,48 @@
 // app/api/organizations/route.ts
-import { headers, cookies } from "next/headers";
-import { NextRequest } from "next/server";
-import { getOrganizations, createOrganization } from "@/mock/business-admin-organizations";
-import type { OrganizationQueryParams } from "@/types/organization";
 
-function beBase() {
-  return (
-    process.env.BE_BASE_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    "http://localhost:8081"
-  );
-}
+import { BE_BASE } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { parseError } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
-export async function GET(req: NextRequest) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const url = new URL(req.url);
-  const queryString = url.searchParams.toString();
-  const path = queryString
-    ? `/api/organizations?${queryString}`
-    : `/api/organizations`;
+async function handleGET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const queryString = searchParams.toString();
+  const url = queryString
+    ? `${BE_BASE}/api/organizations?${queryString}`
+    : `${BE_BASE}/api/organizations`;
 
-  if (USE_MOCK) {
-    // Parse query params from URL
-    const params: OrganizationQueryParams = {};
-    if (url.searchParams.get("page")) params.page = parseInt(url.searchParams.get("page")!);
-    if (url.searchParams.get("limit")) params.limit = parseInt(url.searchParams.get("limit")!);
-    if (url.searchParams.get("search")) params.search = url.searchParams.get("search")!;
-    if (url.searchParams.get("status")) params.status = url.searchParams.get("status")!;
-    if (url.searchParams.get("sortBy")) params.sortBy = url.searchParams.get("sortBy")!;
-    if (url.searchParams.get("sortOrder")) params.sortOrder = url.searchParams.get("sortOrder") as "asc" | "desc";
-    if (url.searchParams.get("dateFrom")) params.dateFrom = url.searchParams.get("dateFrom")!;
-    if (url.searchParams.get("dateTo")) params.dateTo = url.searchParams.get("dateTo")!;
+  const authHeader = await getAuthHeader();
 
-    const result = getOrganizations(params);
-    return json({ data: result }, 200, { "x-mode": "mock" });
+  const fh = new Headers({ "Content-Type": "application/json" });
+  if (authHeader) fh.set("Authorization", authHeader);
+
+  const upstream = await fetch(url, {
+    method: "GET",
+    headers: fh,
+    cache: "no-store",
+  });
+
+  const text = await upstream.text();
+  if (!upstream.ok) {
+    return Response.json(
+      { error: parseError(text, "Request failed") },
+      { status: upstream.status },
+    );
   }
 
   try {
-    const { upstream } = await forward(path);
-    const raw = await upstream.json().catch(() => ({}));
-    return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
-  } catch (e: any) {
-    return json(
-      { message: "Organizations fetch failed", error: String(e) },
-      502
+    const response = JSON.parse(text);
+    return Response.json(response);
+  } catch {
+    return Response.json(
+      { error: "Failed to process response" },
+      { status: 500 },
     );
   }
 }
 
-export async function POST(req: NextRequest) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const body = await req.json().catch(() => null);
-
-  if (!body) {
-    return json({ error: "Invalid JSON" }, 400);
-  }
-
-  if (USE_MOCK) {
-    // Check if this is a list request (has query params in body) or create request
-    if (body.page !== undefined || body.search !== undefined || body.status !== undefined) {
-      // This is a list request (POST with query params)
-      const params: OrganizationQueryParams = body;
-      const result = getOrganizations(params);
-      return json({ data: result }, 200, { "x-mode": "mock" });
-    } else {
-      // This is a create request
-      const org = createOrganization(body);
-      return json({ data: org }, 201, { "x-mode": "mock" });
-    }
-  }
-
-  try {
-    const { upstream } = await forwardJson("/api/organizations", body);
-    const raw = await upstream.json().catch(() => ({}));
-    return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
-  } catch (e: any) {
-    return json(
-      { message: "Organization creation failed", error: String(e) },
-      502
-    );
-  }
-}
-
-// ---------- Helpers ----------
-async function forward(path: string) {
-  const h = headers();
-  const cookieStore = cookies();
-  const headerAuth = (await h).get("authorization") || "";
-  const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
-  const effectiveAuth = headerAuth || cookieAuth;
-
-  const upstreamUrl = beBase() + path;
-  const passHeaders: Record<string, string> = {
-    ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
-  };
-
-  const cookieHeader = (await h).get("cookie");
-  if (cookieHeader) passHeaders["cookie"] = cookieHeader;
-
-  const upstream = await fetch(upstreamUrl, {
-    headers: passHeaders,
-    cache: "no-store",
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/organizations/route.ts/GET",
   });
-
-  return { upstream, status: upstream.status, headers: upstream.headers };
-}
-
-async function forwardJson(path: string, body: any) {
-  const h = headers();
-  const cookieStore = cookies();
-  const headerAuth = (await h).get("authorization") || "";
-  const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
-  const effectiveAuth = headerAuth || cookieAuth;
-
-  const upstreamUrl = beBase() + path;
-  const passHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
-  };
-
-  const cookieHeader = (await h).get("cookie");
-  if (cookieHeader) passHeaders["cookie"] = cookieHeader;
-
-  const upstream = await fetch(upstreamUrl, {
-    method: "POST",
-    headers: passHeaders,
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
-
-  return { upstream, status: upstream.status, headers: upstream.headers };
-}
-
-function json(
-  data: any,
-  status = 200,
-  extraHeaders: Record<string, string> = {},
-) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "content-type": "application/json", ...extraHeaders },
-  });
-}
-

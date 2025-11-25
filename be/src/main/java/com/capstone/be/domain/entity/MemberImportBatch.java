@@ -79,7 +79,7 @@ public class MemberImportBatch extends BaseEntity {
    * S3 URL of the uploaded Excel file (nullable for manual imports)
    */
   @Column(length = 1000)
-  private String fileUrl;
+  private String fileKey;
 
   /**
    * Additional notes or error summary

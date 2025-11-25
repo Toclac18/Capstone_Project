@@ -1,87 +1,57 @@
 // app/api/organizations/[id]/status/route.ts
-import { headers, cookies } from "next/headers";
-import { NextRequest } from "next/server";
 
-function beBase() {
-  return (
-    process.env.BE_BASE_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    "http://localhost:8081"
-  );
-}
+import { BE_BASE } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { parseError } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+async function handlePATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
   const { id } = await params;
 
   const body = await req.json().catch(() => null);
   if (!body) {
-    return json({ error: "Invalid JSON" }, 400);
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
   if (!body.status) {
-    return json({ error: "Status is required" }, 400);
+    return Response.json({ error: "Status is required" }, { status: 400 });
   }
 
-  if (USE_MOCK) {
-    const { updateOrganizationStatus } = await import("@/mock/business-admin-organizations");
-    const updated = updateOrganizationStatus(id, body.status);
-    if (!updated) {
-      return json({ error: "Organization not found" }, 404, { "x-mode": "mock" });
-    }
-    return json({ data: updated }, 200, { "x-mode": "mock" });
-  }
+  const authHeader = await getAuthHeader();
 
-  try {
-    const { upstream } = await forwardJson(`/api/organizations/${id}/status`, body);
-    const raw = await upstream.json().catch(() => ({}));
-    return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
-  } catch (e: any) {
-    return json(
-      { message: "Organization status update failed", error: String(e) },
-      502
-    );
-  }
-}
+  const fh = new Headers({ "Content-Type": "application/json" });
+  if (authHeader) fh.set("Authorization", authHeader);
 
-// ---------- Helpers ----------
-async function forwardJson(path: string, body: any) {
-  const h = headers();
-  const cookieStore = cookies();
-  const headerAuth = (await h).get("authorization") || "";
-  const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
-  const effectiveAuth = headerAuth || cookieAuth;
-
-  const upstreamUrl = beBase() + path;
-  const passHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
-  };
-
-  const cookieHeader = (await h).get("cookie");
-  if (cookieHeader) passHeaders["cookie"] = cookieHeader;
-
-  const upstream = await fetch(upstreamUrl, {
+  const upstream = await fetch(`${BE_BASE}/api/organizations/${id}/status`, {
     method: "PATCH",
-    headers: passHeaders,
+    headers: fh,
     body: JSON.stringify(body),
     cache: "no-store",
   });
 
-  return { upstream, status: upstream.status, headers: upstream.headers };
+  const text = await upstream.text();
+  if (!upstream.ok) {
+    return Response.json(
+      { error: parseError(text, "Request failed") },
+      { status: upstream.status },
+    );
+  }
+
+  try {
+    const response = JSON.parse(text);
+    return Response.json(response);
+  } catch {
+    return Response.json(
+      { error: "Failed to process response" },
+      { status: 500 },
+    );
+  }
 }
 
-function json(
-  data: any,
-  status = 200,
-  extraHeaders: Record<string, string> = {},
-) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "content-type": "application/json", ...extraHeaders },
+export const PATCH = (...args: Parameters<typeof handlePATCH>) =>
+  withErrorBoundary(() => handlePATCH(...args), {
+    context: "api/organizations/[id]/status/route.ts/PATCH",
   });
-}
-

@@ -52,20 +52,16 @@ public class SecurityConfig {
         .authorizeHttpRequests(auth -> auth
             // Public endpoints
             .requestMatchers(
-                "/api/v1/auth/**",
+                "/auth/**",
+
                 "/v3/api-docs/**",
                 "/swagger-ui/**",
                 "/swagger-ui.html",
 
-                "/api/v1/dev/**",
-                "/api/v1/contact-tickets/**" // Public endpoint for ticket creation, auth handled in controller
+                "/public/**",
+                "/dev/**",
+                "/contact-tickets/**" // Public endpoint for ticket creation, auth handled in controller
             ).permitAll()
-            // Role-based access control
-            .requestMatchers("/api/v1/reader/**").hasRole("READER")
-            .requestMatchers("/api/v1/reviewer/**").hasRole("REVIEWER")
-            .requestMatchers("/api/v1/organization/**").hasRole("ORGANIZATION_ADMIN")
-            .requestMatchers("/api/v1/business-admin/**").hasAnyRole("BUSINESS_ADMIN")
-            .requestMatchers("/api/v1/system-admin/**").hasAnyRole("SYSTEM_ADMIN")
             // All other requests need authentication
             .anyRequest().authenticated()
         )

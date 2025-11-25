@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import styles from "../styles.module.css";
 import DocCard, { type DocCardItem } from "./DocCard";
-import { useHomepage } from "../HomepageProvider";
+import { useHomepage } from "../provider";
 import { useModalPreview } from "@/components/ModalPreview";
 import type { DocumentItem as BaseDoc } from "@/types/documentResponse";
 

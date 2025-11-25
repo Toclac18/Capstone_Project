@@ -57,17 +57,17 @@ public class DocumentThumbnailServiceImpl implements DocumentThumbnailService {
       baos.flush();
       byte[] bytes = baos.toByteArray();
 
-      String filename = "thumb-" + UUID.randomUUID() + ".png";
+      String filename = UUID.randomUUID() + ".png";
 
-      String thumbnailUrl = fileStorageService.uploadFile(
+      String thumbnailKey = fileStorageService.uploadFile(
           bytes,
           "image/png",
           folder,
           filename
       );
 
-      log.info("Generated and uploaded thumbnail: {}", thumbnailUrl);
-      return thumbnailUrl;
+      log.info("Generated and uploaded thumbnail: {}", thumbnailKey);
+      return thumbnailKey;
 
     } catch (IOException e) {
       log.error("Failed to generate thumbnail for document: {}", file.getOriginalFilename(), e);

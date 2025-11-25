@@ -36,7 +36,7 @@ public class User extends BaseEntity {
   @Column(nullable = false)
   private String fullName;
 
-  private String avatarUrl;
+  private String avatarKey;
 
 //  @Builder.Default
 //  private Integer point = 0;

@@ -1,22 +1,11 @@
 // app/api/contact-admin/route.ts
 import { headers } from "next/headers";
-import { mockDB, type ContactAdminPayload } from "@/mock/db";
+import { mockDB, type ContactAdminPayload } from "@/mock/dbMock";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { badRequest, proxyJsonResponse, jsonResponse } from "@/server/response";
 
-const DEFAULT_BE_BASE = "http://localhost:8080";
-
-function badRequest(msg: string) {
-  return new Response(JSON.stringify({ error: msg }), {
-    status: 400,
-    headers: { "content-type": "application/json" },
-  });
-}
-
-export async function POST(req: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
+async function handlePOST(req: Request) {
   let body: ContactAdminPayload;
   try {
     body = await req.json();
@@ -49,7 +38,7 @@ export async function POST(req: Request) {
       message: "Your message has been received. (mock)",
       meta: { ip },
     };
-    return new Response(JSON.stringify(response), {
+    return jsonResponse(response, {
       status: 201,
       headers: {
         "content-type": "application/json",
@@ -75,13 +64,10 @@ export async function POST(req: Request) {
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/admin/contact/route.ts/POST",
+  });

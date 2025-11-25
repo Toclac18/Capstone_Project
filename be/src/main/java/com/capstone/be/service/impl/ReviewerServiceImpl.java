@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -96,47 +95,6 @@ public class ReviewerServiceImpl implements ReviewerService {
     return buildProfileResponse(user, reviewerProfile);
   }
 
-  @Override
-  @Transactional
-  public ReviewerProfileResponse uploadAvatar(UUID userId, MultipartFile file) {
-    log.info("Uploading avatar for user ID: {}", userId);
-
-    // Get user
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
-
-    // Get reviewer profile
-    ReviewerProfile reviewerProfile = reviewerProfileRepository.findByUserId(userId)
-        .orElseThrow(
-            () -> new ResourceNotFoundException(
-                "Reviewer profile not found for user ID: " + userId));
-
-    // Force initialization of lazy-loaded collection
-    reviewerProfile.getCredentialFileUrls().size();
-
-    // Delete old avatar if exists
-    if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
-      try {
-        fileStorageService.deleteFile(user.getAvatarUrl());
-        log.info("Deleted old avatar for user ID: {}", userId);
-      } catch (Exception e) {
-        log.warn("Failed to delete old avatar, continuing with upload: {}", e.getMessage());
-      }
-    }
-
-    // Upload new avatar to S3
-    String avatarUrl = fileStorageService.uploadFile(file, "avatars", null);
-    user.setAvatarUrl(avatarUrl);
-
-    // Save user
-    userRepository.save(user);
-
-    log.info("Successfully uploaded avatar for user ID: {}", userId);
-
-    // Return updated profile
-    return buildProfileResponse(user, reviewerProfile);
-  }
-
   /**
    * Helper method to build profile response
    */
@@ -145,7 +103,7 @@ public class ReviewerServiceImpl implements ReviewerService {
         .userId(user.getId())
         .email(user.getEmail())
         .fullName(user.getFullName())
-        .avatarUrl(user.getAvatarUrl())
+        .avatarUrl(user.getAvatarKey())
 //        .point(user.getPoint())
         .status(user.getStatus())
         .dateOfBirth(reviewerProfile.getDateOfBirth())

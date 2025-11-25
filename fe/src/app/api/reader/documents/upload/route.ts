@@ -1,26 +1,25 @@
 import { headers } from "next/headers";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
-const DEFAULT_BE_BASE = "http://localhost:8080";
-
-export async function POST(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
+async function handlePOST(request: Request) {
   try {
     if (USE_MOCK) {
       const formData = await request.formData();
       const file = formData.get("file") as File;
 
       if (!file) {
-        return new Response(JSON.stringify({ error: "File is required" }), {
-          status: 400,
-          headers: {
-            "content-type": "application/json",
-            "x-mode": "mock",
+        return jsonResponse(
+          { error: "File is required" },
+          {
+            status: 400,
+            headers: {
+              "content-type": "application/json",
+              "x-mode": "mock",
+            },
           },
-        });
+        );
       }
 
       return new Response(
@@ -34,7 +33,7 @@ export async function POST(request: Request) {
             "content-type": "application/json",
             "x-mode": "mock",
           },
-        }
+        },
       );
     }
 
@@ -60,28 +59,25 @@ export async function POST(request: Request) {
       cache: "no-store",
     });
 
-    const text = await upstream.text();
-    return new Response(text, {
-      status: upstream.status,
-      headers: {
-        "content-type":
-          upstream.headers.get("content-type") ?? "application/json",
-        "x-mode": "real",
-      },
-    });
+    return proxyJsonResponse(upstream, { mode: "real" });
   } catch (error) {
     console.error("Upload error:", error);
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : "Failed to upload document",
+        error:
+          error instanceof Error ? error.message : "Failed to upload document",
       }),
       {
         status: 500,
         headers: {
           "content-type": "application/json",
         },
-      }
+      },
     );
   }
 }
 
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/reader/documents/upload/route.ts/POST",
+  });

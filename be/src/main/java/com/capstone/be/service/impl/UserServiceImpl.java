@@ -1,7 +1,9 @@
 package com.capstone.be.service.impl;
 
+import com.capstone.be.config.constant.FileStorage;
 import com.capstone.be.domain.entity.EmailChangeRequest;
 import com.capstone.be.domain.entity.PasswordResetRequest;
+import com.capstone.be.domain.entity.PasswordResetToken;
 import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.EmailChangeStatus;
 import com.capstone.be.domain.enums.PasswordResetStatus;
@@ -16,17 +18,24 @@ import com.capstone.be.dto.response.admin.AdminReviewerResponse;
 import com.capstone.be.exception.BusinessException;
 import com.capstone.be.exception.DuplicateResourceException;
 import com.capstone.be.exception.InvalidRequestException;
+import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.repository.EmailChangeRequestRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.PasswordResetRequestRepository;
+import com.capstone.be.repository.PasswordResetTokenRepository;
 import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.repository.ReviewerProfileRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.repository.specification.UserSpecification;
 import com.capstone.be.service.EmailService;
+import com.capstone.be.service.FileStorageService;
 import com.capstone.be.service.UserService;
 import com.capstone.be.util.OtpUtil;
+import com.capstone.be.util.TokenUtil;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +46,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -48,9 +58,12 @@ public class UserServiceImpl implements UserService {
   private final ReaderProfileRepository readerProfileRepository;
   private final ReviewerProfileRepository reviewerProfileRepository;
   private final OrganizationProfileRepository organizationProfileRepository;
-  private final EmailService emailService;
   private final EmailChangeRequestRepository emailChangeRequestRepository;
   private final PasswordResetRequestRepository passwordResetRequestRepository;
+  private final PasswordResetTokenRepository passwordResetTokenRepository;
+
+  private final EmailService emailService;
+  private final FileStorageService fileStorageService;
 
   @Override
   @Transactional
@@ -124,6 +137,36 @@ public class UserServiceImpl implements UserService {
     userRepository.save(user);
 
     log.info("Account deleted successfully for user: {}", userId);
+  }
+
+  @Override
+  @Transactional
+  public void uploadAvatar(UUID userId, MultipartFile file) {
+    log.info("Uploading avatar for user ID: {}", userId);
+
+    // Get user
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+    // Delete old avatar if exists
+    if (user.getAvatarKey() != null && !user.getAvatarKey().isEmpty()) {
+      try {
+        fileStorageService.deleteFile(
+            FileStorage.AVATAR_FOLDER, user.getAvatarKey());
+        log.info("Deleted old avatar for user ID: {}", userId);
+      } catch (Exception e) {
+        log.warn("Failed to delete old avatar, continuing with upload: {}", e.getMessage());
+      }
+    }
+
+    // Upload new avatar to S3
+    String avatarKey = fileStorageService.uploadFile(file, FileStorage.AVATAR_FOLDER, null);
+    user.setAvatarKey(avatarKey);
+
+    // Save user
+    userRepository.save(user);
+
+    log.info("Successfully uploaded avatar for user ID: {}", userId);
   }
 
   @Override
@@ -259,20 +302,35 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional(noRollbackFor = InvalidRequestException.class)
-  public void requestPasswordReset(String email) {
-    log.info("Request password reset for email: {}", email);
+  public void sendPasswordResetOtp(String email) {
+    log.info("Send password reset OTP for email: {}", email);
+
+    // Rate limiting: check recent requests (max 3 requests per 15 minutes)
+    Instant rateLimitWindow = Instant.now().minusSeconds(900); // 15 minutes
+    long recentRequestCount = passwordResetRequestRepository.countRecentRequestsByEmail(
+        email, rateLimitWindow);
+
+    if (recentRequestCount >= 3) {
+      log.warn("Rate limit exceeded for email: {}", email);
+      // Return generic message without revealing if email exists
+      return;
+    }
 
     // Find user by email
-    User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new BusinessException(
-            "User not found with email: " + email,
-            HttpStatus.NOT_FOUND,
-            "USER_NOT_FOUND"
-        ));
+    Optional<User> userOptional = userRepository.findByEmail(email);
+
+    // Always return success to prevent email enumeration
+    if (userOptional.isEmpty()) {
+      log.info("User not found for email: {}, returning generic success", email);
+      return;
+    }
+
+    User user = userOptional.get();
 
     // Check if user is active
     if (user.getStatus() != UserStatus.ACTIVE) {
-      throw new InvalidRequestException("Account is not active. Cannot reset password");
+      log.info("User account not active for: {}, returning generic success", email);
+      return;
     }
 
     // Cancel any existing pending request for this user
@@ -284,10 +342,10 @@ public class UserServiceImpl implements UserService {
       passwordResetRequestRepository.save(existing);
     });
 
-    // Generate OTP
+    // Generate OTP (6 digits, valid for 10 minutes)
     String otp = OtpUtil.generateOtp();
     String otpHash = passwordEncoder.encode(otp);
-    LocalDateTime otpExpiry = LocalDateTime.now().plusMinutes(10);
+    Instant otpExpiry = Instant.now().plusSeconds(600); // 10 minutes
 
     // Create new password reset request
     PasswordResetRequest passwordResetRequest = PasswordResetRequest.builder()
@@ -304,21 +362,17 @@ public class UserServiceImpl implements UserService {
     // Send OTP to user's email
     emailService.sendPasswordResetOtp(user.getEmail(), user.getFullName(), otp);
 
-    log.info("Created password reset request and sent OTP to email: {}", email);
+    log.info("Created password reset request and sent OTP to email: {}", user.getEmail());
   }
 
   @Override
   @Transactional(noRollbackFor = InvalidRequestException.class)
-  public void verifyPasswordResetOtp(String email, String otp, String newPassword) {
-    log.info("Verify password reset OTP for email: {}", email);
+  public String verifyOtpAndGenerateResetToken(String email, String otp) {
+    log.info("Verify OTP for email: {}", email);
 
     // Find user by email
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new BusinessException(
-            "User not found with email: " + email,
-            HttpStatus.NOT_FOUND,
-            "USER_NOT_FOUND"
-        ));
+        .orElseThrow(() -> new InvalidRequestException("Invalid credentials"));
 
     // Find pending password reset request
     PasswordResetRequest passwordResetRequest = passwordResetRequestRepository.findByUserAndStatus(
@@ -343,7 +397,6 @@ public class UserServiceImpl implements UserService {
 
     // Increment attempt count
     passwordResetRequest.incrementAttemptCount();
-    System.out.println(passwordResetRequest.getAttemptCount());
 
     // Verify OTP using password encoder (constant-time comparison)
     if (!passwordEncoder.matches(otp, passwordResetRequest.getOtpHash())) {
@@ -352,6 +405,64 @@ public class UserServiceImpl implements UserService {
       throw new InvalidRequestException(
           "Invalid OTP code. " + remainingAttempts + " attempts remaining");
     }
+
+    // OTP is valid - mark request as verified
+    passwordResetRequest.setStatus(PasswordResetStatus.VERIFIED);
+    passwordResetRequestRepository.save(passwordResetRequest);
+
+    // Invalidate any existing reset tokens for this user
+    passwordResetTokenRepository.invalidateAllUserTokens(user);
+
+    // Generate new reset token (valid for 10 minutes)
+    String resetToken = TokenUtil.generateResetToken();
+    String tokenHash = passwordEncoder.encode(resetToken);
+    Instant tokenExpiry = Instant.now().plusSeconds(600); // 10 minutes
+
+    PasswordResetToken passwordResetToken = PasswordResetToken.builder()
+        .user(user)
+        .tokenHash(tokenHash)
+        .expiryTime(tokenExpiry)
+        .used(false)
+        .build();
+
+    passwordResetTokenRepository.save(passwordResetToken);
+
+    log.info("OTP verified and reset token generated for user: {}", user.getEmail());
+    return resetToken;
+  }
+
+  @Override
+  @Transactional
+  public void resetPasswordWithToken(String resetToken, String newPassword) {
+    log.info("Reset password with token");
+
+    // Hash the token to find it in DB
+    // We need to find the token differently since we can't hash and search
+    // Instead, we'll iterate through recent tokens and verify
+    List<PasswordResetToken> recentTokens = passwordResetTokenRepository
+        .findAll()
+        .stream()
+        .filter(t -> !t.getUsed() && !t.isExpired())
+        .toList();
+
+    PasswordResetToken validToken = null;
+    for (PasswordResetToken token : recentTokens) {
+      if (passwordEncoder.matches(resetToken, token.getTokenHash())) {
+        validToken = token;
+        break;
+      }
+    }
+
+    if (validToken == null) {
+      throw new InvalidRequestException("Invalid or expired reset token");
+    }
+
+    // Check if token has been used
+    if (validToken.getUsed()) {
+      throw new InvalidRequestException("Reset token has already been used");
+    }
+
+    User user = validToken.getUser();
 
     // Check if new password is same as current password
     if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
@@ -366,11 +477,11 @@ public class UserServiceImpl implements UserService {
     user.setPasswordHash(passwordEncoder.encode(newPassword));
     userRepository.save(user);
 
-    // Mark request as verified
-    passwordResetRequest.setStatus(PasswordResetStatus.VERIFIED);
-    passwordResetRequestRepository.save(passwordResetRequest);
+    // Mark token as used
+    validToken.setUsed(true);
+    passwordResetTokenRepository.save(validToken);
 
-    log.info("Password reset successfully for email: {}", email);
+    log.info("Password reset successfully for user: {}", user.getEmail());
   }
 
   // Admin operations - Reader management
@@ -588,7 +699,7 @@ public class UserServiceImpl implements UserService {
             .userId(user.getId())
             .email(user.getEmail())
             .fullName(user.getFullName())
-            .avatarUrl(user.getAvatarUrl())
+            .avatarUrl(user.getAvatarKey())
 //            .point(user.getPoint())
             .status(user.getStatus())
             .createdAt(user.getCreatedAt())
@@ -608,7 +719,7 @@ public class UserServiceImpl implements UserService {
             .userId(user.getId())
             .email(user.getEmail())
             .fullName(user.getFullName())
-            .avatarUrl(user.getAvatarUrl())
+            .avatarUrl(user.getAvatarKey())
 //            .point(user.getPoint())
             .status(user.getStatus())
             .createdAt(user.getCreatedAt())
@@ -637,7 +748,7 @@ public class UserServiceImpl implements UserService {
             .userId(user.getId())
             .email(user.getEmail())
             .fullName(user.getFullName())
-            .avatarUrl(user.getAvatarUrl())
+            .avatarUrl(user.getAvatarKey())
 //            .point(user.getPoint())
             .status(user.getStatus())
             .createdAt(user.getCreatedAt())
@@ -649,7 +760,7 @@ public class UserServiceImpl implements UserService {
           .orgType(profile.getType() != null ? profile.getType().name() : null)
           .orgEmail(profile.getEmail())
           .orgHotline(profile.getHotline())
-          .orgLogo(profile.getLogo())
+          .orgLogo(profile.getLogoKey())
           .orgAddress(profile.getAddress())
           .orgRegistrationNumber(profile.getRegistrationNumber());
     });

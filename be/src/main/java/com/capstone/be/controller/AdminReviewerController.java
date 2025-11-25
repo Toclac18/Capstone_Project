@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/admin/reviewers")
+@RequestMapping("/admin/reviewers")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('BUSINESS_ADMIN')")
 public class AdminReviewerController {

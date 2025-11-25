@@ -1,6 +1,6 @@
 "use client";
 import { useMemo } from "react";
-import { useSearch } from "../SearchProvider";
+import { useSearch } from "../provider";
 import styles from "../styles.module.css";
 
 export default function Pagination() {
@@ -40,7 +40,7 @@ export default function Pagination() {
           disabled={page === 1}
           aria-label="First page"
         >
-          « First
+          «
         </button>
 
         {/* ‹ Prev */}
@@ -81,7 +81,7 @@ export default function Pagination() {
           disabled={page >= totalPages}
           aria-label="Last page"
         >
-          Last »
+          »
         </button>
       </nav>
     </>

@@ -39,7 +39,7 @@ public class OrganizationProfile extends BaseEntity {
   @Column(nullable = false)
   private String hotline;
 
-  private String logo;
+  private String logoKey;
 
   @Column(nullable = false)
   private String address;

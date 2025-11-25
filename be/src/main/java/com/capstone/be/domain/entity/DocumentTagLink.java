@@ -21,7 +21,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @SuperBuilder
 @Entity
-@Table(name = "document_tag")
+@Table(name = "document_tag_link")
 public class DocumentTagLink extends BaseEntity {
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)

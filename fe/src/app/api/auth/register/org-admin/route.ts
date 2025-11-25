@@ -1,115 +1,125 @@
-const USE_MOCK = process.env.USE_MOCK === "true";
-const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { jsonResponse, parseError, badRequest } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   const contentType = req.headers.get("content-type") || "";
-  
+
   if (!contentType.includes("multipart/form-data")) {
-    return Response.json({ error: "Content-Type must be multipart/form-data" }, { status: 400 });
+    return badRequest("Content-Type must be multipart/form-data");
   }
 
   const formData = await req.formData().catch(() => null);
   if (!formData) {
-    return Response.json({ error: "Invalid form data" }, { status: 400 });
+    return badRequest("Invalid form data");
   }
 
-  // Parse info JSON blob
-  const infoBlob = formData.get("info");
-  if (!infoBlob) {
-    return Response.json({ error: "Missing info field" }, { status: 400 });
+  // Parse data JSON blob (backend expects @RequestPart("data"))
+  const dataBlob = formData.get("data");
+  if (!dataBlob) {
+    return badRequest("Missing data field");
   }
 
-  let info: {
-    fullName: string;
-    dateOfBirth: string;
-    username: string;
-    email: string;
+  let data: {
+    adminEmail: string;
     password: string;
+    adminFullName: string;
     organizationName: string;
     organizationType: string;
-    registrationNumber: string;
     organizationEmail: string;
+    hotline: string;
+    address: string;
+    registrationNumber: string;
   };
 
   try {
-    const infoText = await (infoBlob as Blob).text();
-    info = JSON.parse(infoText);
+    const dataText = await (dataBlob as Blob).text();
+    data = JSON.parse(dataText);
   } catch {
-    return Response.json({ error: "Invalid info JSON" }, { status: 400 });
+    return badRequest("Invalid data JSON");
   }
 
-  // Validate required fields
-  const { fullName, dateOfBirth, username, email, password, organizationName, organizationType, registrationNumber, organizationEmail } = info;
-  if (!fullName || !dateOfBirth || !username || !email || !password) {
-    return Response.json(
-      { error: "Missing required basic fields" },
-      { status: 400 }
-    );
+  // Validate required fields (matching backend RegisterOrganizationRequest)
+  const {
+    adminEmail,
+    password,
+    adminFullName,
+    organizationName,
+    organizationType,
+    organizationEmail,
+    hotline,
+    address,
+    registrationNumber,
+  } = data;
+  
+  if (!adminEmail || !password || !adminFullName) {
+    return badRequest("Missing required admin fields");
   }
 
-  if (!organizationName || !organizationType || !registrationNumber || !organizationEmail) {
-    return Response.json(
-      { error: "Missing required organization fields" },
-      { status: 400 }
-    );
+  if (
+    !organizationName ||
+    !organizationType ||
+    !organizationEmail ||
+    !hotline ||
+    !address ||
+    !registrationNumber
+  ) {
+    return badRequest("Missing required organization fields");
   }
 
-  // Validate file upload (required for organization)
-  const files = formData.getAll("certificateUploads");
-  if (!files || files.length === 0) {
-    return Response.json(
-      { error: "Organization certificate upload is required" },
-      { status: 400 }
-    );
-  }
-
-  // Validate file size (max 10MB per file)
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-  for (const file of files) {
-    if (file instanceof File && file.size > MAX_FILE_SIZE) {
-      return Response.json(
-        { error: `File "${file.name}" exceeds 10MB limit` },
-        { status: 400 }
-      );
-    }
-  }
+  // Logo file is optional (backend expects @RequestPart(value = "logoFile", required = false))
+  // No validation needed for logoFile
 
   if (USE_MOCK) {
-    const mockUser = {
-      id: Math.floor(Math.random() * 10000),
-      username,
-      email,
-      fullName,
+    const mockResponse = {
+      userId: `user-${Date.now()}`,
+      email: adminEmail,
+      fullName: adminFullName,
       role: "ORGANIZATION",
-      status: "PENDING_VERIFICATION",
-      message: "Organization registration successful! Admin will verify your information.",
+      status: "PENDING_EMAIL_VERIFY",
+      accessToken: null,
+      tokenType: "Bearer",
     };
-    return Response.json(mockUser, { status: 201 });
+    return jsonResponse(mockResponse, { status: 201, mode: "mock" });
   }
 
-  // Proxy to BE
-  const upstream = await fetch(`${BE_BASE}/api/auth/register-organization`, {
+  // Proxy to BE (backend expects multipart with "data" and optional "logoFile")
+  const upstream = await fetch(`${BE_BASE}/api/auth/register/organization`, {
     method: "POST",
     body: formData,
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  const responseContentType = upstream.headers.get("content-type") ?? "application/json";
-
   if (!upstream.ok) {
-    let errorMsg = "Registration failed";
-    try {
-      const json = JSON.parse(text);
-      errorMsg = json?.detail || json?.message || errorMsg;
-    } catch {
-      errorMsg = text || errorMsg;
-    }
-    return Response.json({ error: errorMsg }, { status: upstream.status });
+    const text = await upstream.text();
+    return jsonResponse(
+      { error: parseError(text, "Registration failed") },
+      { status: upstream.status }
+    );
   }
 
-  return new Response(text, {
+  // Parse response from backend
+  let responseData: any;
+  try {
+    const text = await upstream.text();
+    responseData = JSON.parse(text);
+  } catch {
+    return jsonResponse(
+      { error: "Failed to parse backend response" },
+      { status: 500 }
+    );
+  }
+
+  // Backend may return { data: AuthResponse } or AuthResponse directly
+  const authResponse = responseData?.data || responseData;
+  
+  return jsonResponse(authResponse, { 
     status: upstream.status,
-    headers: { "content-type": responseContentType },
+    mode: "real" 
   });
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/auth/register/org-admin/route.ts/POST",
+  });

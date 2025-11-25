@@ -10,4 +10,9 @@ import org.springframework.stereotype.Repository;
 public interface SpecializationRepository extends JpaRepository<Specialization, UUID> {
 
   List<Specialization> findAllByIdIn(List<UUID> ids);
+
+  /**
+   * Find specializations by domain ID
+   */
+  List<Specialization> findByDomain_Id(UUID domainId);
 }

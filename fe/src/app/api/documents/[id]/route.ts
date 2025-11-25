@@ -1,121 +1,51 @@
 // app/api/documents/[id]/route.ts
-import { headers, cookies } from "next/headers";
-import { NextRequest } from "next/server";
 
-function beBase() {
-  return (
-    process.env.BE_BASE_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    "http://localhost:8081"
-  );
-}
+import { BE_BASE } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { parseError } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+/**
+ * This route proxies document detail by id via dynamic segment /documents/[id].
+ * Original behavior: call BE_BASE/api/documents/{id} with Authorization.
+ */
+async function handleGET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
   const { id } = await params;
 
-  if (USE_MOCK) {
-    const { getDocumentById } = await import("@/mock/business-admin-documents");
-    const doc = getDocumentById(id);
-    if (!doc) {
-      return json({ error: "Document not found" }, 404, { "x-mode": "mock" });
-    }
-    return json({ data: doc }, 200, { "x-mode": "mock" });
-  }
+  const authHeader = await getAuthHeader();
 
-  try {
-    const { upstream } = await forward(`/api/documents/${id}`);
-    const raw = await upstream.json().catch(() => ({}));
-    return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
-  } catch (e: any) {
-    return json({ message: "Document fetch failed", error: String(e) }, 502);
-  }
-}
+  const fh = new Headers({ "Content-Type": "application/json" });
+  if (authHeader) fh.set("Authorization", authHeader);
 
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const { id } = await params;
-
-  if (USE_MOCK) {
-    const { deleteDocument } = await import("@/mock/business-admin-documents");
-    const success = deleteDocument(id);
-    if (!success) {
-      return json({ error: "Document not found" }, 404, { "x-mode": "mock" });
-    }
-    return json({ message: "Document deleted successfully" }, 200, { "x-mode": "mock" });
-  }
-
-  try {
-    const { upstream } = await forwardDelete(`/api/documents/${id}`);
-    const raw = await upstream.json().catch(() => ({}));
-    return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
-  } catch (e: any) {
-    return json({ message: "Document deletion failed", error: String(e) }, 502);
-  }
-}
-
-// ---------- Helpers ----------
-async function forward(path: string) {
-  const h = headers();
-  const cookieStore = cookies();
-  const headerAuth = (await h).get("authorization") || "";
-  const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
-  const effectiveAuth = headerAuth || cookieAuth;
-
-  const upstreamUrl = beBase() + path;
-  const passHeaders: Record<string, string> = {
-    ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
-  };
-
-  const cookieHeader = (await h).get("cookie");
-  if (cookieHeader) passHeaders["cookie"] = cookieHeader;
-
-  const upstream = await fetch(upstreamUrl, {
-    headers: passHeaders,
+  const upstream = await fetch(`${BE_BASE}/api/documents/${id}`, {
+    method: "GET",
+    headers: fh,
     cache: "no-store",
   });
 
-  return { upstream, status: upstream.status, headers: upstream.headers };
+  const text = await upstream.text();
+  if (!upstream.ok) {
+    return Response.json(
+      { error: parseError(text, "Request failed") },
+      { status: upstream.status },
+    );
+  }
+
+  try {
+    const response = JSON.parse(text);
+    return Response.json(response);
+  } catch {
+    return Response.json(
+      { error: "Failed to process response" },
+      { status: 500 },
+    );
+  }
 }
 
-async function forwardDelete(path: string) {
-  const h = headers();
-  const cookieStore = cookies();
-  const headerAuth = (await h).get("authorization") || "";
-  const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
-  const effectiveAuth = headerAuth || cookieAuth;
-
-  const upstreamUrl = beBase() + path;
-  const passHeaders: Record<string, string> = {
-    ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
-  };
-
-  const cookieHeader = (await h).get("cookie");
-  if (cookieHeader) passHeaders["cookie"] = cookieHeader;
-
-  const upstream = await fetch(upstreamUrl, {
-    method: "DELETE",
-    headers: passHeaders,
-    cache: "no-store",
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/documents/[id]/route.ts/GET",
   });
-
-  return { upstream, status: upstream.status, headers: upstream.headers };
-}
-
-function json(
-  data: any,
-  status = 200,
-  extraHeaders: Record<string, string> = {},
-) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "content-type": "application/json", ...extraHeaders },
-  });
-}
-

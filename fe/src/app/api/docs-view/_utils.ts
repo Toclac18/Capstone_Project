@@ -2,9 +2,10 @@
 import { headers } from "next/headers";
 
 import { getAuthHeader } from "@/server/auth";
+import { jsonResponse } from "@/server/response";
 
 export function json(data: any, status = 200) {
-  return new Response(JSON.stringify(data), {
+  return jsonResponse(data, {
     status,
     headers: { "content-type": "application/json" },
   });

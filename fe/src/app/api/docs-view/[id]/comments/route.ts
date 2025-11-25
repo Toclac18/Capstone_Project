@@ -3,7 +3,7 @@ import { mockAddComment, mockGetDocDetail } from "@/mock/docsDetailMock";
 import { buildForwardHeaders } from "../../_utils";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
-import { badRequest } from "@/server/response";
+import { badRequest, proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handleGET(
   _req: Request,
@@ -15,13 +15,16 @@ async function handleGET(
   if (USE_MOCK) {
     const data = mockGetDocDetail(id);
     if (!data) return badRequest("Not found", 404);
-    return new Response(JSON.stringify({ comments: data.comments }), {
-      status: 200,
-      headers: {
-        "content-type": "application/json",
-        "x-mode": "mock",
+    return jsonResponse(
+      { comments: data.comments },
+      {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+          "x-mode": "mock",
+        },
       },
-    });
+    );
   }
 
   const fh = await buildForwardHeaders();
@@ -32,15 +35,7 @@ async function handleGET(
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 async function handlePOST(
@@ -64,13 +59,16 @@ async function handlePOST(
     const comment = mockAddComment(id, content, author);
     if (!comment) return badRequest("Not found", 404);
 
-    return new Response(JSON.stringify({ comment }), {
-      status: 200,
-      headers: {
-        "content-type": "application/json",
-        "x-mode": "mock",
+    return jsonResponse(
+      { comment },
+      {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+          "x-mode": "mock",
+        },
       },
-    });
+    );
   }
 
   const fh = await buildForwardHeaders();
@@ -83,15 +81,7 @@ async function handlePOST(
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 export const GET = (...args: Parameters<typeof handleGET>) =>

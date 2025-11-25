@@ -3,6 +3,7 @@ import { mockOrganizationAdminDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 // Helper function to create forward headers
 async function createForwardHeaders(): Promise<Headers> {
@@ -39,21 +40,13 @@ async function forwardRequest(
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 async function handleGET() {
   if (USE_MOCK) {
     const orgInfo = mockOrganizationAdminDB.get();
-    return new Response(JSON.stringify(orgInfo), {
+    return jsonResponse(orgInfo, {
       status: 200,
       headers: {
         "content-type": "application/json",
@@ -97,7 +90,7 @@ async function handlePUT(request: Request) {
     }
 
     const updated = mockOrganizationAdminDB.update(body);
-    return new Response(JSON.stringify(updated), {
+    return jsonResponse(updated, {
       status: 200,
       headers: {
         "content-type": "application/json",
@@ -130,10 +123,13 @@ async function handlePUT(request: Request) {
       body = JSON.stringify(jsonBody);
       fh.set("Content-Type", "application/json");
     } catch {
-      return new Response(JSON.stringify({ error: "Invalid request body" }), {
-        status: 400,
-        headers: { "content-type": "application/json" },
-      });
+      return jsonResponse(
+        { error: "Invalid request body" },
+        {
+          status: 400,
+          headers: { "content-type": "application/json" },
+        },
+      );
     }
   }
 

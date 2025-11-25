@@ -2,6 +2,7 @@ import { mockLibraryDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -32,7 +33,7 @@ async function handleGET(request: Request) {
       page,
       limit,
     });
-    return new Response(JSON.stringify(result), {
+    return jsonResponse(result, {
       status: 200,
       headers: {
         "content-type": "application/json",
@@ -66,15 +67,7 @@ async function handleGET(request: Request) {
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 export const GET = (...args: Parameters<typeof handleGET>) =>

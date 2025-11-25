@@ -168,6 +168,11 @@ public class AuthServiceImpl implements AuthService {
     User user = userRepository.findByEmail(request.getEmail())
         .orElseThrow(() -> ResourceNotFoundException.userByEmail(request.getEmail()));
 
+    //Check role
+    if (!user.getRole().equals(request.getRole())) {
+      throw UnauthorizedException.invalidCredentials();
+    }
+
     // Check if email is verified
     if (user.getStatus() == UserStatus.PENDING_EMAIL_VERIFY) {
       throw UnauthorizedException.emailNotVerified();

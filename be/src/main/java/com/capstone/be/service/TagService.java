@@ -1,9 +1,7 @@
 package com.capstone.be.service;
 
 import com.capstone.be.domain.entity.Tag;
-import com.capstone.be.domain.enums.TagStatus;
 import java.util.List;
-import java.util.Set;
 
 public interface TagService {
 
@@ -14,5 +12,19 @@ public interface TagService {
   * @return list Of Added Tags (with PENDING status)
    * **/
   List<Tag> addUserTag(String string);
+
+  /**
+   * Get all active tags
+   *
+   * @return List of active tags
+   */
+  List<Tag> getActiveTags();
+
+  /**
+   * Get all tags (including pending)
+   *
+   * @return List of all tags
+   */
+  List<Tag> getAllTags();
 
 }

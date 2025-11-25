@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/policies")
+@RequestMapping("/policies")
 @RequiredArgsConstructor
 public class PolicyController {
 

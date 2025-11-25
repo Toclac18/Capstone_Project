@@ -1,5 +1,4 @@
 // app/api/policies/route.ts
-import { headers, cookies } from "next/headers";
 import { NextRequest } from "next/server";
 import {
   getAllPolicies,
@@ -10,17 +9,12 @@ import type {
   PolicyType,
   UpdatePolicyRequest,
 } from "@/types/policy";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { jsonResponse, proxyJsonResponse } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
-function beBase() {
-  return (
-    process.env.BE_BASE_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    "http://localhost:8080"
-  );
-}
-
-export async function GET(req: NextRequest) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
+async function handleGET(req: NextRequest): Promise<Response> {
   const url = new URL(req.url);
   const type = url.searchParams.get("type") as PolicyType | null;
   const active = url.searchParams.get("active") === "true";
@@ -30,19 +24,37 @@ export async function GET(req: NextRequest) {
     if (USE_MOCK) {
       const policy = getActivePolicyByType(type);
       if (!policy) {
-        return json({ error: "Policy not found" }, 404, { "x-mode": "mock" });
+        return jsonResponse({ error: "Policy not found" }, {
+          status: 404,
+          mode: "mock",
+        });
       }
-      return json({ data: policy }, 200, { "x-mode": "mock" });
+      return jsonResponse({ data: policy }, { status: 200, mode: "mock" });
     }
 
     try {
-      const { upstream } = await forward(`/api/policies?type=${type}&active=true`);
+      const authHeader = await getAuthHeader();
+      const fh = new Headers({ "Content-Type": "application/json" });
+      if (authHeader) fh.set("Authorization", authHeader);
+
+      const upstream = await fetch(
+        `${BE_BASE}/api/policies?type=${type}&active=true`,
+        {
+          method: "GET",
+          headers: fh,
+          cache: "no-store",
+        }
+      );
+
       const raw = await upstream.json().catch(() => ({}));
-      return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
+      return jsonResponse(raw?.data ?? raw, {
+        status: upstream.status,
+        mode: "real",
+      });
     } catch (e: any) {
-      return json(
+      return jsonResponse(
         { message: "Policy fetch failed", error: String(e) },
-        502
+        { status: 502 }
       );
     }
   }
@@ -51,38 +63,100 @@ export async function GET(req: NextRequest) {
   if (USE_MOCK) {
     try {
       const policies = getAllPolicies();
-      return json({ data: policies }, 200, { "x-mode": "mock" });
+      return jsonResponse({ data: policies }, { status: 200, mode: "mock" });
     } catch (e: any) {
       console.error("[MOCK] Error in policies GET:", e);
-      return json(
+      return jsonResponse(
         { error: "Failed to fetch policies", message: String(e) },
-        500,
-        { "x-mode": "mock" }
+        { status: 500, mode: "mock" }
       );
     }
   }
 
   try {
-    const { upstream } = await forward("/api/policies");
+    const authHeader = await getAuthHeader();
+    const fh = new Headers({ "Content-Type": "application/json" });
+    if (authHeader) fh.set("Authorization", authHeader);
+
+    const upstream = await fetch(`${BE_BASE}/api/policies`, {
+      method: "GET",
+      headers: fh,
+      cache: "no-store",
+    });
+
+    if (!upstream.ok) {
+      let errorData: any = {};
+      try {
+        const text = await upstream.text();
+        errorData = text ? JSON.parse(text) : {};
+      } catch {
+        // Ignore parse errors
+      }
+      return jsonResponse(
+        errorData?.data ?? errorData ?? { message: "Failed to fetch policies" },
+        {
+          status: upstream.status,
+          mode: "real",
+        }
+      );
+    }
+
     const raw = await upstream.json().catch(() => ({}));
-    return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
+    
+    // Backend returns ApiResponse<List<PolicyResponse>> via ResponseWrapperAdvice
+    // Structure: { success: true, data: [...], timestamp: "..." }
+    // Unwrap to get the actual policies array
+    let policies: any[] = [];
+    
+    // Handle different response structures
+    if (raw?.data) {
+      if (Array.isArray(raw.data)) {
+        // Direct array: { data: [...] }
+        policies = raw.data;
+      } else if (raw.data?.data && Array.isArray(raw.data.data)) {
+        // Nested: { data: { data: [...] } }
+        policies = raw.data.data;
+      } else if (raw.data?.success && Array.isArray(raw.data.data)) {
+        // ApiResponse format: { data: { success: true, data: [...] } }
+        policies = raw.data.data;
+      }
+    } else if (Array.isArray(raw)) {
+      // Already an array
+      policies = raw;
+    }
+    
+    // Return in format that service expects: { data: [...] }
+    // Service will check res.data.data and return that
+    return jsonResponse({ data: policies }, {
+      status: upstream.status,
+      mode: "real",
+    });
   } catch (e: any) {
-    return json({ message: "Policies fetch failed", error: String(e) }, 502);
+    return jsonResponse(
+      { message: "Policies fetch failed", error: String(e) },
+      { status: 502 }
+    );
   }
 }
 
-export async function PATCH(req: NextRequest) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/policies/route.ts/GET",
+  });
+
+async function handlePATCH(req: NextRequest): Promise<Response> {
   const url = new URL(req.url);
   const type = url.searchParams.get("type") as PolicyType | null;
   const body = await req.json().catch(() => null);
 
   if (!body) {
-    return json({ error: "Invalid JSON" }, 400);
+    return jsonResponse({ error: "Invalid JSON" }, { status: 400 });
   }
 
   if (!type) {
-    return json({ error: "Type parameter is required" }, 400);
+    return jsonResponse({ error: "Type parameter is required" }, {
+      status: 400,
+    });
   }
 
   if (USE_MOCK) {
@@ -90,98 +164,42 @@ export async function PATCH(req: NextRequest) {
     const policy = updatePolicyByType(type, data);
 
     if (!policy) {
-      return json({ error: "Policy not found" }, 404, { "x-mode": "mock" });
+      return jsonResponse({ error: "Policy not found" }, {
+        status: 404,
+        mode: "mock",
+      });
     }
 
-    return json({ data: policy }, 200, { "x-mode": "mock" });
+    return jsonResponse({ data: policy }, { status: 200, mode: "mock" });
   }
 
   try {
-    const { upstream } = await forwardJson(`/api/policies?type=${type}`, body, "PATCH");
+    const authHeader = await getAuthHeader();
+    const fh = new Headers({ "Content-Type": "application/json" });
+    if (authHeader) fh.set("Authorization", authHeader);
+
+    const upstream = await fetch(`${BE_BASE}/api/policies?type=${type}`, {
+      method: "PATCH",
+      headers: fh,
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+
     const raw = await upstream.json().catch(() => ({}));
-    return json(raw?.data ?? raw, upstream.status, { "x-mode": "real" });
+    return jsonResponse(raw?.data ?? raw, {
+      status: upstream.status,
+      mode: "real",
+    });
   } catch (e: any) {
-    return json(
+    return jsonResponse(
       { message: "Policy update failed", error: String(e) },
-      502
+      { status: 502 }
     );
   }
 }
 
-// ---------- Helpers ----------
-async function forward(path: string) {
-  const h = await headers();
-  const cookieStore = await cookies();
-  const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
-  
-  // Get token from cookie and convert to Bearer format
-  const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
-  
-  // Also check if Authorization header is already present
-  const headerAuth = h.get("authorization") || "";
-
-  const upstreamUrl = beBase() + path;
-  const passHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-  
-  // Use Bearer token from cookie or existing Authorization header
-  if (bearerToken) {
-    passHeaders["Authorization"] = bearerToken;
-  } else if (headerAuth) {
-    passHeaders["Authorization"] = headerAuth;
-  }
-
-  const upstream = await fetch(upstreamUrl, {
-    headers: passHeaders,
-    cache: "no-store",
+export const PATCH = (...args: Parameters<typeof handlePATCH>) =>
+  withErrorBoundary(() => handlePATCH(...args), {
+    context: "api/policies/route.ts/PATCH",
   });
 
-  return { upstream, status: upstream.status, headers: upstream.headers };
-}
-
-async function forwardJson(path: string, body: any, method: "PATCH" | "PUT" = "PATCH") {
-  const h = await headers();
-  const cookieStore = await cookies();
-  const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
-  
-  // Get token from cookie and convert to Bearer format
-  const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
-  
-  // Also check if Authorization header is already present
-  const headerAuth = h.get("authorization") || "";
-
-  const upstreamUrl = beBase() + path;
-  const passHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-  
-  // Use Bearer token from cookie or existing Authorization header
-  if (bearerToken) {
-    passHeaders["Authorization"] = bearerToken;
-  } else if (headerAuth) {
-    passHeaders["Authorization"] = headerAuth;
-  }
-
-  const upstream = await fetch(upstreamUrl, {
-    method,
-    headers: passHeaders,
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
-
-  return { upstream, status: upstream.status, headers: upstream.headers };
-}
-
-function json(
-  data: any,
-  status = 200,
-  extraHeaders: Record<string, string> = {},
-) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "content-type": "application/json", ...extraHeaders },
-  });
-}

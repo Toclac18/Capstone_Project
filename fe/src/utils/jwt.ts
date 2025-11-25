@@ -1,7 +1,6 @@
 // src/common/jwt.ts
 
 export type JwtPayload = {
-  // standard claims
   iss?: string;
   sub?: string;
   iat?: number;
@@ -13,7 +12,7 @@ export type JwtPayload = {
 };
 
 /**
- * Strip "Bearer " prefix nếu có
+ * Strip "Bearer " prefix
  */
 function stripBearer(raw: string): string {
   const trimmed = raw.trim();
@@ -24,15 +23,19 @@ function stripBearer(raw: string): string {
 }
 
 /**
- * Decode phần payload của JWT (không verify signature).
- * Decode được trên client (browser) vì dùng atob().
+ * Decode phần payload của JWT (không verify signature -> chỉ thực hiện trên spring).
+ *
+ * Lưu ý:
+ * - Chỉ dùng ở FE / BFF để hiển thị UI (ví dụ: sidebar theo role, lấy readerId…)
+ * - Không dùng để quyết định quyền truy cập backend.
+ * - Việc verify chữ ký + exp vẫn do Spring Security xử lý.
+ *
+ * Chạy cả:
+ * - Server-side (Next API route / server component)
+ * - Client-side (browser)
  */
 export function decodeJwtPayload(token: string): JwtPayload | null {
   if (!token) return null;
-
-  if (typeof window === "undefined") {
-    return null;
-  }
 
   try {
     const stripped = stripBearer(token);
@@ -44,9 +47,17 @@ export function decodeJwtPayload(token: string): JwtPayload | null {
     const base64 = payloadSeg.replace(/-/g, "+").replace(/_/g, "/");
     const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
 
-    const json = window.atob(padded);
-    const obj = JSON.parse(json);
+    let json: string;
 
+    if (typeof window === "undefined") {
+      // Server-side (Node.js) trên Next.js
+      json = Buffer.from(padded, "base64").toString("utf8");
+    } else {
+      // Browser
+      json = window.atob(padded);
+    }
+
+    const obj = JSON.parse(json);
     return obj as JwtPayload;
   } catch {
     return null;
@@ -55,8 +66,8 @@ export function decodeJwtPayload(token: string): JwtPayload | null {
 
 /**
  * Lấy readerId từ payload:
- * - ưu tiên "sub" vì BE setSubject(String.valueOf(readerId))
- * - giữ backward-compat cho readerId / reader_id
+ * - ưu tiên "sub" vì BE setSubject(userId.toString())
+ * - giữ backward-compat cho readerId / reader_id nếu sau này cần
  */
 export function extractReaderId(payload: JwtPayload | null): string | null {
   if (!payload) return null;
@@ -80,7 +91,7 @@ export function extractRole(payload: JwtPayload | null): string | null {
   return (payload.role as string | undefined) ?? null;
 }
 
-/** Lấy orgId từ JWT **/
+/** Lấy orgId từ JWT (nếu BE có claim) **/
 export function extractOrgId(payload: JwtPayload | null): string | null {
   if (!payload) return null;
   return (payload.orgId as string | undefined) ?? null;

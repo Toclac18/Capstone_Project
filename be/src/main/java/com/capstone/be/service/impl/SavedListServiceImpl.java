@@ -6,6 +6,7 @@ import com.capstone.be.domain.entity.SavedList;
 import com.capstone.be.domain.entity.SavedListDocument;
 import com.capstone.be.dto.request.savedlist.AddDocumentToSavedListRequest;
 import com.capstone.be.dto.request.savedlist.CreateSavedListRequest;
+import com.capstone.be.dto.request.savedlist.UpdateSavedListRequest;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
 import com.capstone.be.dto.response.savedlist.SavedListDetailResponse;
 import com.capstone.be.dto.response.savedlist.SavedListResponse;
@@ -173,6 +174,32 @@ public class SavedListServiceImpl implements SavedListService {
         .orElseThrow(() -> new ResourceNotFoundException("SavedList", savedListId));
 
     return savedListMapper.toResponse(refreshedList);
+  }
+
+  @Override
+  @Transactional
+  public SavedListResponse updateSavedList(UUID savedListId, UUID readerId,
+      UpdateSavedListRequest request) {
+    log.debug("Updating SavedList: {} for reader: {}", savedListId, readerId);
+
+    // Verify reader exists
+    ReaderProfile reader = readerProfileRepository.findByUserId(readerId)
+        .orElseThrow(() -> new ResourceNotFoundException("ReaderProfile", "userId", readerId));
+
+    // Get SavedList and verify ownership
+    SavedList savedList = savedListRepository.findById(savedListId)
+        .orElseThrow(() -> new ResourceNotFoundException("SavedList", savedListId));
+
+    if (!savedList.getReader().getId().equals(reader.getId())) {
+      throw new ForbiddenException("You don't have permission to modify this SavedList");
+    }
+
+    // Update name
+    savedList.setName(request.getName());
+    savedList = savedListRepository.save(savedList);
+    log.info("Updated SavedList: {} with new name: {}", savedListId, request.getName());
+
+    return savedListMapper.toResponse(savedList);
   }
 
   @Override

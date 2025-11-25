@@ -2,6 +2,7 @@ package com.capstone.be.controller;
 
 import com.capstone.be.dto.request.savedlist.AddDocumentToSavedListRequest;
 import com.capstone.be.dto.request.savedlist.CreateSavedListRequest;
+import com.capstone.be.dto.request.savedlist.UpdateSavedListRequest;
 import com.capstone.be.dto.response.savedlist.SavedListDetailResponse;
 import com.capstone.be.dto.response.savedlist.SavedListResponse;
 import com.capstone.be.security.model.UserPrincipal;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -114,6 +116,29 @@ public class SavedListController {
     log.info("User {} adding document {} to SavedList {}", readerId, request.getDocumentId(), id);
 
     SavedListResponse savedList = savedListService.addDocumentToSavedList(id, readerId, request);
+
+    return ResponseEntity.ok(savedList);
+  }
+
+  /**
+   * Update SavedList name
+   * PUT /api/save-lists/{id}
+   *
+   * @param userPrincipal Authenticated user
+   * @param id            SavedList ID
+   * @param request       UpdateSavedListRequest
+   * @return SavedListResponse
+   */
+  @PutMapping("/{id}")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
+  public ResponseEntity<SavedListResponse> updateSavedList(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "id") UUID id,
+      @Valid @RequestBody UpdateSavedListRequest request) {
+    UUID readerId = userPrincipal.getId();
+    log.info("User {} updating SavedList {} with new name: {}", readerId, id, request.getName());
+
+    SavedListResponse savedList = savedListService.updateSavedList(id, readerId, request);
 
     return ResponseEntity.ok(savedList);
   }

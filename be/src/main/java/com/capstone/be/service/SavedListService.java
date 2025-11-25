@@ -2,6 +2,7 @@ package com.capstone.be.service;
 
 import com.capstone.be.dto.request.savedlist.AddDocumentToSavedListRequest;
 import com.capstone.be.dto.request.savedlist.CreateSavedListRequest;
+import com.capstone.be.dto.request.savedlist.UpdateSavedListRequest;
 import com.capstone.be.dto.response.savedlist.SavedListDetailResponse;
 import com.capstone.be.dto.response.savedlist.SavedListResponse;
 import java.util.List;
@@ -48,6 +49,17 @@ public interface SavedListService {
    */
   SavedListResponse addDocumentToSavedList(UUID savedListId, UUID readerId,
       AddDocumentToSavedListRequest request);
+
+  /**
+   * Update SavedList name
+   *
+   * @param savedListId SavedList ID
+   * @param readerId    Reader user ID (for authorization)
+   * @param request     UpdateSavedListRequest
+   * @return SavedListResponse
+   */
+  SavedListResponse updateSavedList(UUID savedListId, UUID readerId,
+      UpdateSavedListRequest request);
 
   /**
    * Remove a document from a SavedList

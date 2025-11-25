@@ -9,7 +9,7 @@ import {
   addDocToSaveList,
   createSaveListAndAddDoc,
   fetchSaveLists,
-} from "@/services/saveListService";
+} from "@/services/save-list.service";
 import { decodeJwtPayload, extractReaderId } from "@/utils/jwt";
 
 type SaveListModalProps = {

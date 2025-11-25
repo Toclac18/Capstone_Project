@@ -1,4 +1,4 @@
-import { mockSpecializationsDB } from "@/mock/dbMock";
+import { mockSpecializationsDB } from "@/mock/db.mock";
 import type {
   CreateSpecializationRequest,
   SpecializationQueryParams,

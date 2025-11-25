@@ -4,7 +4,7 @@ import { getAuthHeader } from "@/server/auth";
 import {
   mockCreateSaveListAndAddDoc,
   mockFetchSaveLists,
-} from "@/mock/saveListMock";
+} from "@/mock/save-list.mock";
 
 // Cấu trúc giống contact-admin/route.ts
 const DEFAULT_BE_BASE = "http://localhost:8081";

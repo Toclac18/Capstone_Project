@@ -7,7 +7,7 @@ import {
   type RegisterReviewerPayload,
   type RegisterOrgAdminPayload,
   type RegisterResponse,
-} from "@/services/authService";
+} from "@/services/auth.service";
 
 export type {
   RegisterReaderPayload,
@@ -17,21 +17,21 @@ export type {
 };
 
 export async function registerReader(
-  payload: RegisterReaderPayload
+  payload: RegisterReaderPayload,
 ): Promise<RegisterResponse> {
   return registerReaderService(payload);
 }
 
 export async function registerReviewer(
   payload: RegisterReviewerPayload,
-  files?: File[]
+  files?: File[],
 ): Promise<RegisterResponse> {
   return registerReviewerService(payload, files);
 }
 
 export async function registerOrgAdmin(
   payload: RegisterOrgAdminPayload,
-  files?: File[]
+  files?: File[],
 ): Promise<RegisterResponse> {
   return registerOrganizationService(payload, files);
 }

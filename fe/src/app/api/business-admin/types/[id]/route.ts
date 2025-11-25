@@ -1,4 +1,4 @@
-import { mockTypesDB } from "@/mock/dbMock";
+import { mockTypesDB } from "@/mock/db.mock";
 import type { UpdateTypeRequest } from "@/types/document-type";
 import { USE_MOCK, BE_BASE } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";

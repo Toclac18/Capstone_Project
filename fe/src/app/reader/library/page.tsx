@@ -16,7 +16,10 @@ import EditDocumentModal, {
   type UpdateDocumentData,
 } from "./_components/EditDocumentModal";
 import DeleteDocumentModal from "./_components/DeleteDocumentModal";
-import { getDocumentTypes, getDomains } from "@/services/uploadDocuments";
+import {
+  getDocumentTypes,
+  getDomains,
+} from "@/services/upload-documents.service";
 import styles from "./styles.module.css";
 import {
   AlertCircle,
@@ -47,40 +50,44 @@ export default function LibraryPage() {
   });
   const [allDocumentTypes, setAllDocumentTypes] = useState<string[]>([]);
   const [allDomains, setAllDomains] = useState<string[]>([]);
-  const [selectedDocument, setSelectedDocument] = useState<LibraryDocument | null>(null);
+  const [selectedDocument, setSelectedDocument] =
+    useState<LibraryDocument | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const fetchData = useCallback(async (params: LibraryQueryParams) => {
-    setState("loading");
-    setError(null);
-    try {
-      const result = await fetchLibrary({
-        ...params,
-        page: params.page || 1,
-        limit: params.limit || ITEMS_PER_PAGE,
-      });
-      setDocuments(result.documents);
-      setTotal(result.total);
-      const limit = params.limit || ITEMS_PER_PAGE;
-      setTotalPages(result.total > 0 ? Math.ceil(result.total / limit) : 1);
-      setCurrentPage(params.page || 1);
-      setState(result.documents.length ? "success" : "empty");
-    } catch (e: unknown) {
-      const msg =
-        e instanceof Error
-          ? e.message
-          : "Unable to load your library. Please try again later.";
-      setError(msg);
-      setState("error");
-      showToast({
-        type: "error",
-        title: "Error",
-        message: msg,
-        duration: 5000,
-      });
-    }
-  }, [showToast]);
+  const fetchData = useCallback(
+    async (params: LibraryQueryParams) => {
+      setState("loading");
+      setError(null);
+      try {
+        const result = await fetchLibrary({
+          ...params,
+          page: params.page || 1,
+          limit: params.limit || ITEMS_PER_PAGE,
+        });
+        setDocuments(result.documents);
+        setTotal(result.total);
+        const limit = params.limit || ITEMS_PER_PAGE;
+        setTotalPages(result.total > 0 ? Math.ceil(result.total / limit) : 1);
+        setCurrentPage(params.page || 1);
+        setState(result.documents.length ? "success" : "empty");
+      } catch (e: unknown) {
+        const msg =
+          e instanceof Error
+            ? e.message
+            : "Unable to load your library. Please try again later.";
+        setError(msg);
+        setState("error");
+        showToast({
+          type: "error",
+          title: "Error",
+          message: msg,
+          duration: 5000,
+        });
+      }
+    },
+    [showToast],
+  );
 
   useEffect(() => {
     const loadData = async () => {
@@ -183,14 +190,14 @@ export default function LibraryPage() {
     const documentId = selectedDocument.id;
     try {
       await deleteLibraryDocument(documentId);
-      
+
       // Refresh data first - ensure it completes
       await fetchData(filters);
-      
+
       // Then close modal and show success
       setShowDeleteModal(false);
       setSelectedDocument(null);
-      
+
       showToast({
         type: "success",
         title: "Success",
@@ -238,7 +245,9 @@ export default function LibraryPage() {
       {state === "error" && (
         <div className={styles["error-container"]}>
           <AlertCircle className={styles["error-icon"]} />
-          <p>{error || "Unable to load your library. Please try again later."}</p>
+          <p>
+            {error || "Unable to load your library. Please try again later."}
+          </p>
         </div>
       )}
 
@@ -246,7 +255,8 @@ export default function LibraryPage() {
         <div className={styles["empty-container"]}>
           <FileText className={styles["empty-icon"]} />
           <p className={styles["empty-text"]}>
-            Your library is empty. Start uploading or purchasing documents to see them here.
+            Your library is empty. Start uploading or purchasing documents to
+            see them here.
           </p>
         </div>
       )}
@@ -313,7 +323,9 @@ export default function LibraryPage() {
                     <div className={styles["metadata-item"]}>
                       <Calendar className={styles["metadata-icon"]} />
                       <div className={styles["metadata-content"]}>
-                        <span className={styles["metadata-label"]}>Upload Date</span>
+                        <span className={styles["metadata-label"]}>
+                          Upload Date
+                        </span>
                         <span className={styles["metadata-value"]}>
                           {formatDate(doc.uploadDate)}
                         </span>
@@ -323,20 +335,26 @@ export default function LibraryPage() {
                       <FileType className={styles["metadata-icon"]} />
                       <div className={styles["metadata-content"]}>
                         <span className={styles["metadata-label"]}>Type</span>
-                        <span className={styles["metadata-value"]}>{doc.type}</span>
+                        <span className={styles["metadata-value"]}>
+                          {doc.type}
+                        </span>
                       </div>
                     </div>
                     <div className={styles["metadata-item"]}>
                       <FolderOpen className={styles["metadata-icon"]} />
                       <div className={styles["metadata-content"]}>
                         <span className={styles["metadata-label"]}>Domain</span>
-                        <span className={styles["metadata-value"]}>{doc.domain}</span>
+                        <span className={styles["metadata-value"]}>
+                          {doc.domain}
+                        </span>
                       </div>
                     </div>
                     <div className={styles["metadata-item"]}>
                       <HardDrive className={styles["metadata-icon"]} />
                       <div className={styles["metadata-content"]}>
-                        <span className={styles["metadata-label"]}>File Size</span>
+                        <span className={styles["metadata-label"]}>
+                          File Size
+                        </span>
                         <span className={styles["metadata-value"]}>
                           {formatFileSize(doc.fileSize)}
                         </span>

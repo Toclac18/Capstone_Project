@@ -9,7 +9,10 @@ import {
   useTransition,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { fetchImports, ImportListResponse } from "@/services/orgAdmin-imports";
+import {
+  fetchImports,
+  ImportListResponse,
+} from "@/services/org-admin-imports.service";
 
 type Filters = { q: string; status: string; page: number; pageSize: number };
 

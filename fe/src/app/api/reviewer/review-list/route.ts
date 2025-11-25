@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { getReviewDocuments } from "@/mock/reviewListMock";
+import { getReviewDocuments } from "@/mock/review-list.mock";
 import { getAuthHeader } from "@/server/auth";
 
 const DEFAULT_BE_BASE = "http://localhost:8080";
@@ -43,7 +43,8 @@ export async function GET(request: Request) {
   const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
   const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
 
-  const authHeader = (await getAuthHeader("api/reviewer/review-list/route.ts")) || bearerToken;
+  const authHeader =
+    (await getAuthHeader("api/reviewer/review-list/route.ts")) || bearerToken;
 
   const fh = new Headers();
   if (authHeader) {

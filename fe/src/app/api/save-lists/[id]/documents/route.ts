@@ -1,6 +1,6 @@
 // src/app/api/save-lists/[id]/documents/route.ts
 import { headers } from "next/headers";
-import { mockAddDocToSaveList } from "@/mock/saveListMock";
+import { mockAddDocToSaveList } from "@/mock/save-list.mock";
 import { getAuthHeader } from "@/server/auth";
 
 const DEFAULT_BE_BASE = "http://localhost:8081";
@@ -60,7 +60,8 @@ export async function POST(
 
   // ---- REAL MODE ----
   const h = await headers();
-  const jwtAuth = (await getAuthHeader("api/save-lists/[id]/documents/route.ts")) || "";
+  const jwtAuth =
+    (await getAuthHeader("api/save-lists/[id]/documents/route.ts")) || "";
   const authHeader = jwtAuth || h.get("authorization") || "";
   const cookieHeader = h.get("cookie") || "";
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();

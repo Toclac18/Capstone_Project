@@ -16,7 +16,10 @@ import {
   type RegisterOrgAdminPayload,
 } from "../api";
 import styles from "../styles.module.css";
-import { getDomains, getSpecializations } from "@/services/uploadDocuments";
+import {
+  getDomains,
+  getSpecializations,
+} from "@/services/upload-documents.service";
 import {
   validateField as validateFieldHelper,
   getFieldsToValidate,

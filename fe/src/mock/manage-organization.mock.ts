@@ -1,4 +1,4 @@
-import { mockOrganizationAdminDB } from "./dbMock";
+import { mockOrganizationAdminDB } from "./db.mock";
 
 /**
  * Mock API for manage-organization domain.

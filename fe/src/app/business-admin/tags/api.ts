@@ -5,7 +5,7 @@ export {
   updateTag,
   deleteTag,
   approveTag,
-} from "@/services/manageTagService";
+} from "@/services/manage-tag.service";
 
 export type {
   Tag,
@@ -15,4 +15,3 @@ export type {
   UpdateTagRequest,
   TagStatus,
 } from "@/types/document-tag";
-

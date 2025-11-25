@@ -1,6 +1,6 @@
 // app/api/profile/get/route.ts
 import { cookies } from "next/headers";
-import { mockProfileDB } from "@/mock/dbMock";
+import { mockProfileDB } from "@/mock/db.mock";
 import { BE_BASE, COOKIE_NAME, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";

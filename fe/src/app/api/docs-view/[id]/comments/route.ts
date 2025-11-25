@@ -1,5 +1,5 @@
 // src/app/api/docs-view/[id]/comments/route.ts
-import { mockAddComment, mockGetDocDetail } from "@/mock/docsDetailMock";
+import { mockAddComment, mockGetDocDetail } from "@/mock/docs-detail.mock";
 import { buildForwardHeaders } from "../../_utils";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";

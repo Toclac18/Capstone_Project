@@ -2,44 +2,45 @@ import { apiClient } from "./http";
 
 // ============ Types ============
 export type RegisterReaderPayload = {
-  fullName: string;
-  dateOfBirth: string;
-  username: string;
   email: string;
   password: string;
+  fullName: string;
+  dateOfBirth: string; // Format: YYYY-MM-DD
 };
 
 export type RegisterReviewerPayload = RegisterReaderPayload & {
-  educationLevel: string;
-  domains: string[];
-  specializations: string[];
-  referenceOrgName: string;
-  referenceOrgEmail: string;
-};
-
-export type RegisterOrgAdminPayload = RegisterReaderPayload & {
+  orcid?: string; // Optional
+  educationLevel: "COLLEGE" | "UNIVERSITY" | "MASTER" | "DOCTORATE";
   organizationName: string;
-  organizationType: string;
-  registrationNumber: string;
   organizationEmail: string;
+  domainIds: string[]; // UUIDs, 1-3 domains
+  specializationIds: string[]; // UUIDs, 1-5 specializations
 };
 
-export type RegisterResponse = {
-  id: number;
-  username: string;
+export type RegisterOrgAdminPayload = {
+  adminEmail: string;
+  password: string;
+  adminFullName: string;
+  organizationName: string;
+  organizationType: "SCHOOL" | "COLLEGE" | "UNIVERSITY" | "TRAINING_CENTER";
+  organizationEmail: string;
+  hotline: string;
+  address: string;
+  registrationNumber: string;
+};
+
+export type AuthResponse = {
+  userId: string; // UUID
   email: string;
-  message: string;
-};
-
-export type LoginResponse = {
-  accessToken: string;
-  tokenType: string;
-  expiresIn: number;
-  subjectId: string;
+  fullName: string;
   role: string;
-  email: string;
-  displayName: string;
+  status: string;
+  accessToken: string | null; // null until email verified
+  tokenType?: string;
 };
+
+export type RegisterResponse = AuthResponse;
+
 
 // ============ Reader Registration ============
 export async function registerReader(
@@ -55,33 +56,31 @@ export async function registerReader(
 // ============ Reviewer Registration ============
 export async function registerReviewer(
   payload: RegisterReviewerPayload,
-  files?: File[]
-): Promise<RegisterResponse> {
+  credentialFiles: File[]
+): Promise<AuthResponse> {
   const formData = new FormData();
   
-  // Add info as JSON blob
-  const info = {
-    fullName: payload.fullName,
-    dateOfBirth: payload.dateOfBirth,
-    username: payload.username,
+  // Add data as JSON blob (backend expects @RequestPart("data"))
+  const data = {
     email: payload.email,
     password: payload.password,
+    fullName: payload.fullName,
+    dateOfBirth: payload.dateOfBirth,
+    orcid: payload.orcid || null,
     educationLevel: payload.educationLevel,
-    domains: payload.domains,
-    specializations: payload.specializations,
-    referenceOrgName: payload.referenceOrgName,
-    referenceOrgEmail: payload.referenceOrgEmail,
+    organizationName: payload.organizationName,
+    organizationEmail: payload.organizationEmail,
+    domainIds: payload.domainIds,
+    specializationIds: payload.specializationIds,
   };
-  formData.append("info", new Blob([JSON.stringify(info)], { type: "application/json" }));
+  formData.append("data", new Blob([JSON.stringify(data)], { type: "application/json" }));
   
-  // Add files (required for reviewer)
-  if (files && files.length > 0) {
-    files.forEach((file) => {
-      formData.append("backgroundUploads", file);
-    });
-  }
+  // Add credential files (backend expects @RequestPart("credentialFiles"))
+  credentialFiles.forEach((file) => {
+    formData.append("credentialFiles", file);
+  });
 
-  const res = await apiClient.post<RegisterResponse>(
+  const res = await apiClient.post<AuthResponse>(
     "/auth/register/reviewer",
     formData,
     {
@@ -96,32 +95,30 @@ export async function registerReviewer(
 // ============ Organization Registration ============
 export async function registerOrganization(
   payload: RegisterOrgAdminPayload,
-  files?: File[]
-): Promise<RegisterResponse> {
+  logoFile?: File
+): Promise<AuthResponse> {
   const formData = new FormData();
   
-  // Add info as JSON blob
-  const info = {
-    fullName: payload.fullName,
-    dateOfBirth: payload.dateOfBirth,
-    username: payload.username,
-    email: payload.email,
+  // Add data as JSON blob (backend expects @RequestPart("data"))
+  const data = {
+    adminEmail: payload.adminEmail,
     password: payload.password,
+    adminFullName: payload.adminFullName,
     organizationName: payload.organizationName,
     organizationType: payload.organizationType,
-    registrationNumber: payload.registrationNumber,
     organizationEmail: payload.organizationEmail,
+    hotline: payload.hotline,
+    address: payload.address,
+    registrationNumber: payload.registrationNumber,
   };
-  formData.append("info", new Blob([JSON.stringify(info)], { type: "application/json" }));
+  formData.append("data", new Blob([JSON.stringify(data)], { type: "application/json" }));
   
-  // Add files (required for organization)
-  if (files && files.length > 0) {
-    files.forEach((file) => {
-      formData.append("certificateUploads", file);
-    });
+  // Add logo file (optional, backend expects @RequestPart(value = "logoFile", required = false))
+  if (logoFile) {
+    formData.append("logoFile", logoFile);
   }
 
-  const res = await apiClient.post<RegisterResponse>(
+  const res = await apiClient.post<AuthResponse>(
     "/auth/register/org-admin",
     formData,
     {
@@ -144,20 +141,27 @@ export type LoginPayload = {
 // Alias for backward compatibility
 export type LoginRequest = LoginPayload;
 
+export type LoginResponse = {
+  success: boolean;
+  role: string;
+  userId: string;
+  email: string;
+  fullName: string;
+  status: string;
+};
+
 export async function login(payload: LoginPayload): Promise<LoginResponse> {
   const res = await apiClient.post<LoginResponse>("/auth/login", payload);
   return res.data;
 }
 
 // ============ Verify Email ============
-export type VerifyEmailResponse = {
-  message: string;
-  success: boolean;
-};
+export type VerifyEmailResponse = AuthResponse;
 
 export async function verifyEmail(token: string): Promise<VerifyEmailResponse> {
-  const res = await apiClient.get<VerifyEmailResponse>(
-    `/auth/verify-email?token=${encodeURIComponent(token)}`
+  const res = await apiClient.post<VerifyEmailResponse>(
+    "/auth/verify-email",
+    { token }
   );
   return res.data;
 }
@@ -165,9 +169,35 @@ export async function verifyEmail(token: string): Promise<VerifyEmailResponse> {
 // ============ Logout ============
 export async function logout(): Promise<void> {
   await apiClient.post("/auth/logout");
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("userRole");
-  localStorage.removeItem("userId");
-  localStorage.removeItem("userEmail");
-  localStorage.removeItem("userName");
+}
+
+// ============ Forgot Password ============
+export type RequestPasswordResetPayload = {
+  email: string;
+};
+
+export type ResetPasswordPayload = {
+  email: string;
+  otp: string;
+  newPassword: string;
+};
+
+export async function requestPasswordReset(
+  payload: RequestPasswordResetPayload
+): Promise<{ message: string }> {
+  const res = await apiClient.post<{ message: string }>(
+    "/auth/request-password-reset",
+    payload
+  );
+  return res.data;
+}
+
+export async function resetPassword(
+  payload: ResetPasswordPayload
+): Promise<{ message: string }> {
+  const res = await apiClient.post<{ message: string }>(
+    "/auth/reset-password",
+    payload
+  );
+  return res.data;
 }

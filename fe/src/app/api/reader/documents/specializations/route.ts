@@ -1,8 +1,6 @@
-import { headers } from "next/headers";
 import { mockDocumentsDB } from "@/mock/dbMock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
-import { getAuthHeader } from "@/server/auth";
 
 async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -22,24 +20,14 @@ async function handleGET(request: Request) {
     });
   }
 
-  const h = await headers();
-  const jwtAuth =
-    (await getAuthHeader("api/reader/documents/specializations/route.ts")) ||
-    "";
-  const authHeader = jwtAuth || h.get("authorization") || "";
-  const cookieHeader = h.get("cookie") || "";
-
-  const fh = new Headers({ "Content-Type": "application/json" });
-  if (authHeader) fh.set("Authorization", authHeader);
-  if (cookieHeader) fh.set("Cookie", cookieHeader);
-
+  // Public endpoint - no auth required
   const url = domainIdsParam
     ? `${BE_BASE}/api/reader/documents/specializations?domainIds=${encodeURIComponent(domainIdsParam)}`
     : `${BE_BASE}/api/reader/documents/specializations`;
 
   const upstream = await fetch(url, {
     method: "GET",
-    headers: fh,
+    headers: { "Content-Type": "application/json" },
     cache: "no-store",
   });
 

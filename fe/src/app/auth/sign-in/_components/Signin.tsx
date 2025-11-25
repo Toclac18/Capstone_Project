@@ -56,20 +56,14 @@ export default function Signin() {
     try {
       const result: LoginResponse = await login(payload);
 
-      localStorage.setItem('accessToken', result.accessToken);
-      localStorage.setItem('userRole', result.role);
-      localStorage.setItem('userId', result.subjectId);
-      localStorage.setItem('userEmail', result.email);
-      localStorage.setItem('userName', result.displayName);
-
       showToast({ type: 'success', title: 'Login Successful' });
 
       // Redirect based on role
       const roleRoutes: Record<typeof data.role, string> = {
         READER: '/',
-        REVIEWER: '/reviewer/dashboard',
-        ORGANIZATION: '/organization/dashboard',
-        SYSTEM_ADMIN: '/admin/system/dashboard',
+        REVIEWER: '/reviewer',
+        ORGANIZATION: '/organization-admin',
+        SYSTEM_ADMIN: '/admin',
         BUSINESS_ADMIN: '/business-admin',
       };
 

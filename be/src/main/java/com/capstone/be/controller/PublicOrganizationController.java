@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/public/organizations")
+@RequestMapping("/public/organizations")
 @RequiredArgsConstructor
 public class PublicOrganizationController {
 

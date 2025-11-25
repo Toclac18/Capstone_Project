@@ -16,14 +16,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Controller for user-related operations (profile, password management, etc.)
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/user")
+@RequestMapping("/user")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -102,5 +104,17 @@ public class UserController {
     userService.verifyEmailChangeOtp(userId, request.getOtp());
 
     return ResponseEntity.ok("Email changed successfully. Please login again with your new email");
+  }
+
+  @PostMapping("/upload-avatar")
+  public ResponseEntity<Void> uploadAvatar(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @RequestPart("file") MultipartFile file) {
+    UUID userId = userPrincipal.getId();
+    log.info("Upload avatar for user: {}", userId);
+
+    userService.uploadAvatar(userId, file);
+
+    return ResponseEntity.noContent().build();
   }
 }

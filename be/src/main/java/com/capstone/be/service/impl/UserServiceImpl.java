@@ -1,5 +1,6 @@
 package com.capstone.be.service.impl;
 
+import com.capstone.be.config.constant.FileStorage;
 import com.capstone.be.domain.entity.EmailChangeRequest;
 import com.capstone.be.domain.entity.PasswordResetRequest;
 import com.capstone.be.domain.entity.User;
@@ -16,6 +17,7 @@ import com.capstone.be.dto.response.admin.AdminReviewerResponse;
 import com.capstone.be.exception.BusinessException;
 import com.capstone.be.exception.DuplicateResourceException;
 import com.capstone.be.exception.InvalidRequestException;
+import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.repository.EmailChangeRequestRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.PasswordResetRequestRepository;
@@ -24,6 +26,7 @@ import com.capstone.be.repository.ReviewerProfileRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.repository.specification.UserSpecification;
 import com.capstone.be.service.EmailService;
+import com.capstone.be.service.FileStorageService;
 import com.capstone.be.service.UserService;
 import com.capstone.be.util.OtpUtil;
 import java.time.LocalDateTime;
@@ -37,6 +40,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -48,9 +52,11 @@ public class UserServiceImpl implements UserService {
   private final ReaderProfileRepository readerProfileRepository;
   private final ReviewerProfileRepository reviewerProfileRepository;
   private final OrganizationProfileRepository organizationProfileRepository;
-  private final EmailService emailService;
   private final EmailChangeRequestRepository emailChangeRequestRepository;
   private final PasswordResetRequestRepository passwordResetRequestRepository;
+
+  private final EmailService emailService;
+  private final FileStorageService fileStorageService;
 
   @Override
   @Transactional
@@ -124,6 +130,36 @@ public class UserServiceImpl implements UserService {
     userRepository.save(user);
 
     log.info("Account deleted successfully for user: {}", userId);
+  }
+
+  @Override
+  @Transactional
+  public void uploadAvatar(UUID userId, MultipartFile file) {
+    log.info("Uploading avatar for user ID: {}", userId);
+
+    // Get user
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+    // Delete old avatar if exists
+    if (user.getAvatarKey() != null && !user.getAvatarKey().isEmpty()) {
+      try {
+        fileStorageService.deleteFile(
+            FileStorage.AVATAR_FOLDER, user.getAvatarKey());
+        log.info("Deleted old avatar for user ID: {}", userId);
+      } catch (Exception e) {
+        log.warn("Failed to delete old avatar, continuing with upload: {}", e.getMessage());
+      }
+    }
+
+    // Upload new avatar to S3
+    String avatarKey = fileStorageService.uploadFile(file, FileStorage.AVATAR_FOLDER, null);
+    user.setAvatarKey(avatarKey);
+
+    // Save user
+    userRepository.save(user);
+
+    log.info("Successfully uploaded avatar for user ID: {}", userId);
   }
 
   @Override
@@ -588,7 +624,7 @@ public class UserServiceImpl implements UserService {
             .userId(user.getId())
             .email(user.getEmail())
             .fullName(user.getFullName())
-            .avatarUrl(user.getAvatarUrl())
+            .avatarUrl(user.getAvatarKey())
 //            .point(user.getPoint())
             .status(user.getStatus())
             .createdAt(user.getCreatedAt())
@@ -608,7 +644,7 @@ public class UserServiceImpl implements UserService {
             .userId(user.getId())
             .email(user.getEmail())
             .fullName(user.getFullName())
-            .avatarUrl(user.getAvatarUrl())
+            .avatarUrl(user.getAvatarKey())
 //            .point(user.getPoint())
             .status(user.getStatus())
             .createdAt(user.getCreatedAt())
@@ -637,7 +673,7 @@ public class UserServiceImpl implements UserService {
             .userId(user.getId())
             .email(user.getEmail())
             .fullName(user.getFullName())
-            .avatarUrl(user.getAvatarUrl())
+            .avatarUrl(user.getAvatarKey())
 //            .point(user.getPoint())
             .status(user.getStatus())
             .createdAt(user.getCreatedAt())
@@ -649,7 +685,7 @@ public class UserServiceImpl implements UserService {
           .orgType(profile.getType() != null ? profile.getType().name() : null)
           .orgEmail(profile.getEmail())
           .orgHotline(profile.getHotline())
-          .orgLogo(profile.getLogo())
+          .orgLogo(profile.getLogoKey())
           .orgAddress(profile.getAddress())
           .orgRegistrationNumber(profile.getRegistrationNumber());
     });

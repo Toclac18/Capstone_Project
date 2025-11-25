@@ -4,7 +4,6 @@ type UserType = "reader" | "reviewer" | "org-admin";
 
 // Constants
 const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
-const USERNAME_REGEX = /^[a-zA-Z0-9_.-]+$/;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 
 /**
@@ -47,13 +46,6 @@ export function validateField(
       return "";
     }
 
-    case "username":
-      if (!val) return "Username is required";
-      if (typeof val === "string" && val.length < 3) return "Username must be at least 3 characters";
-      if (typeof val === "string" && !USERNAME_REGEX.test(val)) {
-        return "Only letters, numbers, underscore, dot and hyphen allowed";
-      }
-      return "";
 
     case "email":
       if (!val) return "Email is required";
@@ -80,21 +72,21 @@ export function validateField(
       case "educationLevel":
         return !val ? "Education level is required" : "";
 
-      case "domains":
+      case "domainIds":
         if (!Array.isArray(value) || value.length === 0) return "At least 1 domain is required";
         if (value.length > 3) return "Maximum 3 domains allowed";
         return "";
 
-      case "specializations":
+      case "specializationIds":
         if (!Array.isArray(value) || value.length === 0) return "At least 1 specialization is required";
         if (value.length > 5) return "Maximum 5 specializations allowed";
         return "";
 
-      case "referenceOrgName":
-        return !val ? "Reference organization name is required" : "";
+      case "organizationName":
+        return !val ? "Organization name is required" : "";
 
-      case "referenceOrgEmail":
-        if (!val) return "Reference organization email is required";
+      case "organizationEmail":
+        if (!val) return "Organization email is required";
         if (typeof val === "string" && !EMAIL_REGEX.test(val)) return "Email is invalid";
         return "";
     }
@@ -116,6 +108,14 @@ export function validateField(
         if (!val) return "Organization email is required";
         if (typeof val === "string" && !EMAIL_REGEX.test(val)) return "Email is invalid";
         return "";
+
+      case "hotline":
+        return !val ? "Hotline is required" : "";
+
+      case "address":
+        if (!val) return "Address is required";
+        if (typeof val === "string" && val.length < 10) return "Address must be at least 10 characters";
+        return "";
     }
   }
 
@@ -126,26 +126,31 @@ export function validateField(
  * Get fields to validate based on user type
  */
 export function getFieldsToValidate(userType: UserType): string[] {
-  const baseFields = ["name", "date_of_birth", "username", "email", "password", "repassword"];
+  const baseFields = ["name", "date_of_birth", "email", "password", "repassword"];
 
   if (userType === "reviewer") {
     return [
       ...baseFields,
       "educationLevel",
-      "domains",
-      "specializations",
-      "referenceOrgName",
-      "referenceOrgEmail",
+      "domainIds",
+      "specializationIds",
+      "organizationName",
+      "organizationEmail",
     ];
   }
 
   if (userType === "org-admin") {
     return [
-      ...baseFields,
+      "name",
+      "email",
+      "password",
+      "repassword",
       "organizationName",
       "organizationType",
       "registrationNumber",
       "organizationEmail",
+      "hotline",
+      "address",
     ];
   }
 

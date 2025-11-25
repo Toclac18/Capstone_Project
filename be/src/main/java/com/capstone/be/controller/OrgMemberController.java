@@ -34,7 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/organization/members")
+@RequestMapping("/organization/members")
 @RequiredArgsConstructor
 public class OrgMemberController {
 

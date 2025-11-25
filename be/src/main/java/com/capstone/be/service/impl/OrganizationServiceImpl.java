@@ -1,5 +1,6 @@
 package com.capstone.be.service.impl;
 
+import com.capstone.be.config.constant.FileStorage;
 import com.capstone.be.domain.entity.OrgEnrollment;
 import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.User;
@@ -108,43 +109,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   @Override
   @Transactional
-  public OrganizationProfileResponse uploadAvatar(UUID userId, MultipartFile file) {
-    log.info("Uploading avatar for organization admin user ID: {}", userId);
-
-    // Get user
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
-
-    // Get organization profile
-    OrganizationProfile organizationProfile = organizationProfileRepository.findByUserId(userId)
-        .orElseThrow(() -> new ResourceNotFoundException(
-            "Organization profile not found for user ID: " + userId));
-
-    // Delete old avatar if exists
-    if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
-      try {
-        fileStorageService.deleteFile(user.getAvatarUrl());
-        log.info("Deleted old avatar for user ID: {}", userId);
-      } catch (Exception e) {
-        log.warn("Failed to delete old avatar, continuing with upload: {}", e.getMessage());
-      }
-    }
-
-    // Upload new avatar to S3
-    String avatarUrl = fileStorageService.uploadFile(file, "avatars", null);
-    user.setAvatarUrl(avatarUrl);
-
-    // Save user
-    userRepository.save(user);
-
-    log.info("Successfully uploaded avatar for user ID: {}", userId);
-
-    // Return updated profile
-    return buildProfileResponse(user, organizationProfile);
-  }
-
-  @Override
-  @Transactional
   public OrganizationProfileResponse uploadLogo(UUID userId, MultipartFile file) {
     log.info("Uploading logo for organization user ID: {}", userId);
 
@@ -158,9 +122,10 @@ public class OrganizationServiceImpl implements OrganizationService {
             "Organization profile not found for user ID: " + userId));
 
     // Delete old logo if exists
-    if (organizationProfile.getLogo() != null && !organizationProfile.getLogo().isEmpty()) {
+    if (organizationProfile.getLogoKey() != null && !organizationProfile.getLogoKey().isEmpty()) {
       try {
-        fileStorageService.deleteFile(organizationProfile.getLogo());
+        fileStorageService.deleteFile(
+            FileStorage.ORG_LOGO_FOLDER, organizationProfile.getLogoKey());
         log.info("Deleted old logo for organization user ID: {}", userId);
       } catch (Exception e) {
         log.warn("Failed to delete old logo, continuing with upload: {}", e.getMessage());
@@ -168,8 +133,8 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     // Upload new logo to S3
-    String logoUrl = fileStorageService.uploadFile(file, "logos", null);
-    organizationProfile.setLogo(logoUrl);
+    String logoKey = fileStorageService.uploadFile(file, FileStorage.ORG_LOGO_FOLDER, null);
+    organizationProfile.setLogoKey(logoKey);
 
     // Save organization profile
     organizationProfileRepository.save(organizationProfile);
@@ -189,14 +154,14 @@ public class OrganizationServiceImpl implements OrganizationService {
         .userId(user.getId())
         .email(user.getEmail())
         .fullName(user.getFullName())
-        .avatarUrl(user.getAvatarUrl())
+        .avatarUrl(user.getAvatarKey())
 //        .point(user.getPoint())
         .status(user.getStatus())
         .orgName(organizationProfile.getName())
         .orgType(organizationProfile.getType())
         .orgEmail(organizationProfile.getEmail())
         .orgHotline(organizationProfile.getHotline())
-        .orgLogo(organizationProfile.getLogo())
+        .orgLogo(organizationProfile.getLogoKey())
         .orgAddress(organizationProfile.getAddress())
         .orgRegistrationNumber(organizationProfile.getRegistrationNumber())
         .createdAt(organizationProfile.getCreatedAt())

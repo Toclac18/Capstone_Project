@@ -27,7 +27,7 @@ public interface OrganizationApprovalMapper {
   @Mapping(target = "hotline", source = "organizationProfile.hotline")
   @Mapping(target = "address", source = "organizationProfile.address")
   @Mapping(target = "registrationNumber", source = "organizationProfile.registrationNumber")
-  @Mapping(target = "logo", source = "organizationProfile.logo")
+  @Mapping(target = "logo", source = "organizationProfile.logoKey")
   PendingOrganizationResponse toPendingOrganizationResponse(
       User admin,
       OrganizationProfile organizationProfile

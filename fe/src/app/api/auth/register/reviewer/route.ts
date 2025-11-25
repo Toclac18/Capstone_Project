@@ -1,157 +1,149 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { jsonResponse, parseError, badRequest } from "@/server/response";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+
 async function handlePOST(req: Request) {
   const contentType = req.headers.get("content-type") || "";
 
   if (!contentType.includes("multipart/form-data")) {
-    return Response.json(
-      { error: "Content-Type must be multipart/form-data" },
-      { status: 400 },
-    );
+    return badRequest("Content-Type must be multipart/form-data");
   }
 
   const formData = await req.formData().catch(() => null);
   if (!formData) {
-    return Response.json({ error: "Invalid form data" }, { status: 400 });
+    return badRequest("Invalid form data");
   }
 
-  // Parse info JSON blob
-  const infoBlob = formData.get("info");
-  if (!infoBlob) {
-    return Response.json({ error: "Missing info field" }, { status: 400 });
+  // Parse data JSON blob (backend expects @RequestPart("data"))
+  const dataBlob = formData.get("data");
+  if (!dataBlob) {
+    return badRequest("Missing data field");
   }
 
-  let info: {
-    fullName: string;
-    dateOfBirth: string;
-    username: string;
+  let data: {
     email: string;
     password: string;
+    fullName: string;
+    dateOfBirth: string;
+    orcid?: string;
     educationLevel: string;
-    domains: string[];
-    specializations: string[];
-    referenceOrgName: string;
-    referenceOrgEmail: string;
+    organizationName: string;
+    organizationEmail: string;
+    domainIds: string[];
+    specializationIds: string[];
   };
 
   try {
-    const infoText = await (infoBlob as Blob).text();
-    info = JSON.parse(infoText);
+    const dataText = await (dataBlob as Blob).text();
+    data = JSON.parse(dataText);
   } catch {
-    return Response.json({ error: "Invalid info JSON" }, { status: 400 });
+    return badRequest("Invalid data JSON");
   }
 
-  // Validate required fields
+  // Validate required fields (matching backend RegisterReviewerRequest)
   const {
-    fullName,
-    dateOfBirth,
-    username,
     email,
     password,
+    fullName,
+    dateOfBirth,
     educationLevel,
-    domains,
-    specializations,
-    referenceOrgName,
-    referenceOrgEmail,
-  } = info;
-  if (!fullName || !dateOfBirth || !username || !email || !password) {
-    return Response.json(
-      { error: "Missing required basic fields" },
-      { status: 400 },
-    );
+    organizationName,
+    organizationEmail,
+    domainIds,
+    specializationIds,
+  } = data;
+  
+  if (!email || !password || !fullName || !dateOfBirth) {
+    return badRequest("Missing required basic fields");
   }
 
   if (
     !educationLevel ||
-    !domains ||
-    !specializations ||
-    !referenceOrgName ||
-    !referenceOrgEmail
+    !organizationName ||
+    !organizationEmail ||
+    !domainIds ||
+    !specializationIds
   ) {
-    return Response.json(
-      { error: "Missing required reviewer fields" },
-      { status: 400 },
-    );
+    return badRequest("Missing required reviewer fields");
   }
 
   // Validate constraints
-  if (!Array.isArray(domains) || domains.length < 1 || domains.length > 3) {
-    return Response.json(
-      { error: "Domains must be between 1 and 3" },
-      { status: 400 },
-    );
+  if (!Array.isArray(domainIds) || domainIds.length < 1 || domainIds.length > 3) {
+    return badRequest("Must select 1 to 3 domains");
   }
 
   if (
-    !Array.isArray(specializations) ||
-    specializations.length < 1 ||
-    specializations.length > 5
+    !Array.isArray(specializationIds) ||
+    specializationIds.length < 1 ||
+    specializationIds.length > 5
   ) {
-    return Response.json(
-      { error: "Specializations must be between 1 and 5" },
-      { status: 400 },
-    );
+    return badRequest("Must select 1 to 5 specializations");
   }
 
   // Validate file upload (required for reviewer)
-  const files = formData.getAll("backgroundUploads");
+  const files = formData.getAll("credentialFiles");
   if (!files || files.length === 0) {
-    return Response.json(
-      { error: "Verified background upload is required" },
-      { status: 400 },
-    );
+    return badRequest("At least one credential file is required");
+  }
+  
+  if (files.length > 10) {
+    return badRequest("Maximum 10 credential files allowed");
   }
 
   // Validate file size (max 10MB per file)
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   for (const file of files) {
     if (file instanceof File && file.size > MAX_FILE_SIZE) {
-      return Response.json(
-        { error: `File "${file.name}" exceeds 10MB limit` },
-        { status: 400 },
-      );
+      return badRequest(`File "${file.name}" exceeds 10MB limit`);
     }
   }
 
   if (USE_MOCK) {
-    const mockUser = {
-      id: Math.floor(Math.random() * 10000),
-      username,
+    const mockResponse = {
+      userId: `user-${Date.now()}`,
       email,
       fullName,
       role: "REVIEWER",
-      status: "PENDING_VERIFICATION",
-      message:
-        "Reviewer registration successful! Please check your email to verify your account.",
+      status: "PENDING_EMAIL_VERIFY",
+      accessToken: null,
+      tokenType: "Bearer",
     };
-    return Response.json(mockUser, { status: 201 });
+    return jsonResponse(mockResponse, { status: 201, mode: "mock" });
   }
 
-  // Proxy to BE
-  const upstream = await fetch(`${BE_BASE}/api/auth/register-reviewer`, {
+  // Proxy to BE (backend expects multipart with "data" and "credentialFiles")
+  const upstream = await fetch(`${BE_BASE}/api/auth/register/reviewer`, {
     method: "POST",
     body: formData,
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  const responseContentType =
-    upstream.headers.get("content-type") ?? "application/json";
-
   if (!upstream.ok) {
-    let errorMsg = "Registration failed";
-    try {
-      const json = JSON.parse(text);
-      errorMsg = json?.detail || json?.message || errorMsg;
-    } catch {
-      errorMsg = text || errorMsg;
-    }
-    return Response.json({ error: errorMsg }, { status: upstream.status });
+    const text = await upstream.text();
+    return jsonResponse(
+      { error: parseError(text, "Registration failed") },
+      { status: upstream.status }
+    );
   }
 
-  return new Response(text, {
+  // Parse response from backend
+  let responseData: any;
+  try {
+    const text = await upstream.text();
+    responseData = JSON.parse(text);
+  } catch {
+    return jsonResponse(
+      { error: "Failed to parse backend response" },
+      { status: 500 }
+    );
+  }
+
+  // Backend may return { data: AuthResponse } or AuthResponse directly
+  const authResponse = responseData?.data || responseData;
+  
+  return jsonResponse(authResponse, { 
     status: upstream.status,
-    headers: { "content-type": responseContentType },
+    mode: "real" 
   });
 }
 

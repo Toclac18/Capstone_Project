@@ -7,7 +7,6 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import {
   login,
   type LoginPayload,
-  type LoginResponse,
 } from "../api";
 import { EmailIcon, GoogleIcon, PasswordIcon } from "@/assets/icons";
 import { useToast } from "@/components/ui/toast";
@@ -54,22 +53,16 @@ export default function Signin() {
     };
 
     try {
-      const result: LoginResponse = await login(payload);
-
-      localStorage.setItem('accessToken', result.accessToken);
-      localStorage.setItem('userRole', result.role);
-      localStorage.setItem('userId', result.subjectId);
-      localStorage.setItem('userEmail', result.email);
-      localStorage.setItem('userName', result.displayName);
+      await login(payload);
 
       showToast({ type: 'success', title: 'Login Successful' });
 
       // Redirect based on role
       const roleRoutes: Record<typeof data.role, string> = {
         READER: '/',
-        REVIEWER: '/reviewer/dashboard',
-        ORGANIZATION: '/organization/dashboard',
-        SYSTEM_ADMIN: '/admin/system/dashboard',
+        REVIEWER: '/reviewer',
+        ORGANIZATION: '/organization-admin',
+        SYSTEM_ADMIN: '/admin',
         BUSINESS_ADMIN: '/business-admin',
       };
 

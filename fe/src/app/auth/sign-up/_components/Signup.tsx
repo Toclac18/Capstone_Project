@@ -29,18 +29,18 @@ type UserType = "reader" | "reviewer" | "org-admin";
 // Constants
 const EDUCATION_LEVELS = [
   { value: "", label: "Select education level" },
-  { value: "BACHELOR", label: "Bachelor's Degree" },
+  { value: "COLLEGE", label: "College" },
+  { value: "UNIVERSITY", label: "University" },
   { value: "MASTER", label: "Master's Degree" },
-  { value: "PHD", label: "Ph.D." },
-  { value: "PROFESSOR", label: "Professor" },
+  { value: "DOCTORATE", label: "Doctorate" },
 ] as const;
 
 const ORGANIZATION_TYPES = [
   { value: "", label: "Select organization type" },
-  { value: "COMPANY", label: "Company" },
-  { value: "NON-PROFIT", label: "Non-Profit" },
-  { value: "EDUCATIONAL", label: "Educational Institution" },
-  { value: "GOVERNMENT", label: "Government Agency" },
+  { value: "SCHOOL", label: "School" },
+  { value: "COLLEGE", label: "College" },
+  { value: "UNIVERSITY", label: "University" },
+  { value: "TRAINING_CENTER", label: "Training Center" },
 ] as const;
 
 const SUCCESS_MESSAGES = {
@@ -70,25 +70,31 @@ const VALIDATION_MESSAGES = {
 type BaseFormData = {
   name: string;
   date_of_birth: string;
-  username: string;
   email: string;
   password: string;
   repassword: string;
 };
 
 type ReviewerFormData = BaseFormData & {
+  orcid?: string;
   educationLevel: string;
-  domains: string[];
-  specializations: string[];
-  referenceOrgName: string;
-  referenceOrgEmail: string;
+  domainIds: string[];
+  specializationIds: string[];
+  organizationName: string;
+  organizationEmail: string;
 };
 
-type OrgAdminFormData = BaseFormData & {
+type OrgAdminFormData = {
+  adminEmail: string;
+  password: string;
+  repassword: string;
+  adminFullName: string;
   organizationName: string;
   organizationType: string;
-  registrationNumber: string;
   organizationEmail: string;
+  hotline: string;
+  address: string;
+  registrationNumber: string;
 };
 
 type FormData = ReviewerFormData & OrgAdminFormData;
@@ -96,19 +102,20 @@ type FormData = ReviewerFormData & OrgAdminFormData;
 const INITIAL_FORM_DATA: Partial<FormData> = {
   name: "",
   date_of_birth: "",
-  username: "",
   email: "",
   password: "",
   repassword: "",
   educationLevel: "",
-  domains: [],
-  specializations: [],
-  referenceOrgName: "",
-  referenceOrgEmail: "",
+  domainIds: [],
+  specializationIds: [],
   organizationName: "",
+  organizationEmail: "",
+  adminEmail: "",
+  adminFullName: "",
   organizationType: "",
   registrationNumber: "",
-  organizationEmail: "",
+  hotline: "",
+  address: "",
 };
 
 export default function Signup() {
@@ -134,9 +141,11 @@ export default function Signup() {
 
   const loadReviewerOptions = useCallback(async () => {
     try {
+      // Add delay for better UX
+      await new Promise((resolve) => setTimeout(resolve, 500));
       const domains = await getDomains();
       setDomainOptions(domains);
-    } catch (error) {
+    } catch {
       showToast({
         type: "error",
         title: VALIDATION_MESSAGES.loadFailed.title,
@@ -149,9 +158,11 @@ export default function Signup() {
   const loadSpecializations = useCallback(
     async (domainIds: string[]) => {
       try {
+        // Add delay for better UX
+        await new Promise((resolve) => setTimeout(resolve, 500));
         const specs = await getSpecializations(domainIds);
         setSpecializationOptions(specs);
-      } catch (error) {
+      } catch {
         showToast({
           type: "error",
           title: VALIDATION_MESSAGES.loadFailed.title,
@@ -170,12 +181,12 @@ export default function Signup() {
   }, [userType, loadReviewerOptions]);
 
   React.useEffect(() => {
-    if (userType === "reviewer" && data.domains && data.domains.length > 0) {
-      loadSpecializations(data.domains);
+    if (userType === "reviewer" && data.domainIds && data.domainIds.length > 0) {
+      loadSpecializations(data.domainIds);
     } else {
       setSpecializationOptions([]);
     }
-  }, [data.domains, userType, loadSpecializations]);
+  }, [data.domainIds, userType, loadSpecializations]);
 
   const validateAll = useCallback(
     (form: Partial<FormData>) => {
@@ -238,6 +249,23 @@ export default function Signup() {
     ) => {
       const files = Array.from(e.target.files || []);
       if (files.length === 0) return;
+
+      // Validate file type for logo (certificate) - must be image
+      if (fieldType === "certificate") {
+        const invalidFiles = files.filter(
+          (file) => !file.type.startsWith("image/")
+        );
+        if (invalidFiles.length > 0) {
+          showToast({
+            type: "error",
+            title: "Invalid File Type",
+            message: "Logo must be an image file (JPG, PNG, etc.)",
+            duration: 5000,
+          });
+          e.target.value = "";
+          return;
+        }
+      }
 
       // Validate file size
       const sizeError = validateFileSize(files);
@@ -307,40 +335,40 @@ export default function Signup() {
       // Submit based on user type
       if (userType === "reader") {
         const payload: RegisterReaderPayload = {
-          fullName: data.name!,
-          dateOfBirth: data.date_of_birth!,
-          username: data.username!,
           email: data.email!,
           password: data.password!,
+          fullName: data.name!,
+          dateOfBirth: data.date_of_birth!,
         };
         await registerReader(payload);
       } else if (userType === "reviewer") {
         const payload: RegisterReviewerPayload = {
-          fullName: data.name!,
-          dateOfBirth: data.date_of_birth!,
-          username: data.username!,
           email: data.email!,
           password: data.password!,
-          educationLevel: data.educationLevel!,
-          domains: data.domains!,
-          specializations: data.specializations!,
-          referenceOrgName: data.referenceOrgName!,
-          referenceOrgEmail: data.referenceOrgEmail!,
+          fullName: data.name!,
+          dateOfBirth: data.date_of_birth!,
+          orcid: data.orcid,
+          educationLevel: data.educationLevel! as "COLLEGE" | "UNIVERSITY" | "MASTER" | "DOCTORATE",
+          organizationName: data.organizationName!,
+          organizationEmail: data.organizationEmail!,
+          domainIds: data.domainIds!,
+          specializationIds: data.specializationIds!,
         };
         await registerReviewer(payload, backgroundFiles);
       } else if (userType === "org-admin") {
         const payload: RegisterOrgAdminPayload = {
-          fullName: data.name!,
-          dateOfBirth: data.date_of_birth!,
-          username: data.username!,
-          email: data.email!,
+          adminEmail: data.email!,
           password: data.password!,
+          adminFullName: data.name!,
           organizationName: data.organizationName!,
-          organizationType: data.organizationType!,
-          registrationNumber: data.registrationNumber!,
+          organizationType: data.organizationType! as "SCHOOL" | "COLLEGE" | "UNIVERSITY" | "TRAINING_CENTER",
           organizationEmail: data.organizationEmail!,
+          hotline: data.hotline!,
+          address: data.address!,
+          registrationNumber: data.registrationNumber!,
         };
-        await registerOrgAdmin(payload, certificateFiles);
+        // Only send first file as logoFile (optional)
+        await registerOrgAdmin(payload, certificateFiles.length > 0 ? certificateFiles[0] : undefined);
       }
 
       // Success: inform user to check email for verification
@@ -372,23 +400,34 @@ export default function Signup() {
   const handleUserTypeChange = useCallback((type: UserType) => {
     setUserType(type);
     // Keep base fields, clear role-specific fields
-    setData((prev) => ({
-      name: prev.name,
-      date_of_birth: prev.date_of_birth,
-      username: prev.username,
-      email: prev.email,
-      password: prev.password,
-      repassword: prev.repassword,
-      educationLevel: "",
-      domains: [],
-      specializations: [],
-      referenceOrgName: "",
-      referenceOrgEmail: "",
-      organizationName: "",
-      organizationType: "",
-      registrationNumber: "",
-      organizationEmail: "",
-    }));
+    if (type === "reader" || type === "reviewer") {
+      setData((prev) => ({
+        name: prev.name,
+        date_of_birth: prev.date_of_birth,
+        email: prev.email,
+        password: prev.password,
+        repassword: prev.repassword,
+        educationLevel: "",
+        domainIds: [],
+        specializationIds: [],
+        organizationName: "",
+        organizationEmail: "",
+      }));
+    } else {
+      // org-admin uses name and email from base fields
+      setData((prev) => ({
+        name: prev.name,
+        email: prev.email,
+        password: prev.password,
+        repassword: prev.repassword,
+        organizationName: "",
+        organizationType: "",
+        organizationEmail: "",
+        hotline: "",
+        address: "",
+        registrationNumber: "",
+      }));
+    }
     setErrors({});
     setBackgroundFiles([]);
     setCertificateFiles([]);
@@ -437,36 +476,27 @@ export default function Signup() {
             value={data.name}
             icon={<UserIcon />}
             error={errors.name}
+            required
           />
           {errors.name && <p className={styles["error-text"]}>{errors.name}</p>}
 
-          <InputGroup
-            type="date"
-            label="Date of Birth"
-            className={styles["input-group"]}
-            placeholder="Enter your date of birth"
-            name="date_of_birth"
-            handleChange={handleChange}
-            value={data.date_of_birth}
-            error={errors.date_of_birth}
-          />
-          {errors.date_of_birth && (
-            <p className={styles["error-text"]}>{errors.date_of_birth}</p>
-          )}
-
-          <InputGroup
-            type="string"
-            label="Username"
-            className={styles["input-group"]}
-            placeholder="Enter your username"
-            name="username"
-            handleChange={handleChange}
-            value={data.username}
-            icon={<UserIcon />}
-            error={errors.username}
-          />
-          {errors.username && (
-            <p className={styles["error-text"]}>{errors.username}</p>
+          {userType !== "org-admin" && (
+            <>
+              <InputGroup
+                type="date"
+                label="Date of Birth"
+                className={styles["input-group"]}
+                placeholder="Enter your date of birth"
+                name="date_of_birth"
+                handleChange={handleChange}
+                value={data.date_of_birth}
+                error={errors.date_of_birth}
+                required
+              />
+              {errors.date_of_birth && (
+                <p className={styles["error-text"]}>{errors.date_of_birth}</p>
+              )}
+            </>
           )}
 
           <InputGroup
@@ -479,6 +509,7 @@ export default function Signup() {
             value={data.email}
             icon={<EmailIcon />}
             error={errors.email}
+            required
           />
           {errors.email && (
             <p className={styles["error-text-slight"]}>{errors.email}</p>
@@ -494,6 +525,7 @@ export default function Signup() {
             value={data.password}
             icon={<PasswordIcon />}
             error={errors.password}
+            required
           />
           {errors.password && (
             <p className={styles["error-text"]}>{errors.password}</p>
@@ -509,6 +541,7 @@ export default function Signup() {
             value={data.repassword}
             icon={<PasswordIcon />}
             error={errors.repassword}
+            required
           />
           {errors.repassword && (
             <p className={styles["error-text"]}>{errors.repassword}</p>
@@ -566,6 +599,17 @@ export default function Signup() {
                 Reviewer Information
               </h3>
 
+              <InputGroup
+                type="string"
+                label="ORCID"
+                className={styles["input-group"]}
+                placeholder="Enter your ORCID (optional)"
+                name="orcid"
+                handleChange={handleChange}
+                value={data.orcid || ""}
+                error={errors.orcid}
+              />
+
               <div className="mb-4">
                 <label
                   htmlFor="educationLevel"
@@ -617,10 +661,10 @@ export default function Signup() {
                         >
                           <input
                             type="checkbox"
-                            checked={(data.domains || []).includes(domain.id)}
+                            checked={(data.domainIds || []).includes(domain.id)}
                             onChange={(e) =>
                               handleMultiSelectChange(
-                                "domains",
+                                "domainIds",
                                 domain.id,
                                 e.target.checked,
                               )
@@ -628,8 +672,8 @@ export default function Signup() {
                             className={styles["checkbox-input"]}
                             disabled={
                               loading ||
-                              ((data.domains || []).length >= 3 &&
-                                !(data.domains || []).includes(domain.id))
+                              ((data.domainIds || []).length >= 3 &&
+                                !(data.domainIds || []).includes(domain.id))
                             }
                           />
                           <span className={styles["checkbox-label"]}>
@@ -640,8 +684,8 @@ export default function Signup() {
                     </div>
                   )}
                 </div>
-                {errors.domains && (
-                  <p className={styles["form-error"]}>{errors.domains}</p>
+                {errors.domainIds && (
+                  <p className={styles["form-error"]}>{errors.domainIds}</p>
                 )}
               </div>
 
@@ -656,7 +700,7 @@ export default function Signup() {
                 <div className={styles["checkbox-list-container"]}>
                   {specializationOptions.length === 0 ? (
                     <p className={styles["checkbox-list-empty"]}>
-                      {(data.domains || []).length === 0
+                      {(data.domainIds || []).length === 0
                         ? "Please select domains first"
                         : "Loading specializations..."}
                     </p>
@@ -669,12 +713,12 @@ export default function Signup() {
                         >
                           <input
                             type="checkbox"
-                            checked={(data.specializations || []).includes(
+                            checked={(data.specializationIds || []).includes(
                               spec.id,
                             )}
                             onChange={(e) =>
                               handleMultiSelectChange(
-                                "specializations",
+                                "specializationIds",
                                 spec.id,
                                 e.target.checked,
                               )
@@ -682,8 +726,8 @@ export default function Signup() {
                             className={styles["checkbox-input"]}
                             disabled={
                               loading ||
-                              ((data.specializations || []).length >= 5 &&
-                                !(data.specializations || []).includes(spec.id))
+                              ((data.specializationIds || []).length >= 5 &&
+                                !(data.specializationIds || []).includes(spec.id))
                             }
                           />
                           <span className={styles["checkbox-label"]}>
@@ -694,43 +738,45 @@ export default function Signup() {
                     </div>
                   )}
                 </div>
-                {errors.specializations && (
+                {errors.specializationIds && (
                   <p className={styles["form-error"]}>
-                    {errors.specializations}
+                    {errors.specializationIds}
                   </p>
                 )}
               </div>
 
               <InputGroup
                 type="string"
-                label="Reference Organization Name"
+                label="Organization Name"
                 className={styles["input-group"]}
-                placeholder="Enter reference organization name"
-                name="referenceOrgName"
+                placeholder="Enter organization name"
+                name="organizationName"
                 handleChange={handleChange}
-                value={data.referenceOrgName}
-                error={errors.referenceOrgName}
+                value={data.organizationName}
+                error={errors.organizationName}
+                required
               />
-              {errors.referenceOrgName && (
+              {errors.organizationName && (
                 <p className={styles["error-text"]}>
-                  {errors.referenceOrgName}
+                  {errors.organizationName}
                 </p>
               )}
 
               <InputGroup
                 type="email"
-                label="Reference Organization Email"
+                label="Organization Email"
                 className={styles["input-group"]}
-                placeholder="Enter reference organization email"
-                name="referenceOrgEmail"
+                placeholder="Enter organization email"
+                name="organizationEmail"
                 handleChange={handleChange}
-                value={data.referenceOrgEmail}
+                value={data.organizationEmail}
                 icon={<EmailIcon />}
-                error={errors.referenceOrgEmail}
+                error={errors.organizationEmail}
+                required
               />
-              {errors.referenceOrgEmail && (
+              {errors.organizationEmail && (
                 <p className={styles["error-text"]}>
-                  {errors.referenceOrgEmail}
+                  {errors.organizationEmail}
                 </p>
               )}
 
@@ -789,6 +835,7 @@ export default function Signup() {
                 handleChange={handleChange}
                 value={data.organizationName}
                 error={errors.organizationName}
+                required
               />
               {errors.organizationName && (
                 <p className={styles["error-text"]}>
@@ -834,6 +881,7 @@ export default function Signup() {
                 handleChange={handleChange}
                 value={data.registrationNumber}
                 error={errors.registrationNumber}
+                required
               />
               {errors.registrationNumber && (
                 <p className={styles["error-text"]}>
@@ -851,6 +899,7 @@ export default function Signup() {
                 value={data.organizationEmail}
                 icon={<EmailIcon />}
                 error={errors.organizationEmail}
+                required
               />
               {errors.organizationEmail && (
                 <p className={styles["error-text"]}>
@@ -858,22 +907,54 @@ export default function Signup() {
                 </p>
               )}
 
+              <InputGroup
+                type="string"
+                label="Hotline"
+                className={styles["input-group"]}
+                placeholder="Enter hotline"
+                name="hotline"
+                handleChange={handleChange}
+                value={data.hotline}
+                error={errors.hotline}
+                required
+              />
+              {errors.hotline && (
+                <p className={styles["error-text"]}>
+                  {errors.hotline}
+                </p>
+              )}
+
+              <InputGroup
+                type="string"
+                label="Address"
+                className={styles["input-group"]}
+                placeholder="Enter address"
+                name="address"
+                handleChange={handleChange}
+                value={data.address}
+                error={errors.address}
+                required
+              />
+              {errors.address && (
+                <p className={styles["error-text"]}>
+                  {errors.address}
+                </p>
+              )}
+
               <div className="mb-4">
                 <label
-                  htmlFor="certificateUpload"
+                  htmlFor="logoUpload"
                   className={styles["form-label"]}
                 >
-                  Organization Certificate Upload{" "}
-                  <span className={styles["form-label-required"]}>*</span>
+                  Organization Logo Upload{" "}
                   <span className={styles["form-label-hint"]}>
-                    (PDF, DOC, Images)
+                    (Optional - Images only)
                   </span>
                 </label>
                 <input
-                  id="certificateUpload"
+                  id="logoUpload"
                   type="file"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                  multiple
+                  accept="image/*"
                   onChange={(e) => handleFileUpload(e, "certificate")}
                   className={`${styles["file-upload"]} ${errors.certificateFiles ? "border-red-500" : ""}`}
                   disabled={loading}

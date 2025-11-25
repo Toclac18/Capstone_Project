@@ -30,13 +30,14 @@ function VerifyEmailInner() {
 
     const run = async () => {
       try {
-        const [result] = await Promise.all([
+        await Promise.all([
           verifyEmail(token),
           new Promise((resolve) => setTimeout(resolve, 3000)),
         ]);
 
         setStatus("success");
-        setMessage(result.message || "Email has been verified successfully");
+        // Backend returns AuthResponse, show success message
+        setMessage("Email has been verified successfully! You can now login.");
 
         // Redirect sang login sau 3 giây
         setTimeout(() => {

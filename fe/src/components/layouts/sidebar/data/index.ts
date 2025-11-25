@@ -63,32 +63,38 @@ export const BUSINESS_ADMIN_NAV_DATA = [
       {
         title: "Dashboard",
         icon: Icons.HomeIcon,
-        url: "/business-admin"
+        url: "/business-admin",
+        items: [],
       },
       {
         title: "User Management",
         icon: Icons.User,
-        url: "/business-admin/users"
+        url: "/business-admin/users",
+        items: [],
       },
       {
         title: "Organization Management",
         icon: Icons.BuildingIcon,
-        url: "/business-admin/organization"
+        url: "/business-admin/organization",
+        items: [],
       },
       {
         title: "Documents Management",
         icon: Icons.FileTextIcon,
-        url: "/business-admin/document"
+        url: "/business-admin/document",
+        items: [],
       },
       {
         title: "Reports",
         icon: Icons.FourCircle,
-        url: "/business-admin/reports"
+        url: "/business-admin/reports",
+        items: [],
       },
       {
         title: "Settings",
         icon: Icons.Alphabet,
-        url: "/business-admin/settings"
+        url: "/business-admin/settings",
+        items: [],
       },
     ],
   },

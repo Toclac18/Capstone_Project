@@ -46,3 +46,4 @@ export const GET = (...args: Parameters<typeof handleGET>) =>
   withErrorBoundary(() => handleGET(...args), {
     context: "api/organizations/route.ts/GET",
   });
+  

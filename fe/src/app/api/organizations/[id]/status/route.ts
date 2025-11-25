@@ -55,3 +55,4 @@ export const PATCH = (...args: Parameters<typeof handlePATCH>) =>
   withErrorBoundary(() => handlePATCH(...args), {
     context: "api/organizations/[id]/status/route.ts/PATCH",
   });
+  

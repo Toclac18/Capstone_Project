@@ -19,3 +19,4 @@ public class ChangeRoleRequest {
   private String reason; // Optional reason for role change (for audit log)
 }
 
+

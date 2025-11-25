@@ -15,6 +15,7 @@ import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.OrgEnrollStatus;
 import com.capstone.be.domain.enums.TagStatus;
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
+import com.capstone.be.dto.request.document.DocumentSearchFilter;
 import com.capstone.be.dto.request.document.DocumentUploadHistoryFilter;
 import com.capstone.be.dto.request.document.UpdateDocumentRequest;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
@@ -22,6 +23,7 @@ import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
 import com.capstone.be.dto.response.document.DocumentReadHistoryResponse;
+import com.capstone.be.dto.response.document.DocumentSearchResponse;
 import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
 import com.capstone.be.exception.BusinessException;
@@ -41,6 +43,7 @@ import com.capstone.be.repository.SpecializationRepository;
 import com.capstone.be.repository.TagRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.repository.specification.DocumentLibrarySpecification;
+import com.capstone.be.repository.specification.DocumentSearchSpecification;
 import com.capstone.be.repository.specification.DocumentUploadHistorySpecification;
 import com.capstone.be.service.DocumentAccessService;
 import com.capstone.be.service.DocumentService;
@@ -765,6 +768,73 @@ public class DocumentServiceImpl implements DocumentService {
     log.info("Retrieved {} read history records for user {} (page {}/{})",
         responsePage.getNumberOfElements(),
         userId,
+        responsePage.getNumber() + 1,
+        responsePage.getTotalPages());
+
+    return responsePage;
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<DocumentSearchResponse> searchPublicDocuments(DocumentSearchFilter filter,
+      Pageable pageable) {
+    log.info("Searching public documents with filter: {} and pagination: {}", filter, pageable);
+
+    // Build specification for public documents only
+    Specification<Document> spec = DocumentSearchSpecification.buildSearchSpec(filter);
+
+    // Fetch documents with specification and pagination
+    Page<Document> documentsPage = documentRepository.findAll(spec, pageable);
+
+    // Map to response DTO
+    Page<DocumentSearchResponse> responsePage = documentsPage.map(document -> {
+      // Fetch tags for this document
+      List<DocumentTagLink> tagLinks = documentTagLinkRepository.findByDocument_Id(
+          document.getId());
+      List<String> tagNames = tagLinks.stream()
+          .map(link -> link.getTag().getName())
+          .sorted()
+          .toList();
+
+      // Build organization info (if exists)
+      DocumentSearchResponse.OrganizationInfo orgInfo = null;
+      if (document.getOrganization() != null) {
+        orgInfo = DocumentSearchResponse.OrganizationInfo.builder()
+            .id(document.getOrganization().getId())
+            .name(document.getOrganization().getName())
+            .logoUrl(document.getOrganization().getLogoKey())
+            .build();
+      }
+
+      // Build uploader info
+      DocumentSearchResponse.UploaderInfo uploaderInfo = DocumentSearchResponse.UploaderInfo.builder()
+          .id(document.getUploader().getId())
+          .fullName(document.getUploader().getFullName())
+          .avatarUrl(document.getUploader().getAvatarKey())
+          .build();
+
+      return DocumentSearchResponse.builder()
+          .id(document.getId())
+          .title(document.getTitle())
+          .description(document.getDescription())
+          .isPremium(document.getIsPremium())
+          .price(document.getPrice())
+          .thumbnailUrl(document.getThumbnailKey())
+          .createdAt(document.getCreatedAt())
+          .viewCount(document.getViewCount())
+          .upvoteCount(document.getUpvoteCount())
+          .voteScore(document.getVoteScore())
+          .docTypeName(document.getDocType().getName())
+          .specializationName(document.getSpecialization().getName())
+          .domainName(document.getSpecialization().getDomain().getName())
+          .tagNames(tagNames)
+          .organization(orgInfo)
+          .uploader(uploaderInfo)
+          .build();
+    });
+
+    log.info("Found {} public documents (page {}/{})",
+        responsePage.getNumberOfElements(),
         responsePage.getNumber() + 1,
         responsePage.getTotalPages());
 

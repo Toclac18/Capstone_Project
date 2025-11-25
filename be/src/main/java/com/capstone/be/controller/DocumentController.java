@@ -2,6 +2,7 @@ package com.capstone.be.controller;
 
 import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
+import com.capstone.be.dto.request.document.DocumentSearchFilter;
 import com.capstone.be.dto.request.document.DocumentUploadHistoryFilter;
 import com.capstone.be.dto.request.document.UpdateDocumentRequest;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
@@ -9,15 +10,18 @@ import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
 import com.capstone.be.dto.response.document.DocumentReadHistoryResponse;
+import com.capstone.be.dto.response.document.DocumentSearchResponse;
 import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.DocumentService;
+import com.capstone.be.util.PagingUtil;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -250,6 +254,30 @@ public class DocumentController {
         pageable);
 
     return ResponseEntity.ok(PagedResponse.of(historyPage));
+  }
+
+  /**
+   * Search public documents Returns paginated list of PUBLIC and VERIFIED documents No
+   * authentication required - open to everyone
+   *
+   * @return Paged response of search results
+   * @body filter Search filters (all optional)
+   */
+  @PostMapping(value = "/search")
+  public ResponseEntity<PagedResponse<DocumentSearchResponse>> searchPublicDocuments(
+      @Valid @RequestBody DocumentSearchFilter filter) {
+    Pageable pageable = PageRequest.of(
+        filter.getPage(),
+        filter.getSize(),
+        PagingUtil.parseSort(filter.getSorts())
+    );
+    log.info("Public search request with filter: {} (page: {}, size: {})",
+        filter, pageable.getPageNumber(), pageable.getPageSize());
+
+    Page<DocumentSearchResponse> searchResults = documentService.searchPublicDocuments(filter,
+        pageable);
+
+    return ResponseEntity.ok(PagedResponse.of(searchResults));
   }
 
 }

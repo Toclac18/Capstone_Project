@@ -1,6 +1,7 @@
 package com.capstone.be.service;
 
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
+import com.capstone.be.dto.request.document.DocumentSearchFilter;
 import com.capstone.be.dto.request.document.DocumentUploadHistoryFilter;
 import com.capstone.be.dto.request.document.UpdateDocumentRequest;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
@@ -8,6 +9,7 @@ import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
 import com.capstone.be.dto.response.document.DocumentReadHistoryResponse;
+import com.capstone.be.dto.response.document.DocumentSearchResponse;
 import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
 import java.util.UUID;
@@ -108,5 +110,15 @@ public interface DocumentService {
    * @return Page of read history
    */
   Page<DocumentReadHistoryResponse> getReadHistory(UUID userId, Pageable pageable);
+
+  /**
+   * Search public documents with filters Only returns PUBLIC and VERIFIED documents
+   *
+   * @param filter   Search criteria (all optional)
+   * @param pageable Pagination parameters
+   * @return Page of search results
+   */
+  Page<DocumentSearchResponse> searchPublicDocuments(DocumentSearchFilter filter,
+      Pageable pageable);
 
 }

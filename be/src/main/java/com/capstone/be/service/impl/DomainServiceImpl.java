@@ -2,6 +2,7 @@ package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.Domain;
 import com.capstone.be.domain.entity.Specialization;
+import com.capstone.be.dto.response.resource.DomainResponse;
 import com.capstone.be.dto.response.resource.DomainWithSpecializationsResponse;
 import com.capstone.be.dto.response.resource.DomainWithSpecializationsResponse.SpecializationInfo;
 import com.capstone.be.exception.ResourceNotFoundException;
@@ -24,6 +25,25 @@ public class DomainServiceImpl implements DomainService {
 
   private final DomainRepository domainRepository;
   private final SpecializationRepository specializationRepository;
+
+  @Override
+  public List<DomainResponse> getDomains() {
+    log.info("Fetching all domains");
+
+    List<Domain> domains = domainRepository.findAll();
+
+    List<DomainResponse> response =
+        domains.stream()
+            .map(d -> DomainResponse.builder()
+                .id(d.getId())
+                .code(d.getCode())
+                .name(d.getName())
+                .build())
+            .collect(Collectors.toList());
+
+    log.info("Retrieved {} domains", response.size());
+    return response;
+  }
 
   @Override
   @Transactional(readOnly = true)

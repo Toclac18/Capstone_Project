@@ -1,5 +1,6 @@
 package com.capstone.be.service;
 
+import com.capstone.be.dto.response.resource.DomainResponse;
 import com.capstone.be.dto.response.resource.DomainWithSpecializationsResponse;
 import java.util.List;
 import java.util.UUID;
@@ -8,6 +9,14 @@ import java.util.UUID;
  * Service interface for Domain and Specialization resources
  */
 public interface DomainService {
+
+  /**
+   * Get all domains
+   *
+   * @return List of domains with
+   */
+  List<DomainResponse> getDomains();
+
 
   /**
    * Get all domains with their specializations

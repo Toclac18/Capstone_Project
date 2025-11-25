@@ -1,5 +1,6 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.dto.response.resource.DomainResponse;
 import com.capstone.be.dto.response.resource.DomainWithSpecializationsResponse;
 import com.capstone.be.dto.response.resource.DomainWithSpecializationsResponse.SpecializationInfo;
 import com.capstone.be.service.DomainService;
@@ -25,6 +26,15 @@ public class PublicDomainController {
 
   private final DomainService domainService;
 
+
+  @GetMapping
+  public ResponseEntity<List<DomainResponse>> getDomains() {
+
+    List<DomainResponse> response = domainService.getDomains();
+
+    return ResponseEntity.ok(response);
+  }
+
   /**
    * Get all domains with their specializations
    * Public endpoint - no authentication required
@@ -32,7 +42,7 @@ public class PublicDomainController {
    *
    * @return List of domains with nested specializations
    */
-  @GetMapping
+  @GetMapping("/specializations")
   public ResponseEntity<List<DomainWithSpecializationsResponse>> getDomainsWithSpecializations() {
     log.info("Public request for all domains with specializations");
 

@@ -5,7 +5,7 @@ import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 async function handleGET() {
   if (USE_MOCK) {
     const domains = mockDocumentsDB.getDomains();
-    return new Response(JSON.stringify(domains), {
+    return jsonResponse(domains, {
       status: 200,
       headers: {
         "content-type": "application/json",
@@ -21,15 +21,7 @@ async function handleGET() {
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 export const GET = (...args: Parameters<typeof handleGET>) =>

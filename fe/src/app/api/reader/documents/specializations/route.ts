@@ -11,7 +11,7 @@ async function handleGET(request: Request) {
 
   if (USE_MOCK) {
     const specializations = mockDocumentsDB.getSpecializations(domainIds);
-    return new Response(JSON.stringify(specializations), {
+    return jsonResponse(specializations, {
       status: 200,
       headers: {
         "content-type": "application/json",
@@ -31,15 +31,7 @@ async function handleGET(request: Request) {
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 export const GET = (...args: Parameters<typeof handleGET>) =>

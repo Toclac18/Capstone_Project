@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/reader/enrollments")
+@RequestMapping("/reader/enrollments")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('READER')")
 public class ReaderEnrollmentController {

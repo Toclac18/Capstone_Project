@@ -4,6 +4,7 @@ import com.capstone.be.exception.FileStorageException;
 import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.service.FileStorageService;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -15,7 +16,11 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 @Slf4j
 @Service
@@ -23,6 +28,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 public class AwsS3FileStorageService implements FileStorageService {
 
   private final S3Client s3Client;
+  private final S3Presigner s3Presigner;
 
   @Value("${aws.s3.bucket}")
   private String bucketName;
@@ -64,11 +70,8 @@ public class AwsS3FileStorageService implements FileStorageService {
           RequestBody.fromInputStream(file.getInputStream(), file.getSize())
       );
 
-      String fileUrl = String.format("https://%s.s3.%s.amazonaws.com/%s",
-          bucketName, region, key);
-
-      log.info("Successfully uploaded file to S3: {}", fileUrl);
-      return fileUrl;
+      log.info("Successfully uploaded file to S3: {}", key);
+      return filename;
 
     } catch (IOException e) {
       log.error("Failed to upload file: {}", file.getOriginalFilename(), e);
@@ -84,7 +87,7 @@ public class AwsS3FileStorageService implements FileStorageService {
     try {
       String finalFilename = (filename != null && !filename.isBlank())
           ? filename
-          : generateUniqueFilename("thumbnail.png"); //for extension
+          : generateUniqueFilename("dump.png"); //for extension
 
       String key = folder + "/" + finalFilename;
 
@@ -96,9 +99,8 @@ public class AwsS3FileStorageService implements FileStorageService {
 
       s3Client.putObject(putObjectRequest, RequestBody.fromBytes(content));
 
-      String fileUrl = String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, key);
-      log.info("Successfully uploaded generated file to S3: {}", fileUrl);
-      return fileUrl;
+      log.info("Successfully uploaded generated file to S3: {}", key);
+      return finalFilename;
     } catch (Exception e) {
       log.error("Failed to upload generated file to S3", e);
       throw new FileStorageException("Failed to upload generated file to S3", e);
@@ -107,42 +109,41 @@ public class AwsS3FileStorageService implements FileStorageService {
 
   @Override
   public List<String> uploadFiles(List<MultipartFile> files, String folder) {
-    List<String> fileUrls = new ArrayList<>();
+    List<String> fileKeys = new ArrayList<>();
 
     for (MultipartFile file : files) {
       String fileUrl = uploadFile(file, folder, null);
-      fileUrls.add(fileUrl);
+      fileKeys.add(fileUrl);
     }
 
-    return fileUrls;
+    return fileKeys;
   }
 
   @Override
-  public void deleteFile(String fileUrl) {
+  public void deleteFile(String folder, String filename) {
+    String key = folder + "/" + filename;
     try {
-      String key = extractKeyFromUrl(fileUrl);
-
       DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
           .bucket(bucketName)
           .key(key)
           .build();
 
       s3Client.deleteObject(deleteObjectRequest);
-      log.info("Successfully deleted file from S3: {}", fileUrl);
+      log.info("Successfully deleted file from S3: {}", key);
 
     } catch (Exception e) {
-      log.error("Failed to delete file: {}", fileUrl, e);
-      throw FileStorageException.deleteFailed(fileUrl, e);
+      log.error("Failed to delete file with key: {}", key, e);
+      throw FileStorageException.deleteFailed(key, e);
     }
   }
 
   @Override
-  public void deleteFiles(List<String> fileUrls) {
-    for (String fileUrl : fileUrls) {
+  public void deleteFiles(String folder, List<String> filenames) {
+    for (String filename : filenames) {
       try {
-        deleteFile(fileUrl);
+        deleteFile(folder, filename);
       } catch (Exception e) {
-        log.error("Failed to delete file, continuing with others: {}", fileUrl, e);
+        log.error("Failed to delete file, continuing with others: {}", filename, e);
       }
     }
   }
@@ -175,12 +176,32 @@ public class AwsS3FileStorageService implements FileStorageService {
     return UUID.randomUUID() + extension;
   }
 
-  private String extractKeyFromUrl(String fileUrl) {
-    // Extract key from URL format: https://bucket.s3.region.amazonaws.com/key
-    String prefix = String.format("https://%s.s3.%s.amazonaws.com/", bucketName, region);
-    if (fileUrl.startsWith(prefix)) {
-      return fileUrl.substring(prefix.length());
+  @Override
+  public String generatePresignedUrl(String folder, String filename, int expirationMinutes) {
+    try {
+      String key = folder + "/" + filename;
+
+      GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+          .bucket(bucketName)
+          .key(key)
+          .build();
+
+      GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+          .signatureDuration(Duration.ofMinutes(expirationMinutes))
+          .getObjectRequest(getObjectRequest)
+          .build();
+
+      PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+
+      String url = presignedRequest.url().toString();
+      log.info("Generated presigned URL for key: {}, expires in {} minutes", key,
+          expirationMinutes);
+
+      return url;
+    } catch (Exception e) {
+      log.error("Failed to generate presigned URL for {}/{}", folder, filename, e);
+      throw new FileStorageException("Failed to generate presigned URL", e);
     }
-    throw new IllegalArgumentException("Invalid S3 URL format: " + fileUrl);
   }
+
 }

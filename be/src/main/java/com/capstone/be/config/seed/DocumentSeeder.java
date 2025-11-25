@@ -1,17 +1,21 @@
 package com.capstone.be.config.seed;
 
-import com.capstone.be.config.seed.event.UserSeededEvent;
+import com.capstone.be.config.seed.event.TagSeededEvent;
 import com.capstone.be.domain.entity.DocType;
 import com.capstone.be.domain.entity.Document;
+import com.capstone.be.domain.entity.DocumentTagLink;
 import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.Specialization;
+import com.capstone.be.domain.entity.Tag;
 import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.DocVisibility;
 import com.capstone.be.repository.DocTypeRepository;
 import com.capstone.be.repository.DocumentRepository;
+import com.capstone.be.repository.DocumentTagLinkRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.SpecializationRepository;
+import com.capstone.be.repository.TagRepository;
 import com.capstone.be.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,10 +38,12 @@ public class DocumentSeeder {
   private final DocTypeRepository docTypeRepository;
   private final SpecializationRepository specializationRepository;
   private final OrganizationProfileRepository organizationProfileRepository;
+  private final TagRepository tagRepository;
+  private final DocumentTagLinkRepository documentTagLinkRepository;
 
 
   @Transactional
-  @EventListener(UserSeededEvent.class)
+  @EventListener(TagSeededEvent.class)
   public void run() {
     log.info("\uD83C\uDF31 Start seeding Document");
 
@@ -73,13 +79,24 @@ public class DocumentSeeder {
         .docType(docType)
         .isPremium(true)
         .price(100)
-        .thumbnail("thumbnail.pdf")
-        .fileName("filename.pdf")
+        .thumbnailKey("thumbnail-1.png")
+        .fileKey("file-1.pdf")
         .pageCount(20)
         .status(DocStatus.VERIFIED)
         .specialization(spec)
         .build();
 
-    documentRepository.save(document);
+    Document savedDoc = documentRepository.save(document);
+
+    Tag tag1 = tagRepository.findByCode(1L).orElse(null);
+    Tag tag2 = tagRepository.findByCode(2L).orElse(null);
+
+    if (tag1 != null & tag2 != null) {
+      var link1 = DocumentTagLink.builder().tag(tag1).document(savedDoc).build();
+      var link2 = DocumentTagLink.builder().tag(tag2).document(savedDoc).build();
+
+      documentTagLinkRepository.save(link1);
+      documentTagLinkRepository.save(link2);
+    }
   }
 }

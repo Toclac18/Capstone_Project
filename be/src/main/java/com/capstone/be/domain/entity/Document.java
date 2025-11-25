@@ -52,9 +52,9 @@ public class Document extends BaseEntity {
 
   private Integer price;  // System will set fixed price for premium docs
 
-  private String thumbnail;
+  private String thumbnailKey;
 
-  private String fileName;
+  private String fileKey;
 
   private int pageCount;
 

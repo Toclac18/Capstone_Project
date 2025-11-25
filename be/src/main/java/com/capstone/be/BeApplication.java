@@ -5,10 +5,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.repository.config.BootstrapMode;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableJpaRepositories(basePackages = "com.capstone.be", bootstrapMode = BootstrapMode.LAZY)
 @EntityScan(basePackages = "com.capstone.be.domain.entity")
+@EnableScheduling
 //@EnableJpaAuditing
 public class BeApplication {
 

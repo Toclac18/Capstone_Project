@@ -37,7 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/contact-tickets")
+@RequestMapping("/contact-tickets")
 @RequiredArgsConstructor
 @Tag(name = "Contact Tickets", description = "APIs for contact ticket management")
 public class ContactTicketController {

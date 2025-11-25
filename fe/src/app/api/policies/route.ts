@@ -11,7 +11,7 @@ import type {
 } from "@/types/policy";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { jsonResponse, proxyJsonResponse } from "@/server/response";
+import { jsonResponse } from "@/server/response";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
 async function handleGET(req: NextRequest): Promise<Response> {
@@ -111,8 +111,15 @@ async function handleGET(req: NextRequest): Promise<Response> {
     // Handle different response structures
     if (raw?.data) {
       if (Array.isArray(raw.data)) {
-        // Direct array: { data: [...] }
-        policies = raw.data;
+        // Check if it's array of ApiResponse objects or direct policies array
+        if (raw.data.length > 0 && raw.data[0]?.success && raw.data[0]?.data) {
+          // Array of ApiResponse: [{ success: true, data: [...] }]
+          // Extract policies from first element
+          policies = Array.isArray(raw.data[0].data) ? raw.data[0].data : [];
+        } else {
+          // Direct array of policies: { data: [...] }
+          policies = raw.data;
+        }
       } else if (raw.data?.data && Array.isArray(raw.data.data)) {
         // Nested: { data: { data: [...] } }
         policies = raw.data.data;
@@ -123,6 +130,9 @@ async function handleGET(req: NextRequest): Promise<Response> {
     } else if (Array.isArray(raw)) {
       // Already an array
       policies = raw;
+    } else if (raw?.success && Array.isArray(raw.data)) {
+      // Direct ApiResponse: { success: true, data: [...] }
+      policies = raw.data;
     }
     
     // Return in format that service expects: { data: [...] }

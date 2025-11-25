@@ -6,6 +6,7 @@ import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, proxyJsonResponse } from "@/server/response";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { getUsers } from "@/mock/business-admin-users";
+import { UserQueryParams } from "@/types/user";
 
 /**
  * List users with optional query params. Proxies to BE_BASE/api/users.
@@ -13,7 +14,8 @@ import { getUsers } from "@/mock/business-admin-users";
 async function handleGET(req: NextRequest): Promise<Response> {
   if (USE_MOCK) {
     const { searchParams } = new URL(req.url);
-    const params = {
+    const sortOrderParam = searchParams.get("sortOrder");
+    const params: UserQueryParams = {
       page: searchParams.get("page")
         ? Number(searchParams.get("page"))
         : undefined,
@@ -26,7 +28,9 @@ async function handleGET(req: NextRequest): Promise<Response> {
       dateFrom: searchParams.get("dateFrom") || undefined,
       dateTo: searchParams.get("dateTo") || undefined,
       sortBy: searchParams.get("sortBy") || undefined,
-      sortOrder: searchParams.get("sortOrder") || undefined,
+      sortOrder: (sortOrderParam === "asc" || sortOrderParam === "desc")
+        ? (sortOrderParam as "asc" | "desc")
+        : undefined,
     };
 
     const result = getUsers(params);
@@ -63,7 +67,8 @@ async function handleGET(req: NextRequest): Promise<Response> {
 async function handlePOST(req: NextRequest): Promise<Response> {
   if (USE_MOCK) {
     const body = await req.json().catch(() => ({}));
-    const params = {
+    const sortOrderParam = body?.sortOrder;
+    const params: UserQueryParams = {
       page: body?.page || 1,
       limit: body?.limit || 10,
       search: body?.search || undefined,
@@ -72,7 +77,9 @@ async function handlePOST(req: NextRequest): Promise<Response> {
       dateFrom: body?.dateFrom || undefined,
       dateTo: body?.dateTo || undefined,
       sortBy: body?.sortBy || undefined,
-      sortOrder: body?.sortOrder || undefined,
+      sortOrder: (sortOrderParam === "asc" || sortOrderParam === "desc")
+        ? (sortOrderParam as "asc" | "desc")
+        : undefined,
     };
 
     const result = getUsers(params);

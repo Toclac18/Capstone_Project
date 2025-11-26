@@ -841,7 +841,7 @@ public class UserServiceImpl implements UserService {
         .id(user.getId())
         .email(user.getEmail())
         .fullName(user.getFullName())
-        .avatarUrl(user.getAvatarUrl())
+        .avatarUrl(user.getAvatarKey())
         .role(user.getRole())
         .status(user.getStatus())
         .createdAt(user.getCreatedAt())

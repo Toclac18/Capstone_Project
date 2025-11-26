@@ -223,5 +223,3 @@ export function mockUpdateOrganizationStatus(
     status,
   };
 }
-
-

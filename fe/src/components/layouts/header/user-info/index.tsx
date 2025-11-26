@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown";
 import { cn } from "@/utils/utils";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { logout } from "@/services/auth.service";
 import { LogOutIcon, SettingsIcon, UserIcon } from "./icons";
@@ -18,15 +18,13 @@ export function UserInfo() {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
   const { email, loading } = useReader();
-  const [name, setName] = useState<string | null>(null);
-
-  // Get name from localStorage
-  useEffect(() => {
+  // Get name from localStorage using initial state function
+  const [name] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
-      const userName = localStorage.getItem("userName");
-      setName(userName);
+      return localStorage.getItem("userName");
     }
-  }, []);
+    return null;
+  });
 
   async function handleLogout() {
     try {

@@ -1,17 +1,13 @@
 import { headers } from "next/headers";
-import { mockDocumentsDB } from "@/mock/db";
+import { mockDocumentsDB } from "@/mock/db.mock";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
-const DEFAULT_BE_BASE = "http://localhost:8080";
-
-export async function GET() {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
+async function handleGET() {
   if (USE_MOCK) {
     const tags = mockDocumentsDB.getTags();
-    return new Response(JSON.stringify(tags), {
+    return jsonResponse(tags, {
       status: 200,
       headers: {
         "content-type": "application/json",
@@ -34,14 +30,10 @@ export async function GET() {
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/reader/documents/tags/route.ts/GET",
+  });

@@ -8,7 +8,7 @@ import {
   type UpdateDocumentRequest,
   type UpdateDocumentResponse,
   type DeleteDocumentResponse,
-} from "@/services/library";
+} from "@/services/library.service";
 
 export type {
   LibraryDocument,
@@ -20,21 +20,20 @@ export type {
 };
 
 export async function fetchLibrary(
-  params?: LibraryQueryParams
+  params?: LibraryQueryParams,
 ): Promise<LibraryResponse> {
   return getLibraryService(params);
 }
 
 export async function updateLibraryDocument(
   documentId: string,
-  data: UpdateDocumentRequest
+  data: UpdateDocumentRequest,
 ): Promise<UpdateDocumentResponse> {
   return updateDocumentService(documentId, data);
 }
 
 export async function deleteLibraryDocument(
-  documentId: string
+  documentId: string,
 ): Promise<DeleteDocumentResponse> {
   return deleteDocumentService(documentId);
 }
-

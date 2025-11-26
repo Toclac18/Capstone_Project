@@ -1,91 +1,55 @@
 // app/api/documents/[id]/route.ts
-import { cookies } from "next/headers";
 
-const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+import { NextRequest } from "next/server";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { jsonResponse, proxyJsonResponse } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { mockGetDocDetail } from "@/mock/docs-detail.mock";
 
-async function getAuthHeader(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  return token ? `Bearer ${token}` : null;
-}
-
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+/**
+ * This route proxies document detail by id via dynamic segment /documents/[id].
+ * Original behavior: call BE_BASE/api/documents/{id} with Authorization.
+ */
+async function handleGET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+): Promise<Response> {
   const { id } = await params;
-  const authHeader = await getAuthHeader();
 
-  const fh = new Headers({ "Content-Type": "application/json" });
-  if (authHeader) fh.set("Authorization", authHeader);
+  if (USE_MOCK) {
+    const result = mockGetDocDetail(id);
+    if (!result) {
+      return jsonResponse({ error: "Document not found" }, {
+        status: 404,
+        mode: "mock",
+      });
+    }
+    return jsonResponse(result, { status: 200, mode: "mock" });
+  }
 
-  const upstream = await fetch(`${BE_BASE}/api/documents/${id}`, {
-    method: "GET",
-    headers: fh,
-    cache: "no-store",
+  try {
+    const authHeader = await getAuthHeader();
+
+    const fh = new Headers({ "Content-Type": "application/json" });
+    if (authHeader) fh.set("Authorization", authHeader);
+
+    const upstream = await fetch(`${BE_BASE}/api/documents/${id}`, {
+      method: "GET",
+      headers: fh,
+      cache: "no-store",
+    });
+
+    return proxyJsonResponse(upstream, { mode: "real" });
+  } catch (e: any) {
+    return jsonResponse(
+      { message: "Document fetch failed", error: String(e) },
+      { status: 502 },
+    );
+  }
+}
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/documents/[id]/route.ts/GET",
   });
-
-  const text = await upstream.text();
-  if (!upstream.ok) {
-    return Response.json(
-      { error: parseError(text) },
-      { status: upstream.status }
-    );
-  }
-
-  try {
-    const response = JSON.parse(text);
-    return Response.json(response);
-  } catch {
-    return Response.json(
-      { error: "Failed to process response" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-  const authHeader = await getAuthHeader();
-
-  const fh = new Headers({ "Content-Type": "application/json" });
-  if (authHeader) fh.set("Authorization", authHeader);
-
-  const upstream = await fetch(`${BE_BASE}/api/documents/${id}`, {
-    method: "DELETE",
-    headers: fh,
-    cache: "no-store",
-  });
-
-  const text = await upstream.text();
-  if (!upstream.ok) {
-    return Response.json(
-      { error: parseError(text) },
-      { status: upstream.status }
-    );
-  }
-
-  try {
-    const response = JSON.parse(text);
-    return Response.json(response);
-  } catch {
-    return Response.json(
-      { error: "Failed to process response" },
-      { status: 500 }
-    );
-  }
-}
-
-function parseError(text: string): string {
-  try {
-    const json = JSON.parse(text);
-    return json?.error || json?.message || "Request failed";
-  } catch {
-    return text || "Request failed";
-  }
-}
-

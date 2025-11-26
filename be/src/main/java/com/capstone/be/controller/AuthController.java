@@ -1,14 +1,16 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.dto.request.auth.ForgotPasswordOtpRequest;
 import com.capstone.be.dto.request.auth.LoginRequest;
 import com.capstone.be.dto.request.auth.RegisterOrganizationRequest;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
 import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
 import com.capstone.be.dto.request.auth.ResendVerificationEmailRequest;
+import com.capstone.be.dto.request.auth.ResetPasswordWithTokenRequest;
 import com.capstone.be.dto.request.auth.VerifyEmailRequest;
-import com.capstone.be.dto.request.user.RequestPasswordResetRequest;
-import com.capstone.be.dto.request.user.VerifyPasswordResetOtpRequest;
+import com.capstone.be.dto.request.auth.VerifyOtpRequest;
 import com.capstone.be.dto.response.auth.AuthResponse;
+import com.capstone.be.dto.response.auth.VerifyOtpResponse;
 import com.capstone.be.service.AuthService;
 import com.capstone.be.service.UserService;
 import jakarta.validation.Valid;
@@ -27,7 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -85,32 +87,54 @@ public class AuthController {
   }
 
   /**
-   * Request password reset - sends OTP to user's email
-   * POST /api/v1/auth/request-password-reset
+   * Step 1: Send OTP for password reset
+   * POST /api/v1/auth/forgot-password/otp
    *
-   * @param request Request password reset request (email)
-   * @return 200 OK with message
+   * @param request Forgot password OTP request (email)
+   * @return 200 OK with generic message
    */
-  @PostMapping("/request-password-reset")
-  public ResponseEntity<String> requestPasswordReset(
-      @Valid @RequestBody RequestPasswordResetRequest request) {
-    log.info("Request password reset for email: {}", request.getEmail());
-    userService.requestPasswordReset(request.getEmail());
-    return ResponseEntity.ok("OTP has been sent to your email address");
+  @PostMapping("/forgot-password/otp")
+  public ResponseEntity<String> sendPasswordResetOtp(
+      @Valid @RequestBody ForgotPasswordOtpRequest request) {
+    log.info("Send password reset OTP for email: {}", request.getEmail());
+    userService.sendPasswordResetOtp(request.getEmail());
+    return ResponseEntity.ok("If an account exists with this email, an OTP has been sent");
   }
 
   /**
-   * Verify OTP and reset password
+   * Step 2: Verify OTP and get reset token
+   * POST /api/v1/auth/verify-otp
+   *
+   * @param request Verify OTP request (email, otp)
+   * @return 200 OK with reset token
+   */
+  @PostMapping("/verify-otp")
+  public ResponseEntity<VerifyOtpResponse> verifyOtp(
+      @Valid @RequestBody VerifyOtpRequest request) {
+    log.info("Verify OTP for email: {}", request.getEmail());
+    String resetToken = userService.verifyOtpAndGenerateResetToken(
+        request.getEmail(), request.getOtp());
+
+    VerifyOtpResponse response = VerifyOtpResponse.builder()
+        .valid(true)
+        .resetToken(resetToken)
+        .build();
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Step 3: Reset password with token
    * POST /api/v1/auth/reset-password
    *
-   * @param request Verify password reset OTP request (email, otp, newPassword)
+   * @param request Reset password request (resetToken, newPassword)
    * @return 200 OK with message
    */
   @PostMapping("/reset-password")
   public ResponseEntity<String> resetPassword(
-      @Valid @RequestBody VerifyPasswordResetOtpRequest request) {
-    log.info("Reset password for email: {}", request.getEmail());
-    userService.verifyPasswordResetOtp(request.getEmail(), request.getOtp(), request.getNewPassword());
+      @Valid @RequestBody ResetPasswordWithTokenRequest request) {
+    log.info("Reset password with token");
+    userService.resetPasswordWithToken(request.getResetToken(), request.getNewPassword());
     return ResponseEntity.ok("Password reset successfully. You can now login with your new password");
   }
 }

@@ -1,127 +1,97 @@
-import { cookies } from "next/headers";
-import { mockDocumentsDB } from "@/mock/db";
+// app/api/reader/documents/[id]/re-review/route.ts
 
-const DEFAULT_BE_BASE = "http://localhost:8080";
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+import { mockDocumentsDB } from "@/mock/db.mock";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { jsonResponse, parseError } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { badRequest } from "@/server/response";
 
-export async function POST(
+/**
+ * Handle POST request to submit a re-review request for a document
+ */
+async function handlePOST(
   request: Request,
-  ctx: { params: Promise<{ id: string }> }
-) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
+  ctx: { params: Promise<{ id: string }> },
+): Promise<Response> {
   const { id } = await ctx.params;
 
+  let body: any;
   try {
-    const body = await request.json();
-    const reason = body.reason?.trim() || "";
+    body = await request.json();
+  } catch {
+    return badRequest("Invalid JSON");
+  }
 
-    // Validate reason
-    if (!reason) {
-      return new Response(
-        JSON.stringify({
-          error: "Reason is required",
-        }),
-        {
-          status: 400,
-          headers: {
-            "content-type": "application/json",
-          },
-        }
+  const reason = (body.reason || "").toString().trim();
+
+  if (!reason) {
+    return badRequest("Reason is required");
+  }
+
+  if (reason.length < 10) {
+    return badRequest("Reason must be at least 10 characters");
+  }
+
+  if (USE_MOCK) {
+    const result = mockDocumentsDB.requestReReview(id, reason);
+
+    if (result.error) {
+      return jsonResponse(
+        { error: result.error },
+        { status: result.status || 400, mode: "mock" },
       );
     }
 
-    if (reason.length < 10) {
-      return new Response(
-        JSON.stringify({
-          error: "Reason must be at least 10 characters",
-        }),
-        {
-          status: 400,
-          headers: {
-            "content-type": "application/json",
-          },
-        }
-      );
-    }
+    return jsonResponse(
+      {
+        message: "Your request has been submitted and is under review.",
+      },
+      { mode: "mock" },
+    );
+  }
+  const authHeader = await getAuthHeader("reader-documents-rereview");
 
-    if (USE_MOCK) {
-      // Check if document already has re-review request
-      const result = mockDocumentsDB.requestReReview(id, reason);
-      
-      if (result.error) {
-        return new Response(
-          JSON.stringify({
-            error: result.error,
-          }),
-          {
-            status: result.status || 400,
-            headers: {
-              "content-type": "application/json",
-              "x-mode": "mock",
-            },
-          }
-        );
-      }
+  const fh = new Headers({ "Content-Type": "application/json" });
+  if (authHeader) fh.set("Authorization", authHeader);
 
-      return new Response(
-        JSON.stringify({
-          message:
-            "Your request has been submitted and is under review.",
-        }),
-        {
-          status: 200,
-          headers: {
-            "content-type": "application/json",
-            "x-mode": "mock",
-          },
-        }
-      );
-    }
-
-    // Lấy authentication từ cookie
-    const cookieStore = await cookies();
-    const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
-    const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
-
-    // Backend chỉ nhận Authorization header, không nhận cookie
-    const fh = new Headers({ "Content-Type": "application/json" });
-    if (bearerToken) {
-      fh.set("Authorization", bearerToken);
-    }
-
-    const upstream = await fetch(`${BE_BASE}/api/reader/documents/${id}/re-review`, {
+  const upstream = await fetch(
+    `${BE_BASE}/api/reader/documents/${encodeURIComponent(id)}/re-review`,
+    {
       method: "POST",
       headers: fh,
       body: JSON.stringify({ reason }),
       cache: "no-store",
-    });
+    },
+  );
 
-    const text = await upstream.text();
-    return new Response(text, {
-      status: upstream.status,
-      headers: {
-        "content-type":
-          upstream.headers.get("content-type") ?? "application/json",
-        "x-mode": "real",
-      },
-    });
-  } catch (error) {
-    return new Response(
-      JSON.stringify({
-        error: "Unable to submit request. Please try again later.",
-      }),
-      {
-        status: 500,
-        headers: {
-          "content-type": "application/json",
-        },
-      }
+  const text = await upstream.text();
+
+  if (!upstream.ok) {
+    return jsonResponse(
+      { error: parseError(text, "Request failed") },
+      { status: upstream.status, mode: "real" },
     );
   }
+
+  // Success path
+  let data: any = null;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return jsonResponse(
+      { error: "Failed to parse upstream response" },
+      { status: 500, mode: "real" },
+    );
+  }
+
+  return jsonResponse(data, { mode: "real" });
 }
 
-
+/**
+ * Exported route wrapped with global withErrorBoundary
+ */
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/reader/documents/[id]/re-review/POST",
+  });

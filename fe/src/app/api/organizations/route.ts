@@ -1,102 +1,106 @@
 // app/api/organizations/route.ts
-import { cookies } from "next/headers";
 
-const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+import { NextRequest } from "next/server";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { jsonResponse, proxyJsonResponse } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { mockGetOrganizations } from "@/mock/organizations.mock";
 
-async function getAuthHeader(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (process.env.NODE_ENV === "development") {
-    console.log(`[organizations] Cookie name: ${COOKIE_NAME}`);
-    console.log(`[organizations] Token found: ${token ? "YES" : "NO"}`);
-    if (token) {
-      console.log(`[organizations] Token length: ${token.length}`);
-    }
+async function handleGET(req: NextRequest): Promise<Response> {
+  if (USE_MOCK) {
+    const { searchParams } = new URL(req.url);
+    const params = {
+      page: searchParams.get("page")
+        ? Number(searchParams.get("page"))
+        : undefined,
+      limit: searchParams.get("limit")
+        ? Number(searchParams.get("limit"))
+        : undefined,
+      search: searchParams.get("search") || undefined,
+      type: searchParams.get("type") || undefined,
+      status: searchParams.get("status") || undefined,
+    };
+
+    const result = mockGetOrganizations(params);
+    return jsonResponse(result, { status: 200, mode: "mock" });
   }
-  return token ? `Bearer ${token}` : null;
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const queryString = searchParams.toString();
+    const url = queryString
+      ? `${BE_BASE}/api/organizations?${queryString}`
+      : `${BE_BASE}/api/organizations`;
+
+    const authHeader = await getAuthHeader();
+
+    const fh = new Headers({ "Content-Type": "application/json" });
+    if (authHeader) fh.set("Authorization", authHeader);
+
+    const upstream = await fetch(url, {
+      method: "GET",
+      headers: fh,
+      cache: "no-store",
+    });
+
+    return proxyJsonResponse(upstream, { mode: "real" });
+  } catch (e: any) {
+    return jsonResponse(
+      { message: "Organizations fetch failed", error: String(e) },
+      { status: 502 },
+    );
+  }
 }
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const queryString = searchParams.toString();
-  const url = queryString
-    ? `${BE_BASE}/api/organizations?${queryString}`
-    : `${BE_BASE}/api/organizations`;
+async function handlePOST(req: NextRequest): Promise<Response> {
+  if (USE_MOCK) {
+    const body = await req.json().catch(() => ({}));
+    const params = {
+      page: body?.page || 1,
+      limit: body?.limit || 10,
+      search: body?.search || undefined,
+      type: body?.type || undefined,
+      status: body?.status || undefined,
+      dateFrom: body?.dateFrom || undefined,
+      dateTo: body?.dateTo || undefined,
+      sortBy: body?.sortBy || undefined,
+      sortOrder: body?.sortOrder || undefined,
+    };
 
-  const authHeader = await getAuthHeader();
+    const result = mockGetOrganizations(params);
+    return jsonResponse(result, { status: 200, mode: "mock" });
+  }
 
-  const fh = new Headers({ "Content-Type": "application/json" });
-  if (authHeader) fh.set("Authorization", authHeader);
+  try {
+    const body = await req.json().catch(() => ({}));
+    const authHeader = await getAuthHeader();
 
-  const upstream = await fetch(url, {
-    method: "GET",
-    headers: fh,
-    cache: "no-store",
+    const fh = new Headers({ "Content-Type": "application/json" });
+    if (authHeader) fh.set("Authorization", authHeader);
+
+    const upstream = await fetch(`${BE_BASE}/api/organizations`, {
+      method: "POST",
+      headers: fh,
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+
+    return proxyJsonResponse(upstream, { mode: "real" });
+  } catch (e: any) {
+    return jsonResponse(
+      { message: "Organizations fetch failed", error: String(e) },
+      { status: 502 },
+    );
+  }
+}
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/organizations/route.ts/GET",
   });
 
-  const text = await upstream.text();
-  if (!upstream.ok) {
-    return Response.json(
-      { error: parseError(text) },
-      { status: upstream.status }
-    );
-  }
-
-  try {
-    const response = JSON.parse(text);
-    return Response.json(response);
-  } catch {
-    return Response.json(
-      { error: "Failed to process response" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(req: Request) {
-  const body = await req.json().catch(() => null);
-  if (!body) {
-    return Response.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-
-  const authHeader = await getAuthHeader();
-
-  const fh = new Headers({ "Content-Type": "application/json" });
-  if (authHeader) fh.set("Authorization", authHeader);
-
-  const upstream = await fetch(`${BE_BASE}/api/organizations`, {
-    method: "POST",
-    headers: fh,
-    body: JSON.stringify(body),
-    cache: "no-store",
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/organizations/route.ts/POST",
   });
-
-  const text = await upstream.text();
-  if (!upstream.ok) {
-    return Response.json(
-      { error: parseError(text) },
-      { status: upstream.status }
-    );
-  }
-
-  try {
-    const response = JSON.parse(text);
-    return Response.json(response);
-  } catch {
-    return Response.json(
-      { error: "Failed to process response" },
-      { status: 500 }
-    );
-  }
-}
-
-function parseError(text: string): string {
-  try {
-    const json = JSON.parse(text);
-    return json?.error || json?.message || "Request failed";
-  } catch {
-    return text || "Request failed";
-  }
-}
-

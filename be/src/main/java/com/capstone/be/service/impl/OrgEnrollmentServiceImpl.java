@@ -1,5 +1,6 @@
 package com.capstone.be.service.impl;
 
+import com.capstone.be.config.constant.FileStorage;
 import com.capstone.be.domain.entity.MemberImportBatch;
 import com.capstone.be.domain.entity.OrgEnrollment;
 import com.capstone.be.domain.entity.OrganizationProfile;
@@ -494,11 +495,11 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
       MultipartFile file) {
 
     // Upload Excel file to S3 if provided
-    String fileUrl = null;
+    String importFileKey = null;
     if (file != null && !file.isEmpty()) {
       try {
-        fileUrl = fileStorageService.uploadFile(file, "import-batches", null);
-        log.info("Uploaded import Excel file to S3: {}", fileUrl);
+        importFileKey = fileStorageService.uploadFile(file, FileStorage.MEMBER_IMPORT_FOLDER, null);
+        log.info("Uploaded import Excel file to S3: {}", importFileKey);
       } catch (Exception e) {
         log.error("Failed to upload Excel file to S3", e);
         // Continue without file URL
@@ -515,7 +516,7 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
         .failedCount(0)
         .skippedCount(0)
         .fileName(fileName)
-        .fileUrl(fileUrl)
+        .fileKey(importFileKey)
         .build();
 
     batch = memberImportBatchRepository.save(batch);

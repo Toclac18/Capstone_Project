@@ -10,7 +10,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -43,7 +43,7 @@ public class PasswordResetRequest extends BaseEntity {
   private String otpHash;
 
   @Column(nullable = false)
-  private LocalDateTime expiryTime;
+  private Instant expiryTime;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
@@ -62,7 +62,7 @@ public class PasswordResetRequest extends BaseEntity {
   private static final int MAX_ATTEMPTS = 5;
 
   public boolean isExpired() {
-    return LocalDateTime.now().isAfter(expiryTime);
+    return Instant.now().isAfter(expiryTime);
   }
 
   public boolean isMaxAttemptsReached() {

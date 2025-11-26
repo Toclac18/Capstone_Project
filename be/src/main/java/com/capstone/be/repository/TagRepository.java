@@ -10,12 +10,14 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface TagRepository extends JpaRepository<Tag, UUID> {
+public interface TagRepository extends JpaRepository<Tag, UUID>,
+    JpaSpecificationExecutor<Tag> {
 
   Optional<Tag> findByName(String name);
 
@@ -36,6 +38,8 @@ public interface TagRepository extends JpaRepository<Tag, UUID> {
   Set<Tag> findAllByStatusAndCodeIn(TagStatus status, Collection<Long> codes);
 
   List<Tag> findAllByNameIn(Collection<String> names);
+
+  Optional<Tag> findByCode(Long code);
 
   @Query("select t.code from Tag t where t.code in :codes and t.status = ACTIVE")
   Set<Long> findValidActiveTagCodes(@Param("codes") List<Long> codes);

@@ -1,58 +1,70 @@
-const USE_MOCK = process.env.USE_MOCK === "true";
-const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { jsonResponse, parseError, badRequest } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body) {
-    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+    return badRequest("Invalid JSON");
   }
 
-  // Validate required fields for Reader
-  const { fullName, dateOfBirth, username, email, password } = body;
-  if (!fullName || !dateOfBirth || !username || !email || !password) {
-    return Response.json(
-      { error: "Missing required fields" },
-      { status: 400 }
-    );
+  // Validate required fields for Reader (matching backend RegisterReaderRequest)
+  const { email, password, fullName, dateOfBirth } = body;
+  if (!email || !password || !fullName || !dateOfBirth) {
+    return badRequest("Missing required fields: email, password, fullName, dateOfBirth");
   }
 
   if (USE_MOCK) {
-    const mockUser = {
-      id: Math.floor(Math.random() * 10000),
-      username,
+    const mockResponse = {
+      userId: `user-${Date.now()}`,
       email,
       fullName,
       role: "READER",
-      status: "PENDING_VERIFICATION",
-      message: "Registration successful! Please check your email to verify your account.",
+      status: "PENDING_EMAIL_VERIFY",
+      accessToken: null,
+      tokenType: "Bearer",
     };
-    return Response.json(mockUser, { status: 201 });
+    return jsonResponse(mockResponse, { status: 201, mode: "mock" });
   }
 
   // Proxy to BE
-  const upstream = await fetch(`${BE_BASE}/api/auth/register-reader`, {
+  const upstream = await fetch(`${BE_BASE}/api/auth/register/reader`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ email, password, fullName, dateOfBirth }),
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  const contentType = upstream.headers.get("content-type") ?? "application/json";
-
   if (!upstream.ok) {
-    let errorMsg = "Registration failed";
-    try {
-      const json = JSON.parse(text);
-      errorMsg = json?.detail || json?.message || errorMsg;
-    } catch {
-      errorMsg = text || errorMsg;
-    }
-    return Response.json({ error: errorMsg }, { status: upstream.status });
+    const text = await upstream.text();
+    return jsonResponse(
+      { error: parseError(text, "Registration failed") },
+      { status: upstream.status }
+    );
   }
 
-  return new Response(text, {
+  // Parse response from backend
+  let responseData: any;
+  try {
+    const text = await upstream.text();
+    responseData = JSON.parse(text);
+  } catch {
+    return jsonResponse(
+      { error: "Failed to parse backend response" },
+      { status: 500 }
+    );
+  }
+
+  // Backend may return { data: AuthResponse } or AuthResponse directly
+  const authResponse = responseData?.data || responseData;
+  
+  return jsonResponse(authResponse, { 
     status: upstream.status,
-    headers: { "content-type": contentType },
+    mode: "real" 
   });
 }
+
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/auth/register/reader/route.ts/POST",
+  });

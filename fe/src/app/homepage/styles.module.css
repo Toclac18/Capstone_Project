@@ -1,329 +1,734 @@
 /* ============ Container ============ */
-.main {
-  @apply mx-auto w-full max-w-6xl px-6 py-8 lg:px-8;
+
+.pageShell {
+  @apply flex min-h-screen flex-col bg-slate-50;
 }
+
+:global(html.dark) .pageShell {
+  @apply bg-slate-950;
+}
+
+.main {
+  @apply mx-auto w-full max-w-6xl flex-1 px-4 py-8 lg:px-8 lg:py-10;
+}
+
 .topRow {
-  @apply mb-6 flex items-center gap-3;
+  @apply mb-6 flex items-center gap-4;
 }
 
 /* ============ Search Bar ============ */
+
 .searchWrap {
-  @apply relative w-full max-w-full;
+  @apply relative w-full;
 }
 
-/* input box */
+/* Input box */
 .search {
-  @apply w-full rounded-2xl border border-gray-200 bg-white/80 py-3.5 pl-5 pr-12 text-[15px] text-gray-700 shadow-sm outline-none backdrop-blur transition-all duration-200 placeholder:text-gray-400;
+  @apply w-full rounded-2xl border border-gray-200 bg-white/80 px-4 py-3 text-sm text-gray-800 shadow-sm outline-none backdrop-blur transition-all duration-200 placeholder:text-gray-400;
 }
-.search:hover {
-  @apply bg-white shadow-md;
-}
+
 .search:focus {
-  @apply bg-white shadow-lg ring-2 ring-indigo-300/60;
+  @apply border-indigo-400 bg-white shadow-md ring-2 ring-indigo-100;
 }
 
-/* dark mode */
 :global(html.dark) .search {
-  @apply border-gray-700 bg-gray-800/80 text-gray-100 placeholder-gray-400 shadow-none;
-}
-:global(html.dark) .search:hover {
-  @apply bg-gray-800 shadow;
-}
-:global(html.dark) .search:focus {
-  @apply bg-gray-800 shadow-md ring-indigo-500/30;
+  @apply border-gray-700 bg-gray-900/80 text-gray-100 placeholder:text-gray-500;
 }
 
-/* magnifying-glass button */
+:global(html.dark) .search:focus {
+  @apply border-indigo-400 bg-gray-900 shadow-md ring-indigo-500/30;
+}
+
+/* Magnifying button */
 .searchIconBtn {
-  @apply absolute right-4 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-500 transition-colors duration-150;
+  @apply absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-indigo-50 text-gray-600 shadow-sm transition-all duration-200;
 }
+
 .searchIconBtn:hover {
-  @apply text-indigo-500;
+  @apply bg-indigo-100 text-indigo-600;
 }
+
 .searchIconBtn:active {
   @apply scale-95;
 }
-:global(html.dark) .searchIconBtn {
-  @apply text-gray-300;
-}
-:global(html.dark) .searchIconBtn:hover {
-  @apply text-indigo-400;
+
+.searchIconBtn:focus-visible {
+  @apply outline-none ring-2 ring-indigo-300/70;
 }
 
-/* ============ Action buttons ============ */
+:global(html.dark) .searchIconBtn {
+  @apply bg-gray-800 text-gray-300;
+}
+
+:global(html.dark) .searchIconBtn:hover {
+  @apply bg-gray-700 text-indigo-300;
+}
+
+/* ============ Action Buttons (chips under search) ============ */
+
 .actions {
-  @apply mb-7 grid grid-cols-1 gap-3 sm:grid-cols-3;
+  @apply mb-6 flex flex-wrap gap-3;
 }
+
 .actionBtn {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200;
+  @apply inline-flex items-center rounded-full border border-indigo-50 bg-indigo-50 px-4 py-2 text-xs font-medium text-indigo-700 shadow-sm transition-all duration-200;
 }
+
 .actionBtn:hover {
-  @apply -translate-y-[2px] bg-gray-50 shadow-lg;
+  @apply border-indigo-200 bg-indigo-100 text-indigo-800 shadow;
 }
+
 .actionBtn:active {
-  @apply translate-y-0 shadow;
+  @apply translate-y-0.5 shadow-none;
 }
+
 .actionBtn:focus-visible {
-  @apply outline-none ring-2 ring-indigo-300/60;
+  @apply outline-none ring-2 ring-indigo-300/70;
 }
+
 :global(html.dark) .actionBtn {
   @apply border-gray-700 bg-gray-800 text-gray-100 shadow-none;
 }
+
 :global(html.dark) .actionBtn:hover {
-  @apply shadow;
+  @apply border-gray-600 bg-gray-700;
 }
 
 /* ============ Sections ============ */
+
 .section {
   @apply mb-10;
 }
+
 .sectionHeaderRow {
-  @apply mb-4 flex items-center justify-between;
+  @apply mb-4 flex items-center justify-between gap-3;
 }
+
 .sectionHeader {
-  @apply text-lg font-semibold text-gray-800;
+  @apply text-lg font-semibold text-gray-900;
 }
+
 :global(html.dark) .sectionHeader {
   @apply text-gray-100;
 }
 
-/* ============ Pager ============ */
-.pager {
-  @apply flex items-center gap-2;
-}
-.pageSizeWrap {
-  @apply mr-2 inline-flex items-center gap-2;
-}
-.pageSizeLabel {
-  @apply text-xs text-gray-500;
-}
-:global(html.dark) .pageSizeLabel {
-  @apply text-gray-400;
-}
-.pageSizeSelect {
-  @apply h-9 rounded-md border border-gray-200 bg-white px-2 text-sm text-gray-700 shadow-sm outline-none transition;
-}
-.pageSizeSelect:focus {
-  @apply ring-2 ring-indigo-300/60;
-}
-:global(html.dark) .pageSizeSelect {
-  @apply border-gray-700 bg-gray-800 text-gray-100 shadow-none;
-}
-:global(html.dark) .pageSizeSelect:focus {
-  @apply ring-indigo-500/30;
-}
-.pagerBtn {
-  @apply h-9 w-9 rounded-md border border-gray-200 bg-white text-gray-700 shadow-sm transition;
-}
-.pagerBtn:hover {
-  @apply bg-gray-50 shadow;
-}
-.pagerBtn:disabled {
-  @apply cursor-not-allowed opacity-50 shadow-none;
-}
-:global(html.dark) .pagerBtn {
-  @apply border-gray-700 bg-gray-800 text-gray-100 shadow-none;
-}
-.pagerText {
-  @apply text-sm text-gray-500;
-}
-:global(html.dark) .pagerText {
-  @apply text-gray-400;
+/* ============ Cards Grid ============ */
+
+.cardsGrid {
+  @apply flex gap-4 overflow-x-auto pb-2 md:gap-6;
 }
 
-/* ============ Cards ============ */
-.cardsGrid {
-  @apply flex gap-6 overflow-x-auto pb-4 pt-2;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-}
-.cardsGrid > * {
-  @apply flex-shrink-0;
-  scroll-snap-align: start;
-}
-:global(.cardsGrid::-webkit-scrollbar) {
-  height: 8px;
-}
-:global(.cardsGrid::-webkit-scrollbar-thumb) {
-  background-color: rgba(156, 163, 175, 0.5);
-  border-radius: 9999px;
-}
-:global(.cardsGrid::-webkit-scrollbar-thumb:hover) {
-  background-color: rgba(107, 114, 128, 0.7);
+@media (min-width: 1280px) {
+  .cardsGrid {
+    justify-content: flex-start;
+  }
 }
 
 /* ============ DocCard ============ */
+
 .card {
-  @apply flex-shrink-0 rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 ease-out;
-  flex: 0 0 calc((100% - 3rem) / 4);
-  max-width: 280px;
-  min-width: 220px;
-  height: 395px;
-  padding: 1rem;
+  @apply relative flex h-[380px] w-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white/95 px-4 pb-4 pt-3 text-sm text-gray-800 shadow-sm transition-all duration-300;
   transform: translateY(0);
 }
-.card:hover {
-  transform: translateY(-5px) scale(1.02);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-}
-.card:focus-within {
-  @apply ring-2 ring-indigo-300/60;
-}
-:global(html.dark) .card {
-  @apply border-gray-700 bg-gray-800 shadow-none;
-}
-:global(html.dark) .card:hover {
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-}
 
-/* Thumbnail with hover zoom */
-.thumb {
-  @apply relative mb-3 w-full overflow-hidden rounded-xl bg-gray-100 transition-all duration-300;
-  aspect-ratio: 16 / 9;
-}
-.thumbImg {
-  @apply h-full w-full object-cover transition-transform duration-300 ease-in-out;
-}
-.card:hover .thumbImg {
-  transform: scale(1.06);
-}
-:global(html.dark) .thumb {
-  @apply bg-gray-700;
-}
-
-/* Title & meta (larger line spacing) */
-.cardTitle {
-  @apply text-sm font-semibold leading-relaxed text-gray-900 transition-colors duration-200;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin-bottom: 0.35rem;
-  line-height: 1.6rem;
-}
-.card:hover .cardTitle {
-  @apply text-indigo-700;
-}
-:global(html.dark) .card:hover .cardTitle {
-  @apply text-indigo-300;
-}
-.meta {
-  @apply mt-1 items-center gap-2 text-xs leading-loose text-gray-500;
-}
-:global(html.dark) .meta {
-  @apply text-gray-400;
-}
-
-/* Votes + specialization */
-.votesRow {
-  @apply mt-1 flex items-center gap-2 text-xs font-medium leading-relaxed;
-}
-.voteUp {
-  @apply rounded-full bg-green-50 px-2 py-0.5 text-green-700 transition;
-}
-.voteDown {
-  @apply rounded-full bg-red-50 px-2 py-0.5 text-red-700 transition;
-}
-.specRow {
-  @apply mt-1 items-center gap-2 text-xs font-medium leading-relaxed;
-}
-.card:hover .voteUp {
-  @apply bg-green-100;
-}
-.card:hover .voteDown {
-  @apply bg-red-100;
-}
-.specChip {
-  @apply ml-auto rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-900;
-}
-:global(html.dark) .specChip {
-  @apply bg-gray-700 text-gray-100;
-}
-
-/* Uploader + Premium stacked (aligned left) */
-.uploaderRow {
-  @apply mt-3 flex flex-col items-end gap-2 leading-loose;
-}
-.uploader {
-  @apply text-xs italic leading-relaxed text-gray-500 transition-colors duration-200;
-}
-.card:hover .uploader {
-  @apply text-indigo-600;
-}
-:global(html.dark) .uploader {
-  @apply text-gray-400;
-}
-:global(html.dark) .card:hover .uploader {
-  @apply text-indigo-300;
-}
-
-/* Premium tag (aligned left under uploader) with glow hover */
-.premiumChip {
-  @apply inline-flex items-center gap-1 rounded-full border px-3 py-[4px] text-[11px] font-semibold shadow-sm transition-all duration-200;
-  @apply border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-800;
-}
-.premiumChip::before {
-  content: "★";
-  @apply text-amber-500;
-  opacity: 0.9;
-}
-.premiumChip:hover {
-  @apply scale-105 shadow-lg ring-1 ring-amber-300/70;
-}
-.premiumChip:focus-visible {
-  @apply outline-none ring-2 ring-amber-300/60;
-}
-:global(html.dark) .premiumChip {
-  @apply border-amber-700 bg-amber-900/40 text-amber-200 shadow;
-}
-:global(html.dark) .premiumChip:hover {
-  @apply scale-105 ring-amber-400/40;
-}
-:global(html.dark) .premiumChip::before {
-  @apply text-amber-300;
-}
-
-/* ============ Specialization Block ============ */
-.specBlock {
-  @apply mt-6;
-}
-.specTitle {
-  @apply mb-2 text-base font-semibold text-gray-800;
-}
-:global(html.dark) .specTitle {
-  @apply text-gray-100;
-}
-
-/* ============ Footer Pager ============ */
-.footerPager {
-  @apply mt-8 flex items-center justify-end gap-3 border-t border-gray-200 pt-5;
-}
-:global(html.dark) .footerPager {
-  @apply border-gray-800;
-}
-
-/* ============ Responsive tweaks ============ */
-@media (min-width: 1440px) {
+/* Responsive width similar behaviour */
+@media (min-width: 1024px) {
   .card {
-    flex-basis: calc((100% - 4.5rem) / 4);
-    max-width: 300px;
+    flex: 0 0 calc((100% - 3rem) / 4);
+    max-width: 280px;
   }
 }
-@media (max-width: 1024px) {
+
+@media (max-width: 1024px) and (min-width: 768px) {
   .card {
-    flex-basis: calc((100% - 2rem) / 3);
+    flex: 0 0 calc((100% - 2rem) / 3);
     max-width: 260px;
   }
 }
-@media (max-width: 768px) {
+
+@media (max-width: 768px) and (min-width: 480px) {
   .card {
-    flex-basis: calc((100% - 1rem) / 2);
+    flex: 0 0 calc((100% - 1rem) / 2);
     max-width: 240px;
   }
 }
+
 @media (max-width: 480px) {
   .card {
     min-width: 200px;
     max-width: 220px;
   }
+}
+
+/* Thumbnail inside doc card */
+.thumb {
+  @apply relative mb-3 h-32 w-full overflow-hidden rounded-xl bg-gray-100;
+}
+
+:global(html.dark) .thumb {
+  @apply bg-slate-800;
+}
+
+.thumbImg {
+  @apply object-cover transition-transform duration-300;
+}
+
+/* Hover states */
+.card:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 18px 35px rgba(15, 23, 42, 0.12);
+  border-color: rgb(129, 140, 248);
+}
+
+.card:focus-within {
+  @apply ring-2 ring-indigo-300/60;
+}
+
+:global(html.dark) .card {
+  @apply border-gray-800 bg-gray-900/90 text-gray-100 shadow-none;
+}
+
+:global(html.dark) .card:hover {
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.7);
+  border-color: rgb(129, 140, 248);
+}
+
+/* Thumbnail */
+.thumb {
+  @apply relative mb-3 h-32 w-full overflow-hidden rounded-xl bg-gray-100;
+}
+
+.thumbImg {
+  @apply object-cover transition-transform duration-300;
+}
+
+/* Save button on thumbnail */
+.saveBtn {
+  @apply absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-gray-100 bg-white/90 text-gray-500 shadow-sm transition-all duration-200;
+  @apply backdrop-blur;
+}
+
+.saveBtn:hover {
+  @apply bg-indigo-600 text-white shadow-md;
+}
+
+.saveBtn:active {
+  @apply scale-95;
+}
+
+.saveBtn:focus-visible {
+  @apply outline-none ring-2 ring-indigo-300/70;
+}
+
+.saveIcon {
+  @apply h-4 w-4;
+}
+
+:global(html.dark) .saveBtn {
+  @apply border-gray-700 bg-gray-900/90 text-gray-200 shadow-none;
+}
+
+:global(html.dark) .saveBtn:hover {
+  @apply bg-indigo-500 text-white shadow-lg;
+}
+
+.card:hover .thumbImg {
+  transform: scale(1.05);
+}
+
+/* Title */
+.cardTitle {
+  @apply mb-1 line-clamp-2 text-sm font-semibold leading-snug text-gray-900;
+}
+
+:global(html.dark) .cardTitle {
+  @apply text-gray-50;
+}
+
+/* Meta info: views, org, year */
+.meta {
+  @apply mb-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-medium text-gray-500;
+}
+
+:global(html.dark) .meta {
+  @apply text-gray-400;
+}
+
+/* Votes */
+.votesRow {
+  @apply mb-2 flex items-center justify-between text-[11px];
+}
+
+.voteUp {
+  @apply inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700;
+}
+
+.voteDown {
+  @apply inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700;
+}
+
+:global(html.dark) .voteUp {
+  @apply bg-emerald-900/30 text-emerald-300;
+}
+
+:global(html.dark) .voteDown {
+  @apply bg-rose-900/30 text-rose-300;
+}
+
+/* Specialization chip row */
+.specRow {
+  @apply mb-2 flex flex-wrap gap-2;
+}
+
+.specChip {
+  @apply inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-medium text-indigo-700;
+}
+
+:global(html.dark) .specChip {
+  @apply bg-indigo-900/40 text-indigo-200;
+}
+
+/* Uploader text */
+.uploader {
+  @apply mt-auto text-[11px] text-gray-500;
+}
+
+:global(html.dark) .uploader {
+  @apply text-gray-400;
+}
+
+/* ============ Specializations Block ============ */
+
+.specBlock {
+  @apply mb-8 rounded-2xl border border-gray-100 bg-white/60 p-4 shadow-sm;
+}
+
+.specTitle {
+  @apply mb-3 text-sm font-semibold text-gray-800;
+}
+
+:global(html.dark) .specBlock {
+  @apply border-gray-800 bg-gray-900/70;
+}
+
+:global(html.dark) .specTitle {
+  @apply text-gray-100;
+}
+
+/* ============ Pager (bottom control) ============ */
+
+.footerPager {
+  @apply mt-10 flex flex-col items-center justify-between gap-4 border-t border-gray-100 pt-5 text-sm text-gray-600 md:flex-row;
+}
+
+:global(html.dark) .footerPager {
+  @apply border-gray-800 text-gray-300;
+}
+
+/* Select groups per page */
+.pageSizeWrap {
+  @apply flex items-center gap-3;
+}
+
+.pageSizeLabel {
+  @apply text-xs font-medium text-gray-500;
+}
+
+.pageSizeSelect {
+  @apply rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-800 shadow-sm outline-none transition;
+}
+
+.pageSizeSelect:focus-visible {
+  @apply ring-2 ring-indigo-300/70;
+}
+
+:global(html.dark) .pageSizeSelect {
+  @apply border-gray-700 bg-gray-900 text-gray-100;
+}
+
+/* Pager buttons & text */
+.pager {
+  @apply inline-flex items-center gap-2 rounded-full bg-gray-50 px-2 py-1;
+}
+
+:global(html.dark) .pager {
+  @apply bg-gray-800;
+}
+
+.pagerBtn {
+  @apply inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold text-gray-600 transition;
+}
+
+.pagerBtn:hover:enabled {
+  @apply bg-white text-indigo-600 shadow-sm;
+}
+
+.pagerBtn:disabled {
+  @apply cursor-not-allowed opacity-40;
+}
+
+.pagerBtn:focus-visible {
+  @apply outline-none ring-2 ring-indigo-300/70;
+}
+
+:global(html.dark) .pagerBtn {
+  @apply text-gray-300;
+}
+
+.pagerText {
+  @apply px-2 text-xs font-medium text-gray-500;
+}
+
+:global(html.dark) .pagerText {
+  @apply text-gray-400;
+}
+
+/* ============ Misc / Root ============ */
+.module {
+  @apply w-full;
+}
+
+/* ============ Hero ============ */
+
+.heroRow {
+  @apply mb-10 grid gap-6 rounded-3xl border border-stroke bg-gradient-to-r from-sky-50 via-indigo-50 to-purple-50 p-6 shadow-sm;
+  @apply lg:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)];
+}
+
+:global(html.dark) .heroRow {
+  @apply border-stroke-dark from-slate-900 via-slate-950 to-slate-900;
+}
+
+.heroMain {
+  @apply flex flex-col gap-4;
+}
+
+.heroTitle {
+  @apply text-2xl font-extrabold tracking-tight text-gray-900 md:text-3xl;
+}
+
+:global(html.dark) .heroTitle {
+  @apply text-white;
+}
+
+.heroSubtitle {
+  @apply max-w-xl text-sm text-gray-600 md:text-base;
+}
+
+:global(html.dark) .heroSubtitle {
+  @apply text-gray-300;
+}
+
+.heroSearchRow {
+  @apply mt-2;
+}
+
+.heroAside {
+  @apply flex items-stretch justify-center;
+}
+
+/* ============ Stats strip ============ */
+
+.statsStrip {
+  @apply flex h-full flex-col justify-between gap-3 rounded-2xl bg-white/70 p-3 backdrop-blur;
+}
+
+:global(html.dark) .statsStrip {
+  @apply bg-slate-900/60;
+}
+
+.statsCard {
+  @apply flex flex-col gap-1 rounded-xl border border-dashed border-indigo-100 px-3 py-2;
+}
+
+:global(html.dark) .statsCard {
+  @apply border-slate-700;
+}
+
+.statsLabel {
+  @apply text-xs font-semibold uppercase tracking-wide text-indigo-500;
+}
+
+:global(html.dark) .statsLabel {
+  @apply text-indigo-300;
+}
+
+.statsValue {
+  @apply text-2xl font-bold text-gray-900;
+}
+
+:global(html.dark) .statsValue {
+  @apply text-white;
+}
+
+.statsSub {
+  @apply text-xs text-gray-500;
+}
+
+:global(html.dark) .statsSub {
+  @apply text-gray-400;
+}
+
+/* ============ Doc card tags ============ */
+
+.cardTags {
+  @apply mt-2 flex flex-wrap gap-1;
+}
+
+.tagPill {
+  @apply inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-600;
+}
+
+:global(html.dark) .tagPill {
+  @apply bg-slate-800 text-indigo-300;
+}
+
+/* ============ Horizontal strips ============ */
+
+.horizontalScroll {
+  @apply flex gap-4 overflow-x-auto pb-1;
+}
+
+.horizontalCardWrap {
+  @apply min-w-[260px] max-w-xs flex-shrink-0;
+}
+
+/* ============ Trending specs ============ */
+
+.trendingRow {
+  @apply mb-4 flex flex-wrap items-center gap-2 text-xs text-gray-600;
+}
+
+:global(html.dark) .trendingRow {
+  @apply text-gray-300;
+}
+
+.trendingLabel {
+  @apply font-semibold uppercase tracking-wide;
+}
+
+.trendingPills {
+  @apply flex flex-wrap gap-2;
+}
+
+.trendingPill {
+  @apply rounded-full border border-indigo-100 bg-white px-3 py-1 text-xs font-medium text-indigo-600 transition hover:border-indigo-300 hover:bg-indigo-50;
+}
+
+:global(html.dark) .trendingPill {
+  @apply border-slate-700 bg-slate-900 text-indigo-300 hover:border-indigo-500 hover:bg-slate-800;
+}
+
+/* ============ Orgs section ============ */
+
+.orgGrid {
+  @apply grid gap-4 md:grid-cols-2;
+}
+
+.orgColumn {
+  @apply rounded-2xl border border-stroke bg-white/80 p-4 shadow-sm;
+}
+
+:global(html.dark) .orgColumn {
+  @apply border-stroke-dark bg-slate-900/70;
+}
+
+.orgTitle {
+  @apply mb-3 text-sm font-semibold text-gray-800;
+}
+
+:global(html.dark) .orgTitle {
+  @apply text-gray-100;
+}
+
+.orgCards {
+  @apply flex flex-col gap-3;
+}
+
+.orgSection {
+  @apply mb-8;
+}
+
+/* ============ Stats strip enhancements ============ */
+
+.statsCardsRow {
+  @apply grid gap-3 sm:grid-cols-3;
+}
+
+.statsActivity {
+  @apply mt-3 text-xs text-gray-500;
+}
+
+:global(html.dark) .statsActivity {
+  @apply text-gray-400;
+}
+
+/* ============ Empty state ============ */
+
+.emptyState {
+  @apply flex flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-stroke bg-white/70 px-6 py-8 text-center text-sm text-gray-600;
+}
+
+:global(html.dark) .emptyState {
+  @apply border-stroke-dark bg-slate-900/40 text-gray-300;
+}
+
+.emptyIcon {
+  @apply mb-1 text-2xl;
+}
+
+.emptyTitle {
+  @apply font-semibold;
+}
+
+.emptyDesc {
+  @apply text-xs text-gray-500;
+}
+
+:global(html.dark) .emptyDesc {
+  @apply text-gray-400;
+}
+
+/* ============ Skeleton ============ */
+
+.skelTitle {
+  @apply mb-2 h-6 w-3/4 animate-pulse rounded-lg bg-gray-200;
+}
+
+:global(html.dark) .skelTitle {
+  @apply bg-slate-700;
+}
+
+.skelText {
+  @apply mb-4 h-4 w-5/6 animate-pulse rounded-lg bg-gray-200;
+}
+
+:global(html.dark) .skelText {
+  @apply bg-slate-700;
+}
+
+.skelSearch {
+  @apply mb-3 h-10 w-full max-w-md animate-pulse rounded-xl bg-gray-200;
+}
+
+:global(html.dark) .skelSearch {
+  @apply bg-slate-700;
+}
+
+.skelButtons {
+  @apply flex gap-2;
+}
+
+.skelBtn {
+  @apply h-9 w-24 animate-pulse rounded-full bg-gray-200;
+}
+
+:global(html.dark) .skelBtn {
+  @apply bg-slate-700;
+}
+
+.skelStats {
+  @apply h-32 w-full animate-pulse rounded-2xl bg-gray-200;
+}
+
+:global(html.dark) .skelStats {
+  @apply bg-slate-800;
+}
+
+.skelSectionRow {
+  @apply mt-8;
+}
+
+.skelSectionHeader {
+  @apply mb-3 h-5 w-40 animate-pulse rounded-lg bg-gray-200;
+}
+
+:global(html.dark) .skelSectionHeader {
+  @apply bg-slate-700;
+}
+
+.skelCardsRow {
+  @apply flex gap-4;
+}
+
+.skelCard {
+  @apply h-40 w-56 animate-pulse rounded-2xl bg-gray-200;
+}
+
+:global(html.dark) .skelCard {
+  @apply bg-slate-800;
+}
+
+/* ============ Footer ============ */
+
+.footer {
+  @apply mt-10 border-t border-stroke bg-white/80 px-4 py-6 text-xs text-gray-600;
+}
+
+:global(html.dark) .footer {
+  @apply border-stroke-dark bg-slate-950 text-gray-400;
+}
+
+.footerInner {
+  @apply mx-auto flex w-full max-w-6xl flex-col gap-6 md:flex-row md:items-start md:justify-between;
+}
+
+.footerBrand {
+  @apply max-w-sm;
+}
+
+.footerLogo {
+  @apply text-lg font-extrabold tracking-tight text-gray-900;
+}
+
+:global(html.dark) .footerLogo {
+  @apply text-white;
+}
+
+.footerTagline {
+  @apply mt-1 text-xs text-gray-500;
+}
+
+:global(html.dark) .footerTagline {
+  @apply text-gray-400;
+}
+
+.footerColumns {
+  @apply flex flex-wrap gap-8;
+}
+
+.footerColumn {
+  @apply min-w-[140px];
+}
+
+.footerColTitle {
+  @apply mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500;
+}
+
+:global(html.dark) .footerColTitle {
+  @apply text-gray-400;
+}
+
+.footerLink {
+  @apply inline-flex cursor-pointer items-center rounded-md px-0 py-1 text-left text-xs text-gray-600 transition hover:text-indigo-600;
+}
+
+:global(html.dark) .footerLink {
+  @apply text-gray-300 hover:text-indigo-300;
+}
+
+.footerBottom {
+  @apply mx-auto mt-4 flex w-full max-w-6xl flex-col items-start justify-between gap-2 border-t border-dashed border-stroke pt-3 text-[11px] text-gray-500 md:flex-row md:items-center;
+}
+
+:global(html.dark) .footerBottom {
+  @apply border-stroke-dark text-gray-400;
+}
+
+.footerCopy {
+  @apply text-[11px];
+}
+
+.footerBottomLinks {
+  @apply flex gap-3;
 }

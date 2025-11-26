@@ -1,67 +1,64 @@
 // app/api/users/[id]/status/route.ts
-import { cookies } from "next/headers";
 
-const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+import { NextRequest } from "next/server";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { jsonResponse, proxyJsonResponse } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { updateUserStatus } from "@/mock/business-admin-users";
 
-async function getAuthHeader(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  return token ? `Bearer ${token}` : null;
-}
-
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+/**
+ * Update user status by id. Proxies to BE_BASE/api/users/{id}/status with PATCH.
+ */
+async function handlePATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+): Promise<Response> {
   const { id } = await params;
 
   const body = await req.json().catch(() => null);
   if (!body) {
-    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+    return jsonResponse({ error: "Invalid JSON" }, { status: 400 });
   }
 
   if (!body.status) {
-    return Response.json({ error: "Status is required" }, { status: 400 });
+    return jsonResponse({ error: "Status is required" }, { status: 400 });
   }
 
-  const authHeader = await getAuthHeader();
+  if (USE_MOCK) {
+    const user = updateUserStatus(id, body.status);
+    if (!user) {
+      return jsonResponse({ error: "User not found" }, {
+        status: 404,
+        mode: "mock",
+      });
+    }
+    return jsonResponse(user, { status: 200, mode: "mock" });
+  }
 
-  const fh = new Headers({ "Content-Type": "application/json" });
-  if (authHeader) fh.set("Authorization", authHeader);
+  try {
+    const authHeader = await getAuthHeader();
 
-  const upstream = await fetch(`${BE_BASE}/api/users/${id}/status`, {
-    method: "PATCH",
-    headers: fh,
-    body: JSON.stringify(body),
-    cache: "no-store",
+    const fh = new Headers({ "Content-Type": "application/json" });
+    if (authHeader) fh.set("Authorization", authHeader);
+
+    const upstream = await fetch(`${BE_BASE}/api/users/${id}/status`, {
+      method: "PATCH",
+      headers: fh,
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+
+    return proxyJsonResponse(upstream, { mode: "real" });
+  } catch (e: any) {
+    return jsonResponse(
+      { message: "User status update failed", error: String(e) },
+      { status: 502 },
+    );
+  }
+}
+
+export const PATCH = (...args: Parameters<typeof handlePATCH>) =>
+  withErrorBoundary(() => handlePATCH(...args), {
+    context: "api/users/[id]/status/route.ts/PATCH",
   });
-
-  const text = await upstream.text();
-  if (!upstream.ok) {
-    return Response.json(
-      { error: parseError(text) },
-      { status: upstream.status }
-    );
-  }
-
-  try {
-    const response = JSON.parse(text);
-    return Response.json(response);
-  } catch {
-    return Response.json(
-      { error: "Failed to process response" },
-      { status: 500 }
-    );
-  }
-}
-
-function parseError(text: string): string {
-  try {
-    const json = JSON.parse(text);
-    return json?.error || json?.message || "Request failed";
-  } catch {
-    return text || "Request failed";
-  }
-}
-

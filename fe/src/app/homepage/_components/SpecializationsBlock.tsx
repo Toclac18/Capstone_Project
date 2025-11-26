@@ -3,8 +3,9 @@
 import { useMemo, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import styles from "../styles.module.css";
+import EmptyState from "./EmptyState";
 import DocCard, { type DocCardItem } from "./DocCard";
-import { useHomepage } from "../HomepageProvider";
+import { useHomepage } from "../provider";
 import { useModalPreview } from "@/components/ModalPreview";
 import type { DocumentItem as BaseDoc } from "@/types/documentResponse";
 
@@ -64,7 +65,19 @@ export default function SpecializationsBlock({
   }, [q, normalizedGroups]);
 
   if (disablePager) {
-    if (!filtered.length) return null;
+    if (!filtered.length) {
+      return (
+        <section className={styles.section}>
+          <div className={styles.sectionHeaderRow}>
+            <div className={styles.sectionHeader}>Specializations</div>
+          </div>
+          <EmptyState
+            title="No specializations match your search"
+            description="Try a different keyword or clear filters."
+          />
+        </section>
+      );
+    }
     return (
       <section className={styles.section}>
         <div className={styles.sectionHeaderRow}>
@@ -135,7 +148,19 @@ export default function SpecializationsBlock({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clampedPage, size, spObj]);
 
-  if (!filtered.length) return null;
+  if (!filtered.length) {
+    return (
+      <section className={styles.section}>
+        <div className={styles.sectionHeaderRow}>
+          <div className={styles.sectionHeader}>Specializations</div>
+        </div>
+        <EmptyState
+          title="No specializations match your search"
+          description="Try a different keyword or clear filters."
+        />
+      </section>
+    );
+  }
 
   return (
     <section className={styles.section}>

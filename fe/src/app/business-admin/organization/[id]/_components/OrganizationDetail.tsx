@@ -186,7 +186,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
           ) : (
             <div className={styles["logo-placeholder"]}>
               <span className={styles["logo-placeholder-text"]}>
-                {(organization.name || organization.email)
+                {((organization.name || organization.email || "OR") as string)
                   .substring(0, 2)
                   .toUpperCase()}
               </span>

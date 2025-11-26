@@ -1,5 +1,5 @@
 "use client";
-import { fetchImportDetail } from "@/services/orgAdmin-imports";
+import { fetchImportDetail } from "@/services/org-admin-imports.service";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 type Ctx = {
@@ -20,26 +20,28 @@ export function useImportEvents(
   id: string,
   onProgress: (data: any) => void,
   onRow: (row: any) => void,
-  onComplete?: () => void
+  onComplete?: () => void,
 ) {
   useEffect(() => {
     if (!id) return;
     const es = new EventSource(`/api/org-admin/imports/${id}/events`);
 
     es.addEventListener("progress", (ev: MessageEvent) => {
-      try { 
-        onProgress(JSON.parse(ev.data)); 
-      } 
-      // eslint-disable-next-line no-empty
-      catch (e) { /* Bỏ qua lỗi parse JSON */ } 
+      try {
+        onProgress(JSON.parse(ev.data));
+      } catch (e) {
+        // eslint-disable-next-line no-empty
+        /* Bỏ qua lỗi parse JSON */
+      }
     });
 
     es.addEventListener("row", (ev: MessageEvent) => {
-      try { 
-        onRow(JSON.parse(ev.data)); 
-      } 
-      // eslint-disable-next-line no-empty
-      catch (e) { /* Bỏ qua lỗi parse JSON */ } 
+      try {
+        onRow(JSON.parse(ev.data));
+      } catch (e) {
+        // eslint-disable-next-line no-empty
+        /* Bỏ qua lỗi parse JSON */
+      }
     });
 
     es.addEventListener("complete", () => {
@@ -47,7 +49,9 @@ export function useImportEvents(
       es.close();
     });
 
-    es.onerror = () => { es.close(); };
+    es.onerror = () => {
+      es.close();
+    };
     return () => es.close();
   }, [id, onProgress, onRow, onComplete]);
 }

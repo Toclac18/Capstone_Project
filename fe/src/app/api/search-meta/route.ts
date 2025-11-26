@@ -2,15 +2,9 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { headers, cookies } from "next/headers";
-import { mockLibraryDocs } from "@/mock/documents";
-
-function beBase() {
-  return (
-    process.env.BE_BASE_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    "http://localhost:8081"
-  );
-}
+import { mockLibraryDocs } from "@/mock/documents.mock";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
 async function forward(path: string) {
   const h = headers();
@@ -20,7 +14,7 @@ async function forward(path: string) {
   const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
   const effectiveAuth = headerAuth || cookieAuth;
 
-  const upstreamUrl = beBase() + path;
+  const upstreamUrl = BE_BASE + path;
   const passHeaders: Record<string, string> = {
     ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
   };
@@ -34,9 +28,7 @@ async function forward(path: string) {
   return res;
 }
 
-export async function GET() {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-
+async function handleGET() {
   if (USE_MOCK) {
     // Organizations, domains, specializations, years
     const organizations = Array.from(
@@ -105,3 +97,8 @@ export async function GET() {
     );
   }
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/search-meta/route.ts/GET",
+  });

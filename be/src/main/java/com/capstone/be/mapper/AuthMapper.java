@@ -46,7 +46,7 @@ public interface AuthMapper {
   @Mapping(target = "role", ignore = true)
   @Mapping(target = "status", ignore = true)
 //  @Mapping(target = "point", constant = "0")
-  @Mapping(target = "avatarUrl", ignore = true)
+  @Mapping(target = "avatarKey", ignore = true)
   User toUserEntity(RegisterReaderRequest request);
 
   /**
@@ -57,7 +57,7 @@ public interface AuthMapper {
   @Mapping(target = "role", ignore = true)
   @Mapping(target = "status", ignore = true)
 //  @Mapping(target = "point", constant = "0")
-  @Mapping(target = "avatarUrl", ignore = true)
+  @Mapping(target = "avatarKey", ignore = true)
   User toUserEntity(RegisterReviewerRequest request);
 
   /**
@@ -87,7 +87,7 @@ public interface AuthMapper {
   @Mapping(target = "role", ignore = true)
   @Mapping(target = "status", ignore = true)
 //  @Mapping(target = "point", constant = "0")
-  @Mapping(target = "avatarUrl", ignore = true)
+  @Mapping(target = "avatarKey", ignore = true)
   User toOrganizationAdminEntity(RegisterOrganizationRequest request);
 
   /**
@@ -98,6 +98,6 @@ public interface AuthMapper {
   @Mapping(target = "name", source = "organizationName")
   @Mapping(target = "type", source = "organizationType")
   @Mapping(target = "email", source = "organizationEmail")
-  @Mapping(target = "logo", ignore = true)
+  @Mapping(target = "logoKey", ignore = true)
   OrganizationProfile toOrganizationProfile(RegisterOrganizationRequest request);
 }

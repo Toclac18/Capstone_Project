@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getNotifications, markNotificationAsRead, type NotificationResponse } from "./api";
-import { NotificationDetailModal } from "@/components/Layouts/header/notification/NotificationDetailModal";
+import {
+  getNotifications,
+  markNotificationAsRead,
+  type NotificationResponse,
+} from "./api";
+import { NotificationDetailModal } from "@/components/layouts/header/notification/NotificationDetailModal";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { BellIcon } from "@/components/Layouts/header/notification/icons";
+import { BellIcon } from "@/components/layouts/header/notification/icons";
 import { cn } from "@/utils/utils";
 import styles from "./NotificationView.module.css";
 
@@ -44,7 +48,9 @@ export default function NotificationView() {
   const [data, setData] = useState<NotificationResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedNotification, setSelectedNotification] = useState<any | null>(null);
+  const [selectedNotification, setSelectedNotification] = useState<any | null>(
+    null,
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchNotifications = async () => {
@@ -66,7 +72,7 @@ export default function NotificationView() {
 
   const handleMarkAsRead = async (id: string, isRead: boolean) => {
     if (isRead) return; // Already read, no need to update
-    
+
     try {
       await markNotificationAsRead(id);
       // Update local state optimistically
@@ -75,7 +81,7 @@ export default function NotificationView() {
         return {
           ...prev,
           notifications: prev.notifications.map((n) =>
-            n.id === id ? { ...n, isRead: true } : n
+            n.id === id ? { ...n, isRead: true } : n,
           ),
           unreadCount: Math.max(0, prev.unreadCount - 1),
         };
@@ -100,23 +106,15 @@ export default function NotificationView() {
   }
 
   if (error) {
-    return (
-      <div className={styles.errorContainer}>
-        {error}
-      </div>
-    );
+    return <div className={styles.errorContainer}>{error}</div>;
   }
 
   if (!data || data.notifications.length === 0) {
     return (
       <div className={styles.emptyContainer}>
         <BellIcon className={styles.emptyIcon} />
-        <p className={styles.emptyTitle}>
-          No new notifications
-        </p>
-        <p className={styles.emptySubtitle}>
-          You&apos;re all caught up!
-        </p>
+        <p className={styles.emptyTitle}>No new notifications</p>
+        <p className={styles.emptySubtitle}>You&apos;re all caught up!</p>
       </div>
     );
   }
@@ -124,13 +122,9 @@ export default function NotificationView() {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.pageHeader}>
-        <h2 className={styles.pageTitle}>
-          Notifications
-        </h2>
+        <h2 className={styles.pageTitle}>Notifications</h2>
         {data.unreadCount > 0 && (
-          <span className={styles.unreadBadge}>
-            {data.unreadCount} new
-          </span>
+          <span className={styles.unreadBadge}>{data.unreadCount} new</span>
         )}
       </div>
 
@@ -143,16 +137,11 @@ export default function NotificationView() {
               styles.notificationCard,
               notif.isRead
                 ? styles.notificationCardRead
-                : styles.notificationCardUnread
+                : styles.notificationCardUnread,
             )}
           >
             {/* Type indicator */}
-            <div
-              className={cn(
-                styles.typeIndicator,
-                getTypeColor(notif.type)
-              )}
-            >
+            <div className={cn(styles.typeIndicator, getTypeColor(notif.type))}>
               <div className={styles.typeIndicatorDot}></div>
             </div>
 
@@ -163,14 +152,12 @@ export default function NotificationView() {
                   styles.notificationTitle,
                   notif.isRead
                     ? styles.notificationTitleRead
-                    : styles.notificationTitleUnread
+                    : styles.notificationTitleUnread,
                 )}
               >
                 {notif.title}
               </h3>
-              <p className={styles.notificationSummary}>
-                {notif.summary}
-              </p>
+              <p className={styles.notificationSummary}>{notif.summary}</p>
               <p className={styles.notificationTimestamp}>
                 {dayjs(notif.timestamp).fromNow()}
               </p>
@@ -195,4 +182,3 @@ export default function NotificationView() {
     </div>
   );
 }
-

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { User, X, AlertCircle, Calendar } from "lucide-react";
-import type { ProfileResponse } from "@/services/profileService";
+import type { ProfileResponse } from "@/services/profile.service";
 import styles from "@/app/profile/styles.module.css";
 
 interface EditProfileModalProps {
@@ -99,12 +99,18 @@ export default function EditProfileModal({
   return (
     <div className={`${styles["modal-overlay"]} ${styles["with-padding"]}`}>
       <div className={styles["modal-backdrop"]} onClick={onClose} />
-      <div className={`${styles["modal-container"]} ${styles["modal-container-lg"]}`}>
+      <div
+        className={`${styles["modal-container"]} ${styles["modal-container-lg"]}`}
+      >
         <div className={`${styles["modal-card"]} ${styles["modal-card-flex"]}`}>
           <div className={styles["modal-header"]}>
             <div className={styles["modal-header-left"]}>
-              <div className={`${styles["modal-icon-wrapper"]} ${styles["primary"]}`}>
-                <User className={`${styles["modal-icon"]} ${styles["primary"]}`} />
+              <div
+                className={`${styles["modal-icon-wrapper"]} ${styles["primary"]}`}
+              >
+                <User
+                  className={`${styles["modal-icon"]} ${styles["primary"]}`}
+                />
               </div>
               <div>
                 <h3 className={styles["modal-title"]}>Edit Profile</h3>
@@ -118,14 +124,18 @@ export default function EditProfileModal({
               className={styles["modal-close-btn"]}
               disabled={isLoading}
             >
-              <X className="w-5 h-5" />
+              <X className="h-5 w-5" />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className={`${styles["modal-form"]} ${styles["with-scroll"]}`}>
+          <form
+            onSubmit={handleSubmit}
+            className={`${styles["modal-form"]} ${styles["with-scroll"]}`}
+          >
             <div className={styles["field-group"]}>
               <label className={styles["field-label"]}>
-                Full Name <span className={styles["field-label-required"]}>*</span>
+                Full Name{" "}
+                <span className={styles["field-label-required"]}>*</span>
               </label>
               <input
                 type="text"
@@ -166,7 +176,7 @@ export default function EditProfileModal({
               <label className={styles["field-label"]}>Date of Birth</label>
               <div className={styles["field-icon-wrapper"]}>
                 <div className={styles["field-icon"]}>
-                  <Calendar className="w-5 h-5 text-dark-6 dark:text-dark-7" />
+                  <Calendar className="h-5 w-5 text-dark-6 dark:text-dark-7" />
                 </div>
                 <input
                   type="date"
@@ -174,7 +184,8 @@ export default function EditProfileModal({
                   value={formData.dateOfBirth}
                   onChange={(e) => {
                     setFormData({ ...formData, dateOfBirth: e.target.value });
-                    if (errors.dateOfBirth) setErrors({ ...errors, dateOfBirth: "" });
+                    if (errors.dateOfBirth)
+                      setErrors({ ...errors, dateOfBirth: "" });
                   }}
                   className={`${styles["field-input"]} ${styles["date-input"]} ${errors.dateOfBirth ? styles.error : ""}`}
                 />
@@ -208,7 +219,11 @@ export default function EditProfileModal({
                 className={styles["btn-submit"]}
               >
                 {isLoading && (
-                  <svg className={styles["spinner"]} fill="none" viewBox="0 0 24 24">
+                  <svg
+                    className={styles["spinner"]}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
                     <circle
                       className="opacity-25"
                       cx="12"

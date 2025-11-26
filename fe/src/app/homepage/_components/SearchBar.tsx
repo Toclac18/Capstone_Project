@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useHomepage } from "../HomepageProvider";
+import { useHomepage } from "../provider";
 import styles from "../styles.module.css";
 import { useState } from "react";
 

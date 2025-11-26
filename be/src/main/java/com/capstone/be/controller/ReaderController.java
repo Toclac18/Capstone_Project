@@ -12,20 +12,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Controller for Reader-specific operations
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/reader")
+@RequestMapping("/reader")
 @RequiredArgsConstructor
 public class ReaderController {
 
@@ -68,22 +65,4 @@ public class ReaderController {
     return ResponseEntity.ok(response);
   }
 
-  /**
-   * Upload avatar for reader POST /api/v1/reader/profile/avatar
-   *
-   * @param file           Avatar image file
-   * @return Updated ReaderProfileResponse with new avatar URL
-   */
-  @PostMapping("/profile/avatar")
-  @PreAuthorize("hasRole('READER')")
-  public ResponseEntity<ReaderProfileResponse> uploadAvatar(
-      @AuthenticationPrincipal UserPrincipal userPrincipal,
-      @RequestParam(value = "file") MultipartFile file) {
-    UUID userId = userPrincipal.getId();
-    log.info("Upload avatar request for reader user ID: {}", userId);
-
-    ReaderProfileResponse response = readerService.uploadAvatar(userId, file);
-
-    return ResponseEntity.ok(response);
-  }
 }

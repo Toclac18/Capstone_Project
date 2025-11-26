@@ -1,15 +1,10 @@
-import { cookies } from "next/headers";
-import { mockDocumentsDB } from "@/mock/db";
+import { mockDocumentsDB } from "@/mock/db.mock";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
+import { getAuthHeader } from "@/server/auth";
 
-const DEFAULT_BE_BASE = "http://localhost:8080";
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
-
-export async function GET(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
+async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") || undefined;
   const dateFrom = searchParams.get("dateFrom") || undefined;
@@ -17,8 +12,12 @@ export async function GET(request: Request) {
   const type = searchParams.get("type") || undefined;
   const domain = searchParams.get("domain") || undefined;
   const status = searchParams.get("status") || undefined;
-  const page = searchParams.get("page") ? parseInt(searchParams.get("page")!) : 1;
-  const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 10;
+  const page = searchParams.get("page")
+    ? parseInt(searchParams.get("page")!)
+    : 1;
+  const limit = searchParams.get("limit")
+    ? parseInt(searchParams.get("limit")!)
+    : 10;
 
   if (USE_MOCK) {
     const result = mockDocumentsDB.getUploadHistory({
@@ -31,7 +30,7 @@ export async function GET(request: Request) {
       page,
       limit,
     });
-    return new Response(JSON.stringify(result), {
+    return jsonResponse(result, {
       status: 200,
       headers: {
         "content-type": "application/json",
@@ -40,13 +39,9 @@ export async function GET(request: Request) {
     });
   }
 
-  // Lấy authentication từ cookie
-  const cookieStore = await cookies();
-  const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
+  const bearerToken = await getAuthHeader();
 
-  // Backend chỉ nhận Authorization header, không nhận cookie
-  const fh = new Headers();
+  const fh = new Headers({ "Content-Type": "application/json" });
   if (bearerToken) {
     fh.set("Authorization", bearerToken);
   }
@@ -70,14 +65,10 @@ export async function GET(request: Request) {
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/reader/documents/upload-history/route.ts/GET",
+  });

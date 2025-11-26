@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import styles from "./styles.module.css";
-import { ReadersProvider, useReaders } from "./ReadersProvider";
+import { ReadersProvider, useReaders } from "./provider";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
 import EnableButton from "./_components/EnableButton";
 
@@ -145,7 +145,9 @@ function ReadersContent() {
                     : styles["status-suspended"];
 
                 const statusLabel =
-                  statusUpper === "PENDING_VERIFICATION" ? "PENDING_VERIFICATION" : statusUpper;
+                  statusUpper === "PENDING_VERIFICATION"
+                    ? "PENDING_VERIFICATION"
+                    : statusUpper;
 
                 return (
                   <tr key={r.id} className={styles["table-row"]}>
@@ -153,11 +155,15 @@ function ReadersContent() {
                     <td>{r.username}</td>
                     <td className={styles["col-email"]}>{r.email}</td>
                     <td>
-                      <span className={`${styles["status-badge"]} ${badgeClass}`}>
+                      <span
+                        className={`${styles["status-badge"]} ${badgeClass}`}
+                      >
                         {statusLabel}
                       </span>
                     </td>
-                    <td className={`${styles["cell-right"]} ${styles["col-coins"]}`}>
+                    <td
+                      className={`${styles["cell-right"]} ${styles["col-coins"]}`}
+                    >
                       {r.coinBalance.toLocaleString()}
                     </td>
                     <td className={styles["cell-right"]}>
@@ -185,7 +191,6 @@ function ReadersContent() {
                   </tr>
                 );
               })
-
             )}
           </tbody>
         </table>

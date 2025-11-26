@@ -1,14 +1,10 @@
-import { headers } from "next/headers";
-import { mockDocumentsDB } from "@/mock/db";
+import { mockDocumentsDB } from "@/mock/db.mock";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { jsonResponse, proxyJsonResponse } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
-const DEFAULT_BE_BASE = "http://localhost:8080";
-
-export async function GET(request: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
+async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);
   const domainIdsParam = searchParams.get("domainIds");
   const domainIds = domainIdsParam
@@ -17,41 +13,34 @@ export async function GET(request: Request) {
 
   if (USE_MOCK) {
     const specializations = mockDocumentsDB.getSpecializations(domainIds);
-    return new Response(JSON.stringify(specializations), {
-      status: 200,
-      headers: {
-        "content-type": "application/json",
-        "x-mode": "mock",
-      },
-    });
+    return jsonResponse(specializations, { status: 200, mode: "mock" });
   }
 
-  const h = await headers();
-  const authHeader = h.get("authorization") || "";
-  const cookieHeader = h.get("cookie") || "";
+  const bearerToken = await getAuthHeader("domains");
 
-  const fh = new Headers({ "Content-Type": "application/json" });
-  if (authHeader) fh.set("Authorization", authHeader);
-  if (cookieHeader) fh.set("Cookie", cookieHeader);
+  const headers = new Headers({
+    "Content-Type": "application/json",
+  });
 
+  if (bearerToken) {
+    headers.set("Authorization", bearerToken);
+  }
+
+  // Public endpoint - no auth required
   const url = domainIdsParam
-      ? `${BE_BASE}/api/reader/documents/specializations?domainIds=${encodeURIComponent(domainIdsParam)}`
+    ? `${BE_BASE}/api/reader/documents/specializations?domainIds=${encodeURIComponent(domainIdsParam)}`
     : `${BE_BASE}/api/reader/documents/specializations`;
 
   const upstream = await fetch(url, {
     method: "GET",
-    headers: fh,
+    headers: { "Content-Type": "application/json" },
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/reader/documents/specializations/route.ts/GET",
+  });

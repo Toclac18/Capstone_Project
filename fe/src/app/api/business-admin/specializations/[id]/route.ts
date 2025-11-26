@@ -1,25 +1,20 @@
-import { cookies } from "next/headers";
-import { mockSpecializationsDB } from "@/mock/db";
+import { mockSpecializationsDB } from "@/mock/db.mock";
 import type { UpdateSpecializationRequest } from "@/types/document-specialization";
-
-const DEFAULT_BE_BASE = "http://localhost:8080";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   const { id } = await params;
 
   if (USE_MOCK) {
     const body = (await request.json()) as UpdateSpecializationRequest;
     try {
       const result = mockSpecializationsDB.update(id, body);
-      return new Response(JSON.stringify(result), {
+      return jsonResponse(result, {
         status: 200,
         headers: {
           "content-type": "application/json",
@@ -27,7 +22,7 @@ export async function PUT(
         },
       });
     } catch (error: any) {
-      return new Response(JSON.stringify({ message: error.message }), {
+      return jsonResponse({ message: error.message }, {
         status: 400,
         headers: { "content-type": "application/json", "x-mode": "mock" },
       });
@@ -35,9 +30,7 @@ export async function PUT(
   }
 
   // Get authentication from cookie
-  const cookieStore = await cookies();
-  const tokenFromCookie = cookieStore.get("access_token")?.value;
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
+  const bearerToken = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (bearerToken) {
@@ -53,14 +46,5 @@ export async function PUT(
     cache: "no-store",
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") ?? "application/json",
-      "x-mode": "real",
-    },
-  });
+    return proxyJsonResponse(upstream, { mode: "real" });
 }
-

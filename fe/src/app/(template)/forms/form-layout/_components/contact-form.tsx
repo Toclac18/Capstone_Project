@@ -1,7 +1,7 @@
 import InputGroup from "@/components/(template)/FormElements/InputGroup";
 import { TextAreaGroup } from "@/components/(template)/FormElements/InputGroup/text-area";
 import { Select } from "@/components/(template)/FormElements/select";
-import { ShowcaseSection } from "@/components/Layouts/showcase-section";
+import { ShowcaseSection } from "@/components/layouts/showcase-section";
 
 export function ContactForm() {
   return (

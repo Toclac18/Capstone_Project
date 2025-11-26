@@ -3,7 +3,7 @@ export {
   getSpecializations,
   createSpecialization,
   updateSpecialization,
-} from "@/services/manageSpecializationService";
+} from "@/services/manage-specialization.service";
 
 // Re-export types from document-specialization
 export type {
@@ -13,4 +13,3 @@ export type {
   CreateSpecializationRequest,
   UpdateSpecializationRequest,
 } from "@/types/document-specialization";
-

@@ -1,39 +1,30 @@
 // src/app/api/homepage/route.ts
+
 import {
   mockContinueReading,
   mockLibraryDocs,
   mockSpecializationGroups,
   mockTopUpvoted,
-} from "@/mock/documents";
-import { headers, cookies } from "next/headers";
+} from "@/mock/documents.mock";
 import { NextRequest } from "next/server";
-function beBase() {
-  return (
-    process.env.BE_BASE_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    "http://localhost:8081"
-  );
-}
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { jsonResponse, parseError } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
-export async function GET(req: NextRequest) {
+type GroupType = "continueReading" | "topUpvoted" | "bySpecialization" | "all";
+
+async function handleGET(req: NextRequest): Promise<Response> {
   const url = new URL(req.url);
-  const queryMock = url.searchParams.get("use_mock")?.toLowerCase();
-  const useMockByQuery = queryMock && ["1", "true", "yes"].includes(queryMock);
-  const useMockByEnv = process.env.USE_MOCK === "true";
-  const USE_MOCK = !!(useMockByQuery || useMockByEnv);
-
   const q = (url.searchParams.get("q") || "").trim().toLowerCase();
-  const group = (url.searchParams.get("group") || "all") as
-    | "continueReading"
-    | "topUpvoted"
-    | "bySpecialization"
-    | "all";
+  const group = (url.searchParams.get("group") || "all") as GroupType;
   const specialization = (url.searchParams.get("specialization") || "").trim();
   const page = Number(url.searchParams.get("page") || 1);
   const pageSize = Number(url.searchParams.get("pageSize") || 12);
   const mode = (url.searchParams.get("mode") || "").toLowerCase();
 
   if (USE_MOCK) {
+    // Paged / grouped mode
     if (mode === "paged" || group !== "all") {
       let pool = mockLibraryDocs;
 
@@ -62,20 +53,20 @@ export async function GET(req: NextRequest) {
       const start = (page - 1) * pageSize;
       const items = filtered.slice(start, start + pageSize);
 
-      return json({ items, total: filtered.length, page, pageSize }, 200, {
-        "x-mode": "mock-paged",
-        "cache-control": "no-store",
-      });
+      return jsonResponse(
+        { items, total: filtered.length, page, pageSize },
+        { status: 200, mode: "mock-paged" },
+      );
     }
 
-    return json(
+    // Bulk mode
+    return jsonResponse(
       {
         continueReading: mockContinueReading,
         topUpvoted: mockTopUpvoted,
         specializations: mockSpecializationGroups,
       },
-      200,
-      { "x-mode": "mock-bulk", "cache-control": "no-store" },
+      { status: 200, mode: "mock-bulk" },
     );
   }
 
@@ -86,48 +77,42 @@ export async function GET(req: NextRequest) {
   qs.set("page", String(page));
   qs.set("pageSize", String(pageSize));
 
-  try {
-    const { upstream } = await forward(`/api/homepage?${qs.toString()}`);
-    const raw = await upstream.json().catch(() => ({}));
-    return json(raw?.data ?? raw, upstream.status, {
-      "x-mode": "real",
-      "cache-control": "no-store",
-    });
-  } catch (e: any) {
-    return json({ message: "Homepage fetch failed", error: String(e) }, 502);
-  }
-}
+  const authHeader = await getAuthHeader("homepage");
 
-async function forward(path: string) {
-  const h = headers();
-  const cookieStore = cookies();
-  const headerAuth = (await h).get("authorization") || "";
-  const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
-  const effectiveAuth = headerAuth || cookieAuth;
+  const fh = new Headers({ "Content-Type": "application/json" });
+  if (authHeader) fh.set("Authorization", authHeader);
 
-  const upstreamUrl = beBase() + path;
-  const passHeaders: Record<string, string> = {
-    ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
-  };
-
-  const cookieHeader = (await h).get("cookie");
-  if (cookieHeader) passHeaders["cookie"] = cookieHeader;
-
-  const upstream = await fetch(upstreamUrl, {
-    headers: passHeaders,
+  const upstream = await fetch(`${BE_BASE}/api/homepage?${qs.toString()}`, {
+    method: "GET",
+    headers: fh,
     cache: "no-store",
   });
 
-  return { upstream, status: upstream.status, headers: upstream.headers };
+  const text = await upstream.text();
+
+  if (!upstream.ok) {
+    return jsonResponse(
+      {
+        error: parseError(text, "Homepage fetch failed"),
+      },
+      { status: upstream.status, mode: "real" },
+    );
+  }
+
+  try {
+    const raw = JSON.parse(text);
+    const payload = (raw as any)?.data ?? raw;
+    return jsonResponse(payload, { status: 200, mode: "real" });
+  } catch {
+    return jsonResponse(
+      { error: "Failed to parse upstream homepage response" },
+      { status: 500, mode: "real" },
+    );
+  }
 }
 
-function json(
-  data: any,
-  status = 200,
-  extraHeaders: Record<string, string> = {},
-) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "content-type": "application/json", ...extraHeaders },
+// Wrapped with global error boundary
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/homepage/route.ts/GET",
   });
-}

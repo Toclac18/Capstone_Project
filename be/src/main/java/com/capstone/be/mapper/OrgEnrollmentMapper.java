@@ -20,7 +20,7 @@ public interface OrgEnrollmentMapper {
   @Mapping(source = "id", target = "enrollmentId")
   @Mapping(source = "member.id", target = "memberId")
   @Mapping(source = "member.fullName", target = "memberFullName")
-  @Mapping(source = "member.avatarUrl", target = "memberAvatarUrl")
+  @Mapping(source = "member.avatarKey", target = "memberAvatarUrl")
   @Mapping(source = "organization.id", target = "organizationId")
   @Mapping(source = "organization.name", target = "organizationName")
   @Mapping(source = "createdAt", target = "invitedAt")

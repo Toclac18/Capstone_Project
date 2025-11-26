@@ -1,5 +1,6 @@
 package com.capstone.be.service.impl;
 
+import com.capstone.be.config.constant.FileStorage;
 import com.capstone.be.domain.entity.Domain;
 import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.ReaderProfile;
@@ -167,6 +168,11 @@ public class AuthServiceImpl implements AuthService {
     User user = userRepository.findByEmail(request.getEmail())
         .orElseThrow(() -> ResourceNotFoundException.userByEmail(request.getEmail()));
 
+    //Check role
+    if (!user.getRole().equals(request.getRole())) {
+      throw UnauthorizedException.invalidCredentials();
+    }
+
     // Check if email is verified
     if (user.getStatus() == UserStatus.PENDING_EMAIL_VERIFY) {
       throw UnauthorizedException.emailNotVerified();
@@ -212,10 +218,10 @@ public class AuthServiceImpl implements AuthService {
     }
 
     // Upload logo if provided
-    String logoUrl = null;
+    String logoKey = null;
     if (logoFile != null && !logoFile.isEmpty()) {
-      logoUrl = fileStorageService.uploadFile(logoFile, "organization-logos", null);
-      log.info("Uploaded organization logo to S3: {}", logoUrl);
+      logoKey = fileStorageService.uploadFile(logoFile, FileStorage.ORG_LOGO_FOLDER, null);
+      log.info("Uploaded organization logo to S3: {}", logoKey);
     }
 
     // Map request to User entity (Organization Admin)
@@ -231,7 +237,7 @@ public class AuthServiceImpl implements AuthService {
     // Map request to OrganizationProfile
     OrganizationProfile organizationProfile = authMapper.toOrganizationProfile(request);
     organizationProfile.setAdmin(admin);
-    organizationProfile.setLogo(logoUrl);
+    organizationProfile.setLogoKey(logoKey);
 
     organizationProfileRepository.save(organizationProfile);
     log.info("Created organization profile for admin id: {}", admin.getId());

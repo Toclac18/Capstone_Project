@@ -53,7 +53,12 @@ export default function Signin() {
     };
 
     try {
-      await login(payload);
+      const response = await login(payload);
+
+      // Save fullName to localStorage
+      if (response.fullName) {
+        localStorage.setItem("userName", response.fullName);
+      }
 
       showToast({ type: 'success', title: 'Login Successful' });
 

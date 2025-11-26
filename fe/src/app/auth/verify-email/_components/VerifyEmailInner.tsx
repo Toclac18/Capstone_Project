@@ -27,17 +27,7 @@ function VerifyEmailInner() {
   const [email, setEmail] = useState("");
   const [resendLoading, setResendLoading] = useState(false);
   const [isTokenExpired, setIsTokenExpired] = useState(false);
-
-  // Extract email from token on mount if token exists
-  useEffect(() => {
-    if (token) {
-      const payload = decodeJwtPayload(token);
-      const extractedEmail = extractEmail(payload);
-      if (extractedEmail) {
-        setEmail(extractedEmail);
-      }
-    }
-  }, [token]);
+  const emailRef = useRef<string>("");
 
   const verifiedRef = useRef(false);
 
@@ -45,6 +35,17 @@ function VerifyEmailInner() {
     if (!token || verifiedRef.current) return;
 
     verifiedRef.current = true;
+
+    // Extract email from token
+    const payload = decodeJwtPayload(token);
+    const extractedEmail = extractEmail(payload);
+    if (extractedEmail) {
+      emailRef.current = extractedEmail;
+      // Use setTimeout to avoid synchronous setState in effect
+      setTimeout(() => {
+        setEmail(extractedEmail);
+      }, 0);
+    }
 
     const run = async () => {
       try {
@@ -73,11 +74,12 @@ function VerifyEmailInner() {
                          msg.toLowerCase().includes("token");
         
         if (isExpired && token) {
-          // Email should already be extracted from token in useEffect
+          // Use ref to get email without waiting for state update
+          const emailToUse = emailRef.current || extractedEmail || "";
           setIsTokenExpired(true);
           setStatus("resend");
           setMessage(
-            email
+            emailToUse
               ? "Your verification link has expired. Click the button below to receive a new verification link."
               : "Your verification link has expired. Please contact support."
           );
@@ -160,7 +162,7 @@ function VerifyEmailInner() {
                 href="/auth/sign-in"
                 className={`${styles["link-primary"]} mt-4 inline-block`}
               >
-                Click here if not redirected
+                Click here to redirect to login
               </Link>
             </>
           )}

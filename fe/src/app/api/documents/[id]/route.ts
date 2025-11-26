@@ -5,7 +5,7 @@ import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, proxyJsonResponse } from "@/server/response";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
-import { mockGetDocDetail } from "@/mock/docsDetailMock";
+import { mockGetDocDetail } from "@/mock/docs-detail.mock";
 
 /**
  * This route proxies document detail by id via dynamic segment /documents/[id].

@@ -5,7 +5,7 @@ import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, proxyJsonResponse } from "@/server/response";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
-import { mockUpdateOrganizationStatus } from "@/mock/organizationsMock";
+import { mockUpdateOrganizationStatus } from "@/mock/organizations.mock";
 
 async function handlePATCH(
   req: NextRequest,

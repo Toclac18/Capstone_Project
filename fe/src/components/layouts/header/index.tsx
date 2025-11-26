@@ -5,9 +5,34 @@ import { AnimatedMenuIcon } from "./icons";
 import { Notification } from "./notification";
 import { ThemeToggleSwitch } from "./theme-toggle";
 import { UserInfo } from "./user-info";
+import Link from "next/link";
+import { Upload } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useMemo } from "react";
+import { Logo } from "@/components/logo";
+import { useReader } from "@/hooks/useReader";
 
 export function Header() {
   const { toggleSidebar, isOpen } = useSidebarContext();
+  const pathname = usePathname();
+  const { role, loading, isAuthenticated } = useReader();
+
+  // Check if user is guest (not authenticated)
+  const isGuest = useMemo(() => {
+    return !loading && !isAuthenticated;
+  }, [loading, isAuthenticated]);
+
+  // Show upload button only for READER role
+  const showUploadButton = useMemo(() => {
+    // Don't show on auth pages
+    if (pathname?.startsWith("/auth")) return false;
+    
+    // Don't show if still loading
+    if (loading) return false;
+    
+    // Only show for READER role
+    return role === "READER" || role === "REVIEWER";
+  }, [role, loading, pathname]);
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-stroke bg-white px-4 py-5 shadow-1 dark:border-stroke-dark dark:bg-gray-dark md:px-5 2xl:px-10">
@@ -22,22 +47,11 @@ export function Header() {
         <span className="sr-only">Toggle Sidebar</span>
       </button>
 
-      {/* {isMobile && (
-        <Link href={"/"} className="ml-2 max-[430px]:hidden min-[375px]:ml-4">
-          <Image
-            src={"/images/logo/logo-icon.svg"}
-            width={32}
-            height={32}
-            alt=""
-            role="presentation"
-          />
-        </Link>
-      )} */}
       {!isOpen && (
-        <div className="max-xl:hidden">
-          <h1 className="mb-0.5 ml-4 text-heading-5 font-bold text-dark dark:text-white">
-            Readee
-          </h1>
+        <div className="ml-4 flex items-center max-xl:hidden">
+          <Link href="/" className="flex items-center h-8">
+            <Logo />
+          </Link>
         </div>
       )}
 
@@ -52,13 +66,41 @@ export function Header() {
           <SearchIcon className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 max-[1015px]:size-5" />
         </div> */}
 
-        <ThemeToggleSwitch />
+        {isGuest ? (
+          <>
+            {/* Guest: Only theme toggle and login button */}
+            <ThemeToggleSwitch />
+            <Link
+              href="/auth/sign-in"
+              className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:bg-primary/90 hover:shadow-xl hover:scale-105 active:scale-100 dark:bg-primary dark:text-white dark:hover:bg-primary/90"
+              title="Sign In"
+            >
+              <span>Sign In</span>
+            </Link>
+          </>
+        ) : (
+          <>
+            {/* Authenticated: Upload button (for READER), Notification, UserInfo */}
+            {showUploadButton && (
+              <Link
+                href="/reader/upload-document"
+                className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:bg-primary/90 hover:shadow-xl hover:scale-105 active:scale-100 dark:bg-primary dark:text-white dark:hover:bg-primary/90"
+                title="Upload Document"
+              >
+                <Upload className="h-5 w-5" />
+                <span>Upload</span>
+              </Link>
+            )}
 
-        <Notification />
+            <ThemeToggleSwitch />
 
-        <div className="shrink-0">
-          <UserInfo />
-        </div>
+            <Notification />
+
+            <div className="shrink-0">
+              <UserInfo />
+            </div>
+          </>
+        )}
       </div>
     </header>
   );

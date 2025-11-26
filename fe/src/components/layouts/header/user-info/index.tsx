@@ -8,64 +8,39 @@ import {
 } from "@/components/ui/dropdown";
 import { cn } from "@/utils/utils";
 import Link from "next/link";
-import { useState, useLayoutEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { logout } from "@/services/auth.service";
 import { LogOutIcon, SettingsIcon, UserIcon } from "./icons";
+import { useReader } from "@/hooks/useReader";
 
 export function UserInfo() {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
-  const [user, setUser] = useState(() => {
-    if (typeof window === "undefined") {
-      return {
-        name: "",
-        email: "",
-        role: "",
-      };
+  const { email, loading } = useReader();
+  // Get name from localStorage using initial state function
+  const [name] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("userName");
     }
-    const userRole = localStorage.getItem("userRole") || "";
-    const userEmail = localStorage.getItem("userEmail") || "";
-    const userName = localStorage.getItem("userName") || "";
-
-    return {
-      name: userName || "User",
-      email: userEmail || "",
-      role: userRole,
-    };
+    return null;
   });
-
-  useLayoutEffect(() => {
-    const updateUser = () => {
-      const userRole = localStorage.getItem("userRole") || "";
-      const userEmail = localStorage.getItem("userEmail") || "";
-      const userName = localStorage.getItem("userName") || "";
-
-      setUser({
-        name: userName || "User",
-        email: userEmail || "",
-        role: userRole,
-      });
-    };
-    window.addEventListener("storage", updateUser);
-
-    queueMicrotask(() => {
-      updateUser();
-    });
-
-    return () => {
-      window.removeEventListener("storage", updateUser);
-    };
-  }, []);
 
   async function handleLogout() {
     try {
       await logout();
+      // Clear localStorage
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("userName");
+      }
       setIsOpen(false);
       router.push("/auth/sign-in");
     } catch (error) {
       console.error("Logout failed:", error);
-      // Still redirect even if API fails
+      // Clear localStorage even if API fails
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("userName");
+      }
       setIsOpen(false);
       router.push("/auth/sign-in");
     }
@@ -79,7 +54,7 @@ export function UserInfo() {
         <figure className="flex items-center gap-3">
           <UserIcon />
           <figcaption className="flex items-center gap-1 font-medium text-dark dark:text-dark-6 max-[1024px]:sr-only">
-            <span>{user.name || "User"}</span>
+            <span>{name || email || "User"}</span>
 
             <ChevronUpIcon
               aria-hidden
@@ -103,11 +78,11 @@ export function UserInfo() {
           <UserIcon />
           <figcaption className="space-y-1 text-base font-medium">
             <div className="mb-2 leading-none text-dark dark:text-white">
-              {user.name || "User"}
+              {loading ? "Loading..." : (name || email || "User")}
             </div>
 
             <div className="leading-none text-gray-6">
-              {user.email || "No email"}
+              {loading ? "" : (email || "No email")}
             </div>
           </figcaption>
         </figure>

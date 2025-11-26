@@ -8,7 +8,7 @@ import {
   type LibraryQueryParams,
   type LibraryResponse,
   type UpdateDocumentRequest,
-} from "./libraryMock";
+} from "./library.mock";
 
 // Re-export library types and data for backward compatibility
 export type {
@@ -25,7 +25,7 @@ export {
   getReviewRequests,
   getReviewHistory,
   resetMockReviewData,
-} from "./reviewListMock";
+} from "./review-list.mock";
 
 export type TicketCategory =
   | "PAYMENT"

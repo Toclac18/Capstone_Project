@@ -1,5 +1,5 @@
 // app/api/profile/get/route.ts
-import { mockProfileDB } from "@/mock/dbMock";
+import { mockProfileDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";

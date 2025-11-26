@@ -1,5 +1,5 @@
 // app/api/profile/update/route.ts
-import { mockProfileDB, type ProfileData } from "@/mock/dbMock";
+import { mockProfileDB, type ProfileData } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";

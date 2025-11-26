@@ -11,7 +11,7 @@ import {
   deleteAccount,
   type ProfileResponse,
   type UserRole,
-} from "@/services/profileService";
+} from "@/services/profile.service";
 import {
   Mail,
   MapPin,
@@ -75,7 +75,8 @@ export default function Page() {
   };
 
   // Computed values from profile
-  const displayName = profile?.fullName || profile?.username || profile?.email || "";
+  const displayName =
+    profile?.fullName || profile?.username || profile?.email || "";
   const coverPhoto = "/images/cover.png"; // Default cover photo (fixed)
 
   // Handle profile photo change
@@ -177,7 +178,7 @@ export default function Page() {
   const handleChangePassword = async (
     currentPassword: string,
     newPassword: string,
-    confirmPassword: string
+    confirmPassword: string,
   ) => {
     if (newPassword !== confirmPassword) {
       throw new Error("Passwords do not match");
@@ -260,7 +261,10 @@ export default function Page() {
                 className={styles["profile-photo-image"]}
                 alt="profile"
               />
-              <label htmlFor="profilePhoto" className={styles["profile-photo-label"]}>
+              <label
+                htmlFor="profilePhoto"
+                className={styles["profile-photo-label"]}
+              >
                 <Camera className="h-4 w-4" />
                 <input
                   type="file"
@@ -313,47 +317,75 @@ export default function Page() {
             </div>
 
             {/* Profile Details Card */}
-            <div className={`${styles["profile-details-card"]} ${styles["sm-cols-2"]}`}>
+            <div
+              className={`${styles["profile-details-card"]} ${styles["sm-cols-2"]}`}
+            >
               {profile?.email && (
                 <div className={styles["profile-detail-item"]}>
-                  <div className={`${styles["profile-detail-icon-wrapper"]} ${styles["primary"]}`}>
-                    <Mail className={`${styles["profile-detail-icon"]} ${styles["primary"]}`} />
+                  <div
+                    className={`${styles["profile-detail-icon-wrapper"]} ${styles["primary"]}`}
+                  >
+                    <Mail
+                      className={`${styles["profile-detail-icon"]} ${styles["primary"]}`}
+                    />
                   </div>
                   <div>
                     <p className={styles["profile-detail-label"]}>Email</p>
-                    <p className={styles["profile-detail-value"]}>{profile.email}</p>
+                    <p className={styles["profile-detail-value"]}>
+                      {profile.email}
+                    </p>
                   </div>
                 </div>
               )}
               {profile?.dateOfBirth && (
                 <div className={styles["profile-detail-item"]}>
-                  <div className={`${styles["profile-detail-icon-wrapper"]} ${styles["blue"]}`}>
-                    <Calendar className={`${styles["profile-detail-icon"]} ${styles["blue"]}`} />
+                  <div
+                    className={`${styles["profile-detail-icon-wrapper"]} ${styles["blue"]}`}
+                  >
+                    <Calendar
+                      className={`${styles["profile-detail-icon"]} ${styles["blue"]}`}
+                    />
                   </div>
                   <div>
-                    <p className={styles["profile-detail-label"]}>Date of Birth</p>
-                    <p className={styles["profile-detail-value"]}>{formatDate(profile.dateOfBirth)}</p>
+                    <p className={styles["profile-detail-label"]}>
+                      Date of Birth
+                    </p>
+                    <p className={styles["profile-detail-value"]}>
+                      {formatDate(profile.dateOfBirth)}
+                    </p>
                   </div>
                 </div>
               )}
               {profile?.username && (
                 <div className={styles["profile-detail-item"]}>
-                  <div className={`${styles["profile-detail-icon-wrapper"]} ${styles["primary"]}`}>
-                    <UserIcon className={`${styles["profile-detail-icon"]} ${styles["primary"]}`} />
+                  <div
+                    className={`${styles["profile-detail-icon-wrapper"]} ${styles["primary"]}`}
+                  >
+                    <UserIcon
+                      className={`${styles["profile-detail-icon"]} ${styles["primary"]}`}
+                    />
                   </div>
                   <div>
                     <p className={styles["profile-detail-label"]}>Username</p>
-                    <p className={styles["profile-detail-value"]}>{profile?.username}</p>
+                    <p className={styles["profile-detail-value"]}>
+                      {profile?.username}
+                    </p>
                   </div>
                 </div>
               )}
               {profile?.coinBalance && (
                 <div className={styles["profile-detail-item"]}>
-                  <div className={`${styles["profile-detail-icon-wrapper"]} ${styles["yellow"]}`}>
-                    <Coins className={`${styles["profile-detail-icon"]} ${styles["yellow"]}`} />
+                  <div
+                    className={`${styles["profile-detail-icon-wrapper"]} ${styles["yellow"]}`}
+                  >
+                    <Coins
+                      className={`${styles["profile-detail-icon"]} ${styles["yellow"]}`}
+                    />
                   </div>
                   <div>
-                    <p className={styles["profile-detail-label"]}>Coin Balance</p>
+                    <p className={styles["profile-detail-label"]}>
+                      Coin Balance
+                    </p>
                     <p className={styles["profile-detail-value"]}>
                       {profile?.coinBalance.toLocaleString()}
                     </p>
@@ -363,12 +395,18 @@ export default function Page() {
 
               {profile?.role === "REVIEWER" && profile.ordid && (
                 <div className={styles["profile-detail-item"]}>
-                  <div className={`${styles["profile-detail-icon-wrapper"]} ${styles["purple"]}`}>
-                    <Hash className={`${styles["profile-detail-icon"]} ${styles["purple"]}`} />
+                  <div
+                    className={`${styles["profile-detail-icon-wrapper"]} ${styles["purple"]}`}
+                  >
+                    <Hash
+                      className={`${styles["profile-detail-icon"]} ${styles["purple"]}`}
+                    />
                   </div>
                   <div>
                     <p className={styles["profile-detail-label"]}>ORDID</p>
-                    <p className={styles["profile-detail-value"]}>{profile?.ordid}</p>
+                    <p className={styles["profile-detail-value"]}>
+                      {profile?.ordid}
+                    </p>
                   </div>
                 </div>
               )}
@@ -377,45 +415,79 @@ export default function Page() {
                 <>
                   {profile?.organizationName && (
                     <div className={styles["profile-detail-item"]}>
-                      <div className={`${styles["profile-detail-icon-wrapper"]} ${styles["blue"]}`}>
-                        <Building2 className={`${styles["profile-detail-icon"]} ${styles["blue"]}`} />
+                      <div
+                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["blue"]}`}
+                      >
+                        <Building2
+                          className={`${styles["profile-detail-icon"]} ${styles["blue"]}`}
+                        />
                       </div>
                       <div>
-                        <p className={styles["profile-detail-label"]}>Organization</p>
-                        <p className={styles["profile-detail-value"]}>{profile?.organizationName}</p>
+                        <p className={styles["profile-detail-label"]}>
+                          Organization
+                        </p>
+                        <p className={styles["profile-detail-value"]}>
+                          {profile?.organizationName}
+                        </p>
                       </div>
                     </div>
                   )}
                   {profile?.organizationEmail && (
                     <div className={styles["profile-detail-item"]}>
-                      <div className={`${styles["profile-detail-icon-wrapper"]} ${styles["primary"]}`}>
-                        <Mail className={`${styles["profile-detail-icon"]} ${styles["primary"]}`} />
+                      <div
+                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["primary"]}`}
+                      >
+                        <Mail
+                          className={`${styles["profile-detail-icon"]} ${styles["primary"]}`}
+                        />
                       </div>
                       <div>
-                        <p className={styles["profile-detail-label"]}>Org Email</p>
-                        <p className={styles["profile-detail-value"]}>{profile?.organizationEmail}</p>
+                        <p className={styles["profile-detail-label"]}>
+                          Org Email
+                        </p>
+                        <p className={styles["profile-detail-value"]}>
+                          {profile?.organizationEmail}
+                        </p>
                       </div>
                     </div>
                   )}
                   {profile?.organizationHotline && (
                     <div className={styles["profile-detail-item"]}>
-                      <div className={`${styles["profile-detail-icon-wrapper"]} ${styles["green"]}`}>
-                        <Phone className={`${styles["profile-detail-icon"]} ${styles["green"]}`} />
+                      <div
+                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["green"]}`}
+                      >
+                        <Phone
+                          className={`${styles["profile-detail-icon"]} ${styles["green"]}`}
+                        />
                       </div>
                       <div>
-                        <p className={styles["profile-detail-label"]}>Hotline</p>
-                        <p className={styles["profile-detail-value"]}>{profile?.organizationHotline}</p>
+                        <p className={styles["profile-detail-label"]}>
+                          Hotline
+                        </p>
+                        <p className={styles["profile-detail-value"]}>
+                          {profile?.organizationHotline}
+                        </p>
                       </div>
                     </div>
                   )}
                   {profile?.organizationAddress && (
-                    <div className={`${styles["profile-detail-item"]} ${styles["profile-detail-item-full-width"]}`}>
-                      <div className={`${styles["profile-detail-icon-wrapper"]} ${styles["orange"]}`}>
-                        <MapPin className={`${styles["profile-detail-icon"]} ${styles["orange"]}`} />
+                    <div
+                      className={`${styles["profile-detail-item"]} ${styles["profile-detail-item-full-width"]}`}
+                    >
+                      <div
+                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["orange"]}`}
+                      >
+                        <MapPin
+                          className={`${styles["profile-detail-icon"]} ${styles["orange"]}`}
+                        />
                       </div>
                       <div>
-                        <p className={styles["profile-detail-label"]}>Address</p>
-                        <p className={styles["profile-detail-value"]}>{profile?.organizationAddress}</p>
+                        <p className={styles["profile-detail-label"]}>
+                          Address
+                        </p>
+                        <p className={styles["profile-detail-value"]}>
+                          {profile?.organizationAddress}
+                        </p>
                       </div>
                     </div>
                   )}

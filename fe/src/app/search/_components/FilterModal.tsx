@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { fetchMeta } from "@/services/searchDocumentService";
+import { fetchMeta } from "@/services/search-document.service";
 import type { SearchFilters, SearchMeta } from "@/types/documentResponse";
 import { useSearch } from "../provider";
 import styles from "../styles.module.css";

@@ -10,7 +10,7 @@ import {
   type Specialization,
   type UploadDocumentRequest,
   type UploadDocumentResponse,
-} from "@/services/uploadDocuments";
+} from "@/services/upload-documents.service";
 
 export type {
   DocumentType,
@@ -33,13 +33,14 @@ export async function fetchTags(): Promise<Tag[]> {
   return getTagsService();
 }
 
-export async function fetchSpecializations(domainIds: string[]): Promise<Specialization[]> {
+export async function fetchSpecializations(
+  domainIds: string[],
+): Promise<Specialization[]> {
   return getSpecializationsService(domainIds);
 }
 
 export async function uploadDocument(
-  data: UploadDocumentRequest
+  data: UploadDocumentRequest,
 ): Promise<UploadDocumentResponse> {
   return uploadDocumentService(data);
 }
-

@@ -16,6 +16,7 @@ export default function DocCard(props: Props) {
   const {
     title,
     orgName,
+    domain,
     specialization,
     uploader,
     publicYear,
@@ -34,8 +35,14 @@ export default function DocCard(props: Props) {
 
   const handleOpenSaveModal = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    e.preventDefault();
     setIsSaveModalOpen(true);
+  };
+
+  const handleCardKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handlePreview();
+    }
   };
 
   const handleSaveButtonKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
@@ -53,9 +60,7 @@ export default function DocCard(props: Props) {
         role="button"
         tabIndex={0}
         onClick={handlePreview}
-        onKeyDown={(e) =>
-          (e.key === "Enter" || e.key === " ") && handlePreview()
-        }
+        onKeyDown={handleCardKeyDown}
         aria-label={`Preview ${title}`}
       >
         <div className={styles.thumb}>
@@ -100,15 +105,17 @@ export default function DocCard(props: Props) {
           <span className={styles.voteDown}>▼ {downvote_counts}</span>
         </div>
 
-        <div className={styles.specRow}>
-          <span className={styles.specChip}>{specialization}</span>
-        </div>
-
         {isPremium && (
           <div className={styles.meta}>
             <span className={styles.specChip}>Premium • {points} pts</span>
           </div>
         )}
+
+        {/* Only 1 domain + 1 specialization */}
+        <div className={styles.cardTags}>
+          <span className={styles.tagPill}>{domain}</span>
+          <span className={styles.tagPill}>{specialization}</span>
+        </div>
 
         <div className={styles.uploader}>Uploaded by {uploader}</div>
       </div>

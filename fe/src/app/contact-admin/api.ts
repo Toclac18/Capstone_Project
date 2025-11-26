@@ -3,7 +3,7 @@ import {
   submitTicket as submitTicketService,
   type ContactAdminPayload,
   type ContactAdminResponse,
-} from "@/services/contact-admin";
+} from "@/services/contact-admin.service";
 
 export type { ContactAdminPayload, ContactAdminResponse };
 

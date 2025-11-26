@@ -1,13 +1,10 @@
 import {
   verifyEmail as verifyEmailService,
   type VerifyEmailResponse,
-} from "@/services/authService";
+} from "@/services/auth.service";
 
 export type { VerifyEmailResponse };
 
-export async function verifyEmail(
-  token: string,
-): Promise<VerifyEmailResponse> {
+export async function verifyEmail(token: string): Promise<VerifyEmailResponse> {
   return verifyEmailService(token);
 }
-

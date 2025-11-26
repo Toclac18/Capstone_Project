@@ -10,7 +10,7 @@ import { cn } from "@/utils/utils";
 import Link from "next/link";
 import { useState, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
-import { logout } from "@/services/authService";
+import { logout } from "@/services/auth.service";
 import { LogOutIcon, SettingsIcon, UserIcon } from "./icons";
 
 export function UserInfo() {
@@ -57,17 +57,17 @@ export function UserInfo() {
       window.removeEventListener("storage", updateUser);
     };
   }, []);
-  
+
   async function handleLogout() {
     try {
       await logout();
       setIsOpen(false);
-      router.push('/auth/sign-in');
+      router.push("/auth/sign-in");
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
       // Still redirect even if API fails
       setIsOpen(false);
-      router.push('/auth/sign-in');
+      router.push("/auth/sign-in");
     }
   }
 
@@ -79,7 +79,7 @@ export function UserInfo() {
         <figure className="flex items-center gap-3">
           <UserIcon />
           <figcaption className="flex items-center gap-1 font-medium text-dark dark:text-dark-6 max-[1024px]:sr-only">
-            <span>{user.name || 'User'}</span>
+            <span>{user.name || "User"}</span>
 
             <ChevronUpIcon
               aria-hidden
@@ -103,10 +103,12 @@ export function UserInfo() {
           <UserIcon />
           <figcaption className="space-y-1 text-base font-medium">
             <div className="mb-2 leading-none text-dark dark:text-white">
-              {user.name || 'User'}
+              {user.name || "User"}
             </div>
 
-            <div className="leading-none text-gray-6">{user.email || 'No email'}</div>
+            <div className="leading-none text-gray-6">
+              {user.email || "No email"}
+            </div>
           </figcaption>
         </figure>
 

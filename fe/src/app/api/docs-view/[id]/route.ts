@@ -1,5 +1,5 @@
 // src/app/api/docs-view/[id]/route.ts
-import { mockGetDocDetail } from "@/mock/docsDetailMock";
+import { mockGetDocDetail } from "@/mock/docs-detail.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { badRequest, proxyJsonResponse, jsonResponse } from "@/server/response";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";

@@ -1,4 +1,4 @@
-import { getReviewRequests } from "@/mock/reviewListMock";
+import { getReviewRequests } from "@/mock/review-list.mock";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 import { getAuthHeader } from "@/server/auth";
 import { BE_BASE, USE_MOCK } from "@/server/config";
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
   // Get authentication from cookie
   const bearerToken = await getAuthHeader();
 
-  const fh = new Headers({ "Content-Type": "application/json" });
+  const fh = new Headers();
   if (bearerToken) {
     fh.set("Authorization", bearerToken);
   }

@@ -1,5 +1,5 @@
 // src/app/api/org-admin/readers/route.ts
-import { mockReaders } from "@/mock/readersMock";
+import { mockReaders } from "@/mock/readers.mock";
 import { headers, cookies } from "next/headers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";

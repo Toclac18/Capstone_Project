@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { mockOrganizationAdminDB } from "@/mock/dbMock";
+import { mockOrganizationAdminDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";

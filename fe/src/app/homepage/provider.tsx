@@ -2,6 +2,11 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import type { DocumentItem } from "@/types/documentResponse";
+import {
+  mockContinueReading,
+  mockSpecializationGroups,
+  mockTopUpvoted,
+} from "@/mock/documents.mock";
 
 type SpecGroup = { name: string; items: DocumentItem[] };
 
@@ -167,11 +172,23 @@ export function HomepageProvider({ children }: { children: React.ReactNode }) {
         setTopUpvoted(tu);
         setSpecGroups(groups);
       } catch (e) {
-        console.error("fetch /api/homepage failed", e);
+        console.error(
+          "fetch /api/homepage failed, falling back to mock data",
+          e,
+        );
         if (alive) {
-          setContinueReading([]);
-          setTopUpvoted([]);
-          setSpecGroups([]);
+          const cr = mockContinueReading.map(toDocumentItem);
+          const tu = mockTopUpvoted.map(toDocumentItem);
+          const groups: SpecGroup[] = (mockSpecializationGroups ?? []).map(
+            (g: any) => ({
+              name: String(g?.name ?? ""),
+              items: Array.isArray(g?.items) ? g.items.map(toDocumentItem) : [],
+            }),
+          );
+
+          setContinueReading(cr);
+          setTopUpvoted(tu);
+          setSpecGroups(groups);
         }
       } finally {
         if (alive) setLoading(false);

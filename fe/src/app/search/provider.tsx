@@ -12,7 +12,7 @@ import type {
   SearchFilters,
   Paged,
 } from "@/types/documentResponse";
-import { fetchDocuments } from "@/services/searchDocumentService";
+import { fetchDocuments } from "@/services/search-document.service";
 
 export type PerPage = 10 | 20 | 50;
 

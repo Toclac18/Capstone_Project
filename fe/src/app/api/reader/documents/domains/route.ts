@@ -1,12 +1,23 @@
-import { mockDocumentsDB } from "@/mock/dbMock";
+import { mockDocumentsDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { jsonResponse, proxyJsonResponse } from "@/server/response";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { getAuthHeader } from "@/server/auth";
 
 async function handleGET() {
   if (USE_MOCK) {
     const domains = mockDocumentsDB.getDomains();
     return jsonResponse(domains, { status: 200, mode: "mock" });
+  }
+
+  const bearerToken = await getAuthHeader("domains");
+
+  const headers = new Headers({
+    "Content-Type": "application/json",
+  });
+
+  if (bearerToken) {
+    headers.set("Authorization", bearerToken);
   }
 
   // Public endpoint - no auth required

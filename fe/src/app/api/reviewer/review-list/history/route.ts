@@ -1,4 +1,4 @@
-import { getReviewHistory } from "@/mock/reviewListMock";
+import { getReviewHistory } from "@/mock/review-list.mock";
 import type { ReviewHistoryQueryParams } from "@/types/review";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 import { getAuthHeader } from "@/server/auth";
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
   // Get authentication from cookie
   const bearerToken = await getAuthHeader();
 
-  const fh = new Headers({ "Content-Type": "application/json" });
+  const fh = new Headers();
   if (bearerToken) {
     fh.set("Authorization", bearerToken);
   }

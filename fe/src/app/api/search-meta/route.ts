@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { headers, cookies } from "next/headers";
-import { mockLibraryDocs } from "@/mock/documentsMock";
+import { mockLibraryDocs } from "@/mock/documents.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 

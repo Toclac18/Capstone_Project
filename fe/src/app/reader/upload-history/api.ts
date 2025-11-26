@@ -5,7 +5,7 @@ import {
   type DocumentHistoryStatus,
   type UploadHistoryQueryParams,
   type UploadHistoryResponse,
-} from "@/services/uploadHistory";
+} from "@/services/upload-history.service";
 
 export type {
   DocumentHistory,
@@ -15,15 +15,14 @@ export type {
 };
 
 export async function fetchUploadHistory(
-  params?: UploadHistoryQueryParams
+  params?: UploadHistoryQueryParams,
 ): Promise<UploadHistoryResponse> {
   return getUploadHistoryService(params);
 }
 
 export async function requestReReview(
   documentId: string,
-  reason: string
+  reason: string,
 ): Promise<{ message: string }> {
   return requestReReviewService(documentId, reason);
 }
-

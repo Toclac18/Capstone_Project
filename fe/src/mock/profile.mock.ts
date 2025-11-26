@@ -1,4 +1,4 @@
-import { mockProfileDB, type ProfileData } from "./dbMock";
+import { mockProfileDB, type ProfileData } from "./db.mock";
 
 /**
  * Mock API for profile domain.

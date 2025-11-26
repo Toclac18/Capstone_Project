@@ -1,6 +1,6 @@
 // app/api/notifications/route.ts
 
-import { mockNotificationDB } from "@/mock/dbMock";
+import { mockNotificationDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, proxyJsonResponse } from "@/server/response";

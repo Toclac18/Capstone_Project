@@ -1,4 +1,4 @@
-import { mockDocumentsDB } from "./dbMock";
+import { mockDocumentsDB } from "./db.mock";
 
 /**
  * Mock API for documents upload and related endpoints.

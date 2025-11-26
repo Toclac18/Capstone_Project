@@ -3,7 +3,7 @@ export {
   getDomains,
   createDomain,
   updateDomain,
-} from "@/services/manageDomainService";
+} from "@/services/manage-domain.service";
 
 export type {
   Domain,
@@ -12,4 +12,3 @@ export type {
   CreateDomainRequest,
   UpdateDomainRequest,
 } from "@/types/document-domain";
-

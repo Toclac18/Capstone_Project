@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { mockDocumentsDB } from "@/mock/dbMock";
+import { mockDocumentsDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";

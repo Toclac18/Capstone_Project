@@ -10,7 +10,10 @@ import React, {
   useCallback,
 } from "react";
 import { toast, useToast } from "@/components/ui/toast";
-import { changeReaderAccess, ReaderResponse } from "@/services/orgAdmin-reader";
+import {
+  changeReaderAccess,
+  ReaderResponse,
+} from "@/services/org-admin-reader.service";
 
 /**
  * NOTE:
@@ -110,45 +113,48 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
   }, [page, pageSize, q, status, showToast]);
 
   /** Toggle access with optimistic UI; uses service API for the action */
-  const toggleAccess = useCallback(async (id: string, enable: boolean) => {
-    const snapshot = readers;
+  const toggleAccess = useCallback(
+    async (id: string, enable: boolean) => {
+      const snapshot = readers;
 
-    setError(null);
-    setInfo(null);
-    // optimistic update
-    setReaders((arr) =>
-      arr.map((r) =>
-        r.id === id ? { ...r, status: enable ? "ACTIVE" : "SUSPENDED" } : r,
-      ),
-    );
-
-    try {
-      const updated = await changeReaderAccess({ userId: id, enable });
+      setError(null);
+      setInfo(null);
+      // optimistic update
       setReaders((arr) =>
-        arr.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)),
+        arr.map((r) =>
+          r.id === id ? { ...r, status: enable ? "ACTIVE" : "SUSPENDED" } : r,
+        ),
       );
 
-      const msg = enable
-        ? "Access enabled successfully"
-        : "Access removed successfully";
-      setInfo(msg);
-      showToast(
-        enable
-          ? toast.success("Access Enabled", msg)
-          : toast.error("Access Removed", msg),
-      );
+      try {
+        const updated = await changeReaderAccess({ userId: id, enable });
+        setReaders((arr) =>
+          arr.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)),
+        );
 
-      // Optional: ensure server ordering/policies are reflected
-      // await reload();
-    } catch (e: any) {
-      // rollback
-      setReaders(snapshot);
-      const msg = e?.message ?? "Failed to update access";
-      setError(msg);
-      showToast(toast.error("Action failed", msg));
-      throw e;
-    }
-  }, [readers, showToast]);
+        const msg = enable
+          ? "Access enabled successfully"
+          : "Access removed successfully";
+        setInfo(msg);
+        showToast(
+          enable
+            ? toast.success("Access Enabled", msg)
+            : toast.error("Access Removed", msg),
+        );
+
+        // Optional: ensure server ordering/policies are reflected
+        // await reload();
+      } catch (e: any) {
+        // rollback
+        setReaders(snapshot);
+        const msg = e?.message ?? "Failed to update access";
+        setError(msg);
+        showToast(toast.error("Action failed", msg));
+        throw e;
+      }
+    },
+    [readers, showToast],
+  );
 
   useEffect(() => {
     reload();
@@ -174,7 +180,19 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
       setError,
       setInfo,
     }),
-    [readers, loading, error, info, page, pageSize, total, q, status, reload, toggleAccess],
+    [
+      readers,
+      loading,
+      error,
+      info,
+      page,
+      pageSize,
+      total,
+      q,
+      status,
+      reload,
+      toggleAccess,
+    ],
   );
 
   return (

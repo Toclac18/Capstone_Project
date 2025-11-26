@@ -13,7 +13,7 @@ import {
 } from "@/app/reader/upload-document/api";
 import { fetchOrganizations } from "@/app/reader/organizations/api";
 import type { OrganizationSummary } from "@/app/reader/organizations/api";
-import type { LibraryDocument } from "@/services/library";
+import type { LibraryDocument } from "@/services/library.service";
 import styles from "../styles.module.css";
 
 interface EditDocumentModalProps {
@@ -50,7 +50,7 @@ export default function EditDocumentModal({
   const [title, setTitle] = useState(document.documentName);
   const [description, setDescription] = useState(document.description || "");
   const [visibility, setVisibility] = useState<"PUBLIC" | "INTERNAL">(
-    document.visibility === "PRIVATE" ? "PUBLIC" : document.visibility
+    document.visibility === "PRIVATE" ? "PUBLIC" : document.visibility,
   );
   const [organizationId, setOrganizationId] = useState<string>("");
   const [typeId, setTypeId] = useState("");
@@ -103,7 +103,9 @@ export default function EditDocumentModal({
       // Reset form with document data
       setTitle(document.documentName);
       setDescription(document.description || "");
-      setVisibility(document.visibility === "PRIVATE" ? "PUBLIC" : document.visibility);
+      setVisibility(
+        document.visibility === "PRIVATE" ? "PUBLIC" : document.visibility,
+      );
       setOrganizationId(document.organizationId || "");
       setSelectedTagIds(document.tagIds || []);
       setNewTags([]);
@@ -146,18 +148,22 @@ export default function EditDocumentModal({
       // We need domain ID to load specializations
       const domainsResponse = await fetch("/api/reader/documents/domains");
       const domainsData = await domainsResponse.json();
-      const matchedDomain = domainsData.find((d: { name: string; id: string }) => d.name === document.domain);
-      
+      const matchedDomain = domainsData.find(
+        (d: { name: string; id: string }) => d.name === document.domain,
+      );
+
       if (matchedDomain) {
         setDomainId(matchedDomain.id);
-        
+
         // Load specializations based on matched domain
         const specs = await fetchSpecializations([matchedDomain.id]);
         setSpecializations(specs);
-        
+
         // Pre-select specialization from document if exists
         if (document.specializationId) {
-          const matchedSpec = specs.find((s) => s.id === document.specializationId);
+          const matchedSpec = specs.find(
+            (s) => s.id === document.specializationId,
+          );
           if (matchedSpec) {
             setSpecializationId(document.specializationId);
           } else {
@@ -199,10 +205,10 @@ export default function EditDocumentModal({
   const handleAddNewTag = () => {
     const tag = newTagInput.trim();
     if (!tag) return;
-    
+
     // Check if tag already exists in tags list
     const existingTag = tags.find(
-      (t) => t.name.toLowerCase() === tag.toLowerCase()
+      (t) => t.name.toLowerCase() === tag.toLowerCase(),
     );
     if (existingTag) {
       // If tag exists, add its ID to selectedTagIds instead
@@ -224,7 +230,7 @@ export default function EditDocumentModal({
     setSelectedTagIds((prev) =>
       prev.includes(tagId)
         ? prev.filter((id) => id !== tagId)
-        : [...prev, tagId]
+        : [...prev, tagId],
     );
     setShowTagDropdown(false);
     setTagSearch("");
@@ -271,9 +277,11 @@ export default function EditDocumentModal({
 
     if (visibility === "INTERNAL") {
       if (!organizationId) {
-        newErrors.organizationId = "Organization is required when visibility is Internal";
+        newErrors.organizationId =
+          "Organization is required when visibility is Internal";
       } else if (organizations.length === 0) {
-        newErrors.organizationId = "You must be a member of at least one organization to set visibility as Internal";
+        newErrors.organizationId =
+          "You must be a member of at least one organization to set visibility as Internal";
       }
     }
 
@@ -308,7 +316,10 @@ export default function EditDocumentModal({
         specializationId,
         tagIds: selectedTagIds,
         newTags: newTags.length > 0 ? newTags : undefined,
-        organizationId: visibility === "INTERNAL" && organizationId ? organizationId : undefined,
+        organizationId:
+          visibility === "INTERNAL" && organizationId
+            ? organizationId
+            : undefined,
       };
 
       await onSave(updateData);
@@ -336,9 +347,9 @@ export default function EditDocumentModal({
       tags.filter(
         (tag) =>
           tag.name.toLowerCase().includes(tagSearch.toLowerCase()) &&
-          !selectedTagIds.includes(tag.id)
+          !selectedTagIds.includes(tag.id),
       ),
-    [tags, tagSearch, selectedTagIds]
+    [tags, tagSearch, selectedTagIds],
   );
 
   if (!mounted || !isOpen) return null;
@@ -386,7 +397,9 @@ export default function EditDocumentModal({
               maxLength={40}
             />
             {errors.title && (
-              <span className={styles["edit-error-message"]}>{errors.title}</span>
+              <span className={styles["edit-error-message"]}>
+                {errors.title}
+              </span>
             )}
           </div>
 
@@ -410,7 +423,9 @@ export default function EditDocumentModal({
               maxLength={100}
             />
             {errors.description && (
-              <span className={styles["edit-error-message"]}>{errors.description}</span>
+              <span className={styles["edit-error-message"]}>
+                {errors.description}
+              </span>
             )}
           </div>
 
@@ -459,7 +474,8 @@ export default function EditDocumentModal({
               </label>
               {organizations.length === 0 ? (
                 <div className={styles["edit-error-message"]}>
-                  You must be a member of at least one organization to set visibility as Internal.
+                  You must be a member of at least one organization to set
+                  visibility as Internal.
                 </div>
               ) : (
                 <>
@@ -482,7 +498,9 @@ export default function EditDocumentModal({
                     ))}
                   </select>
                   {errors.organizationId && (
-                    <span className={styles["edit-error-message"]}>{errors.organizationId}</span>
+                    <span className={styles["edit-error-message"]}>
+                      {errors.organizationId}
+                    </span>
                   )}
                 </>
               )}
@@ -512,23 +530,24 @@ export default function EditDocumentModal({
               ))}
             </select>
             {errors.typeId && (
-              <span className={styles["edit-error-message"]}>{errors.typeId}</span>
+              <span className={styles["edit-error-message"]}>
+                {errors.typeId}
+              </span>
             )}
           </div>
 
           <div className={styles["edit-form-group"]}>
-            <label className={styles["edit-form-label"]}>
-              Domain
-            </label>
+            <label className={styles["edit-form-label"]}>Domain</label>
             <input
               type="text"
               value={document.domain}
-              className={`${styles["edit-form-input"]} bg-gray-100 dark:bg-gray-700 cursor-not-allowed`}
+              className={`${styles["edit-form-input"]} cursor-not-allowed bg-gray-100 dark:bg-gray-700`}
               disabled
               readOnly
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Domain cannot be changed. Please select a specialization within this domain.
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Domain cannot be changed. Please select a specialization within
+              this domain.
             </p>
           </div>
 
@@ -555,7 +574,9 @@ export default function EditDocumentModal({
               ))}
             </select>
             {errors.specializationId && (
-              <span className={styles["edit-error-message"]}>{errors.specializationId}</span>
+              <span className={styles["edit-error-message"]}>
+                {errors.specializationId}
+              </span>
             )}
           </div>
 
@@ -563,7 +584,10 @@ export default function EditDocumentModal({
             <label className={styles["edit-form-label"]}>Tags</label>
             <div className={styles["edit-tags-container"]}>
               {/* Search tags input */}
-              <div className={styles["edit-tags-input-wrapper"]} ref={tagsInputWrapperRef}>
+              <div
+                className={styles["edit-tags-input-wrapper"]}
+                ref={tagsInputWrapperRef}
+              >
                 <input
                   type="text"
                   value={tagSearch}
@@ -637,7 +661,10 @@ export default function EditDocumentModal({
                   ) : null;
                 })}
                 {newTags.map((tag, idx) => (
-                  <span key={`new-${idx}`} className={styles["edit-tag-chip-new"]}>
+                  <span
+                    key={`new-${idx}`}
+                    className={styles["edit-tag-chip-new"]}
+                  >
                     {tag}
                     <button
                       type="button"
@@ -674,4 +701,3 @@ export default function EditDocumentModal({
     </div>
   );
 }
-

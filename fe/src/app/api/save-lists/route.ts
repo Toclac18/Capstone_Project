@@ -2,11 +2,11 @@
 import {
   mockCreateSaveListAndAddDoc,
   mockFetchSaveLists,
-} from "@/mock/saveListMock";
+} from "@/mock/save-list.mock";
 import { jsonResponse, proxyJsonResponse } from "@/server/response";
-import { headers } from "next/headers";
-import { BE_BASE, DEFAULT_BE_BASE, USE_MOCK } from "@/server/config";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 import { badRequest } from "@/server/response";
+import { getAuthHeader } from "@/server/auth";
 /**
  * GET /api/save-lists?readerId=...
  * - Mock: lấy danh sách savelist từ mock
@@ -37,15 +37,12 @@ export async function GET(req: Request) {
   }
 
   // ---- REAL MODE ----
-  const h = await headers();
-  const authHeader = h.get("authorization") || "";
-  const cookieHeader = h.get("cookie") || "";
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const bearerToken = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
-  if (authHeader) fh.set("Authorization", authHeader);
-  if (cookieHeader) fh.set("Cookie", cookieHeader);
-  if (ip) fh.set("X-Forwarded-For", ip || "");
+  if (bearerToken) {
+    fh.set("Authorization", bearerToken);
+  }
 
   const upstream = await fetch(
     `${BE_BASE}/api/save-lists?readerId=${encodeURIComponent(readerId)}`,
@@ -66,11 +63,6 @@ export async function GET(req: Request) {
  * - Real: forward sang {BE_BASE}/api/save-lists
  */
 export async function POST(req: Request) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   let body: any;
   try {
     body = await req.json();
@@ -101,15 +93,12 @@ export async function POST(req: Request) {
   }
 
   // ---- REAL MODE ----
-  const h = await headers();
-  const authHeader = h.get("authorization") || "";
-  const cookieHeader = h.get("cookie") || "";
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const bearerToken = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
-  if (authHeader) fh.set("Authorization", authHeader);
-  if (cookieHeader) fh.set("Cookie", cookieHeader);
-  if (ip) fh.set("X-Forwarded-For", ip || "");
+  if (bearerToken) {
+    fh.set("Authorization", bearerToken);
+  }
 
   const upstream = await fetch(`${BE_BASE}/api/save-lists`, {
     method: "POST",

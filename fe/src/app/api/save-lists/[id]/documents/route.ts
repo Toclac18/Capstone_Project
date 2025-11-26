@@ -1,26 +1,13 @@
 // src/app/api/save-lists/[id]/documents/route.ts
-import { headers } from "next/headers";
-import { mockAddDocToSaveList } from "@/mock/saveListMock";
-import { proxyJsonResponse, jsonResponse } from "@/server/response";
-
-const DEFAULT_BE_BASE = "http://localhost:8081";
-
-function badRequest(msg: string, status = 400) {
-  return jsonResponse({ error: msg }, {
-    status,
-    headers: { "content-type": "application/json" },
-  });
-}
+import { mockAddDocToSaveList } from "@/mock/save-list.mock";
+import { proxyJsonResponse, jsonResponse, badRequest } from "@/server/response";
+import { getAuthHeader } from "@/server/auth";
+import { BE_BASE, USE_MOCK } from "@/server/config";
 
 export async function POST(
   req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-  const BE_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-    DEFAULT_BE_BASE;
-
   const { id } = await ctx.params;
   if (!id) {
     return badRequest("Missing path param id");
@@ -59,15 +46,12 @@ export async function POST(
   }
 
   // ---- REAL MODE ----
-  const h = await headers();
-  const authHeader = h.get("authorization") || "";
-  const cookieHeader = h.get("cookie") || "";
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const bearerToken = await getAuthHeader();
 
   const fh = new Headers({ "Content-Type": "application/json" });
-  if (authHeader) fh.set("Authorization", authHeader);
-  if (cookieHeader) fh.set("Cookie", cookieHeader);
-  if (ip) fh.set("X-Forwarded-For", ip || "");
+  if (bearerToken) {
+    fh.set("Authorization", bearerToken);
+  }
 
   const upstream = await fetch(
     `${BE_BASE}/api/save-lists/${encodeURIComponent(id)}/documents`,
@@ -79,5 +63,5 @@ export async function POST(
     },
   );
 
-    return proxyJsonResponse(upstream, { mode: "real" });
+  return proxyJsonResponse(upstream, { mode: "real" });
 }

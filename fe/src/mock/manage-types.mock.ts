@@ -1,48 +1,37 @@
-import { mockSpecializationsDB } from "./dbMock";
+import { mockTypesDB } from "./db.mock";
 
 /**
- * Mock API for manage-specializations domain.
+ * Mock API for manage-types domain.
  * Uses the global `fetch` interceptor technique.
  * Only available in dev mode.
  */
-export function setupMockManageSpecializations() {
+export function setupMockManageTypes() {
   const originalFetch = globalThis.fetch;
-  if ((globalThis as any)._mockManageSpecializationsEnabled) return; // avoid double patch
-  (globalThis as any)._mockManageSpecializationsEnabled = true;
+  if ((globalThis as any)._mockManageTypesEnabled) return; // avoid double patch
+  (globalThis as any)._mockManageTypesEnabled = true;
 
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
 
-    // Handle GET /api/business-admin/specializations
+    // Handle GET /api/business-admin/types
     if (
-      url.includes("/api/business-admin/specializations") &&
-      !url.match(/\/api\/business-admin\/specializations\/[^/]+$/)
+      url.includes("/api/business-admin/types") &&
+      !url.match(/\/api\/business-admin\/types\/[^/]+$/)
     ) {
       if (init?.method === "GET" || !init?.method) {
         const urlObj = new URL(url, "http://localhost");
-        const domainId = urlObj.searchParams.get("domainId");
-
-        if (!domainId) {
-          return new Response(
-            JSON.stringify({ message: "domainId is required" }),
-            {
-              status: 400,
-              headers: { "content-type": "application/json" },
-            },
-          );
-        }
-
         const params = {
-          domainId,
           search: urlObj.searchParams.get("search") || undefined,
+          dateFrom: urlObj.searchParams.get("dateFrom") || undefined,
+          dateTo: urlObj.searchParams.get("dateTo") || undefined,
         };
 
-        const specializations = mockSpecializationsDB.list(params);
-        const total = specializations.length;
+        const types = mockTypesDB.list(params);
+        const total = types.length;
 
         return new Response(
           JSON.stringify({
-            specializations,
+            types,
             total,
             page: 1,
             limit: 10,
@@ -66,7 +55,7 @@ export function setupMockManageSpecializations() {
         }
 
         try {
-          const created = mockSpecializationsDB.create(body);
+          const created = mockTypesDB.create(body);
           return new Response(JSON.stringify(created), {
             status: 201,
             headers: { "content-type": "application/json" },
@@ -80,10 +69,8 @@ export function setupMockManageSpecializations() {
       }
     }
 
-    // Handle /api/business-admin/specializations/[id]
-    const idMatch = url.match(
-      /\/api\/business-admin\/specializations\/([^/]+)$/,
-    );
+    // Handle /api/business-admin/types/[id]
+    const idMatch = url.match(/\/api\/business-admin\/types\/([^/]+)$/);
     if (idMatch) {
       const id = idMatch[1];
 
@@ -99,7 +86,7 @@ export function setupMockManageSpecializations() {
         }
 
         try {
-          const updated = mockSpecializationsDB.update(id, body);
+          const updated = mockTypesDB.update(id, body);
           return new Response(JSON.stringify(updated), {
             status: 200,
             headers: { "content-type": "application/json" },
@@ -117,5 +104,5 @@ export function setupMockManageSpecializations() {
     return originalFetch(input, init);
   };
 
-  console.info("[MOCK] Manage Specializations API enabled (fetch intercepted)");
+  console.info("[MOCK] Manage Types API enabled (fetch intercepted)");
 }

@@ -5,7 +5,7 @@ import {
   mockLibraryDocs,
   mockSpecializationGroups,
   mockTopUpvoted,
-} from "@/mock/documentsMock";
+} from "@/mock/documents.mock";
 import { NextRequest } from "next/server";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";

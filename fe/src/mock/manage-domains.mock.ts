@@ -1,43 +1,37 @@
-import { mockTagsDB } from "./dbMock";
+import { mockDomainsDB } from "./db.mock";
 
 /**
- * Mock API for manage-tags domain.
+ * Mock API for manage-domains domain.
  * Uses the global `fetch` interceptor technique.
  * Only available in dev mode.
  */
-export function setupMockManageTags() {
+export function setupMockManageDomains() {
   const originalFetch = globalThis.fetch;
-  if ((globalThis as any)._mockManageTagsEnabled) return; // avoid double patch
-  (globalThis as any)._mockManageTagsEnabled = true;
+  if ((globalThis as any)._mockManageDomainsEnabled) return; // avoid double patch
+  (globalThis as any)._mockManageDomainsEnabled = true;
 
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
 
-    // Handle GET /api/business-admin/tags
+    // Handle GET /api/business-admin/domains
     if (
-      url.includes("/api/business-admin/tags") &&
-      !url.match(/\/api\/business-admin\/tags\/[^/]+$/)
+      url.includes("/api/business-admin/domains") &&
+      !url.match(/\/api\/business-admin\/domains\/[^/]+$/)
     ) {
       if (init?.method === "GET" || !init?.method) {
         const urlObj = new URL(url, "http://localhost");
         const params = {
           search: urlObj.searchParams.get("search") || undefined,
-          status:
-            (urlObj.searchParams.get("status") as
-              | "ACTIVE"
-              | "INACTIVE"
-              | "PENDING"
-              | null) || undefined,
           dateFrom: urlObj.searchParams.get("dateFrom") || undefined,
           dateTo: urlObj.searchParams.get("dateTo") || undefined,
         };
 
-        const tags = mockTagsDB.list(params);
-        const total = tags.length;
+        const domains = mockDomainsDB.list(params);
+        const total = domains.length;
 
         return new Response(
           JSON.stringify({
-            tags,
+            domains,
             total,
             page: 1,
             limit: 10,
@@ -61,7 +55,7 @@ export function setupMockManageTags() {
         }
 
         try {
-          const created = mockTagsDB.create(body);
+          const created = mockDomainsDB.create(body);
           return new Response(JSON.stringify(created), {
             status: 201,
             headers: { "content-type": "application/json" },
@@ -75,8 +69,8 @@ export function setupMockManageTags() {
       }
     }
 
-    // Handle /api/business-admin/tags/[id]
-    const idMatch = url.match(/\/api\/business-admin\/tags\/([^/]+)$/);
+    // Handle /api/business-admin/domains/[id]
+    const idMatch = url.match(/\/api\/business-admin\/domains\/([^/]+)$/);
     if (idMatch) {
       const id = idMatch[1];
 
@@ -92,7 +86,7 @@ export function setupMockManageTags() {
         }
 
         try {
-          const updated = mockTagsDB.update(id, body);
+          const updated = mockDomainsDB.update(id, body);
           return new Response(JSON.stringify(updated), {
             status: 200,
             headers: { "content-type": "application/json" },
@@ -107,29 +101,14 @@ export function setupMockManageTags() {
 
       if (init?.method === "DELETE") {
         try {
-          mockTagsDB.delete(id);
+          mockDomainsDB.delete(id);
           return new Response(
-            JSON.stringify({ message: "Tag deleted successfully." }),
+            JSON.stringify({ message: "Domain deleted successfully." }),
             {
               status: 200,
               headers: { "content-type": "application/json" },
             },
           );
-        } catch (error: any) {
-          return new Response(JSON.stringify({ message: error.message }), {
-            status: 400,
-            headers: { "content-type": "application/json" },
-          });
-        }
-      }
-
-      if (init?.method === "POST") {
-        try {
-          const approved = mockTagsDB.approve(id);
-          return new Response(JSON.stringify(approved), {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          });
         } catch (error: any) {
           return new Response(JSON.stringify({ message: error.message }), {
             status: 400,
@@ -143,5 +122,5 @@ export function setupMockManageTags() {
     return originalFetch(input, init);
   };
 
-  console.info("[MOCK] Manage Tags API enabled (fetch intercepted)");
+  console.info("[MOCK] Manage Domains API enabled (fetch intercepted)");
 }

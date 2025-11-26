@@ -5,20 +5,27 @@ import {
   type OrganizationListResponse,
   type OrganizationSummary,
   type OrganizationDetail,
-} from "@/services/organizations";
+} from "@/services/organizations.service";
 
-export type { OrganizationListResponse, OrganizationSummary, OrganizationDetail };
+export type {
+  OrganizationListResponse,
+  OrganizationSummary,
+  OrganizationDetail,
+};
 
 export async function fetchOrganizations(): Promise<OrganizationListResponse> {
   return getMyOrganizationsService();
 }
 
-export async function fetchOrganizationDetail(id: string): Promise<OrganizationDetail> {
+export async function fetchOrganizationDetail(
+  id: string,
+): Promise<OrganizationDetail> {
   return getOrganizationByIdService(id);
 }
 
-export async function leaveOrganization(id: string, password: string): Promise<{ message: string }> {
+export async function leaveOrganization(
+  id: string,
+  password: string,
+): Promise<{ message: string }> {
   return leaveOrganizationService(id, password);
 }
-
-

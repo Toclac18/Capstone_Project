@@ -1,7 +1,7 @@
 // src/mock/saveList.ts
 // Mock SaveList mapping trực tiếp với mockDocDetails
 
-import { mockDocDetails } from "./docsDetailMock"; // path đúng: "@/mock/docsDetail" nếu cần
+import { mockDocDetails } from "./docs-detail.mock"; // path đúng: "@/mock/docsDetail" nếu cần
 
 export type SaveListMock = {
   id: string;

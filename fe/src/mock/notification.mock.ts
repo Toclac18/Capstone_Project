@@ -1,4 +1,4 @@
-import { mockNotificationDB } from "./dbMock";
+import { mockNotificationDB } from "./db.mock";
 
 /**
  * Mock API for notification domain.

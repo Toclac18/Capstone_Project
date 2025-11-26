@@ -4,7 +4,7 @@ import {
   deleteOrganization as deleteOrganizationService,
   type OrganizationInfo,
   type UpdateOrganizationData,
-} from "@/services/manageOrganizationService";
+} from "@/services/manage-organization.service";
 
 export type { OrganizationInfo, UpdateOrganizationData };
 
@@ -13,7 +13,7 @@ export async function fetchOrganizationInfo(): Promise<OrganizationInfo> {
 }
 
 export async function updateOrganizationInfo(
-  data: UpdateOrganizationData
+  data: UpdateOrganizationData,
 ): Promise<OrganizationInfo> {
   return updateOrganizationInfoService(data);
 }
@@ -21,4 +21,3 @@ export async function updateOrganizationInfo(
 export async function deleteOrganization(): Promise<{ message: string }> {
   return deleteOrganizationService();
 }
-

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Edit2, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
-import { logout } from "@/services/authService";
+import { logout } from "@/services/auth.service";
 import {
   fetchOrganizationInfo,
   updateOrganizationInfo,
@@ -62,7 +62,8 @@ export default function ManageOrganizationPage() {
       showToast({
         type: "error",
         title: "Update Failed",
-        message: e?.message || "Failed to update organization. Please try again.",
+        message:
+          e?.message || "Failed to update organization. Please try again.",
         duration: 5000,
       });
       throw e;
@@ -75,10 +76,11 @@ export default function ManageOrganizationPage() {
       showToast({
         type: "success",
         title: "Organization Deleted",
-        message: "Organization has been deleted successfully. You will be logged out.",
+        message:
+          "Organization has been deleted successfully. You will be logged out.",
         duration: 3000,
       });
-      
+
       // Auto logout after 2 seconds
       setTimeout(async () => {
         try {
@@ -97,7 +99,8 @@ export default function ManageOrganizationPage() {
       showToast({
         type: "error",
         title: "Delete Failed",
-        message: e?.message || "Failed to delete organization. Please try again.",
+        message:
+          e?.message || "Failed to delete organization. Please try again.",
         duration: 5000,
       });
       throw e;
@@ -151,14 +154,14 @@ export default function ManageOrganizationPage() {
                 onClick={() => setShowEditModal(true)}
                 className={styles["btn-update"]}
               >
-                <Edit2 className="w-4 h-4" />
+                <Edit2 className="h-4 w-4" />
                 Update
               </button>
               <button
                 onClick={() => setShowDeleteModal(true)}
                 className={styles["btn-delete"]}
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="h-4 w-4" />
                 Delete
               </button>
             </div>
@@ -166,7 +169,9 @@ export default function ManageOrganizationPage() {
 
           {/* Organization Details */}
           <div className={styles["details-section"]}>
-            <h3 className={styles["section-title"]}>Organization Information</h3>
+            <h3 className={styles["section-title"]}>
+              Organization Information
+            </h3>
             <div className={styles["details-grid"]}>
               <div className={styles["detail-field"]}>
                 <div className={styles["detail-label"]}>Organization Name</div>
@@ -181,7 +186,9 @@ export default function ManageOrganizationPage() {
               </div>
 
               <div className={styles["detail-field"]}>
-                <div className={styles["detail-label"]}>Registration Number</div>
+                <div className={styles["detail-label"]}>
+                  Registration Number
+                </div>
                 <div className={styles["detail-value"]}>
                   {orgInfo.registrationNumber}
                 </div>
@@ -242,4 +249,3 @@ export default function ManageOrganizationPage() {
     </div>
   );
 }
-

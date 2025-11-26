@@ -1,4 +1,4 @@
-import { mockTagsDB } from "@/mock/dbMock";
+import { mockTagsDB } from "@/mock/db.mock";
 import { getAuthHeader } from "@/server/auth";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";

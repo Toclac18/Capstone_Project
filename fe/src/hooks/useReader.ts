@@ -1,4 +1,4 @@
-// src/hooks/useReaderId.ts
+// src/hooks/useReader.ts
 "use client";
 
 import { useEffect, useState } from "react";
@@ -10,9 +10,10 @@ type MeResponse = {
   role: string | null;
 };
 
-export function useReaderId() {
+export function useReader() {
   const [readerId, setReaderId] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,10 +35,12 @@ export function useReaderId() {
 
         setReaderId(data.readerId);
         setRole(data.role);
+        setEmail(data.email);
       } catch {
         if (!cancelled) {
           setReaderId(null);
           setRole(null);
+          setEmail(null);
         }
       } finally {
         if (!cancelled) {
@@ -54,6 +57,7 @@ export function useReaderId() {
   return {
     readerId,
     role,
+    email,
     loading,
     isAuthenticated: !!readerId,
   };

@@ -15,12 +15,12 @@ async function handlePOST(req: Request) {
 
   if (USE_MOCK) {
     return jsonResponse(
-      { message: "OTP has been sent to your email address" },
+      { message: "Verification email has been resent" },
       { status: 200, mode: "mock" }
     );
   }
 
-  const upstream = await fetch(`${BE_BASE}/api/auth/request-password-reset`, {
+  const upstream = await fetch(`${BE_BASE}/api/auth/resend-verification-email`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
@@ -30,32 +30,24 @@ async function handlePOST(req: Request) {
   if (!upstream.ok) {
     const text = await upstream.text();
     return jsonResponse(
-      { error: parseError(text, "Failed to request password reset") },
+      { error: parseError(text, "Failed to resend verification email") },
       { status: upstream.status }
     );
   }
 
-  // Backend returns ResponseEntity<String> which might be plain text or wrapped in ApiResponse
-  const text = await upstream.text();
-  let message = "OTP has been sent to your email address";
-
-  // Try to parse as JSON first, fallback to plain text
-  try {
-    const json = JSON.parse(text);
-    message = json?.data || json?.message || message;
-  } catch {
-    // Plain text response
-    message = text || message;
-  }
+  // Backend returns ResponseEntity<Void> (204 No Content) or 200 OK
+  const message = upstream.status === 204 
+    ? "Verification email has been resent" 
+    : "Verification email has been resent";
 
   return jsonResponse(
     { message },
-    { status: upstream.status, mode: "real" }
+    { status: 200, mode: "real" }
   );
 }
 
 export const POST = (...args: Parameters<typeof handlePOST>) =>
   withErrorBoundary(() => handlePOST(...args), {
-    context: "api/auth/request-password-reset/route.ts/POST",
+    context: "api/auth/resend-verification-email/route.ts/POST",
   });
 

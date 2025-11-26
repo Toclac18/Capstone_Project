@@ -7,19 +7,37 @@ import Image from "next/image";
 import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
 import { verifyEmail } from "../api";
+import { resendVerificationEmail } from "@/services/auth.service";
+import { useToast } from "@/components/ui/toast";
+import { decodeJwtPayload, extractEmail } from "@/utils/jwt";
 import styles from "../styles.module.css";
 
 function VerifyEmailInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { showToast } = useToast();
   const token = searchParams.get("token");
 
-  const [status, setStatus] = useState<"verifying" | "success" | "error">(() =>
+  const [status, setStatus] = useState<"verifying" | "success" | "error" | "resend">(() =>
     token ? "verifying" : "error",
   );
   const [message, setMessage] = useState<string>(() =>
     token ? "" : "Verification token is missing",
   );
+  const [email, setEmail] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
+  const [isTokenExpired, setIsTokenExpired] = useState(false);
+
+  // Extract email from token on mount if token exists
+  useEffect(() => {
+    if (token) {
+      const payload = decodeJwtPayload(token);
+      const extractedEmail = extractEmail(payload);
+      if (extractedEmail) {
+        setEmail(extractedEmail);
+      }
+    }
+  }, [token]);
 
   const verifiedRef = useRef(false);
 
@@ -48,8 +66,25 @@ function VerifyEmailInner() {
           e instanceof Error
             ? e.message
             : "Verification failed. Please try again.";
-        setStatus("error");
-        setMessage(msg);
+        
+        // Check if token is expired or invalid
+        const isExpired = msg.toLowerCase().includes("expired") || 
+                         msg.toLowerCase().includes("invalid") ||
+                         msg.toLowerCase().includes("token");
+        
+        if (isExpired && token) {
+          // Email should already be extracted from token in useEffect
+          setIsTokenExpired(true);
+          setStatus("resend");
+          setMessage(
+            email
+              ? "Your verification link has expired. Click the button below to receive a new verification link."
+              : "Your verification link has expired. Please contact support."
+          );
+        } else {
+          setStatus("error");
+          setMessage(msg);
+        }
       }
     };
 
@@ -130,7 +165,79 @@ function VerifyEmailInner() {
             </>
           )}
 
-          {status === "error" && (
+          {status === "resend" && (
+            <>
+              <div className={styles["error-icon"]}>
+                <div>
+                  <svg
+                    className="h-10 w-10"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <h2 className={styles["title-error"]}>Verification Link Expired</h2>
+              <p className={styles["body-text-spaced"]}>{message}</p>
+              {email ? (
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+                  <button
+                    onClick={async () => {
+                      setResendLoading(true);
+                      try {
+                        await resendVerificationEmail({ email });
+                        showToast({
+                          type: "success",
+                          title: "Email Sent",
+                          message: "A new verification link has been sent to your email. Please check your inbox.",
+                        });
+                        // Redirect to login after 2 seconds
+                        setTimeout(() => {
+                          router.push("/auth/sign-in");
+                        }, 2000);
+                      } catch (error) {
+                        const msg =
+                          error instanceof Error
+                            ? error.message
+                            : "Failed to resend verification email";
+                        showToast({
+                          type: "error",
+                          title: "Error",
+                          message: msg,
+                        });
+                        setResendLoading(false);
+                      }
+                    }}
+                    disabled={resendLoading}
+                    className={styles["primary-btn"]}
+                  >
+                    {resendLoading ? "Sending..." : "Resend Verification Email"}
+                    {resendLoading && <span className={styles.spinner} />}
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-6">
+                  <p className={styles["body-text"]}>
+                    Unable to extract email from token. Please contact support.
+                  </p>
+                </div>
+              )}
+              <div className="mt-4 text-center">
+                <Link href="/auth/sign-in" className={styles["link-primary"]}>
+                  Back to Login
+                </Link>
+              </div>
+            </>
+          )}
+
+          {status === "error" && !isTokenExpired && (
             <>
               <div className={styles["error-icon"]}>
                 <div>

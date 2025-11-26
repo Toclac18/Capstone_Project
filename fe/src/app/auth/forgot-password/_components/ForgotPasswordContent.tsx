@@ -6,10 +6,11 @@ import Link from "next/link";
 import Image from "next/image";
 import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
-import { EmailIcon } from "@/assets/icons";
+import { EmailIcon, PasswordIcon } from "@/assets/icons";
 import { useToast } from "@/components/ui/toast";
+import { sendPasswordResetOtp, verifyOtp, resetPassword } from "@/services/auth.service";
+import InputGroup from "@/components/(template)/FormElements/InputGroup";
 import styles from "../styles.module.css";
-import { requestPasswordReset } from "@/services/auth.service";
 
 type Step = "email" | "otp" | "reset";
 
@@ -19,6 +20,7 @@ export default function ForgotPasswordContent() {
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
+  const [resetToken, setResetToken] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,7 +57,7 @@ export default function ForgotPasswordContent() {
     setError(null);
 
     try {
-      await requestPasswordReset({ email });
+      await sendPasswordResetOtp({ email });
       setStep("otp");
       showToast({
         type: "success",
@@ -86,17 +88,8 @@ export default function ForgotPasswordContent() {
         e instanceof Error
           ? e.message
           : "Failed to send OTP. Please try again.";
-
-      // Check for email not found error
-      if (
-        msg.toLowerCase().includes("does not exist") ||
-        msg.toLowerCase().includes("not found")
-      ) {
-        setError("Email does not exist in the system");
-      } else {
-        setError(msg);
-      }
-
+      
+      setError(msg);
       showToast({
         type: "error",
         title: "Error",
@@ -113,7 +106,7 @@ export default function ForgotPasswordContent() {
     setError(null);
 
     try {
-      await requestPasswordReset({ email });
+      await sendPasswordResetOtp({ email });
       showToast({
         type: "success",
         title: "OTP Resent",
@@ -187,10 +180,55 @@ export default function ForgotPasswordContent() {
       return;
     }
 
-    // OTP verification is done together with password reset
-    // So we just move to reset step
-    setStep("reset");
+    setLoading(true);
     setError(null);
+
+    try {
+      const response = await verifyOtp({ email, otp });
+      
+      if (!response.valid || !response.resetToken) {
+        setError("Invalid OTP. Please try again.");
+        setOtpAttempts((prev) => prev + 1);
+        if (otpAttempts + 1 >= 4) {
+          setError("You have one more attempt. After 5 failed attempts, your account will be locked.");
+        }
+        return;
+      }
+
+      // Store reset token and move to reset step
+      setResetToken(response.resetToken);
+      setStep("reset");
+      showToast({
+        type: "success",
+        title: "OTP Verified",
+        message: "Please enter your new password.",
+      });
+    } catch (e: unknown) {
+      const msg =
+        e instanceof Error
+          ? e.message
+          : "Failed to verify OTP. Please try again.";
+      
+      // Check for account locked error
+      if (msg.toLowerCase().includes("locked") || msg.toLowerCase().includes("too many")) {
+        setError("Your account is locked because of too many failed attempts. Please contact admin if needed.");
+        setStep("email"); // Reset to email step
+      } else {
+        setError(msg);
+        setOtpAttempts((prev) => prev + 1);
+        if (otpAttempts + 1 >= 4) {
+          setError("You have one more attempt. After 5 failed attempts, your account will be locked.");
+        }
+      }
+      
+      showToast({
+        type: "error",
+        title: "Error",
+        message: msg,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const validatePassword = (password: string): string => {
@@ -259,13 +297,19 @@ export default function ForgotPasswordContent() {
       return;
     }
 
+    if (!resetToken) {
+      setError("Reset token is missing. Please start over.");
+      setStep("email");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const { resetPassword } = await import("@/services/auth.service");
-      await resetPassword({ email, otp, newPassword });
+      await resetPassword({ resetToken, newPassword });
       showToast({
         type: "success",
         title: "Success",
-        message: "Your password is reset successfully.",
+        message: "Your password has been reset successfully.",
       });
       setTimeout(() => {
         router.push("/auth/sign-in");
@@ -275,33 +319,8 @@ export default function ForgotPasswordContent() {
         e instanceof Error
           ? e.message
           : "Failed to reset password. Please try again.";
-
-      // Check for account locked error
-      if (
-        msg.toLowerCase().includes("locked") ||
-        msg.toLowerCase().includes("too many")
-      ) {
-        setError(
-          "Your account is locked because of too many times trying. Please contact admin if needed.",
-        );
-        setStep("email"); // Reset to email step
-      } else {
-        setError(msg);
-        // Increment OTP attempts if OTP is incorrect
-        if (
-          msg.toLowerCase().includes("otp") ||
-          msg.toLowerCase().includes("incorrect")
-        ) {
-          setOtpAttempts((prev) => prev + 1);
-          if (otpAttempts + 1 >= 4) {
-            // After 4 failed attempts, show warning
-            setError(
-              "You have one more attempt. After 5 failed attempts, your account will be locked.",
-            );
-          }
-        }
-      }
-
+      
+      setError(msg);
       showToast({
         type: "error",
         title: "Error",
@@ -437,61 +456,44 @@ export default function ForgotPasswordContent() {
               <h2 className={styles.title}>Reset Password</h2>
               {error && <div className={styles["alert-error"]}>{error}</div>}
               <form onSubmit={handleResetPassword}>
-                <div className="mb-4">
-                  <label
-                    htmlFor="newPassword"
-                    className="mb-3 block text-body-sm font-medium text-dark dark:text-white"
-                  >
-                    New Password <span className="text-red">*</span>
-                  </label>
-                  <input
-                    id="newPassword"
-                    type="password"
-                    placeholder="Enter new password"
-                    className={`w-full rounded-lg border-[1.5px] bg-transparent px-5.5 py-[15px] outline-none transition placeholder:text-dark-6 dark:bg-dark-2 dark:text-white ${
-                      passwordErrors.newPassword
-                        ? "border-red focus:border-red dark:border-red"
-                        : "border-stroke focus:border-primary dark:border-dark-3"
-                    }`}
-                    value={newPassword}
-                    onChange={(e) => handleNewPasswordChange(e.target.value)}
-                    required
-                    disabled={loading}
-                    minLength={8}
-                  />
-                  <p className="mt-1 h-5 overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-5 text-red">
-                    {passwordErrors.newPassword || "\u00A0"}
+                <InputGroup
+                  type="password"
+                  label="New Password"
+                  className={styles["input-group"]}
+                  placeholder="Enter new password"
+                  name="newPassword"
+                  handleChange={(e) => handleNewPasswordChange(e.target.value)}
+                  value={newPassword}
+                  icon={<PasswordIcon />}
+                  error={passwordErrors.newPassword}
+                  required
+                  disabled={loading}
+                />
+                {passwordErrors.newPassword && (
+                  <p className={styles["error-text"]}>
+                    {passwordErrors.newPassword}
                   </p>
-                </div>
-                <div className="mb-4">
-                  <label
-                    htmlFor="confirmPassword"
-                    className="mb-3 block text-body-sm font-medium text-dark dark:text-white"
-                  >
-                    Confirm New Password <span className="text-red">*</span>
-                  </label>
-                  <input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Confirm new password"
-                    className={`w-full rounded-lg border-[1.5px] bg-transparent px-5.5 py-[15px] outline-none transition placeholder:text-dark-6 dark:bg-dark-2 dark:text-white ${
-                      passwordErrors.confirmPassword
-                        ? "border-red focus:border-red dark:border-red"
-                        : "border-stroke focus:border-primary dark:border-dark-3"
-                    }`}
-                    value={confirmPassword}
-                    onChange={(e) =>
-                      handleConfirmPasswordChange(e.target.value)
-                    }
-                    required
-                    disabled={loading}
-                    minLength={8}
-                  />
-                  <p className="mt-1 h-5 overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-5 text-red">
-                    {passwordErrors.confirmPassword || "\u00A0"}
+                )}
+
+                <InputGroup
+                  type="password"
+                  label="Confirm New Password"
+                  className={styles["input-group"]}
+                  placeholder="Confirm new password"
+                  name="confirmPassword"
+                  handleChange={(e) => handleConfirmPasswordChange(e.target.value)}
+                  value={confirmPassword}
+                  icon={<PasswordIcon />}
+                  error={passwordErrors.confirmPassword}
+                  required
+                  disabled={loading}
+                />
+                {passwordErrors.confirmPassword && (
+                  <p className={styles["error-text"]}>
+                    {passwordErrors.confirmPassword}
                   </p>
-                </div>
-                <div className="mb-4.5">
+                )}
+                <div className="mb-4.5 mt-6">
                   <button
                     type="submit"
                     disabled={loading}

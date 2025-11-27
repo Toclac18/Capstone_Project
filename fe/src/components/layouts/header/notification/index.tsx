@@ -7,13 +7,15 @@ import {
 } from "@/components/ui/dropdown";
 import { cn } from "@/utils/utils";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { BellIcon } from "./icons";
 import {
   getNotifications,
+  getUnreadCount,
   markNotificationAsRead,
 } from "@/services/notification.service";
 import { NotificationDetailModal } from "./NotificationDetailModal";
+import { useNotificationEvents, type NotificationEvent } from "@/hooks/useNotificationEvents";
 import styles from "./styles.module.css";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -30,38 +32,128 @@ export function Notification() {
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const fetchNotifications = async () => {
+  const fetchNotificationsInitial = async () => {
     try {
-      const data = await getNotifications();
-      setNotifications(data.notifications.slice(0, 5)); // Show only latest 5
-      setUnreadCount(data.unreadCount);
+      // Fetch latest 5 notifications
+      const data = await getNotifications({
+        unreadOnly: false,
+        page: 0,
+        size: 5,
+        sort: "createdAt,desc",
+      });
+      // Ensure content is always an array
+      setNotifications(Array.isArray(data?.content) ? data.content : []);
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
+      // Set empty array on error
+      setNotifications([]);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchNotifications();
+  const fetchNotificationsBackground = async () => {
+    try {
+      // Fetch latest 5 notifications
+      const data = await getNotifications({
+        unreadOnly: false,
+        page: 0,
+        size: 5,
+        sort: "createdAt,desc",
+      });
+      // Ensure content is always an array
+      setNotifications(Array.isArray(data?.content) ? data.content : []);
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+      // Don't update state on error for background fetch
+    }
+  };
 
-    // Fetch notifications every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+  const fetchUnreadCount = async () => {
+    try {
+      const count = await getUnreadCount();
+      setUnreadCount(count);
+    } catch (error) {
+      console.error("Failed to fetch unread count:", error);
+    }
+  };
+
+  const handleNotificationEvent = useCallback((event: NotificationEvent) => {
+    switch (event.type) {
+      case "new": {
+        const newNotif = event.data;
+        setNotifications((prev) => {
+          if (prev.some((n) => n.id === newNotif.id)) {
+            return prev;
+          }
+          return [newNotif, ...prev].slice(0, 5);
+        });
+        break;
+      }
+
+      case "unread-count":
+        if (event.data?.count !== undefined) {
+          setUnreadCount(event.data.count);
+        }
+        break;
+
+      case "updated": {
+        const updatedNotif = event.data;
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === updatedNotif.id ? updatedNotif : n))
+        );
+        break;
+      }
+    }
+  }, []);
+
+  useNotificationEvents(handleNotificationEvent, true);
+
+  useEffect(() => {
+    fetchNotificationsInitial();
+    fetchUnreadCount();
+
+    const fallbackInterval = setInterval(() => {
+      fetchNotificationsBackground();
+      fetchUnreadCount();
+    }, 30000);
+
+    const handleFocus = () => {
+      fetchNotificationsBackground();
+      fetchUnreadCount();
+    };
+    window.addEventListener("focus", handleFocus);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchNotificationsBackground();
+        fetchUnreadCount();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(fallbackInterval);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   const handleMarkAsRead = async (id: string, isRead: boolean) => {
-    if (isRead) return; // Already read, no need to update
+    if (isRead) return;
+
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
+    );
 
     try {
       await markNotificationAsRead(id);
-      // Update local state optimistically
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (e) {
       console.error("Failed to mark notification as read:", e);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: false } : n)),
+      );
+      await fetchUnreadCount();
     }
   };
 
@@ -79,6 +171,10 @@ export function Notification() {
       isOpen={isOpen}
       setIsOpen={(open) => {
         setIsOpen(open);
+        if (open && !loading) {
+          fetchNotificationsBackground();
+          fetchUnreadCount();
+        }
       }}
     >
       <DropdownTrigger
@@ -170,7 +266,6 @@ export function Notification() {
         </Link>
       </DropdownContent>
 
-      {/* Notification Detail Modal */}
       <NotificationDetailModal
         notification={selectedNotification}
         isOpen={isModalOpen}

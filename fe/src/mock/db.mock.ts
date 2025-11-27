@@ -39,6 +39,13 @@ export type Urgency = "LOW" | "NORMAL" | "HIGH";
 export type TicketStatus = "OPEN" | "PENDING" | "RESOLVED" | "CLOSED";
 
 export type NotificationType =
+  | "SYSTEM"
+  | "DOCUMENT"
+  | "ACCOUNT"
+  | "INFO"
+  | "WARNING"
+  | "SUCCESS"
+  | "ERROR"
   | "DOCUMENT_APPROVAL"
   | "COMMENT"
   | "TAG_APPROVAL"
@@ -232,8 +239,37 @@ export const mockNotificationDB = {
     const notif = _notifications.find((n) => n.id === id);
     if (notif) notif.isRead = true;
   },
+  markAllAsRead(): number {
+    let count = 0;
+    _notifications.forEach((notif) => {
+      if (!notif.isRead) {
+        notif.isRead = true;
+        count++;
+      }
+    });
+    return count;
+  },
   getUnreadCount(): number {
     return _notifications.filter((n) => !n.isRead).length;
+  },
+  create(payload: {
+    userId: string;
+    type: NotificationType;
+    title: string;
+    summary: string;
+    isRead?: boolean;
+    timestamp?: string;
+  }): Notification {
+    const newNotification: Notification = {
+      id: crypto.randomUUID(),
+      type: payload.type,
+      title: payload.title,
+      summary: payload.summary,
+      isRead: payload.isRead ?? false,
+      timestamp: payload.timestamp ?? new Date().toISOString(),
+    };
+    _notifications.push(newNotification);
+    return newNotification;
   },
 };
 

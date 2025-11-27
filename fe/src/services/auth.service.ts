@@ -166,38 +166,83 @@ export async function verifyEmail(token: string): Promise<VerifyEmailResponse> {
   return res.data;
 }
 
+// ============ Resend Verification Email ============
+export type ResendVerificationEmailPayload = {
+  email: string;
+};
+
+export async function resendVerificationEmail(
+  payload: ResendVerificationEmailPayload
+): Promise<{ message: string }> {
+  const res = await apiClient.post<{ message: string }>(
+    "/auth/resend-verification-email",
+    payload
+  );
+  return res.data;
+}
+
 // ============ Logout ============
 export async function logout(): Promise<void> {
   await apiClient.post("/auth/logout");
 }
 
 // ============ Forgot Password ============
-export type RequestPasswordResetPayload = {
+export type ForgotPasswordOtpPayload = {
   email: string;
+};
+
+export type VerifyOtpPayload = {
+  email: string;
+  otp: string; // 6 digits
+};
+
+export type VerifyOtpResponse = {
+  valid: boolean;
+  resetToken: string;
 };
 
 export type ResetPasswordPayload = {
-  email: string;
-  otp: string;
+  resetToken: string;
   newPassword: string;
 };
 
-export async function requestPasswordReset(
-  payload: RequestPasswordResetPayload
+// Step 1: Send OTP for password reset
+export async function sendPasswordResetOtp(
+  payload: ForgotPasswordOtpPayload
 ): Promise<{ message: string }> {
   const res = await apiClient.post<{ message: string }>(
-    "/auth/request-password-reset",
+    "/auth/forgot-password",
     payload
   );
   return res.data;
 }
 
+// Step 2: Verify OTP and get reset token
+export async function verifyOtp(
+  payload: VerifyOtpPayload
+): Promise<VerifyOtpResponse> {
+  const res = await apiClient.post<VerifyOtpResponse>(
+    "/auth/forgot-password",
+    payload
+  );
+  return res.data;
+}
+
+// Step 3: Reset password with token
 export async function resetPassword(
   payload: ResetPasswordPayload
 ): Promise<{ message: string }> {
   const res = await apiClient.post<{ message: string }>(
-    "/auth/reset-password",
+    "/auth/forgot-password",
     payload
   );
   return res.data;
+}
+
+// Legacy function names for backward compatibility (deprecated)
+export type RequestPasswordResetPayload = ForgotPasswordOtpPayload;
+export async function requestPasswordReset(
+  payload: RequestPasswordResetPayload
+): Promise<{ message: string }> {
+  return sendPasswordResetOtp(payload);
 }

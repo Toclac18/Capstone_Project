@@ -1,6 +1,6 @@
 import { mockDocumentsDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { jsonResponse, proxyJsonResponse } from "@/server/response";
+import { jsonResponse, proxyJsonResponse, parseError } from "@/server/response";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";
 
@@ -27,17 +27,69 @@ async function handleGET(request: Request) {
   }
 
   // Public endpoint - no auth required
-  const url = domainIdsParam
-    ? `${BE_BASE}/api/reader/documents/specializations?domainIds=${encodeURIComponent(domainIdsParam)}`
-    : `${BE_BASE}/api/reader/documents/specializations`;
+  // Backend endpoint: GET /public/domains/{domainId}/specializations
+  if (domainIds.length === 0) {
+    return jsonResponse(
+      { error: "domainIds parameter is required" },
+      { status: 400 }
+    );
+  }
 
-  const upstream = await fetch(url, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-  });
+  // If single domainId, fetch and parse response
+  if (domainIds.length === 1) {
+    const upstream = await fetch(
+      `${BE_BASE}/api/public/domains/${domainIds[0]}/specializations`,
+      {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+      }
+    );
 
-  return proxyJsonResponse(upstream, { mode: "real" });
+    if (!upstream.ok) {
+      const text = await upstream.text();
+      return jsonResponse(
+        { error: parseError(text, "Failed to fetch specializations") },
+        { status: upstream.status }
+      );
+    }
+
+    // Parse response - backend may return { success: true, data: [...], timestamp: ... } or direct array
+    const responseData = await upstream.json();
+    const specializations = Array.isArray(responseData) 
+      ? responseData 
+      : (responseData?.data || []);
+
+    return jsonResponse(specializations, { status: upstream.status, mode: "real" });
+  }
+
+  // If multiple domainIds, fetch all and merge results
+  const allSpecializations: any[] = [];
+  for (const domainId of domainIds) {
+    try {
+      const upstream = await fetch(
+        `${BE_BASE}/api/public/domains/${domainId}/specializations`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+        }
+      );
+
+      if (upstream.ok) {
+        // Use proxyJsonResponse to get the response, then parse
+        const response = await proxyJsonResponse(upstream, { mode: "real" });
+        const data = await response.json();
+        // Backend returns List<SpecializationInfo> or wrapped in ApiResponse
+        const specializations = Array.isArray(data) ? data : (data?.data || []);
+        allSpecializations.push(...specializations);
+      }
+    } catch (error) {
+      console.error(`Failed to fetch specializations for domain ${domainId}:`, error);
+    }
+  }
+
+  return jsonResponse(allSpecializations, { status: 200, mode: "real" });
 }
 
 export const GET = (...args: Parameters<typeof handleGET>) =>

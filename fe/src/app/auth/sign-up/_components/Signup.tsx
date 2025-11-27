@@ -253,16 +253,41 @@ export default function Signup() {
       const files = Array.from(e.target.files || []);
       if (files.length === 0) return;
 
-      // Validate file type for logo (certificate) - must be image
+      // Allowed file types: application/pdf, image/jpeg, image/jpg, image/png
+      const ALLOWED_TYPES = [
+        "application/pdf",
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+      ];
+
+      // Validate file type
+      const invalidFiles = files.filter(
+        (file) => !ALLOWED_TYPES.includes(file.type)
+      );
+      
+      if (invalidFiles.length > 0) {
+        const fileTypeLabel = fieldType === "certificate" ? "Logo" : "Background";
+        showToast({
+          type: "error",
+          title: "Invalid File Type",
+          message: `${fileTypeLabel} must be PDF, JPEG, JPG, or PNG file`,
+          duration: 5000,
+        });
+        e.target.value = "";
+        return;
+      }
+
+      // For certificate (logo), only allow images (no PDF)
       if (fieldType === "certificate") {
-        const invalidFiles = files.filter(
+        const nonImageFiles = files.filter(
           (file) => !file.type.startsWith("image/")
         );
-        if (invalidFiles.length > 0) {
+        if (nonImageFiles.length > 0) {
           showToast({
             type: "error",
             title: "Invalid File Type",
-            message: "Logo must be an image file (JPG, PNG, etc.)",
+            message: "Logo must be an image file (JPEG, JPG, or PNG)",
             duration: 5000,
           });
           e.target.value = "";
@@ -791,13 +816,13 @@ export default function Signup() {
                   Verified Background Upload{" "}
                   <span className={styles["form-label-required"]}>*</span>
                   <span className={styles["form-label-hint"]}>
-                    (PDF, DOC, DOCX)
+                    (PDF, JPEG, JPG, PNG)
                   </span>
                 </label>
                 <input
                   id="backgroundUpload"
                   type="file"
-                  accept=".pdf,.doc,.docx"
+                  accept="application/pdf,image/jpeg,image/jpg,image/png"
                   multiple
                   onChange={(e) => handleFileUpload(e, "background")}
                   className={`${styles["file-upload"]} ${errors.backgroundFiles ? "border-red-500" : ""}`}
@@ -951,13 +976,13 @@ export default function Signup() {
                 >
                   Organization Logo Upload{" "}
                   <span className={styles["form-label-hint"]}>
-                    (Optional - Images only)
+                    (Optional - JPEG, JPG, PNG only)
                   </span>
                 </label>
                 <input
                   id="logoUpload"
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/jpg,image/png"
                   onChange={(e) => handleFileUpload(e, "certificate")}
                   className={`${styles["file-upload"]} ${errors.certificateFiles ? "border-red-500" : ""}`}
                   disabled={loading}

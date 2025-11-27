@@ -10,16 +10,16 @@ async function handlePOST(req: Request) {
     return badRequest("Invalid JSON");
   }
 
-  const { email, password, remember } = body;
-  if (!email || !password) {
-    return badRequest("Email and password are required");
+  const { email, password, remember, role } = body;
+  if (!email || !password || !role) {
+    return badRequest("Email, password and role are required");
   }
 
   const url = `${BE_BASE}/api/auth/login`;
   const upstream = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, role }),
     cache: "no-store",
   });
 
@@ -46,7 +46,6 @@ async function handlePOST(req: Request) {
   // Backend may return { data: AuthResponse } or AuthResponse directly
   const authResponse = responseJson?.data || responseJson;
   const token = authResponse?.accessToken;
-  const role = authResponse?.role;
   
   if (!token) {
     return jsonResponse(

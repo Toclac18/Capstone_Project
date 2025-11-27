@@ -93,15 +93,24 @@ public class SpecializationServiceImpl implements SpecializationService {
         .orElseThrow(() -> new ResourceNotFoundException("Specialization", specializationId));
 
     // Find domain if changed
-    if (!specialization.getDomain().getId().equals(request.getDomainId())) {
+    if (request.getDomainId() != null &&
+        !specialization.getDomain().getId().equals(request.getDomainId())) {
+
       Domain domain = domainRepository.findById(request.getDomainId())
           .orElseThrow(() -> new ResourceNotFoundException("Domain", request.getDomainId()));
+
       specialization.setDomain(domain);
     }
 
-    // Update fields
-    specialization.setCode(request.getCode());
-    specialization.setName(request.getName());
+    // Update code
+    if (request.getCode() != null) {
+      specialization.setCode(request.getCode());
+    }
+
+    // Update name
+    if (request.getName() != null && !request.getName().isBlank()) {
+      specialization.setName(request.getName());
+    }
 
     specialization = specializationRepository.save(specialization);
 

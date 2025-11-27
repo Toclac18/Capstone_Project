@@ -1,75 +1,34 @@
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from "next/server";
-import { headers, cookies } from "next/headers";
+import { NextRequest } from "next/server";
 import { mockUsersForRoleManagement } from "@/mock/roleManagement";
 import type { ChangeRoleRequest } from "@/types/role-management";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { jsonResponse } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
-
-function beBase() {
-  return (
-    process.env.BE_BASE_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    "http://localhost:8080"
-  );
-}
-
-async function forward(path: string, method: string = "GET", body?: any) {
-  const h = await headers();
-  const cookieStore = await cookies();
-
-  // Get token from Authorization header or cookie
-  const headerAuth = h.get("authorization") || "";
-  const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value || "";
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
-  const effectiveAuth = headerAuth || bearerToken;
-
-  const upstreamUrl = beBase() + path;
-  const passHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
-  };
-  const cookieHeader = h.get("cookie");
-  if (cookieHeader) passHeaders["cookie"] = cookieHeader;
-
-  const fetchOptions: RequestInit = {
-    method,
-    headers: passHeaders,
-    cache: "no-store",
-  };
-
-  if (body && (method === "POST" || method === "PATCH" || method === "PUT")) {
-    fetchOptions.body = JSON.stringify(body);
-  }
-
-  return fetch(upstreamUrl, fetchOptions);
-}
-
-export async function PATCH(
+async function handlePATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
+  { params }: { params: Promise<{ id: string }> },
+): Promise<Response> {
   const { id } = await params;
 
   if (USE_MOCK) {
     try {
       const body: ChangeRoleRequest = await req.json();
-      
-      // Find user in mock data
+
       const userIndex = mockUsersForRoleManagement.findIndex(
-        (u) => u.id === id
+        (u) => u.id === id,
       );
 
       if (userIndex === -1) {
-        return NextResponse.json(
+        return jsonResponse(
           { error: "User not found" },
-          { status: 404 }
+          { status: 404, mode: "mock" },
         );
       }
 
-      // Update role
       const updatedUser = {
         ...mockUsersForRoleManagement[userIndex],
         role: body.role,
@@ -80,37 +39,51 @@ export async function PATCH(
         message: "Role changed successfully",
       };
 
-      return NextResponse.json(result);
+      return jsonResponse(result, { status: 200, mode: "mock" });
     } catch (error: any) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: error.message || "Failed to process request" },
-        { status: 400 }
+        { status: 400, mode: "mock" },
       );
     }
   }
 
-  // Forward to real BE
   const body = await req.json().catch(() => ({}));
   if (!body.role) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: "Role is required" },
-      { status: 400 }
+      { status: 400, mode: "real" },
     );
   }
 
-  const UPSTREAM_PATH = `/api/v1/system-admin/users/${id}/role`;
+  const url = `${BE_BASE}/api/v1/system-admin/users/${id}/role`;
 
   try {
-    const upstream = await forward(UPSTREAM_PATH, "PATCH", body);
+    const authHeader = await getAuthHeader("system-admin-change-role");
+    const fh = new Headers({ "Content-Type": "application/json" });
+    if (authHeader) fh.set("Authorization", authHeader);
+
+    const upstream = await fetch(url, {
+      method: "PATCH",
+      headers: fh,
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
     const responseBody = await upstream.json().catch(() => ({}));
-    return NextResponse.json(responseBody?.data ?? responseBody, {
+    return jsonResponse(responseBody?.data ?? responseBody, {
       status: upstream.status,
+      mode: "real",
     });
   } catch (e: any) {
-    return NextResponse.json(
+    return jsonResponse(
       { message: "Upstream request failed", error: String(e) },
-      { status: 502 }
+      { status: 502, mode: "real" },
     );
   }
 }
+
+export const PATCH = (...args: Parameters<typeof handlePATCH>) =>
+  withErrorBoundary(() => handlePATCH(...args), {
+    context: "api/system-admin/users/[id]/role/route.ts/PATCH",
+  });
 

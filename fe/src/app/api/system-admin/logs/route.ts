@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { mockSystemLogs } from "@/mock/systemLogs";
 import type { SystemLog, SystemLogQueryParams } from "@/types/system-log";
-
-const USE_MOCK = process.env.USE_MOCK === "true";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { jsonResponse } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
 function filterLogs(logs: SystemLog[], params: SystemLogQueryParams): SystemLog[] {
   let filtered = [...logs];
@@ -82,7 +84,7 @@ function filterLogs(logs: SystemLog[], params: SystemLogQueryParams): SystemLog[
   return filtered;
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest): Promise<Response> {
   if (USE_MOCK) {
     const sp = req.nextUrl.searchParams;
 
@@ -108,119 +110,136 @@ export async function GET(req: NextRequest) {
     const offset = (page - 1) * limit;
     const paginated = filtered.slice(offset, offset + limit);
 
-    return NextResponse.json({
-      logs: paginated,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    });
+    return jsonResponse(
+      {
+        logs: paginated,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+      { status: 200, mode: "mock" },
+    );
   }
 
-  // Forward to real BE
-  const BE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") || "http://localhost:8080";
-  const queryString = req.nextUrl.searchParams.toString();
-  const upstreamUrl = `${BE_BASE}/api/v1/system-admin/logs${queryString ? `?${queryString}` : ""}`;
-
   try {
-    // Get auth headers
-    const cookies = req.headers.get("cookie");
-    const authorization = req.headers.get("authorization");
-    
-    const headers: HeadersInit = {};
-    if (cookies) {
-      headers["Cookie"] = cookies;
-    }
-    if (authorization) {
-      headers["Authorization"] = authorization;
-    }
+    const queryString = req.nextUrl.searchParams.toString();
+    const url = queryString
+      ? `${BE_BASE}/api/v1/system-admin/logs?${queryString}`
+      : `${BE_BASE}/api/v1/system-admin/logs`;
 
-    const upstream = await fetch(upstreamUrl, {
+    const authHeader = await getAuthHeader("system-admin-logs");
+    const fh = new Headers({ "Content-Type": "application/json" });
+    if (authHeader) fh.set("Authorization", authHeader);
+
+    const upstream = await fetch(url, {
       method: "GET",
-      headers,
+      headers: fh,
       cache: "no-store",
     });
 
-    // Get response text first
     const text = await upstream.text();
-    
-    // Handle empty response
+
     if (!text || text.trim() === "") {
-      return NextResponse.json(
-        { message: "Empty response from server", logs: [], total: 0, page: 1, limit: 10, totalPages: 0 },
-        { status: upstream.status || 502 }
+      return jsonResponse(
+        {
+          message: "Empty response from server",
+          logs: [],
+          total: 0,
+          page: 1,
+          limit: 10,
+          totalPages: 0,
+        },
+        { status: upstream.status || 502, mode: "real" },
       );
     }
 
-    // Try to parse JSON
-    let data;
+    let data: any;
     try {
       data = JSON.parse(text);
     } catch {
-      // If not JSON, return error
-      return NextResponse.json(
-        { 
-          message: "Invalid JSON response from server", 
+      return jsonResponse(
+        {
+          message: "Invalid JSON response from server",
           error: text.substring(0, 200),
           logs: [],
           total: 0,
           page: 1,
           limit: 10,
-          totalPages: 0
+          totalPages: 0,
         },
-        { status: 502 }
+        { status: 502, mode: "real" },
       );
     }
 
-    // Handle BE response wrapper (PagedResponse format)
-    if (data && typeof data === 'object') {
-      // Check if it's PagedResponse format
-      if ('data' in data && Array.isArray(data.data) && 'pageInfo' in data) {
-        return NextResponse.json({
-          logs: data.data,
-          total: data.pageInfo?.totalElements || data.data.length,
-          page: data.pageInfo?.page || data.pageInfo?.pageNumber || 1,
-          limit: data.pageInfo?.size || data.pageInfo?.pageSize || 10,
-          totalPages: data.pageInfo?.totalPages || Math.ceil((data.pageInfo?.totalElements || data.data.length) / (data.pageInfo?.size || 10)),
-        }, { status: upstream.status });
-      }
-      
-      // Check if it's direct format with logs array
-      if ('logs' in data && Array.isArray(data.logs)) {
-        return NextResponse.json(data, { status: upstream.status });
-      }
-      
-      // If response has error structure
-      if ('message' in data || 'error' in data) {
-        return NextResponse.json(
-          { 
-            message: data.message || data.error || "Error from server",
-            logs: [],
-            total: 0,
-            page: 1,
-            limit: 10,
-            totalPages: 0
-          },
-          { status: upstream.status || 500 }
-        );
-      }
+    // Handle PagedResponse<SystemLogResponse>
+    if (data && typeof data === "object" && "data" in data && "pageInfo" in data) {
+      const items = Array.isArray(data.data) ? data.data : [];
+      const pageInfo = data.pageInfo ?? {};
+
+      return jsonResponse(
+        {
+          logs: items,
+          total: pageInfo.totalElements ?? items.length ?? 0,
+          page: pageInfo.page ?? pageInfo.pageNumber ?? 1,
+          limit: pageInfo.size ?? pageInfo.pageSize ?? 10,
+          totalPages:
+            pageInfo.totalPages ??
+            Math.ceil(
+              (pageInfo.totalElements ?? items.length ?? 0) /
+                (pageInfo.size ?? 10),
+            ),
+        },
+        { status: upstream.status, mode: "real" },
+      );
     }
 
-    // Fallback: return as-is
-    return NextResponse.json(data, { status: upstream.status });
+    // If backend already returns { logs, total, page, limit, totalPages }
+    if (data && typeof data === "object" && "logs" in data) {
+      return jsonResponse(data, {
+        status: upstream.status,
+        mode: "real",
+      });
+    }
+
+    // Generic error wrapper
+    if (data && typeof data === "object" && ("message" in data || "error" in data)) {
+      return jsonResponse(
+        {
+          message: data.message || data.error || "Error from server",
+          logs: [],
+          total: 0,
+          page: 1,
+          limit: 10,
+          totalPages: 0,
+        },
+        { status: upstream.status || 500, mode: "real" },
+      );
+    }
+
+    // Fallback: return raw data
+    return jsonResponse(data, {
+      status: upstream.status,
+      mode: "real",
+    });
   } catch (e: any) {
-    return NextResponse.json(
-      { 
-        message: "Failed to fetch system logs", 
+    return jsonResponse(
+      {
+        message: "Failed to fetch system logs",
         error: String(e),
         logs: [],
         total: 0,
         page: 1,
         limit: 10,
-        totalPages: 0
+        totalPages: 0,
       },
-      { status: 502 }
+      { status: 502, mode: "real" },
     );
   }
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/system-admin/logs/route.ts/GET",
+  });
 

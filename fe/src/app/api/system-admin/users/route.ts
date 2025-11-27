@@ -1,55 +1,14 @@
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from "next/server";
-import { headers, cookies } from "next/headers";
+import { NextRequest } from "next/server";
 import { mockUsersForRoleManagement } from "@/mock/roleManagement";
 import type { UserQueryParams } from "@/types/user";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { jsonResponse } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
-
-function beBase() {
-  return (
-    process.env.BE_BASE_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    "http://localhost:8080"
-  );
-}
-
-async function forward(path: string, method: string = "GET", body?: any) {
-  const h = await headers();
-  const cookieStore = await cookies();
-
-  // Get token from Authorization header or cookie
-  const headerAuth = h.get("authorization") || "";
-  const tokenFromCookie = cookieStore.get(COOKIE_NAME)?.value || "";
-  const bearerToken = tokenFromCookie ? `Bearer ${tokenFromCookie}` : "";
-  const effectiveAuth = headerAuth || bearerToken;
-
-  const upstreamUrl = beBase() + path;
-  const passHeaders: Record<string, string> = {
-    ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
-  };
-  const cookieHeader = h.get("cookie");
-  if (cookieHeader) passHeaders["cookie"] = cookieHeader;
-
-  const fetchOptions: RequestInit = {
-    method,
-    headers: passHeaders,
-    cache: "no-store",
-  };
-
-  // Always set Content-Type and body for POST/PATCH/PUT
-  if (method === "POST" || method === "PATCH" || method === "PUT") {
-    passHeaders["Content-Type"] = "application/json";
-    fetchOptions.body = JSON.stringify(body || {});
-  }
-
-  return fetch(upstreamUrl, fetchOptions);
-}
-
-export async function POST(req: NextRequest) {
-  const USE_MOCK = process.env.USE_MOCK === "true";
-
+async function handlePOST(req: NextRequest): Promise<Response> {
   if (USE_MOCK) {
     try {
       const body = await req.json().catch(() => ({}));
@@ -74,21 +33,21 @@ export async function POST(req: NextRequest) {
         filteredUsers = filteredUsers.filter(
           (user) =>
             user.name?.toLowerCase().includes(searchLower) ||
-            user.email.toLowerCase().includes(searchLower)
+            user.email.toLowerCase().includes(searchLower),
         );
       }
 
       // Apply role filter
       if (params.role) {
         filteredUsers = filteredUsers.filter(
-          (user) => user.role === params.role
+          (user) => user.role === params.role,
         );
       }
 
       // Apply status filter
       if (params.status) {
         filteredUsers = filteredUsers.filter(
-          (user) => user.status === params.status
+          (user) => user.status === params.status,
         );
       }
 
@@ -96,14 +55,16 @@ export async function POST(req: NextRequest) {
       if (params.dateFrom) {
         const dateFrom = new Date(params.dateFrom);
         filteredUsers = filteredUsers.filter(
-          (user) => user.createdAt && new Date(user.createdAt) >= dateFrom
+          (user) =>
+            user.createdAt && new Date(user.createdAt) >= dateFrom,
         );
       }
       if (params.dateTo) {
         const dateTo = new Date(params.dateTo);
         dateTo.setHours(23, 59, 59, 999);
         filteredUsers = filteredUsers.filter(
-          (user) => user.createdAt && new Date(user.createdAt) <= dateTo
+          (user) =>
+            user.createdAt && new Date(user.createdAt) <= dateTo,
         );
       }
 
@@ -143,11 +104,11 @@ export async function POST(req: NextRequest) {
         limit,
       };
 
-      return NextResponse.json(result);
+      return jsonResponse(result, { status: 200, mode: "mock" });
     } catch (error: any) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: error.message || "Failed to process request" },
-        { status: 400 }
+        { status: 400, mode: "mock" },
       );
     }
   }
@@ -178,21 +139,27 @@ export async function POST(req: NextRequest) {
     body = {};
   }
 
-  const UPSTREAM_PATH = `/api/v1/system-admin/users`;
+  const url = `${BE_BASE}/api/v1/system-admin/users`;
 
   try {
-    const upstream = await forward(UPSTREAM_PATH, "POST", body);
+    const authHeader = await getAuthHeader("system-admin-users");
+    const fh = new Headers({ "Content-Type": "application/json" });
+    if (authHeader) fh.set("Authorization", authHeader);
+
+    const upstream = await fetch(url, {
+      method: "POST",
+      headers: fh,
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+
     const responseBody = await upstream.json().catch(() => ({}));
-    
-    // Handle Spring Page response format
-    // Spring Page has: { content: [], totalElements: number, number: number, size: number, ... }
-    // Frontend expects: { users: [], total: number, page: number, limit: number }
-    if (responseBody && typeof responseBody === 'object') {
+
+    if (responseBody && typeof responseBody === "object") {
       const data = responseBody.data || responseBody;
-      
-      // Check if it's Spring Page format
-      if (Array.isArray(data.content) && typeof data.totalElements === 'number') {
-        // Map fullName to name for each user
+
+      // Spring Page format
+      if (Array.isArray(data.content) && typeof data.totalElements === "number") {
         const users = (data.content || []).map((user: any) => ({
           ...user,
           name: user.fullName || user.name || "",
@@ -200,38 +167,45 @@ export async function POST(req: NextRequest) {
         const mapped = {
           users,
           total: data.totalElements || 0,
-          page: (data.number || 0) + 1, // Spring uses 0-based page, frontend uses 1-based
+          page: (data.number || 0) + 1, // 0-based -> 1-based
           limit: data.size || 10,
         };
-        return NextResponse.json(mapped, {
+        return jsonResponse(mapped, {
           status: upstream.status,
+          mode: "real",
         });
       }
-      
-      // If already in UserResponse format, map fullName to name
+
+      // Already in { users, total, page, limit } format
       if (data.users && Array.isArray(data.users)) {
         const mappedUsers = data.users.map((user: any) => ({
           ...user,
           name: user.fullName || user.name || "",
         }));
-        return NextResponse.json({
-          ...data,
-          users: mappedUsers,
-        }, {
-          status: upstream.status,
-        });
+        return jsonResponse(
+          {
+            ...data,
+            users: mappedUsers,
+          },
+          { status: upstream.status, mode: "real" },
+        );
       }
     }
-    
-    // Fallback: return as is
-    return NextResponse.json(responseBody?.data ?? responseBody, {
+
+    // Fallback: return upstream data as-is
+    return jsonResponse(responseBody?.data ?? responseBody, {
       status: upstream.status,
+      mode: "real",
     });
   } catch (e: any) {
-    return NextResponse.json(
+    return jsonResponse(
       { message: "Upstream request failed", error: String(e) },
-      { status: 502 }
+      { status: 502, mode: "real" },
     );
   }
 }
 
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/system-admin/users/route.ts/POST",
+  });

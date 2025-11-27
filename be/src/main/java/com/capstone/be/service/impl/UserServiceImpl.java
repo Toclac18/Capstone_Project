@@ -148,6 +148,20 @@ public class UserServiceImpl implements UserService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
+    //Check file's content type
+    final List<String> ALLOWED_CONTENT_TYPES = List.of(
+        "image/jpeg",
+        "image/png",
+        "image/jpg",
+        "image/gif",
+        "image/webp"
+    );
+
+    if (!ALLOWED_CONTENT_TYPES.contains(file.getContentType())) {
+      throw new IllegalArgumentException(
+          "Invalid file type. Allowed types: JPEG, PNG, JPG, GIF, WEBP");
+    }
+
     // Delete old avatar if exists
     if (user.getAvatarKey() != null && !user.getAvatarKey().isEmpty()) {
       try {

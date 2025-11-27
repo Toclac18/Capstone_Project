@@ -3,7 +3,7 @@ export {
   getTypes,
   createType,
   updateType,
-} from "@/services/manageTypeService";
+} from "@/services/manage-type.service";
 
 // Re-export types from document-type
 export type {
@@ -13,4 +13,3 @@ export type {
   CreateTypeRequest,
   UpdateTypeRequest,
 } from "@/types/document-type";
-

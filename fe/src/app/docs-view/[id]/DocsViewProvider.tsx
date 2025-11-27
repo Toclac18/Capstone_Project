@@ -11,7 +11,7 @@ import {
   type DocDetail,
   type RelatedLite,
   type Comment,
-} from "@/services/docsService";
+} from "@/services/docs.service";
 
 type DocsContextValue = {
   loading: boolean;

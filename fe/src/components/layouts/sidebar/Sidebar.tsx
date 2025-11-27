@@ -5,9 +5,16 @@ import { cn } from "@/utils/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { NAV_DATA, BUSINESS_ADMIN_NAV_DATA } from "./data";
+import {
+  NAV_DATA,
+  READER_NAV_DATA,
+  REVIEWER_NAV_DATA,
+  ORGANIZATION_ADMIN_NAV_DATA,
+  BUSINESS_ADMIN_NAV_DATA,
+} from "./data";
 import { ArrowLeftIcon, ChevronUp } from "@/components/icons";
 import { useSidebarContext } from "./SidebarContext";
+import { useReader } from "@/hooks/useReader";
 import type * as React from "react";
 import { MenuItem } from "./MenuItem";
 
@@ -45,15 +52,25 @@ export function Sidebar({
   const pathname = usePathname();
   const { setIsOpen, isOpen, isMobile, toggleSidebar } = useSidebarContext();
   const [expanded, setExpanded] = useState<string[]>([]);
+  const { role, loading } = useReader();
 
-  const isBusinessAdmin = pathname?.startsWith("/business-admin");
-  const defaultSections = useMemo<NavSection[]>(
-    () =>
-      (isBusinessAdmin
-        ? BUSINESS_ADMIN_NAV_DATA
-        : NAV_DATA) as unknown as NavSection[],
-    [isBusinessAdmin],
-  );
+  // Get menu data based on role
+  const defaultSections = useMemo<NavSection[]>(() => {
+    if (loading) return [];
+    
+    switch (role) {
+      case "READER":
+        return READER_NAV_DATA as unknown as NavSection[];
+      case "REVIEWER":
+        return REVIEWER_NAV_DATA as unknown as NavSection[];
+      case "ORGANIZATION":
+        return ORGANIZATION_ADMIN_NAV_DATA as unknown as NavSection[];
+      case "BUSINESS_ADMIN":
+        return BUSINESS_ADMIN_NAV_DATA as unknown as NavSection[];
+      default:
+        return NAV_DATA as unknown as NavSection[];
+    }
+  }, [role, loading]);
 
   const sections = useMemo<NavSection[]>(() => {
     if (!sectionsOverride?.length) return defaultSections;

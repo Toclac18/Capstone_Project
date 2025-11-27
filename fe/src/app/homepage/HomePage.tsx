@@ -5,115 +5,73 @@ import { useHomepage } from "./provider";
 import SearchBar from "./_components/SearchBar";
 import ActionButtons from "./_components/ActionButtons";
 import Section from "./_components/Section";
-import HomePager from "./_components/HomePager";
-import { useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import StatsStrip from "./_components/StatsStrip";
+import RecommendedStrip from "./_components/RecommendedStrip";
+import TrendingSpecs from "./_components/TrendingSpecs";
+import OrgHighlights from "./_components/OrgHighlights";
 import SpecializationsBlock from "./_components/SpecializationsBlock";
-
-const readInt = (sp: URLSearchParams, key: string, fb: number) => {
-  const v = parseInt(sp.get(key) || "", 10);
-  return Number.isFinite(v) && v > 0 ? v : fb;
-};
+import RecentRail from "./_components/RecentRail";
+import HomepageFooter from "./_components/Footer";
+import HomepageSkeleton from "./_components/HomepageSkeleton";
 
 export default function Homepage() {
-  const { continueReading, topUpvoted, specGroups, loading, q } = useHomepage();
-  const sp = useSearchParams();
-
-  const defaultGroupsPerPage = 3;
-  const pageFromUrl = readInt(new URLSearchParams(sp.toString()), "hpPage", 1);
-  const groupsPerPage = readInt(
-    new URLSearchParams(sp.toString()),
-    "hpSpecSize",
-    defaultGroupsPerPage,
-  );
-
-  const filteredGroups = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    if (!s) return specGroups;
-    return specGroups
-      .map((g) => ({
-        ...g,
-        items: g.items.filter((d) => {
-          const t = d.title?.toLowerCase?.() ?? "";
-          const u = d.uploader?.toLowerCase?.() ?? "";
-          const spz = d.specialization?.toLowerCase?.() ?? "";
-          const org = (d as any).orgName?.toLowerCase?.() ?? "";
-          const sub = (d as any).subject?.toLowerCase?.() ?? "";
-          const pts =
-            (d as any).points != null ? String((d as any).points) : "";
-          return (
-            t.includes(s) ||
-            u.includes(s) ||
-            spz.includes(s) ||
-            org.includes(s) ||
-            sub.includes(s) ||
-            pts.includes(s)
-          );
-        }),
-      }))
-      .filter((g) => g.items.length > 0);
-  }, [q, specGroups]);
-
-  const totalPages = useMemo(() => {
-    const rest = Math.max(0, filteredGroups.length - groupsPerPage);
-    const extraPages = Math.ceil(rest / groupsPerPage);
-    return 1 + extraPages;
-  }, [filteredGroups.length, groupsPerPage]);
-
-  const currentPage = Math.min(pageFromUrl, totalPages);
-
-  const visibleGroups = useMemo(() => {
-    if (currentPage <= 1) return filteredGroups.slice(0, groupsPerPage);
-    const start = groupsPerPage + (currentPage - 2) * groupsPerPage;
-    return filteredGroups.slice(start, start + groupsPerPage);
-  }, [filteredGroups, groupsPerPage, currentPage]);
+  const { continueReading, topUpvoted, specGroups, loading } = useHomepage();
 
   if (loading) {
-    return (
-      <main className={styles.main}>
-        <div className="text-gray-500 dark:text-gray-400">
-          Loading homepage...
-        </div>
-      </main>
-    );
+    return <HomepageSkeleton />;
   }
 
   return (
-    <main className={styles.main}>
-      <div className={styles.topRow}>
-        <SearchBar />
-      </div>
+    <div className={styles.pageShell}>
+      <main className={styles.main}>
+        <div className={styles.heroRow}>
+          <div className={styles.heroMain}>
+            <h1 className={styles.heroTitle}>
+              Discover trusted academic documents
+            </h1>
+            <p className={styles.heroSubtitle}>
+              Search, save, and revisit high-quality resources across
+              specializations — all in one place.
+            </p>
+            <div className={styles.heroSearchRow}>
+              <SearchBar />
+            </div>
+            <ActionButtons />
+          </div>
+          <div className={styles.heroAside}>
+            <StatsStrip />
+          </div>
+        </div>
 
-      <ActionButtons />
+        <TrendingSpecs />
 
-      {currentPage === 1 && (
-        <>
-          <Section
-            title="Continue Reading"
-            items={continueReading}
-            sectionKey="continue"
-            defaultPageSize={8}
-          />
-          <Section
-            title="Top Upvoted"
-            items={topUpvoted}
-            sectionKey="top"
-            defaultPageSize={8}
-          />
-        </>
-      )}
+        <RecommendedStrip />
 
-      <SpecializationsBlock
-        groups={visibleGroups}
-        defaultGroupsPerPage={0}
-        maxItemsPerGroup={8}
-        disablePager
-      />
+        <Section
+          title="Continue reading"
+          items={continueReading}
+          sectionKey="continue"
+          defaultPageSize={8}
+        />
 
-      <HomePager
-        totalPages={totalPages}
-        defaultGroupsPerPage={defaultGroupsPerPage}
-      />
-    </main>
+        <Section
+          title="Top upvoted"
+          items={topUpvoted}
+          sectionKey="top"
+          defaultPageSize={8}
+        />
+
+        <OrgHighlights />
+
+        <SpecializationsBlock
+          groups={specGroups}
+          defaultGroupsPerPage={3}
+          maxItemsPerGroup={8}
+        />
+
+        <RecentRail />
+      </main>
+      <HomepageFooter />
+    </div>
   );
 }

@@ -3,7 +3,10 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm, SubmitHandler, useWatch } from "react-hook-form";
 import type { ReviewHistoryQueryParams } from "@/types/review";
-import { getDocumentTypes, getDomains } from "@/services/uploadDocuments";
+import {
+  getDocumentTypes,
+  getDomains,
+} from "@/services/upload-documents.service";
 import styles from "../styles.module.css";
 
 interface HistoryFiltersProps {
@@ -25,12 +28,7 @@ export function HistoryFilters({
   onFiltersChange,
   loading = false,
 }: HistoryFiltersProps) {
-  const {
-    register,
-    handleSubmit,
-    reset,
-    control,
-  } = useForm<FilterValues>({
+  const { register, handleSubmit, reset, control } = useForm<FilterValues>({
     defaultValues: {
       search: "",
       dateFrom: "",
@@ -62,19 +60,22 @@ export function HistoryFilters({
     loadOptions();
   }, []);
 
-  const onSubmit = useCallback<SubmitHandler<FilterValues>>((data: FilterValues) => {
-    const filters: ReviewHistoryQueryParams = {
-      search: data.search?.trim() || undefined,
-      dateFrom: data.dateFrom || undefined,
-      dateTo: data.dateTo || undefined,
-      type: data.type || undefined,
-      domain: data.domain || undefined,
-      active: data.active || undefined,
-      rejected: data.rejected || undefined,
-      page: 1,
-    };
-    onFiltersChange(filters);
-  }, [onFiltersChange]);
+  const onSubmit = useCallback<SubmitHandler<FilterValues>>(
+    (data: FilterValues) => {
+      const filters: ReviewHistoryQueryParams = {
+        search: data.search?.trim() || undefined,
+        dateFrom: data.dateFrom || undefined,
+        dateTo: data.dateTo || undefined,
+        type: data.type || undefined,
+        domain: data.domain || undefined,
+        active: data.active || undefined,
+        rejected: data.rejected || undefined,
+        page: 1,
+      };
+      onFiltersChange(filters);
+    },
+    [onFiltersChange],
+  );
 
   const handleClearFilters = useCallback(() => {
     reset({
@@ -142,8 +143,8 @@ export function HistoryFilters({
       className={styles["filters-container"]}
     >
       {/* Search Bar and Action Buttons */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 mb-6">
-        <div className="flex-1 relative">
+      <div className="mb-6 flex flex-col items-stretch gap-3 lg:flex-row lg:items-center">
+        <div className="relative flex-1">
           <div className={styles["search-container"]}>
             <svg
               className={styles["search-icon"]}
@@ -169,7 +170,7 @@ export function HistoryFilters({
           </div>
         </div>
 
-        <div className="flex gap-2 flex-shrink-0">
+        <div className="flex flex-shrink-0 gap-2">
           <button
             type="button"
             onClick={handleClearFilters}
@@ -190,7 +191,7 @@ export function HistoryFilters({
       </div>
 
       {/* Filter Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div>
           <label htmlFor="status" className={styles["label"]}>
             Status
@@ -284,13 +285,13 @@ export function HistoryFilters({
 
       {/* Active Filters Summary */}
       {hasActiveFilters && (
-        <div className="mt-4 pt-4 border-t border-stroke dark:border-stroke-dark">
+        <div className="mt-4 border-t border-stroke pt-4 dark:border-stroke-dark">
           <div className="flex flex-wrap gap-2">
-            <span className="text-sm text-dark-6">
-              Active filters:
-            </span>
+            <span className="text-sm text-dark-6">Active filters:</span>
             {watchedFilters.search?.trim() && (
-              <span className={`${styles["filter-tag"]} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}>
+              <span
+                className={`${styles["filter-tag"]} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}
+              >
                 Search: {watchedFilters.search}
                 <button
                   type="button"
@@ -314,8 +315,11 @@ export function HistoryFilters({
               </span>
             )}
             {(watchedFilters.active || watchedFilters.rejected) && (
-              <span className={`${styles["filter-tag"]} bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200`}>
-                Status: {[
+              <span
+                className={`${styles["filter-tag"]} bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200`}
+              >
+                Status:{" "}
+                {[
                   watchedFilters.active && "Active",
                   watchedFilters.rejected && "Rejected",
                 ]
@@ -343,7 +347,9 @@ export function HistoryFilters({
               </span>
             )}
             {watchedFilters.type && (
-              <span className={`${styles["filter-tag"]} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}>
+              <span
+                className={`${styles["filter-tag"]} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}
+              >
                 Type: {watchedFilters.type}
                 <button
                   type="button"
@@ -367,7 +373,9 @@ export function HistoryFilters({
               </span>
             )}
             {watchedFilters.domain && (
-              <span className={`${styles["filter-tag"]} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`}>
+              <span
+                className={`${styles["filter-tag"]} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`}
+              >
                 Domain: {watchedFilters.domain}
                 <button
                   type="button"
@@ -391,8 +399,11 @@ export function HistoryFilters({
               </span>
             )}
             {(watchedFilters.dateFrom || watchedFilters.dateTo) && (
-              <span className={`${styles["filter-tag"]} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`}>
-                Date: {watchedFilters.dateFrom || "Start"} - {watchedFilters.dateTo || "End"}
+              <span
+                className={`${styles["filter-tag"]} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`}
+              >
+                Date: {watchedFilters.dateFrom || "Start"} -{" "}
+                {watchedFilters.dateTo || "End"}
                 <button
                   type="button"
                   onClick={() => {
@@ -420,4 +431,3 @@ export function HistoryFilters({
     </form>
   );
 }
-

@@ -37,7 +37,7 @@ export function MenuItem(
         className={cn(
           menuItemBaseStyles({
             isActive: props.isActive,
-            className: "relative block py-2",
+            className: "relative flex w-full items-center gap-3 py-2",
           }),
           props.className,
         )}

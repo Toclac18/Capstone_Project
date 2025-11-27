@@ -5,7 +5,7 @@ export {
   getReviewedHistory,
   submitReview,
   approveReviewRequest,
-} from "@/services/review-list";
+} from "@/services/review-list.service";
 
 export type {
   ReviewDocument,
@@ -18,4 +18,3 @@ export type {
   ReviewListQueryParams,
   ReviewHistoryQueryParams,
 } from "@/types/review";
-

@@ -9,7 +9,10 @@ import { cn } from "@/utils/utils";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { BellIcon } from "./icons";
-import { getNotifications, markNotificationAsRead } from "@/services/notification";
+import {
+  getNotifications,
+  markNotificationAsRead,
+} from "@/services/notification.service";
 import { NotificationDetailModal } from "./NotificationDetailModal";
 import styles from "./styles.module.css";
 import dayjs from "dayjs";
@@ -22,7 +25,9 @@ export function Notification() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [selectedNotification, setSelectedNotification] = useState<any | null>(null);
+  const [selectedNotification, setSelectedNotification] = useState<any | null>(
+    null,
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchNotifications = async () => {
@@ -39,7 +44,7 @@ export function Notification() {
 
   useEffect(() => {
     fetchNotifications();
-    
+
     // Fetch notifications every 30 seconds
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
@@ -47,12 +52,12 @@ export function Notification() {
 
   const handleMarkAsRead = async (id: string, isRead: boolean) => {
     if (isRead) return; // Already read, no need to update
-    
+
     try {
       await markNotificationAsRead(id);
       // Update local state optimistically
       setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (e) {
@@ -95,18 +100,11 @@ export function Notification() {
         </span>
       </DropdownTrigger>
 
-      <DropdownContent
-        align="end"
-        className={styles.dropdownContent}
-      >
+      <DropdownContent align="end" className={styles.dropdownContent}>
         <div className={styles.dropdownHeader}>
-          <span className={styles.dropdownTitle}>
-            Notifications
-          </span>
+          <span className={styles.dropdownTitle}>Notifications</span>
           {unreadCount > 0 && (
-            <span className={styles.unreadBadge}>
-              {unreadCount} new
-            </span>
+            <span className={styles.unreadBadge}>{unreadCount} new</span>
           )}
         </div>
 
@@ -117,9 +115,7 @@ export function Notification() {
         ) : notifications.length === 0 ? (
           <div className={styles.emptyContainer}>
             <BellIcon className={styles.emptyIcon} />
-            <p className={styles.emptyText}>
-              No new notifications
-            </p>
+            <p className={styles.emptyText}>No new notifications</p>
           </div>
         ) : (
           <ul className={styles.notificationsList}>
@@ -135,7 +131,7 @@ export function Notification() {
                     styles.notificationItem,
                     notif.isRead
                       ? styles.notificationItemRead
-                      : styles.notificationItemUnread
+                      : styles.notificationItemUnread,
                   )}
                 >
                   <div className={styles.notificationContent}>
@@ -145,7 +141,7 @@ export function Notification() {
                           styles.notificationTitle,
                           notif.isRead
                             ? styles.notificationTitleRead
-                            : styles.notificationTitleUnread
+                            : styles.notificationTitleUnread,
                         )}
                       >
                         {notif.title}

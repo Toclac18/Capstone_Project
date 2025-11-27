@@ -1,6 +1,6 @@
 // app/api/notifications/[id]/read/route.ts
 import { headers } from "next/headers";
-import { mockNotificationDB } from "@/mock/dbMock";
+import { mockNotificationDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";

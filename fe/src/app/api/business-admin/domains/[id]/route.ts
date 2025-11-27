@@ -1,4 +1,4 @@
-import { mockDomainsDB } from "@/mock/dbMock";
+import { mockDomainsDB } from "@/mock/db.mock";
 import type { UpdateDomainRequest } from "@/types/document-domain";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";

@@ -1,6 +1,6 @@
 "use client";
 
-import { setupMocks } from "@/mock/indexMock";
+import { setupMocks } from "@/mock/index.mock";
 setupMocks();
 import { ThemeProvider } from "next-themes";
 import { ToastProvider } from "@/components/ui/toast";

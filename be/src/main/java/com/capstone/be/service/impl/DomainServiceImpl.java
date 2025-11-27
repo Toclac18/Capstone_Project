@@ -168,8 +168,12 @@ public class DomainServiceImpl implements DomainService {
         .orElseThrow(() -> new ResourceNotFoundException("Domain", domainId));
 
     // Update fields
-    domain.setCode(request.getCode());
-    domain.setName(request.getName());
+    if (request.getCode() != null && request.getCode() > 0) {
+      domain.setCode(request.getCode());
+    }
+    if (request.getName() != null && !request.getName().isBlank()) {
+      domain.setName(request.getName());
+    }
 
     domain = domainRepository.save(domain);
 

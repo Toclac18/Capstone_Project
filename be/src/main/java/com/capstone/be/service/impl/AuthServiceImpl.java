@@ -30,6 +30,7 @@ import com.capstone.be.repository.ReviewerSpecLinkRepository;
 import com.capstone.be.repository.SpecializationRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.security.jwt.JwtUtil;
+import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.AuthService;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.service.FileStorageService;
@@ -164,29 +165,23 @@ public class AuthServiceImpl implements AuthService {
         )
     );
 
-    // Get user from database
-    User user = userRepository.findByEmail(request.getEmail())
-        .orElseThrow(() -> ResourceNotFoundException.userByEmail(request.getEmail()));
+    UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
 
-    //Check role
-    if (!user.getRole().equals(request.getRole())) {
+    if (request.getRole() != null && !principal.getRole().equals(request.getRole().name())) {
       throw UnauthorizedException.invalidCredentials();
     }
 
-    // Check if email is verified
-    if (user.getStatus() == UserStatus.PENDING_EMAIL_VERIFY) {
-      throw UnauthorizedException.emailNotVerified();
-    }
-
-    // Check if account is active
-    if (user.getStatus() != UserStatus.ACTIVE) {
+    if (!principal.isEnabled()) {
       throw UnauthorizedException.accountDisabled();
     }
 
-    // Generate JWT token
-    String token = jwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole().name());
+    String token = jwtUtil.generateToken(
+        principal.getId(),
+        principal.getEmail(),
+        principal.getRole()
+    );
 
-    return authMapper.toAuthResponseWithToken(user, token);
+    return authMapper.toAuthResponseWithToken(principal, token);
   }
 
   @Override

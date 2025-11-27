@@ -3,9 +3,11 @@ package com.capstone.be.repository;
 import com.capstone.be.domain.entity.DocType;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface DocTypeRepository extends JpaRepository<DocType, UUID> {
+public interface DocTypeRepository extends JpaRepository<DocType, UUID>,
+    JpaSpecificationExecutor<DocType> {
 
 }

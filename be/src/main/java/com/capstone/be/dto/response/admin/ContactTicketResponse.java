@@ -27,6 +27,7 @@ public class ContactTicketResponse {
   private String message;
 
   // Full ticket details (for admin view)
+  private UUID userId;
   private String name;
   private String email;
   private ContactCategory category;

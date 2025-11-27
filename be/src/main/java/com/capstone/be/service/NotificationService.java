@@ -60,6 +60,7 @@ public interface NotificationService {
    * @param type    Notification type
    * @param title   Notification title
    * @param summary Notification summary
+   * @return Created notification response
    */
-  void createNotification(UUID userId, NotificationType type, String title, String summary);
+  NotificationResponse createNotification(UUID userId, NotificationType type, String title, String summary);
 }

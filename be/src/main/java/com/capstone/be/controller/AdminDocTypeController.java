@@ -15,7 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -121,23 +120,23 @@ public class AdminDocTypeController {
     return ResponseEntity.ok(response);
   }
 
-  /**
-   * Delete a document type
-   * DELETE /api/v1/admin/doc-types/{docTypeId}
-   */
-  @DeleteMapping("/{docTypeId}")
-  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
-  public ResponseEntity<ApiResponse<Void>> deleteDocType(
-      @PathVariable(name = "docTypeId") UUID docTypeId) {
-    log.info("Admin deleting document type: {}", docTypeId);
-
-    docTypeService.deleteDocType(docTypeId);
-
-    ApiResponse<Void> response = ApiResponse.<Void>builder()
-        .success(true)
-        .message("Document type deleted successfully")
-        .build();
-
-    return ResponseEntity.ok(response);
-  }
+//  /**
+//   * Delete a document type
+//   * DELETE /api/v1/admin/doc-types/{docTypeId}
+//   */
+//  @DeleteMapping("/{docTypeId}")
+//  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+//  public ResponseEntity<ApiResponse<Void>> deleteDocType(
+//      @PathVariable(name = "docTypeId") UUID docTypeId) {
+//    log.info("Admin deleting document type: {}", docTypeId);
+//
+//    docTypeService.deleteDocType(docTypeId);
+//
+//    ApiResponse<Void> response = ApiResponse.<Void>builder()
+//        .success(true)
+//        .message("Document type deleted successfully")
+//        .build();
+//
+//    return ResponseEntity.ok(response);
+//  }
 }

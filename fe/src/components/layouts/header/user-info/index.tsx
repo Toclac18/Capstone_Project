@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown";
 import { cn } from "@/utils/utils";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 import { logout } from "@/services/auth.service";
 import { LogOutIcon, SettingsIcon, UserIcon } from "./icons";
@@ -18,13 +18,17 @@ export function UserInfo() {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
   const { email, loading } = useReader();
-  // Get name from localStorage using initial state function
-  const [name] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("userName");
-    }
-    return null;
-  });
+  const [name, setName] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Get name from localStorage after component mounts (client-side only)
+  useLayoutEffect(() => {
+    queueMicrotask(() => {
+      setMounted(true);
+      const userName = localStorage.getItem("userName");
+      setName(userName);
+    });
+  }, []);
 
   async function handleLogout() {
     try {
@@ -54,7 +58,7 @@ export function UserInfo() {
         <figure className="flex items-center gap-3">
           <UserIcon />
           <figcaption className="flex items-center gap-1 font-medium text-dark dark:text-dark-6 max-[1024px]:sr-only">
-            <span>{name || email || "User"}</span>
+            <span>{mounted ? (name || email || "User") : (email || "User")}</span>
 
             <ChevronUpIcon
               aria-hidden
@@ -78,7 +82,7 @@ export function UserInfo() {
           <UserIcon />
           <figcaption className="space-y-1 text-base font-medium">
             <div className="mb-2 leading-none text-dark dark:text-white">
-              {loading ? "Loading..." : (name || email || "User")}
+              {loading ? "Loading..." : (mounted ? (name || email || "User") : (email || "User"))}
             </div>
 
             <div className="leading-none text-gray-6">

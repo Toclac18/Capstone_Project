@@ -9,6 +9,7 @@ import com.capstone.be.mapper.NotificationMapper;
 import com.capstone.be.repository.NotificationRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.service.NotificationService;
+import com.capstone.be.service.NotificationEventService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class NotificationServiceImpl implements NotificationService {
   private final NotificationRepository notificationRepository;
   private final NotificationMapper notificationMapper;
   private final UserRepository userRepository;
+  private final NotificationEventService notificationEventService;
 
   @Override
   @Transactional(readOnly = true)
@@ -78,6 +80,14 @@ public class NotificationServiceImpl implements NotificationService {
     notification.setIsRead(true);
     notificationRepository.save(notification);
 
+    // Send SSE event for notification update
+    NotificationResponse response = notificationMapper.toResponse(notification);
+    notificationEventService.sendNotificationUpdated(userId, response);
+    
+    // Send updated unread count
+    long unreadCount = getUnreadCount(userId);
+    notificationEventService.sendUnreadCount(userId, unreadCount);
+
     log.info("Notification {} marked as read successfully", notificationId);
   }
 
@@ -88,13 +98,16 @@ public class NotificationServiceImpl implements NotificationService {
 
     int count = notificationRepository.markAllAsReadByUser(userId);
 
+    // Send updated unread count (should be 0 after marking all as read)
+    notificationEventService.sendUnreadCount(userId, 0L);
+
     log.info("Marked {} notifications as read for user {}", count, userId);
     return count;
   }
 
   @Override
   @Transactional
-  public void createNotification(UUID userId, NotificationType type, String title, String summary) {
+  public NotificationResponse createNotification(UUID userId, NotificationType type, String title, String summary) {
     log.info("Creating notification for user {}: type={}, title={}", userId, type, title);
 
     User user = getUserById(userId);
@@ -107,9 +120,18 @@ public class NotificationServiceImpl implements NotificationService {
         .isRead(false)
         .build();
 
-    notificationRepository.save(notification);
+    notification = notificationRepository.save(notification);
+
+    // Send SSE event for new notification
+    NotificationResponse response = notificationMapper.toResponse(notification);
+    notificationEventService.sendNotification(userId, response);
+    
+    // Send updated unread count
+    long unreadCount = getUnreadCount(userId);
+    notificationEventService.sendUnreadCount(userId, unreadCount);
 
     log.info("Notification created successfully for user {}", userId);
+    return response;
   }
 
   /**

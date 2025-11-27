@@ -4,6 +4,7 @@ import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.response.user.NotificationResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.NotificationService;
+import com.capstone.be.service.NotificationEventService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Map;
@@ -17,12 +18,20 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import com.capstone.be.dto.request.user.CreateNotificationRequest;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import com.capstone.be.config.annotation.NoResponseWrapping;
 
 /**
  * Controller for notification operations
@@ -35,10 +44,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class NotificationController {
 
   private final NotificationService notificationService;
+  private final NotificationEventService notificationEventService;
 
   /**
    * Get all notifications for current user
-   * GET /api/v1/notifications
+   * GET /api/notifications
    *
    * @param principal  Current authenticated user
    * @param unreadOnly Optional filter to get only unread notifications
@@ -71,7 +81,7 @@ public class NotificationController {
 
   /**
    * Get unread notification count
-   * GET /api/v1/notifications/unread-count
+   * GET /api/notifications/unread-count
    *
    * @param principal Current authenticated user
    * @return Unread count
@@ -92,7 +102,7 @@ public class NotificationController {
 
   /**
    * Mark a notification as read
-   * PATCH /api/v1/notifications/{notificationId}/read
+   * PATCH /api/notifications/{notificationId}/read
    *
    * @param principal      Current authenticated user
    * @param notificationId Notification ID
@@ -115,7 +125,7 @@ public class NotificationController {
 
   /**
    * Mark all notifications as read
-   * PATCH /api/v1/notifications/read-all
+   * PATCH /api/notifications/read-all
    *
    * @param principal Current authenticated user
    * @return Number of notifications marked as read
@@ -132,5 +142,60 @@ public class NotificationController {
     int count = notificationService.markAllAsRead(userId);
 
     return ResponseEntity.ok(Map.of("count", count));
+  }
+
+  /**
+   * Create a notification for a user
+   * POST /api/notifications
+   *
+   * @param request Request containing notification details
+   * @return Created notification
+   */
+  @PostMapping
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Create notification",
+             description = "Create a notification for a user (typically used for testing or admin operations)")
+  public ResponseEntity<NotificationResponse> createNotification(
+      @Valid @RequestBody CreateNotificationRequest request) {
+
+    log.info("Creating notification for user {}: type={}, title={}",
+        request.getUserId(), request.getType(), request.getTitle());
+
+    NotificationResponse notification = notificationService.createNotification(
+        request.getUserId(),
+        request.getType(),
+        request.getTitle(),
+        request.getSummary()
+    );
+
+    return ResponseEntity.status(HttpStatus.CREATED).body(notification);
+  }
+
+  /**
+   * Server-Sent Events endpoint for real-time notifications
+   * GET /api/notifications/events
+   *
+   * @param principal Current authenticated user
+   * @return SSE stream
+   */
+  @GetMapping(value = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+  @PreAuthorize("isAuthenticated()")
+  @NoResponseWrapping
+  @Operation(summary = "Subscribe to notification events",
+             description = "Server-Sent Events stream for real-time notification updates")
+  public SseEmitter subscribeToNotifications(
+      @AuthenticationPrincipal UserPrincipal principal) {
+
+    UUID userId = principal.getId();
+    log.info("User {} subscribing to notification events", userId);
+
+    // Create SSE connection
+    SseEmitter emitter = notificationEventService.createConnection(userId);
+
+    // Send initial unread count
+    long unreadCount = notificationService.getUnreadCount(userId);
+    notificationEventService.sendUnreadCount(userId, unreadCount);
+
+    return emitter;
   }
 }

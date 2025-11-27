@@ -1,24 +1,17 @@
-// app/api/notifications/[id]/read/route.ts
+// app/api/notifications/read-all/route.ts
+
 import { mockNotificationDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
+import { jsonResponse, proxyJsonResponse } from "@/server/response";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
-import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
-async function handlePATCH(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id } = await params;
-
+async function handlePATCH(): Promise<Response> {
   if (USE_MOCK) {
-    mockNotificationDB.markAsRead(id);
+    const count = mockNotificationDB.markAllAsRead();
     return jsonResponse(
-      null,
-      {
-        status: 204,
-        mode: "mock",
-      },
+      { count },
+      { status: 200, mode: "mock" },
     );
   }
 
@@ -27,7 +20,7 @@ async function handlePATCH(
   const fh = new Headers({ "Content-Type": "application/json" });
   if (authHeader) fh.set("Authorization", authHeader);
 
-  const upstream = await fetch(`${BE_BASE}/api/notifications/${id}/read`, {
+  const upstream = await fetch(`${BE_BASE}/api/notifications/read-all`, {
     method: "PATCH",
     headers: fh,
     cache: "no-store",
@@ -38,5 +31,6 @@ async function handlePATCH(
 
 export const PATCH = (...args: Parameters<typeof handlePATCH>) =>
   withErrorBoundary(() => handlePATCH(...args), {
-    context: "api/notifications/[id]/read/route.ts/PATCH",
+    context: "api/notifications/read-all/route.ts/PATCH",
   });
+

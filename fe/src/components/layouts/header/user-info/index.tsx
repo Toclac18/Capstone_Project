@@ -21,8 +21,8 @@ export function UserInfo() {
   const [name, setName] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  // Only show profile link for READER, REVIEWER, and ORGANIZATION_ADMIN
-  const showProfileLink = role === "READER" || role === "REVIEWER" || role === "ORGANIZATION_ADMIN";
+  // Only show profile link for READER and REVIEWER (ORGANIZATION_ADMIN has manage-organization page)
+  const showProfileLink = role === "READER" || role === "REVIEWER";
 
   // Get name from localStorage after component mounts (client-side only)
   useLayoutEffect(() => {

@@ -50,14 +50,7 @@ const InputGroup: React.FC<InputGroupProps> = ({
         {required && <span className="ml-1 select-none text-red">*</span>}
       </label>
 
-      <div
-        className={cn(
-          "relative mt-3 [&_svg]:absolute [&_svg]:top-1/2 [&_svg]:-translate-y-1/2",
-          props.iconPosition === "left"
-            ? "[&_svg]:left-4.5"
-            : "[&_svg]:right-4.5",
-        )}
-      >
+      <div className="relative mt-3">
         <input
           id={id}
           type={inputType}
@@ -81,8 +74,13 @@ const InputGroup: React.FC<InputGroupProps> = ({
           data-active={active}
           aria-invalid={!!error}
         />
-        {!error && !isPasswordField && (
-          <span className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2">
+        {!error && !isPasswordField && icon && (
+          <span
+            className={cn(
+              "pointer-events-none absolute top-1/2 -translate-y-1/2 flex items-center justify-center",
+              props.iconPosition === "left" ? "left-4.5" : "right-4.5",
+            )}
+          >
             {icon}
           </span>
         )}

@@ -2,24 +2,25 @@
 
 /* Page Container */
 .page-container {
-  @apply mx-auto w-full max-w-4xl px-4 py-8;
+  @apply mx-auto w-full max-w-5xl px-4 py-6 sm:py-8;
 }
 
 /* Card Base */
 .card {
-  @apply rounded-xl border border-stroke bg-white p-6 sm:p-8 shadow-sm;
+  @apply rounded-2xl border border-stroke bg-white p-6 sm:p-8 lg:p-10 shadow-lg;
+  @apply transition-shadow hover:shadow-xl;
 }
 :global(html.dark) .card {
-  @apply border-dark-3 bg-dark-2;
+  @apply border-dark-3 bg-dark-2 shadow-2xl;
 }
 
 /* Header Section */
 .header-section {
-  @apply flex items-center gap-4 sm:gap-6 pb-6 sm:pb-8 border-b border-stroke;
-  @apply flex-wrap sm:flex-nowrap;
+  @apply flex items-start gap-6 sm:gap-8 pb-8 border-b border-stroke/50;
+  @apply flex-wrap lg:flex-nowrap;
 }
 :global(html.dark) .header-section {
-  @apply border-dark-3;
+  @apply border-dark-3/50;
 }
 
 .logo-container {
@@ -27,55 +28,84 @@
 }
 
 .logo {
-  @apply h-20 w-20 sm:h-24 sm:w-24 rounded-xl object-cover border border-stroke shadow-sm;
+  @apply h-28 w-28 sm:h-32 sm:w-32 rounded-2xl object-cover border-2 border-stroke shadow-lg;
+  @apply ring-4 ring-white/50;
+  @apply transition-transform hover:scale-105;
 }
 :global(html.dark) .logo {
-  @apply border-dark-3;
+  @apply border-dark-3 ring-dark-2/50;
 }
 
 .logo-fallback {
-  @apply flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 border border-stroke;
+  @apply flex h-28 w-28 sm:h-32 sm:w-32 items-center justify-center rounded-2xl;
+  @apply bg-gradient-to-br from-primary/10 via-primary/5 to-gray-100 border-2 border-stroke;
+  @apply shadow-lg ring-4 ring-white/50;
+  @apply transition-transform hover:scale-105;
 }
 :global(html.dark) .logo-fallback {
-  @apply from-dark-3 to-dark-4 border-dark-3;
+  @apply from-primary/20 via-primary/10 to-dark-3 border-dark-3 ring-dark-2/50;
 }
 
 .logo-fallback-text {
-  @apply text-3xl sm:text-4xl font-bold text-gray-600;
+  @apply text-4xl sm:text-5xl font-bold text-primary;
 }
 :global(html.dark) .logo-fallback-text {
-  @apply text-dark-7;
+  @apply text-primary;
 }
 
 .header-info {
-  @apply flex-1;
+  @apply flex-1 min-w-0 flex flex-col gap-3;
 }
 
-.header-actions {
-  @apply flex items-center gap-3;
+.header-info-top {
+  @apply flex items-start justify-between gap-4;
+}
+
+.header-primary-actions {
+  @apply flex items-center gap-2 sm:gap-3;
+  @apply flex-shrink-0;
+}
+
+.header-secondary-actions {
+  @apply flex items-center gap-2 sm:gap-3;
+  @apply flex-wrap;
 }
 
 .org-name {
-  @apply text-xl sm:text-2xl font-bold text-dark mb-1;
+  @apply text-2xl sm:text-3xl font-bold text-dark mb-2;
+  @apply leading-tight;
 }
 :global(html.dark) .org-name {
   @apply text-white;
 }
 
 .org-type {
-  @apply text-sm text-dark-5;
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
+  @apply bg-primary/10 text-primary;
 }
 :global(html.dark) .org-type {
-  @apply text-dark-6;
+  @apply bg-primary/20 text-primary;
 }
 
 /* Details Section */
 .details-section {
-  @apply pt-6 sm:pt-8;
+  @apply pt-8 sm:pt-10 space-y-8 sm:space-y-10;
+}
+
+.info-section {
+  @apply space-y-4 sm:space-y-6;
+}
+
+.section-header {
+  @apply flex items-center gap-3 mb-4 sm:mb-6;
+}
+
+.section-icon {
+  @apply w-5 h-5 sm:w-6 sm:h-6 text-primary;
 }
 
 .section-title {
-  @apply mb-4 sm:mb-6 text-base sm:text-lg font-semibold text-dark;
+  @apply text-base sm:text-lg font-bold text-dark;
 }
 :global(html.dark) .section-title {
   @apply text-white;
@@ -87,10 +117,11 @@
 }
 
 .detail-field {
-  @apply space-y-1.5 sm:space-y-2 pb-4 border-b border-stroke last:border-b-0;
+  @apply space-y-2 pb-4 border-b border-stroke/20 last:border-b-0 last:pb-0;
+  @apply transition-colors hover:bg-gray-50/50 rounded-lg p-3 -m-3;
 }
 :global(html.dark) .detail-field {
-  @apply border-dark-3;
+  @apply border-dark-3/20 hover:bg-dark-3/20;
 }
 
 .detail-field-full {
@@ -98,14 +129,16 @@
 }
 
 .detail-label {
-  @apply text-xs font-semibold uppercase tracking-wide text-dark-4;
+  @apply text-xs font-bold uppercase tracking-wider text-dark-4 mb-2;
+  @apply flex items-center gap-2;
 }
 :global(html.dark) .detail-label {
-  @apply text-dark-7;
+  @apply text-dark-6;
 }
 
 .detail-value {
-  @apply text-sm sm:text-base font-medium text-dark;
+  @apply text-base sm:text-lg font-normal text-dark;
+  @apply break-words;
 }
 :global(html.dark) .detail-value {
   @apply text-white;
@@ -150,8 +183,25 @@
 
 /* Update Button */
 .btn-update {
-  @apply inline-flex items-center gap-2 rounded-lg px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-medium shadow-sm hover:shadow-md transition-all;
-  @apply bg-primary text-white hover:bg-primary/90;
+  @apply inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold;
+  @apply bg-primary text-white shadow-md hover:shadow-lg;
+  @apply transition-all duration-200 hover:scale-105 active:scale-95;
+  @apply hover:bg-primary/90;
+}
+
+/* Change Email and Change Password Buttons */
+.btn-change-email,
+.btn-change-password {
+  @apply inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium;
+  @apply border-stroke bg-white text-dark;
+  @apply shadow-sm hover:shadow transition-all duration-200;
+  @apply hover:border-primary hover:bg-primary/5 hover:text-primary;
+  @apply active:scale-95;
+}
+:global(html.dark) .btn-change-email,
+:global(html.dark) .btn-change-password {
+  @apply border-dark-3 bg-dark-3 text-white;
+  @apply hover:border-primary hover:bg-primary/10 hover:text-primary;
 }
 
 /* ============================================
@@ -257,9 +307,17 @@
   @apply max-h-[calc(100vh-200px)];
 }
 
+.form-fields {
+  @apply space-y-4;
+}
+
 /* Field group */
 .field-group {
   @apply mb-5.5;
+}
+
+.field-group.space-y {
+  @apply block;
 }
 
 .field-label {
@@ -272,6 +330,25 @@
 
 .field-label-required {
   @apply text-red;
+}
+
+.field-label-sm {
+  @apply text-sm;
+  @apply text-gray-700;
+}
+:global(html.dark) .field-label-sm {
+  @apply text-gray-300;
+}
+
+.field-label-required-sm {
+  @apply text-red-500;
+}
+
+.field-label-confirm {
+  @apply font-mono text-red-600;
+}
+:global(html.dark) .field-label-confirm {
+  @apply text-red-400;
 }
 
 /* Input */
@@ -287,6 +364,27 @@
 
 .field-input.error {
   @apply border-red focus:border-red;
+}
+
+.field-input-sm {
+  @apply px-3 py-2 border rounded-lg;
+  @apply border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+  @apply bg-white text-dark;
+}
+:global(html.dark) .field-input-sm {
+  @apply bg-gray-700 border-gray-600 text-white;
+}
+
+.field-input.disabled {
+  @apply bg-gray-50 cursor-not-allowed;
+  @apply text-gray-500;
+}
+:global(html.dark) .field-input.disabled {
+  @apply bg-gray-700 text-gray-400;
+}
+
+.field-input-mono {
+  @apply font-mono;
 }
 
 .field-select {
@@ -330,6 +428,14 @@
   @apply text-red-400;
 }
 
+.field-error-inline {
+  @apply flex items-center gap-2 mt-1 text-sm;
+}
+
+.error-icon {
+  @apply w-4 h-4;
+}
+
 /* Alert */
 .alert-error {
   @apply mb-4 rounded-lg p-3 border;
@@ -370,6 +476,14 @@
 }
 :global(html.dark) .btn-cancel {
   @apply border-dark-3 text-white;
+}
+
+.btn-cancel-sm {
+  @apply px-4 py-2 text-sm rounded-lg;
+  @apply text-gray-700 bg-white border-gray-300 hover:bg-gray-50;
+}
+:global(html.dark) .btn-cancel-sm {
+  @apply text-gray-300 bg-gray-700 border-gray-600 hover:bg-gray-600;
 }
 
 .btn-submit {
@@ -434,6 +548,10 @@
   @apply bg-red-400;
 }
 
+.btn-submit-sm {
+  @apply px-4 py-2 text-sm;
+}
+
 /* Warning Alert */
 .warning-alert {
   @apply rounded-lg p-4 border mb-4;
@@ -471,12 +589,24 @@
   @apply text-yellow-300;
 }
 
+.warning-list {
+  @apply text-sm space-y-1 list-disc list-inside;
+  @apply text-red-600;
+}
+:global(html.dark) .warning-list {
+  @apply text-red-400;
+}
+
 /* Delete Button */
 .btn-delete {
-  @apply inline-flex items-center gap-2 rounded-lg border px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-medium transition-colors;
-  @apply border-red-300 bg-white text-red-600 hover:border-red-400 hover:bg-red-50;
+  @apply inline-flex items-center gap-2 rounded-xl border-2 px-5 py-2.5 text-sm font-semibold;
+  @apply border-red-300 bg-white text-red-600;
+  @apply shadow-sm hover:shadow-md transition-all duration-200;
+  @apply hover:border-red-400 hover:bg-red-50 hover:text-red-700;
+  @apply active:scale-95;
 }
 :global(html.dark) .btn-delete {
-  @apply border-red-700 bg-dark-2 text-red-400 hover:bg-red-900/20 hover:border-red-600;
+  @apply border-red-700 bg-dark-3 text-red-400;
+  @apply hover:bg-red-900/20 hover:border-red-600 hover:text-red-300;
 }
 

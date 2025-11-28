@@ -2,7 +2,7 @@
 
 import Breadcrumb from "@/components/(template)/Breadcrumbs/Breadcrumb";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   getProfile,
   updateProfile,
@@ -14,13 +14,10 @@ import {
   type ProfileResponse,
   type ReaderProfileResponse,
   type ReviewerProfileResponse,
-  type OrganizationProfileResponse,
 } from "@/services/profile.service";
 import { useReader } from "@/hooks/useReader";
 import {
   Mail,
-  MapPin,
-  Phone,
   Calendar,
   Coins,
   Shield,
@@ -32,14 +29,16 @@ import {
   Camera,
   GraduationCap,
   FileText,
-  FileCheck,
 } from "lucide-react";
 import ChangeEmailModal from "./_components/ChangeEmailModal";
 import ChangePasswordModal from "./_components/ChangePasswordModal";
 import EditProfileModal from "./_components/EditProfileModal";
 import DeleteAccountModal from "./_components/DeleteAccountModal";
 import { useToast } from "@/components/ui/toast";
+import { sanitizeImageUrl } from "@/utils/imageUrl";
 import styles from "@/app/profile/styles.module.css";
+
+const AVATAR_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/avatars/";
 
 export default function Page() {
   const { role, loading: authLoading, isAuthenticated } = useReader();
@@ -57,27 +56,7 @@ export default function Page() {
 
   const { showToast } = useToast();
 
-  useEffect(() => {
-    if (!authLoading && isAuthenticated && role) {
-      loadProfile();
-    } else if (!authLoading && !isAuthenticated) {
-      setError("Please sign in to view your profile");
-      setLoading(false);
-    }
-  }, [authLoading, isAuthenticated, role]);
-
-  useEffect(() => {
-    return () => {
-      if (profilePhoto && profilePhoto.startsWith("blob:")) {
-        URL.revokeObjectURL(profilePhoto);
-      }
-      if (previewPhoto) {
-        URL.revokeObjectURL(previewPhoto);
-      }
-    };
-  }, [profilePhoto, previewPhoto]);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     if (!role) {
       setError("Unable to determine user role");
       setLoading(false);
@@ -90,73 +69,36 @@ export default function Page() {
       setProfile(profileData);
       setError(null);
 
-      const AVATAR_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/avatars/";
-      
-      const sanitizeUrl = (url: string | null | undefined, isAvatar: boolean = false): string => {
-        if (!url || typeof url !== "string") {
-          return "/images/user.png";
-        }
-        
-        const cleaned = url.trim().replace(/[\u200B-\u200D\uFEFF]/g, "");
-        if (!cleaned) {
-          return "/images/user.png";
-        }
-        
-        if (cleaned.startsWith("http://") || cleaned.startsWith("https://")) {
-          try {
-            const urlObj = new URL(cleaned);
-            return `${urlObj.toString()}?t=${Date.now()}`;
-          } catch {
-            return "/images/user.png";
-          }
-        }
-        
-        if (isAvatar) {
-          if (cleaned.includes("s3.amazonaws.com")) {
-            try {
-              const urlObj = new URL(cleaned);
-              return `${urlObj.toString()}?t=${Date.now()}`;
-            } catch {
-              try {
-                const urlObj = new URL(`https://${cleaned}`);
-                return `${urlObj.toString()}?t=${Date.now()}`;
-              } catch {
-                // Fall through
-              }
-            }
-          }
-          
-          const avatarPath = cleaned.startsWith("/") ? cleaned.slice(1) : cleaned;
-          try {
-            const fullUrl = `${AVATAR_BASE_URL}${avatarPath}`;
-            new URL(fullUrl);
-            return `${fullUrl}?t=${Date.now()}`;
-          } catch {
-            return "/images/user.png";
-          }
-        }
-        
-        if (cleaned.startsWith("/")) {
-          return cleaned;
-        }
-        
-        return "/images/user.png";
-      };
-
-      // All roles use avatarUrl
-      if (role === "ORGANIZATION_ADMIN") {
-        const orgProfile = profileData as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" };
-        setProfilePhoto(sanitizeUrl(orgProfile.avatarUrl, true));
-      } else {
-        const userProfile = profileData as (ReaderProfileResponse | ReviewerProfileResponse) & { role: string };
-        setProfilePhoto(sanitizeUrl(userProfile.avatarUrl, true));
-      }
+      // Reader and Reviewer use avatarUrl
+      const userProfile = profileData as (ReaderProfileResponse | ReviewerProfileResponse) & { role: string };
+      const sanitizedUrl = sanitizeImageUrl(userProfile.avatarUrl, AVATAR_BASE_URL, "/images/user.png");
+      setProfilePhoto(sanitizedUrl || "/images/user.png");
     } catch (e: any) {
       setError(e?.message || "Failed to load profile");
     } finally {
       setLoading(false);
     }
-  };
+  }, [role]);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && role) {
+      loadProfile();
+    } else if (!authLoading && !isAuthenticated) {
+      setError("Please sign in to view your profile");
+      setLoading(false);
+    }
+  }, [authLoading, isAuthenticated, role, loadProfile]);
+
+  useEffect(() => {
+    return () => {
+      if (profilePhoto && profilePhoto.startsWith("blob:")) {
+        URL.revokeObjectURL(profilePhoto);
+      }
+      if (previewPhoto) {
+        URL.revokeObjectURL(previewPhoto);
+      }
+    };
+  }, [profilePhoto, previewPhoto]);
 
   const displayName = profile?.fullName || profile?.email || "";
   const coverPhoto = "/images/cover.png";
@@ -245,8 +187,6 @@ export default function Page() {
         return "bg-blue-600/10 text-blue-600 border-blue-300 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-700";
       case "REVIEWER":
         return "bg-emerald-600/10 text-emerald-600 border-emerald-300 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-700";
-      case "ORGANIZATION_ADMIN":
-        return "bg-purple-600/10 text-purple-600 border-purple-300 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-700";
       case "BUSINESS_ADMIN":
         return "bg-amber-600/10 text-amber-600 border-amber-300 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-700";
       case "SYSTEM_ADMIN":
@@ -278,15 +218,8 @@ export default function Page() {
       .join(" ");
   };
 
-  const formatOrgType = (type?: string) => {
-    if (!type) return "-";
-    return type
-      .split("_")
-      .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
-      .join(" ");
-  };
 
-  const handleEditProfile = async (data: Partial<ReaderProfileResponse | ReviewerProfileResponse | OrganizationProfileResponse>) => {
+  const handleEditProfile = async (data: Partial<ReaderProfileResponse | ReviewerProfileResponse>) => {
     if (!role) {
       throw new Error("Unable to determine user role");
     }
@@ -408,18 +341,6 @@ export default function Page() {
             <div className={styles["profile-photo-container"]}>
               {(() => {
                 const imageSrc = previewPhoto || profilePhoto || "/images/user.png";
-                
-                if (!imageSrc || typeof imageSrc !== "string") {
-                  return (
-                    <img
-                      src="/images/user.png"
-                      alt="profile"
-                      className={styles["profile-photo-image"]}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                  );
-                }
-                
                 const isExternalUrl = imageSrc.startsWith("http://") || imageSrc.startsWith("https://");
                 const isBlobUrl = imageSrc.startsWith("blob:");
                 
@@ -497,7 +418,7 @@ export default function Page() {
 
             {/* Action Buttons */}
             <div className={styles["profile-actions"]}>
-              {(role === "READER" || role === "REVIEWER" || role === "ORGANIZATION_ADMIN") && (
+              {(role === "READER" || role === "REVIEWER") && (
                 <button
                   onClick={() => setIsEditProfileOpen(true)}
                   className={styles["btn-edit-profile"]}
@@ -712,128 +633,6 @@ export default function Page() {
                             </a>
                           ))}
                         </div>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Organization Admin specific fields */}
-              {role === "ORGANIZATION_ADMIN" && (
-                <>
-                  {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" })?.orgName && (
-                    <div className={styles["profile-detail-item"]}>
-                      <div
-                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["blue"]}`}
-                      >
-                        <Building2
-                          className={`${styles["profile-detail-icon"]} ${styles["blue"]}`}
-                        />
-                      </div>
-                      <div>
-                        <p className={styles["profile-detail-label"]}>
-                          Organization
-                        </p>
-                        <p className={styles["profile-detail-value"]}>
-                          {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" }).orgName}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" })?.orgType && (
-                    <div className={styles["profile-detail-item"]}>
-                      <div
-                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["purple"]}`}
-                      >
-                        <Building2
-                          className={`${styles["profile-detail-icon"]} ${styles["purple"]}`}
-                        />
-                      </div>
-                      <div>
-                        <p className={styles["profile-detail-label"]}>
-                          Organization Type
-                        </p>
-                        <p className={styles["profile-detail-value"]}>
-                          {formatOrgType((profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" }).orgType)}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" })?.orgEmail && (
-                    <div className={styles["profile-detail-item"]}>
-                      <div
-                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["primary"]}`}
-                      >
-                        <Mail
-                          className={`${styles["profile-detail-icon"]} ${styles["primary"]}`}
-                        />
-                      </div>
-                      <div>
-                        <p className={styles["profile-detail-label"]}>
-                          Org Email
-                        </p>
-                        <p className={styles["profile-detail-value"]}>
-                          {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" }).orgEmail}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" })?.orgHotline && (
-                    <div className={styles["profile-detail-item"]}>
-                      <div
-                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["green"]}`}
-                      >
-                        <Phone
-                          className={`${styles["profile-detail-icon"]} ${styles["green"]}`}
-                        />
-                      </div>
-                      <div>
-                        <p className={styles["profile-detail-label"]}>
-                          Hotline
-                        </p>
-                        <p className={styles["profile-detail-value"]}>
-                          {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" }).orgHotline}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" })?.orgRegistrationNumber && (
-                    <div className={styles["profile-detail-item"]}>
-                      <div
-                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["yellow"]}`}
-                      >
-                        <FileCheck
-                          className={`${styles["profile-detail-icon"]} ${styles["yellow"]}`}
-                        />
-                      </div>
-                      <div>
-                        <p className={styles["profile-detail-label"]}>
-                          Registration Number
-                        </p>
-                        <p className={styles["profile-detail-value"]}>
-                          {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" }).orgRegistrationNumber}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" })?.orgAddress && (
-                    <div
-                      className={`${styles["profile-detail-item"]} ${styles["profile-detail-item-full-width"]}`}
-                    >
-                      <div
-                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["orange"]}`}
-                      >
-                        <MapPin
-                          className={`${styles["profile-detail-icon"]} ${styles["orange"]}`}
-                        />
-                      </div>
-                      <div>
-                        <p className={styles["profile-detail-label"]}>
-                          Address
-                        </p>
-                        <p className={styles["profile-detail-value"]}>
-                          {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" }).orgAddress}
-                        </p>
                       </div>
                     </div>
                   )}

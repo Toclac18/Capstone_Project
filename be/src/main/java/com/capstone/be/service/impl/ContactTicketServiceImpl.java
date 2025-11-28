@@ -191,9 +191,10 @@ public class ContactTicketServiceImpl implements ContactTicketService {
         );
         log.info("Sent in-app notification to user {} for ticket {}", ticket.getUser().getId(),
             ticket.getTicketCode());
+        return;
       }
 
-      // Send email notification (for both authenticated users and guests)
+      // Send email notification (for  guests)
       emailService.sendTicketStatusUpdateEmail(
           ticket.getEmail(),
           ticket.getName(),

@@ -27,7 +27,7 @@ const securityHeaders = [
       `default-src 'self';`,
       `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${FE_DOMAIN};`,
       `style-src 'self' 'unsafe-inline';`,
-      `img-src 'self' data: blob:;`,
+      `img-src 'self' data: blob: https://s3.amazonaws.com https://*.s3.amazonaws.com https://*.s3.ap-southeast-1.amazonaws.com;`,
       `font-src 'self' data:;`,
       `connect-src 'self' ${BE_DOMAIN} ${FE_DOMAIN} ws: wss:;`,
       `frame-ancestors 'none';`,
@@ -41,6 +41,15 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.s3.*.amazonaws.com",
+        pathname: "/**",
+      },
+    ],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

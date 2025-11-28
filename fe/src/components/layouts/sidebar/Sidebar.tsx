@@ -63,7 +63,7 @@ export function Sidebar({
         return READER_NAV_DATA as unknown as NavSection[];
       case "REVIEWER":
         return REVIEWER_NAV_DATA as unknown as NavSection[];
-      case "ORGANIZATION":
+      case "ORGANIZATION_ADMIN":
         return ORGANIZATION_ADMIN_NAV_DATA as unknown as NavSection[];
       case "BUSINESS_ADMIN":
         return BUSINESS_ADMIN_NAV_DATA as unknown as NavSection[];

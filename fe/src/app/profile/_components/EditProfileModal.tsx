@@ -176,22 +176,22 @@ export default function EditProfileModal({
           fullName: formData.fullName.trim(),
         };
         if (formData.name) {
-          updateData.name = formData.name.trim();
+          updateData.orgName = formData.name.trim();
         }
         if (formData.type) {
-          updateData.type = formData.type as any;
+          updateData.orgType = formData.type as any;
         }
         if (formData.email) {
-          updateData.email = formData.email.trim();
+          updateData.orgEmail = formData.email.trim();
         }
         if (formData.hotline) {
-          updateData.hotline = formData.hotline.trim();
+          updateData.orgHotline = formData.hotline.trim();
         }
         if (formData.address) {
-          updateData.address = formData.address.trim();
+          updateData.orgAddress = formData.address.trim();
         }
         if (formData.registrationNumber) {
-          updateData.registrationNumber = formData.registrationNumber.trim();
+          updateData.orgRegistrationNumber = formData.registrationNumber.trim();
         }
         await onSave(updateData);
       }

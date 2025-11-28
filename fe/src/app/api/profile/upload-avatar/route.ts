@@ -1,4 +1,4 @@
-// app/api/profile/change-email/route.ts
+// app/api/profile/upload-avatar/route.ts
 
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
@@ -8,30 +8,35 @@ import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 export const dynamic = "force-dynamic";
 
 async function handlePOST(req: Request) {
-  const body = await req.json().catch(() => null);
-
-  if (!body || !body.newEmail) {
-    return badRequest("Missing required field: newEmail");
-  }
-
   if (USE_MOCK) {
+    const formData = await req.formData();
+    const file = formData.get("file") as File;
+
+    if (!file) {
+      return badRequest("File is required");
+    }
+
     return jsonResponse(
-      { message: "OTP has been sent to your current email address" },
+      { message: "Avatar uploaded successfully" },
       { status: 200, mode: "mock" },
     );
   }
 
-  const authHeader = await getAuthHeader("change-email");
+  const authHeader = await getAuthHeader("upload-avatar");
+  const formData = await req.formData();
 
-  const fh = new Headers({ "Content-Type": "application/json" });
+  const fh = new Headers();
   if (authHeader) fh.set("Authorization", authHeader);
-
-  const upstream = await fetch(`${BE_BASE}/api/user/change-email`, {
+  const upstream = await fetch(`${BE_BASE}/api/user/upload-avatar`, {
     method: "POST",
     headers: fh,
-    body: JSON.stringify({ newEmail: body.newEmail }),
+    body: formData,
     cache: "no-store",
   });
+
+  if (upstream.status === 204) {
+    return new Response(null, { status: 204 });
+  }
 
   const text = await upstream.text();
   let data;
@@ -39,8 +44,7 @@ async function handlePOST(req: Request) {
     const json = JSON.parse(text);
     data = json.data || json;
   } catch {
-    // Backend returns plain text message
-    data = { message: text || "OTP has been sent to your current email address" };
+    data = { error: text || "Failed to upload avatar" };
   }
 
   return jsonResponse(data, { status: upstream.status, mode: "real" });
@@ -48,5 +52,6 @@ async function handlePOST(req: Request) {
 
 export const POST = (...args: Parameters<typeof handlePOST>) =>
   withErrorBoundary(() => handlePOST(...args), {
-    context: "api/profile/change-email/route.ts/POST",
+    context: "api/profile/upload-avatar/route.ts/POST",
   });
+

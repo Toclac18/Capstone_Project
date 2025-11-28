@@ -1,61 +1,48 @@
 // app/api/profile/delete-account/route.ts
-import { headers } from "next/headers";
-import { mockProfileDB } from "@/mock/db.mock";
+
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { jsonResponse } from "@/server/response";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
-import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 export const dynamic = "force-dynamic";
 
-async function handlePOST(req: Request) {
-  let body: { password: string };
-  try {
-    body = await req.json();
-  } catch {
-    return jsonResponse(
-      { error: "Invalid JSON body" },
-      {
-        status: 400,
-        headers: { "content-type": "application/json" },
-      },
-    );
-  }
-
+async function handleDELETE() {
   if (USE_MOCK) {
-    mockProfileDB.clear();
-    return new Response(
-      JSON.stringify({
-        message: "Account deleted successfully. (mock)",
-      }),
-      {
-        status: 200,
-        headers: {
-          "content-type": "application/json",
-          "x-mode": "mock",
-        },
-      },
+    return jsonResponse(
+      { message: "Account deleted successfully" },
+      { status: 200, mode: "mock" },
     );
   }
 
-  const h = await headers();
-  const authHeader = h.get("authorization") || "";
-  const cookieHeader = h.get("cookie") || "";
+  const authHeader = await getAuthHeader("delete-account");
 
-  const fh = new Headers({ "Content-Type": "application/json" });
+  const fh = new Headers();
   if (authHeader) fh.set("Authorization", authHeader);
-  if (cookieHeader) fh.set("Cookie", cookieHeader);
 
-  const upstream = await fetch(`${BE_BASE}/api/profile/delete-account`, {
-    method: "POST",
+  const upstream = await fetch(`${BE_BASE}/api/user/account`, {
+    method: "DELETE",
     headers: fh,
-    body: JSON.stringify(body),
     cache: "no-store",
   });
 
-  return proxyJsonResponse(upstream, { mode: "real" });
+  if (upstream.status === 204) {
+    return new Response(null, { status: 204 });
+  }
+
+  const text = await upstream.text();
+  let data;
+  try {
+    const json = JSON.parse(text);
+    data = json.data || json;
+  } catch {
+    data = { error: text || "Failed to delete account" };
+  }
+
+  return jsonResponse(data, { status: upstream.status, mode: "real" });
 }
 
-export const POST = (...args: Parameters<typeof handlePOST>) =>
-  withErrorBoundary(() => handlePOST(...args), {
-    context: "api/profile/delete-account/route.ts/POST",
+export const DELETE = (...args: Parameters<typeof handleDELETE>) =>
+  withErrorBoundary(() => handleDELETE(...args), {
+    context: "api/profile/delete-account/route.ts/DELETE",
   });

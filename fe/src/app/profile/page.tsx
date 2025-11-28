@@ -6,12 +6,17 @@ import { useEffect, useMemo, useState } from "react";
 import {
   getProfile,
   updateProfile,
-  changeEmail,
+  requestEmailChange,
+  verifyEmailChangeOtp,
   changePassword,
+  uploadAvatar,
   deleteAccount,
   type ProfileResponse,
-  type UserRole,
+  type ReaderProfileResponse,
+  type ReviewerProfileResponse,
+  type OrganizationProfileResponse,
 } from "@/services/profile.service";
+import { useReader } from "@/hooks/useReader";
 import {
   Mail,
   MapPin,
@@ -20,12 +25,14 @@ import {
   Coins,
   Shield,
   Building2,
-  User as UserIcon,
   Hash,
   Edit,
   Key,
   Trash2,
   Camera,
+  GraduationCap,
+  FileText,
+  FileCheck,
 } from "lucide-react";
 import ChangeEmailModal from "./_components/ChangeEmailModal";
 import ChangePasswordModal from "./_components/ChangePasswordModal";
@@ -35,12 +42,14 @@ import { useToast } from "@/components/ui/toast";
 import styles from "@/app/profile/styles.module.css";
 
 export default function Page() {
+  const { role, loading: authLoading, isAuthenticated } = useReader();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [profilePhoto, setProfilePhoto] = useState<string>("/images/user.png"); // Profile photo state
+  const [profilePhoto, setProfilePhoto] = useState<string>("/images/user.png");
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  // Modal states
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangeEmailOpen, setIsChangeEmailOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -49,24 +58,99 @@ export default function Page() {
   const { showToast } = useToast();
 
   useEffect(() => {
-    loadProfile();
-  }, []);
+    if (!authLoading && isAuthenticated && role) {
+      loadProfile();
+    } else if (!authLoading && !isAuthenticated) {
+      setError("Please sign in to view your profile");
+      setLoading(false);
+    }
+  }, [authLoading, isAuthenticated, role]);
 
-  // Cleanup object URL on unmount
   useEffect(() => {
     return () => {
       if (profilePhoto && profilePhoto.startsWith("blob:")) {
         URL.revokeObjectURL(profilePhoto);
       }
+      if (previewPhoto) {
+        URL.revokeObjectURL(previewPhoto);
+      }
     };
-  }, [profilePhoto]);
+  }, [profilePhoto, previewPhoto]);
 
   const loadProfile = async () => {
+    if (!role) {
+      setError("Unable to determine user role");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const profile = await getProfile();
-      setProfile(profile);
+      const profileData = await getProfile(role);
+      setProfile(profileData);
       setError(null);
+
+      const AVATAR_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/avatars/";
+      
+      const sanitizeUrl = (url: string | null | undefined, isAvatar: boolean = false): string => {
+        if (!url || typeof url !== "string") {
+          return "/images/user.png";
+        }
+        
+        const cleaned = url.trim().replace(/[\u200B-\u200D\uFEFF]/g, "");
+        if (!cleaned) {
+          return "/images/user.png";
+        }
+        
+        if (cleaned.startsWith("http://") || cleaned.startsWith("https://")) {
+          try {
+            const urlObj = new URL(cleaned);
+            return `${urlObj.toString()}?t=${Date.now()}`;
+          } catch {
+            return "/images/user.png";
+          }
+        }
+        
+        if (isAvatar) {
+          if (cleaned.includes("s3.amazonaws.com")) {
+            try {
+              const urlObj = new URL(cleaned);
+              return `${urlObj.toString()}?t=${Date.now()}`;
+            } catch {
+              try {
+                const urlObj = new URL(`https://${cleaned}`);
+                return `${urlObj.toString()}?t=${Date.now()}`;
+              } catch {
+                // Fall through
+              }
+            }
+          }
+          
+          const avatarPath = cleaned.startsWith("/") ? cleaned.slice(1) : cleaned;
+          try {
+            const fullUrl = `${AVATAR_BASE_URL}${avatarPath}`;
+            new URL(fullUrl);
+            return `${fullUrl}?t=${Date.now()}`;
+          } catch {
+            return "/images/user.png";
+          }
+        }
+        
+        if (cleaned.startsWith("/")) {
+          return cleaned;
+        }
+        
+        return "/images/user.png";
+      };
+
+      // All roles use avatarUrl
+      if (role === "ORGANIZATION_ADMIN") {
+        const orgProfile = profileData as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" };
+        setProfilePhoto(sanitizeUrl(orgProfile.avatarUrl, true));
+      } else {
+        const userProfile = profileData as (ReaderProfileResponse | ReviewerProfileResponse) & { role: string };
+        setProfilePhoto(sanitizeUrl(userProfile.avatarUrl, true));
+      }
     } catch (e: any) {
       setError(e?.message || "Failed to load profile");
     } finally {
@@ -74,62 +158,94 @@ export default function Page() {
     }
   };
 
-  // Computed values from profile
-  const displayName =
-    profile?.fullName || profile?.username || profile?.email || "";
-  const coverPhoto = "/images/cover.png"; // Default cover photo (fixed)
+  const displayName = profile?.fullName || profile?.email || "";
+  const coverPhoto = "/images/cover.png";
 
-  // Handle profile photo change
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+  const ALLOWED_MIME_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+  const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png"];
+
   const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith("image/")) {
-        showToast({
-          type: "error",
-          title: "Invalid File",
-          message: "Please select an image file",
-        });
-        return;
-      }
+    if (!file) return;
 
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        showToast({
-          type: "error",
-          title: "File Too Large",
-          message: "Please select an image smaller than 5MB",
-        });
-        return;
-      }
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.substring(fileName.lastIndexOf("."));
+    const mimeType = file.type.toLowerCase();
+    
+    const isValidMimeType = mimeType && ALLOWED_MIME_TYPES.includes(mimeType);
+    const isValidExtension = ALLOWED_EXTENSIONS.includes(fileExtension);
+    
+    if (!isValidMimeType && !isValidExtension) {
+      showToast({
+        type: "error",
+        title: "Invalid File",
+        message: "Please select a JPEG or PNG image file",
+      });
+      return;
+    }
 
-      // Revoke old URL if exists
-      if (profilePhoto && profilePhoto.startsWith("blob:")) {
-        URL.revokeObjectURL(profilePhoto);
-      }
+    if (file.size > MAX_FILE_SIZE) {
+      showToast({
+        type: "error",
+        title: "File Too Large",
+        message: "Please select an image smaller than 5MB",
+      });
+      return;
+    }
 
-      // Create preview URL
-      const previewUrl = URL.createObjectURL(file);
-      setProfilePhoto(previewUrl);
+    const previewUrl = URL.createObjectURL(file);
+    setPreviewPhoto(previewUrl);
+    setSelectedFile(file);
+  };
 
-      // TODO: Upload to server here
-      // For now, just show preview
+  const handleSavePhoto = async () => {
+    if (!selectedFile || !role) return;
+
+    try {
+      // All roles upload avatar
+      await uploadAvatar(selectedFile);
+      
       showToast({
         type: "success",
-        title: "Photo Updated",
-        message: "Profile photo has been updated (preview only)",
+        title: "Avatar Updated",
+        message: "Your avatar has been updated successfully",
+      });
+      
+      await loadProfile();
+
+      setPreviewPhoto(null);
+      setSelectedFile(null);
+    } catch (e: any) {
+      showToast({
+        type: "error",
+        title: "Upload Failed",
+        message: e?.message || "Failed to upload image",
       });
     }
   };
 
+  const handleCancelPhoto = () => {
+    if (previewPhoto) {
+      URL.revokeObjectURL(previewPhoto);
+    }
+    setPreviewPhoto(null);
+    setSelectedFile(null);
+    
+    const fileInput = document.getElementById("profilePhoto") as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = "";
+    }
+  };
+
   const roleColor = useMemo(() => {
-    const r = (profile?.role || "") as UserRole | "";
+    const r = role || "";
     switch (r) {
       case "READER":
         return "bg-blue-600/10 text-blue-600 border-blue-300 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-700";
       case "REVIEWER":
         return "bg-emerald-600/10 text-emerald-600 border-emerald-300 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-700";
-      case "ORGANIZATION":
+      case "ORGANIZATION_ADMIN":
         return "bg-purple-600/10 text-purple-600 border-purple-300 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-700";
       case "BUSINESS_ADMIN":
         return "bg-amber-600/10 text-amber-600 border-amber-300 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-700";
@@ -138,7 +254,7 @@ export default function Page() {
       default:
         return "bg-gray-200 text-gray-700 border-stroke dark:bg-gray-700 dark:text-gray-300";
     }
-  }, [profile?.role]);
+  }, [role]);
 
   const formatDate = (iso?: string) => {
     if (!iso) return "-";
@@ -154,9 +270,27 @@ export default function Page() {
     }
   };
 
-  // Action handlers
-  const handleEditProfile = async (data: Partial<ProfileResponse>) => {
-    await updateProfile(data);
+  const formatEducationLevel = (level?: string) => {
+    if (!level) return "-";
+    return level
+      .split("_")
+      .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(" ");
+  };
+
+  const formatOrgType = (type?: string) => {
+    if (!type) return "-";
+    return type
+      .split("_")
+      .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(" ");
+  };
+
+  const handleEditProfile = async (data: Partial<ReaderProfileResponse | ReviewerProfileResponse | OrganizationProfileResponse>) => {
+    if (!role) {
+      throw new Error("Unable to determine user role");
+    }
+    await updateProfile(role, data);
     showToast({
       type: "success",
       title: "Profile Updated",
@@ -165,14 +299,29 @@ export default function Page() {
     await loadProfile();
   };
 
-  const handleChangeEmail = async (newEmail: string, password: string) => {
-    await changeEmail(newEmail, password);
+  const handleChangeEmail = async (newEmail: string, otp: string) => {
+    if (!otp) {
+      await requestEmailChange(newEmail);
+      showToast({
+        type: "success",
+        title: "OTP Sent",
+        message: "OTP has been sent to your current email address",
+      });
+      return { step: "verify" };
+    }
+    
+    await verifyEmailChangeOtp(otp);
     showToast({
       type: "success",
       title: "Email Changed",
-      message: "Your email has been changed successfully",
+      message: "Your email has been changed successfully. Please login again with your new email",
     });
-    await loadProfile();
+    
+    setTimeout(() => {
+      window.location.href = "/auth/sign-in";
+    }, 2000);
+    
+    return { step: "complete" };
   };
 
   const handleChangePassword = async (
@@ -183,7 +332,7 @@ export default function Page() {
     if (newPassword !== confirmPassword) {
       throw new Error("Passwords do not match");
     }
-    await changePassword(currentPassword, newPassword);
+    await changePassword(currentPassword, newPassword, confirmPassword);
     showToast({
       type: "success",
       title: "Password Changed",
@@ -191,20 +340,19 @@ export default function Page() {
     });
   };
 
-  const handleDeleteAccount = async (password: string) => {
-    await deleteAccount(password);
+  const handleDeleteAccount = async () => {
+    await deleteAccount();
     showToast({
       type: "success",
       title: "Account Deleted",
       message: "Your account has been deleted successfully",
     });
-    // Redirect to login or home
     setTimeout(() => {
       window.location.href = "/auth/sign-in";
     }, 2000);
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className={styles["profile-container"]}>
         <Breadcrumb pageName="Profile" />
@@ -216,11 +364,13 @@ export default function Page() {
     );
   }
 
-  if (error) {
+  if (error || !isAuthenticated || !role) {
     return (
       <div className={styles["profile-container"]}>
         <Breadcrumb pageName="Profile" />
-        <div className={styles["profile-error"]}>{error}</div>
+        <div className={styles["profile-error"]}>
+          {error || "Please sign in to view your profile"}
+        </div>
       </div>
     );
   }
@@ -239,12 +389,14 @@ export default function Page() {
             className={styles["profile-cover-image"]}
             width={970}
             height={260}
+            loading="eager"
+            priority
           />
           {/* Role badge */}
-          {profile?.role && (
+          {role && (
             <span className={`${styles["profile-role-badge"]} ${roleColor}`}>
               <Shield className="h-3.5 w-3.5" />
-              {profile.role.replace("_", " ")}
+              {role.replace("_", " ")}
             </span>
           )}
         </div>
@@ -254,27 +406,88 @@ export default function Page() {
           {/* Profile Photo */}
           <div className={styles["profile-photo-wrapper"]}>
             <div className={styles["profile-photo-container"]}>
-              <Image
-                src={profilePhoto}
-                width={160}
-                height={160}
-                className={styles["profile-photo-image"]}
-                alt="profile"
-              />
-              <label
-                htmlFor="profilePhoto"
-                className={styles["profile-photo-label"]}
-              >
-                <Camera className="h-4 w-4" />
-                <input
-                  type="file"
-                  name="profilePhoto"
-                  id="profilePhoto"
-                  className={styles["profile-photo-input"]}
-                  accept="image/png, image/jpg, image/jpeg, image/webp"
-                  onChange={handleProfilePhotoChange}
-                />
-              </label>
+              {(() => {
+                const imageSrc = previewPhoto || profilePhoto || "/images/user.png";
+                
+                if (!imageSrc || typeof imageSrc !== "string") {
+                  return (
+                    <img
+                      src="/images/user.png"
+                      alt="profile"
+                      className={styles["profile-photo-image"]}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  );
+                }
+                
+                const isExternalUrl = imageSrc.startsWith("http://") || imageSrc.startsWith("https://");
+                const isBlobUrl = imageSrc.startsWith("blob:");
+                
+                if (isExternalUrl || isBlobUrl) {
+                  return (
+                    <img
+                      src={imageSrc}
+                      alt="profile"
+                      className={styles["profile-photo-image"]}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      onError={(e) => {
+                        const target = e.currentTarget as HTMLImageElement;
+                        if (target.src !== "/images/user.png") {
+                          target.src = "/images/user.png";
+                        }
+                      }}
+                    />
+                  );
+                }
+                
+                return (
+                  <Image
+                    src={imageSrc}
+                    fill
+                    className={styles["profile-photo-image"]}
+                    alt="profile"
+                    sizes="(max-width: 640px) 144px, 208px"
+                  />
+                );
+              })()}
+              {!previewPhoto && (
+                <label
+                  htmlFor="profilePhoto"
+                  className={styles["profile-photo-label"]}
+                >
+                  <Camera className="h-4 w-4" />
+                  <input
+                    type="file"
+                    name="profilePhoto"
+                    id="profilePhoto"
+                    className={styles["profile-photo-input"]}
+                    accept="image/jpeg, image/jpg, image/png"
+                    onChange={handleProfilePhotoChange}
+                  />
+                </label>
+              )}
+              {previewPhoto && (
+                <div className={styles["profile-photo-actions"]}>
+                  <button
+                    onClick={handleSavePhoto}
+                    className={styles["profile-photo-save"]}
+                    type="button"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={handleCancelPhoto}
+                    className={styles["profile-photo-cancel"]}
+                    type="button"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -284,7 +497,7 @@ export default function Page() {
 
             {/* Action Buttons */}
             <div className={styles["profile-actions"]}>
-              {(profile?.role === "READER" || profile?.role === "REVIEWER") && (
+              {(role === "READER" || role === "REVIEWER" || role === "ORGANIZATION_ADMIN") && (
                 <button
                   onClick={() => setIsEditProfileOpen(true)}
                   className={styles["btn-edit-profile"]}
@@ -337,83 +550,178 @@ export default function Page() {
                   </div>
                 </div>
               )}
-              {profile?.dateOfBirth && (
-                <div className={styles["profile-detail-item"]}>
-                  <div
-                    className={`${styles["profile-detail-icon-wrapper"]} ${styles["blue"]}`}
-                  >
-                    <Calendar
-                      className={`${styles["profile-detail-icon"]} ${styles["blue"]}`}
-                    />
-                  </div>
-                  <div>
-                    <p className={styles["profile-detail-label"]}>
-                      Date of Birth
-                    </p>
-                    <p className={styles["profile-detail-value"]}>
-                      {formatDate(profile.dateOfBirth)}
-                    </p>
-                  </div>
-                </div>
-              )}
-              {profile?.username && (
-                <div className={styles["profile-detail-item"]}>
-                  <div
-                    className={`${styles["profile-detail-icon-wrapper"]} ${styles["primary"]}`}
-                  >
-                    <UserIcon
-                      className={`${styles["profile-detail-icon"]} ${styles["primary"]}`}
-                    />
-                  </div>
-                  <div>
-                    <p className={styles["profile-detail-label"]}>Username</p>
-                    <p className={styles["profile-detail-value"]}>
-                      {profile?.username}
-                    </p>
-                  </div>
-                </div>
-              )}
-              {profile?.coinBalance && (
-                <div className={styles["profile-detail-item"]}>
-                  <div
-                    className={`${styles["profile-detail-icon-wrapper"]} ${styles["yellow"]}`}
-                  >
-                    <Coins
-                      className={`${styles["profile-detail-icon"]} ${styles["yellow"]}`}
-                    />
-                  </div>
-                  <div>
-                    <p className={styles["profile-detail-label"]}>
-                      Coin Balance
-                    </p>
-                    <p className={styles["profile-detail-value"]}>
-                      {profile?.coinBalance.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {profile?.role === "REVIEWER" && profile.ordid && (
-                <div className={styles["profile-detail-item"]}>
-                  <div
-                    className={`${styles["profile-detail-icon-wrapper"]} ${styles["purple"]}`}
-                  >
-                    <Hash
-                      className={`${styles["profile-detail-icon"]} ${styles["purple"]}`}
-                    />
-                  </div>
-                  <div>
-                    <p className={styles["profile-detail-label"]}>ORDID</p>
-                    <p className={styles["profile-detail-value"]}>
-                      {profile?.ordid}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {profile?.role === "ORGANIZATION" && (
+              {/* Reader/Reviewer common fields */}
+              {(role === "READER" || role === "REVIEWER") && (
                 <>
-                  {profile?.organizationName && (
+                  {role === "READER" && (profile as ReaderProfileResponse & { role: "READER" })?.dob && (
+                    <div className={styles["profile-detail-item"]}>
+                      <div
+                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["blue"]}`}
+                      >
+                        <Calendar
+                          className={`${styles["profile-detail-icon"]} ${styles["blue"]}`}
+                        />
+                      </div>
+                      <div>
+                        <p className={styles["profile-detail-label"]}>
+                          Date of Birth
+                        </p>
+                        <p className={styles["profile-detail-value"]}>
+                          {formatDate((profile as ReaderProfileResponse & { role: "READER" }).dob || undefined)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {role === "REVIEWER" && (profile as ReviewerProfileResponse & { role: "REVIEWER" })?.dateOfBirth && (
+                    <div className={styles["profile-detail-item"]}>
+                      <div
+                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["blue"]}`}
+                      >
+                        <Calendar
+                          className={`${styles["profile-detail-icon"]} ${styles["blue"]}`}
+                        />
+                      </div>
+                      <div>
+                        <p className={styles["profile-detail-label"]}>
+                          Date of Birth
+                        </p>
+                        <p className={styles["profile-detail-value"]}>
+                          {formatDate((profile as ReviewerProfileResponse & { role: "REVIEWER" }).dateOfBirth || undefined)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  <div className={styles["profile-detail-item"]}>
+                    <div
+                      className={`${styles["profile-detail-icon-wrapper"]} ${styles["yellow"]}`}
+                    >
+                      <Coins
+                        className={`${styles["profile-detail-icon"]} ${styles["yellow"]}`}
+                      />
+                    </div>
+                    <div>
+                      <p className={styles["profile-detail-label"]}>
+                        Points
+                      </p>
+                      <p className={styles["profile-detail-value"]}>
+                        {(profile?.point ?? 0).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Reviewer specific fields */}
+              {role === "REVIEWER" && (
+                <>
+                  {(profile as ReviewerProfileResponse & { role: "REVIEWER" })?.educationLevel && (
+                    <div className={styles["profile-detail-item"]}>
+                      <div
+                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["blue"]}`}
+                      >
+                        <GraduationCap
+                          className={`${styles["profile-detail-icon"]} ${styles["blue"]}`}
+                        />
+                      </div>
+                      <div>
+                        <p className={styles["profile-detail-label"]}>Education Level</p>
+                        <p className={styles["profile-detail-value"]}>
+                          {formatEducationLevel((profile as ReviewerProfileResponse & { role: "REVIEWER" }).educationLevel)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {(profile as ReviewerProfileResponse & { role: "REVIEWER" })?.organizationName && (
+                    <div className={styles["profile-detail-item"]}>
+                      <div
+                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["blue"]}`}
+                      >
+                        <Building2
+                          className={`${styles["profile-detail-icon"]} ${styles["blue"]}`}
+                        />
+                      </div>
+                      <div>
+                        <p className={styles["profile-detail-label"]}>Organization</p>
+                        <p className={styles["profile-detail-value"]}>
+                          {(profile as ReviewerProfileResponse & { role: "REVIEWER" }).organizationName}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {(profile as ReviewerProfileResponse & { role: "REVIEWER" })?.organizationEmail && (
+                    <div className={styles["profile-detail-item"]}>
+                      <div
+                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["primary"]}`}
+                      >
+                        <Mail
+                          className={`${styles["profile-detail-icon"]} ${styles["primary"]}`}
+                        />
+                      </div>
+                      <div>
+                        <p className={styles["profile-detail-label"]}>Organization Email</p>
+                        <p className={styles["profile-detail-value"]}>
+                          {(profile as ReviewerProfileResponse & { role: "REVIEWER" }).organizationEmail}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {(profile as ReviewerProfileResponse & { role: "REVIEWER" })?.ordid && (
+                    <div className={styles["profile-detail-item"]}>
+                      <div
+                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["purple"]}`}
+                      >
+                        <Hash
+                          className={`${styles["profile-detail-icon"]} ${styles["purple"]}`}
+                        />
+                      </div>
+                      <div>
+                        <p className={styles["profile-detail-label"]}>ORCID</p>
+                        <p className={styles["profile-detail-value"]}>
+                          {(profile as ReviewerProfileResponse & { role: "REVIEWER" }).ordid}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {(profile as ReviewerProfileResponse & { role: "REVIEWER" })?.credentialFileUrls &&
+                    (profile as ReviewerProfileResponse & { role: "REVIEWER" }).credentialFileUrls.length > 0 && (
+                    <div className={`${styles["profile-detail-item"]} ${styles["profile-detail-item-full-width"]}`}>
+                      <div
+                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["green"]}`}
+                      >
+                        <FileText
+                          className={`${styles["profile-detail-icon"]} ${styles["green"]}`}
+                        />
+                      </div>
+                      <div style={{ width: "100%" }}>
+                        <p className={styles["profile-detail-label"]}>Certificate Files</p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "0.25rem" }}>
+                          {(profile as ReviewerProfileResponse & { role: "REVIEWER" }).credentialFileUrls.map((url, index) => (
+                            <a
+                              key={index}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={styles["profile-detail-value"]}
+                              style={{
+                                color: "var(--primary-color, #6366f1)",
+                                textDecoration: "underline",
+                                wordBreak: "break-all",
+                              }}
+                            >
+                              Certificate {index + 1}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Organization Admin specific fields */}
+              {role === "ORGANIZATION_ADMIN" && (
+                <>
+                  {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" })?.orgName && (
                     <div className={styles["profile-detail-item"]}>
                       <div
                         className={`${styles["profile-detail-icon-wrapper"]} ${styles["blue"]}`}
@@ -427,12 +735,31 @@ export default function Page() {
                           Organization
                         </p>
                         <p className={styles["profile-detail-value"]}>
-                          {profile?.organizationName}
+                          {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" }).orgName}
                         </p>
                       </div>
                     </div>
                   )}
-                  {profile?.organizationEmail && (
+                  {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" })?.orgType && (
+                    <div className={styles["profile-detail-item"]}>
+                      <div
+                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["purple"]}`}
+                      >
+                        <Building2
+                          className={`${styles["profile-detail-icon"]} ${styles["purple"]}`}
+                        />
+                      </div>
+                      <div>
+                        <p className={styles["profile-detail-label"]}>
+                          Organization Type
+                        </p>
+                        <p className={styles["profile-detail-value"]}>
+                          {formatOrgType((profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" }).orgType)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" })?.orgEmail && (
                     <div className={styles["profile-detail-item"]}>
                       <div
                         className={`${styles["profile-detail-icon-wrapper"]} ${styles["primary"]}`}
@@ -446,12 +773,12 @@ export default function Page() {
                           Org Email
                         </p>
                         <p className={styles["profile-detail-value"]}>
-                          {profile?.organizationEmail}
+                          {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" }).orgEmail}
                         </p>
                       </div>
                     </div>
                   )}
-                  {profile?.organizationHotline && (
+                  {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" })?.orgHotline && (
                     <div className={styles["profile-detail-item"]}>
                       <div
                         className={`${styles["profile-detail-icon-wrapper"]} ${styles["green"]}`}
@@ -465,12 +792,31 @@ export default function Page() {
                           Hotline
                         </p>
                         <p className={styles["profile-detail-value"]}>
-                          {profile?.organizationHotline}
+                          {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" }).orgHotline}
                         </p>
                       </div>
                     </div>
                   )}
-                  {profile?.organizationAddress && (
+                  {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" })?.orgRegistrationNumber && (
+                    <div className={styles["profile-detail-item"]}>
+                      <div
+                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["yellow"]}`}
+                      >
+                        <FileCheck
+                          className={`${styles["profile-detail-icon"]} ${styles["yellow"]}`}
+                        />
+                      </div>
+                      <div>
+                        <p className={styles["profile-detail-label"]}>
+                          Registration Number
+                        </p>
+                        <p className={styles["profile-detail-value"]}>
+                          {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" }).orgRegistrationNumber}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" })?.orgAddress && (
                     <div
                       className={`${styles["profile-detail-item"]} ${styles["profile-detail-item-full-width"]}`}
                     >
@@ -486,7 +832,7 @@ export default function Page() {
                           Address
                         </p>
                         <p className={styles["profile-detail-value"]}>
-                          {profile?.organizationAddress}
+                          {(profile as OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" }).orgAddress}
                         </p>
                       </div>
                     </div>
@@ -509,7 +855,9 @@ export default function Page() {
         isOpen={isChangeEmailOpen}
         onClose={() => setIsChangeEmailOpen(false)}
         currentEmail={profile?.email || ""}
-        onSave={handleChangeEmail}
+        onRequestEmailChange={async (newEmail: string, otp?: string) => {
+          return await handleChangeEmail(newEmail, otp || "");
+        }}
       />
       <ChangePasswordModal
         isOpen={isChangePasswordOpen}
@@ -520,7 +868,7 @@ export default function Page() {
         isOpen={isDeleteAccountOpen}
         onClose={() => setIsDeleteAccountOpen(false)}
         email={profile?.email || ""}
-        onDelete={handleDeleteAccount}
+        onDelete={() => handleDeleteAccount()}
       />
     </div>
   );

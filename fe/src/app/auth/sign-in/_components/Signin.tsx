@@ -17,7 +17,7 @@ import styles from "../styles.module.css";
 type FormValues = {
   email: string;
   password: string;
-  role: "READER" | "REVIEWER" | "ORGANIZATION" | "SYSTEM_ADMIN" | "BUSINESS_ADMIN";
+  role: "READER" | "REVIEWER" | "ORGANIZATION_ADMIN" | "SYSTEM_ADMIN" | "BUSINESS_ADMIN";
   remember: boolean;
 };
 
@@ -66,7 +66,7 @@ export default function Signin() {
       const roleRoutes: Record<typeof data.role, string> = {
         READER: '/',
         REVIEWER: '/reviewer',
-        ORGANIZATION: '/organization-admin',
+        ORGANIZATION_ADMIN: '/organization-admin',
         SYSTEM_ADMIN: '/admin',
         BUSINESS_ADMIN: '/business-admin',
       };
@@ -127,7 +127,7 @@ export default function Signin() {
               >
                 <option value="READER">Reader</option>
                 <option value="REVIEWER">Reviewer</option>
-                <option value="ORGANIZATION">Organization</option>
+                <option value="ORGANIZATION_ADMIN">Organization Admin</option>
                 <option value="SYSTEM_ADMIN">System Admin</option>
                 <option value="BUSINESS_ADMIN">Business Admin</option>
               </select>

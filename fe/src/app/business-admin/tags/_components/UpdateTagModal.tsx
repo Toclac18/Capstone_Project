@@ -28,7 +28,8 @@ export function UpdateTagModal({
   useEffect(() => {
     if (tag) {
       setName(tag.name);
-      setStatus(tag.status);
+      // Ensure status is ACTIVE or INACTIVE (for tags that can be edited)
+      setStatus(tag.status === "ACTIVE" || tag.status === "INACTIVE" ? tag.status : "ACTIVE");
       setError(null);
     }
   }, [tag]);

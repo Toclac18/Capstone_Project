@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import type { Tag, TagQueryParams, TagResponse, TagStatus } from "../api";
-import { getTags, createTag, updateTag, deleteTag, approveTag } from "../api";
+import { getTags, createTag, updateTag, deleteTag, approveTag, rejectTag } from "../api";
 import { Pagination } from "@/components/ui/pagination";
 import { AddTagModal } from "./AddTagModal";
 import { UpdateTagModal } from "./UpdateTagModal";
@@ -77,7 +77,7 @@ export function TagManagement() {
         const { sortBy: _sortBy, sortOrder: _sortOrder, page: _page, limit: _limit, ...filterParams } = queryParams;
         const response: TagResponse = await getTags(filterParams);
         setAllTags(response.tags);
-        setTotalItems(response.tags.length); // Total after filtering (before pagination)
+        setTotalItems(response.total); // Use total from backend response
         setCurrentPage(queryParams.page || 1);
       } catch (e: unknown) {
         const errorMessage =
@@ -177,19 +177,19 @@ export function TagManagement() {
     setIsUpdateModalOpen(true);
   };
 
-  // Handle reject tag
+  // Handle reject tag (using review endpoint with approved: false)
   const handleRejectTag = useCallback(
     async (id: string) => {
-      await deleteTag(id);
+      await rejectTag(id);
       await fetchTags(filters);
     },
     [filters, fetchTags]
   );
 
-  // Handle approve tag
+  // Handle approve tag (using review endpoint with approved: true)
   const handleApproveTag = useCallback(
     async (id: string) => {
-      await approveTag(id);
+      await approveTag(id, true);
       await fetchTags(filters);
     },
     [filters, fetchTags]
@@ -208,11 +208,11 @@ export function TagManagement() {
   };
 
   // Handle column sort
-  const handleSort = useCallback((column: "name" | "createdDate" | "id") => {
+  const handleSort = useCallback((column: "name" | "createdDate") => {
     const currentSortBy = filters.sortBy;
     const currentSortOrder = filters.sortOrder;
     
-    let newSortBy: "name" | "createdDate" | "id" | undefined = column;
+    let newSortBy: "name" | "createdDate" | undefined = column;
     let newSortOrder: "asc" | "desc" | undefined = "asc";
     
     // If clicking on the same column, cycle through: undefined -> asc -> desc -> undefined
@@ -258,9 +258,6 @@ export function TagManagement() {
       if (sortBy === "name") {
         aValue = a.name.toLowerCase();
         bValue = b.name.toLowerCase();
-      } else if (sortBy === "id") {
-        aValue = a.id.toLowerCase();
-        bValue = b.id.toLowerCase();
       } else {
         aValue = new Date(a.createdDate).getTime();
         bValue = new Date(b.createdDate).getTime();
@@ -280,7 +277,7 @@ export function TagManagement() {
   }, [allTags, filters.sortBy, filters.sortOrder, currentPage, itemsPerPage]);
 
   // Get sort icon for a column
-  const getSortIcon = (column: "name" | "createdDate" | "id") => {
+  const getSortIcon = (column: "name" | "createdDate") => {
     const sortBy = filters.sortBy;
     const sortOrder = filters.sortOrder;
     
@@ -345,7 +342,7 @@ export function TagManagement() {
                 type="text"
                 {...register("search")}
                 className={styles["search-input"]}
-                placeholder="Search by tag name or ID..."
+                placeholder="Search by tag name..."
                 disabled={loading}
               />
             </div>
@@ -372,7 +369,7 @@ export function TagManagement() {
         </div>
 
         {/* Filter Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <div className="grid grid-cols-3 gap-4 mb-4">
           <div>
             <label htmlFor="status" className={styles["label"]}>
               Status
@@ -505,7 +502,6 @@ export function TagManagement() {
           <>
             <table className={styles["table"]}>
               <colgroup>
-                <col className={styles["col-id"]} />
                 <col className={styles["col-name"]} />
                 <col className={styles["col-status"]} />
                 <col className={styles["col-date"]} />
@@ -513,15 +509,6 @@ export function TagManagement() {
               </colgroup>
               <thead className={styles["table-header"]}>
                 <tr>
-                  <th 
-                    className={styles["table-header-cell"] + " " + styles["sortable-header"]}
-                    onClick={() => handleSort("id")}
-                  >
-                    <div className="flex items-center">
-                      Tag ID
-                      {getSortIcon("id")}
-                    </div>
-                  </th>
                   <th 
                     className={styles["table-header-cell"] + " " + styles["sortable-header"]}
                     onClick={() => handleSort("name")}
@@ -547,9 +534,6 @@ export function TagManagement() {
               <tbody className={styles["table-body"]}>
                 {sortedAndPaginatedTags.map((tag) => (
                   <tr key={tag.id} className={styles["table-row"]}>
-                    <td className={styles["table-cell"]}>
-                      <span className={styles["table-cell-main"]}>{tag.id}</span>
-                    </td>
                     <td className={styles["table-cell"]}>
                       <span className={styles["table-cell-main"]}>{tag.name}</span>
                     </td>

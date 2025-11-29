@@ -10,7 +10,7 @@ interface UpdateTypeModalProps {
   isOpen: boolean;
   onClose: () => void;
   type: Type | null;
-  onUpdate: (id: string, name: string) => Promise<void>;
+  onUpdate: (id: string, code: number, name: string, description?: string) => Promise<void>;
 }
 
 export function UpdateTypeModal({
@@ -20,6 +20,7 @@ export function UpdateTypeModal({
   onUpdate,
 }: UpdateTypeModalProps) {
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { showToast } = useToast();
@@ -27,6 +28,7 @@ export function UpdateTypeModal({
   useEffect(() => {
     if (type) {
       setName(type.name);
+      setDescription(type.description || "");
       setError(null);
     }
   }, [type]);
@@ -44,7 +46,7 @@ export function UpdateTypeModal({
 
       try {
         setIsLoading(true);
-        await onUpdate(type.id, name.trim());
+        await onUpdate(type.id, type.code, name.trim(), description.trim() || undefined);
         onClose();
         showToast({
           type: "success",
@@ -66,13 +68,14 @@ export function UpdateTypeModal({
         setIsLoading(false);
       }
     },
-    [type, name, onUpdate, onClose, showToast]
+    [type, name, description, onUpdate, onClose, showToast]
   );
 
   const handleClose = useCallback(() => {
     if (isLoading) return;
     if (type) {
       setName(type.name);
+      setDescription(type.description || "");
     }
     setError(null);
     onClose();
@@ -117,6 +120,21 @@ export function UpdateTypeModal({
                 placeholder="Enter type name"
                 disabled={isLoading}
                 autoFocus
+              />
+            </div>
+
+            <div className={styles["form-group"]}>
+              <label htmlFor="updateTypeDescription" className={styles["form-label"]}>
+                Description
+              </label>
+              <textarea
+                id="updateTypeDescription"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className={styles["form-input"]}
+                placeholder="Enter type description"
+                disabled={isLoading}
+                rows={4}
               />
             </div>
 

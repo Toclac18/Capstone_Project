@@ -2,7 +2,9 @@ import { BaseEntity } from './base';
 
 export interface DocumentType extends BaseEntity {
   id: string;
+  code: number;
   name: string;
+  description?: string;
 }
 
 export interface TypeQueryParams {
@@ -11,7 +13,7 @@ export interface TypeQueryParams {
   search?: string;
   dateFrom?: string;
   dateTo?: string;
-  sortBy?: "name" | "createdAt" | "id";
+  sortBy?: "name" | "createdAt";
   sortOrder?: "asc" | "desc";
 }
 
@@ -23,10 +25,14 @@ export interface TypeResponse {
 }
 
 export interface CreateTypeRequest {
+  code: number;
   name: string;
+  description?: string;
 }
 
 export interface UpdateTypeRequest {
-  name?: string;
+  code: number;
+  name: string;
+  description?: string;
 }
 

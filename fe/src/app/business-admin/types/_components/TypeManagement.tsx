@@ -69,7 +69,7 @@ export function TypeManagement() {
         const { sortBy: _sortBy, sortOrder: _sortOrder, page: _page, limit: _limit, ...filterParams } = queryParams;
         const response: TypeResponse = await getTypes(filterParams);
         setAllTypes(response.types);
-        setTotalItems(response.types.length); // Total after filtering (before pagination)
+        setTotalItems(response.total); // Use total from backend response
         setCurrentPage(queryParams.page || 1);
       } catch (e: unknown) {
         const errorMessage =
@@ -143,8 +143,8 @@ export function TypeManagement() {
 
   // Handle add type
   const handleAddType = useCallback(
-    async (name: string) => {
-      await createType({ name });
+    async (code: number, name: string, description?: string) => {
+      await createType({ code, name, description });
       await fetchTypes(filters);
     },
     [filters, fetchTypes]
@@ -152,8 +152,8 @@ export function TypeManagement() {
 
   // Handle update type
   const handleUpdateType = useCallback(
-    async (id: string, name: string) => {
-      await updateType(id, { name });
+    async (id: string, code: number, name: string, description?: string) => {
+      await updateType(id, { code, name, description });
       await fetchTypes(filters);
     },
     [filters, fetchTypes]
@@ -166,11 +166,11 @@ export function TypeManagement() {
   };
 
   // Handle column sort
-  const handleSort = useCallback((column: "name" | "createdAt" | "id") => {
+  const handleSort = useCallback((column: "name" | "createdAt") => {
     const currentSortBy = filters.sortBy;
     const currentSortOrder = filters.sortOrder;
     
-    let newSortBy: "name" | "createdAt" | "id" | undefined = column;
+    let newSortBy: "name" | "createdAt" | undefined = column;
     let newSortOrder: "asc" | "desc" | undefined = "asc";
     
     // If clicking on the same column, cycle through: undefined -> asc -> desc -> undefined
@@ -216,9 +216,6 @@ export function TypeManagement() {
       if (sortBy === "name") {
         aValue = a.name.toLowerCase();
         bValue = b.name.toLowerCase();
-      } else if (sortBy === "id") {
-        aValue = a.id.toLowerCase();
-        bValue = b.id.toLowerCase();
       } else {
         aValue = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         bValue = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -238,7 +235,7 @@ export function TypeManagement() {
   }, [allTypes, filters.sortBy, filters.sortOrder, currentPage, itemsPerPage]);
 
   // Get sort icon for a column
-  const getSortIcon = (column: "name" | "createdAt" | "id") => {
+  const getSortIcon = (column: "name" | "createdAt") => {
     const sortBy = filters.sortBy;
     const sortOrder = filters.sortOrder;
     
@@ -304,7 +301,7 @@ export function TypeManagement() {
                 type="text"
                 {...register("search")}
                 className={styles["search-input"]}
-                placeholder="Search by type name or ID..."
+                placeholder="Search by type name..."
                 disabled={loading}
               />
             </div>
@@ -331,7 +328,7 @@ export function TypeManagement() {
         </div>
 
         {/* Filter Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
             <label htmlFor="dateFrom" className={styles["label"]}>
               Date From
@@ -430,22 +427,13 @@ export function TypeManagement() {
           <>
             <table className={styles["table"]}>
               <colgroup>
-                <col className={styles["col-id"]} />
                 <col className={styles["col-name"]} />
+                <col className={styles["col-description"]} />
                 <col className={styles["col-date"]} />
                 <col className={styles["col-action"]} />
               </colgroup>
               <thead className={styles["table-header"]}>
                 <tr>
-                  <th 
-                    className={styles["table-header-cell"] + " " + styles["sortable-header"]}
-                    onClick={() => handleSort("id")}
-                  >
-                    <div className="flex items-center">
-                      Type ID
-                      {getSortIcon("id")}
-                    </div>
-                  </th>
                   <th 
                     className={styles["table-header-cell"] + " " + styles["sortable-header"]}
                     onClick={() => handleSort("name")}
@@ -454,6 +442,9 @@ export function TypeManagement() {
                       Type Name
                       {getSortIcon("name")}
                     </div>
+                  </th>
+                  <th className={styles["table-header-cell"]}>
+                    Description
                   </th>
                   <th 
                     className={styles["table-header-cell"] + " " + styles["sortable-header"]}
@@ -471,10 +462,12 @@ export function TypeManagement() {
                 {sortedAndPaginatedTypes.map((type) => (
                   <tr key={type.id} className={styles["table-row"]}>
                     <td className={styles["table-cell"]}>
-                      <span className={styles["table-cell-main"]}>{type.id}</span>
+                      <span className={styles["table-cell-main"]}>{type.name}</span>
                     </td>
                     <td className={styles["table-cell"]}>
-                      <span className={styles["table-cell-main"]}>{type.name}</span>
+                      <span className={styles["table-cell-description"]}>
+                        {type.description || "N/A"}
+                      </span>
                     </td>
                     <td className={styles["table-cell"]}>
                       {formatDate(type)}

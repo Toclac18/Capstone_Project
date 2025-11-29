@@ -52,10 +52,16 @@ export async function deleteTag(id: string): Promise<void> {
 }
 
 /**
- * Approve a pending tag
+ * Review (approve/reject) a pending tag
  */
-export async function approveTag(id: string): Promise<Tag> {
-  const res = await apiClient.post<Tag>(`/business-admin/tags/${id}`);
-  return res.data;
+export async function approveTag(id: string, approved: boolean = true): Promise<void> {
+  await apiClient.post(`/business-admin/tags/${id}`, { approved });
+}
+
+/**
+ * Reject a pending tag (alias for approveTag with approved=false)
+ */
+export async function rejectTag(id: string): Promise<void> {
+  await approveTag(id, false);
 }
 

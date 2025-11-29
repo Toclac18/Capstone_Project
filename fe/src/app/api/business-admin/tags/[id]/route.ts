@@ -37,16 +37,43 @@ export async function PUT(
     fh.set("Authorization", bearerToken);
   }
 
-  const url = `${BE_BASE}/api/business-admin/tags/${id}`;
+  const url = `${BE_BASE}/api/admin/tags/${id}`;
+
+  // Read and stringify request body to avoid duplex option error
+  let body: string;
+  try {
+    const jsonBody = await request.json();
+    body = JSON.stringify(jsonBody);
+  } catch {
+    body = JSON.stringify({});
+  }
 
   const upstream = await fetch(url, {
     method: "PUT",
     headers: fh,
-    body: request.body,
+    body,
     cache: "no-store",
   });
 
+  // Backend returns ApiResponse<TagResponse>, extract data
+  if (!upstream.ok) {
     return proxyJsonResponse(upstream, { mode: "real" });
+  }
+
+  const text = await upstream.text();
+  try {
+    const apiResponse = JSON.parse(text);
+    const data = apiResponse.data || apiResponse;
+    return jsonResponse(data, {
+      status: upstream.status,
+      headers: {
+        "content-type": "application/json",
+        "x-mode": "real",
+      },
+    });
+  } catch {
+    return proxyJsonResponse(upstream, { mode: "real" });
+  }
 }
 
 export async function DELETE(
@@ -84,7 +111,7 @@ export async function DELETE(
     fh.set("Authorization", bearerToken);
   }
 
-  const url = `${BE_BASE}/api/business-admin/tags/${id}`;
+  const url = `${BE_BASE}/api/admin/tags/${id}`;
 
   const upstream = await fetch(url, {
     method: "DELETE",
@@ -92,11 +119,28 @@ export async function DELETE(
     cache: "no-store",
   });
 
+  // Backend returns ApiResponse<Void> for DELETE
+  if (!upstream.ok) {
     return proxyJsonResponse(upstream, { mode: "real" });
+  }
+
+  const text = await upstream.text();
+  try {
+    const apiResponse = JSON.parse(text);
+    return jsonResponse(apiResponse.data || { message: apiResponse.message || "Tag deleted successfully" }, {
+      status: upstream.status,
+      headers: {
+        "content-type": "application/json",
+        "x-mode": "real",
+      },
+    });
+  } catch {
+    return proxyJsonResponse(upstream, { mode: "real" });
+  }
 }
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
@@ -127,13 +171,44 @@ export async function POST(
     fh.set("Authorization", bearerToken);
   }
 
-  const url = `${BE_BASE}/api/business-admin/tags/${id}/approve`;
+  // Read request body once for review endpoint
+  let requestBody: { approved?: boolean } = {};
+  try {
+    const bodyText = await request.text();
+    if (bodyText) {
+      requestBody = JSON.parse(bodyText);
+    }
+  } catch {
+    // If body parsing fails, use default
+  }
+  
+  const approved = requestBody.approved ?? true; // Default to approve if not specified
+
+  const url = `${BE_BASE}/api/admin/tags/${id}/review`;
 
   const upstream = await fetch(url, {
     method: "POST",
     headers: fh,
+    body: JSON.stringify({ approved }),
     cache: "no-store",
   });
 
+  // Backend returns ApiResponse<Void> for review
+  if (!upstream.ok) {
     return proxyJsonResponse(upstream, { mode: "real" });
+  }
+
+  const text = await upstream.text();
+  try {
+    const apiResponse = JSON.parse(text);
+    return jsonResponse(apiResponse.data || { message: apiResponse.message || "Tag reviewed successfully" }, {
+      status: upstream.status,
+      headers: {
+        "content-type": "application/json",
+        "x-mode": "real",
+      },
+    });
+  } catch {
+    return proxyJsonResponse(upstream, { mode: "real" });
+  }
 }

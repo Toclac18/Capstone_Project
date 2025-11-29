@@ -8,10 +8,11 @@ import styles from "../styles.module.css";
 interface AddDomainModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (name: string) => Promise<void>;
+  onAdd: (code: number, name: string) => Promise<void>;
 }
 
 export function AddDomainModal({ isOpen, onClose, onAdd }: AddDomainModalProps) {
+  const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +23,17 @@ export function AddDomainModal({ isOpen, onClose, onAdd }: AddDomainModalProps) 
       e.preventDefault();
       setError(null);
 
+      if (!code.trim()) {
+        setError("Domain code cannot be empty.");
+        return;
+      }
+
+      const codeNum = parseInt(code.trim(), 10);
+      if (isNaN(codeNum) || codeNum < 1) {
+        setError("Domain code must be a positive number.");
+        return;
+      }
+
       if (!name.trim()) {
         setError("Domain name cannot be empty.");
         return;
@@ -29,7 +41,8 @@ export function AddDomainModal({ isOpen, onClose, onAdd }: AddDomainModalProps) 
 
       try {
         setIsLoading(true);
-        await onAdd(name.trim());
+        await onAdd(codeNum, name.trim());
+        setCode("");
         setName("");
         onClose();
         showToast({
@@ -52,11 +65,12 @@ export function AddDomainModal({ isOpen, onClose, onAdd }: AddDomainModalProps) 
         setIsLoading(false);
       }
     },
-    [name, onAdd, onClose, showToast]
+    [code, name, onAdd, onClose, showToast]
   );
 
   const handleClose = useCallback(() => {
     if (isLoading) return;
+    setCode("");
     setName("");
     setError(null);
     onClose();
@@ -89,6 +103,23 @@ export function AddDomainModal({ isOpen, onClose, onAdd }: AddDomainModalProps) 
           {/* Content */}
           <form id="addDomainForm" onSubmit={handleSubmit} className={styles["modal-content"]}>
             <div className={styles["form-group"]}>
+              <label htmlFor="domainCode" className={styles["form-label"]}>
+                Domain Code <span className={styles["required"]}>*</span>
+              </label>
+              <input
+                id="domainCode"
+                type="number"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className={styles["form-input"]}
+                placeholder="Enter domain code (positive number)"
+                disabled={isLoading}
+                min="1"
+                autoFocus
+              />
+            </div>
+
+            <div className={styles["form-group"]}>
               <label htmlFor="domainName" className={styles["form-label"]}>
                 Domain Name <span className={styles["required"]}>*</span>
               </label>
@@ -100,10 +131,10 @@ export function AddDomainModal({ isOpen, onClose, onAdd }: AddDomainModalProps) 
                 className={styles["form-input"]}
                 placeholder="Enter domain name"
                 disabled={isLoading}
-                autoFocus
               />
-              {error && <p className={styles["form-error"]}>{error}</p>}
             </div>
+
+            {error && <p className={styles["form-error"]}>{error}</p>}
           </form>
 
           {/* Footer */}
@@ -120,7 +151,7 @@ export function AddDomainModal({ isOpen, onClose, onAdd }: AddDomainModalProps) 
               type="submit"
               form="addDomainForm"
               className={styles["modal-button-submit"]}
-              disabled={isLoading || !name.trim()}
+              disabled={isLoading || !code.trim() || !name.trim()}
             >
               {isLoading ? "Saving..." : "Add Domain"}
             </button>

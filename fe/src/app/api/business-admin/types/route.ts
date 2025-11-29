@@ -53,7 +53,34 @@ export async function GET(request: Request) {
     fh.set("Authorization", bearerToken);
   }
 
-  const url = `${BE_BASE}/api/business-admin/types?${new URL(request.url).searchParams.toString()}`;
+  // Build query params matching backend API
+  const searchParams = new URL(request.url).searchParams;
+  const queryParams = new URLSearchParams();
+  
+  // Backend uses: name, page, size
+  // Map frontend "search" param to backend "name" param
+  const nameParam = searchParams.get("name") || searchParams.get("search");
+  if (nameParam) {
+    queryParams.append("name", nameParam);
+  }
+  // Backend uses page (0-indexed) and size for pagination
+  // If no page/limit params, fetch first page with reasonable size
+  const pageParam = searchParams.get("page");
+  const limitParam = searchParams.get("limit") || searchParams.get("size");
+  
+  if (pageParam || limitParam) {
+    // Only send pagination if explicitly provided
+    const page = pageParam ? Number(pageParam) - 1 : 0;
+    const size = limitParam || "10";
+    queryParams.append("page", String(page));
+    queryParams.append("size", size);
+  } else {
+    // Default: fetch first page with large size to get all results for client-side pagination
+    queryParams.append("page", "0");
+    queryParams.append("size", "1000"); // Large size to fetch all
+  }
+  
+  const url = `${BE_BASE}/api/admin/doc-types${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
 
   const upstream = await fetch(url, {
     method: "GET",
@@ -61,7 +88,44 @@ export async function GET(request: Request) {
     cache: "no-store",
   });
 
+  // Backend returns: { success, message, data: DocType[], pageInfo, timestamp }
+  if (!upstream.ok) {
     return proxyJsonResponse(upstream, { mode: "real" });
+  }
+
+  const text = await upstream.text();
+  try {
+    const backendResponse = JSON.parse(text);
+    
+    // Backend format: { success, message, data: DocType[], pageInfo: { page, size, totalElements, ... }, timestamp }
+    const types = Array.isArray(backendResponse.data) ? backendResponse.data : [];
+    const pageInfo = backendResponse.pageInfo || {};
+    
+    // Transform to FE format - map backend fields to frontend format
+    const transformed = {
+      types: types.map((type: any) => ({
+        id: type.id,
+        code: type.code,
+        name: type.name,
+        description: type.description,
+        createdAt: type.createdAt || type.createdDate,
+      })),
+      total: pageInfo.totalElements ?? types.length, // Use totalElements from pageInfo
+      page: (pageInfo.page ?? 0) + 1, // Backend uses 0-indexed, FE uses 1-indexed
+      limit: pageInfo.size ?? 10,
+    };
+    
+    return jsonResponse(transformed, {
+      status: 200,
+      headers: {
+        "content-type": "application/json",
+        "x-mode": "real",
+      },
+    });
+  } catch (error: any) {
+    console.error("Error parsing types response:", error);
+    return proxyJsonResponse(upstream, { mode: "real" });
+  }
 }
 
 export async function POST(request: Request) {
@@ -92,14 +156,42 @@ export async function POST(request: Request) {
     fh.set("Authorization", bearerToken);
   }
 
-  const url = `${BE_BASE}/api/business-admin/types`;
+  const url = `${BE_BASE}/api/admin/doc-types`;
+
+  // Read and stringify request body to avoid duplex option error
+  let body: string;
+  try {
+    const jsonBody = await request.json();
+    body = JSON.stringify(jsonBody);
+  } catch {
+    body = JSON.stringify({});
+  }
 
   const upstream = await fetch(url, {
     method: "POST",
     headers: fh,
-    body: request.body,
+    body,
     cache: "no-store",
   });
 
+  // Backend returns ApiResponse<DocTypeDetailResponse>, extract data
+  if (!upstream.ok) {
     return proxyJsonResponse(upstream, { mode: "real" });
+  }
+
+  const text = await upstream.text();
+  try {
+    const apiResponse = JSON.parse(text);
+    // Extract data from { success, data, timestamp } format
+    const data = apiResponse.data || apiResponse;
+    return jsonResponse(data, {
+      status: upstream.status,
+      headers: {
+        "content-type": "application/json",
+        "x-mode": "real",
+      },
+    });
+  } catch {
+    return proxyJsonResponse(upstream, { mode: "real" });
+  }
 }

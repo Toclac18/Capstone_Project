@@ -33,7 +33,7 @@ export function SpecializationManagement() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  const [sortBy, setSortBy] = useState<"name" | "id" | undefined>(undefined);
+  const [sortBy, setSortBy] = useState<"name" | undefined>(undefined);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | undefined>(undefined);
 
   const {
@@ -131,14 +131,9 @@ export function SpecializationManagement() {
       let aValue: string | number;
       let bValue: string | number;
 
-      if (sortBy === "name") {
-        aValue = a.name.toLowerCase();
-        bValue = b.name.toLowerCase();
-      } else {
-        // sortBy === "id"
-        aValue = a.id.toLowerCase();
-        bValue = b.id.toLowerCase();
-      }
+      // sortBy === "name"
+      aValue = a.name.toLowerCase();
+      bValue = b.name.toLowerCase();
 
       if (sortOrder === "asc") {
         return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
@@ -159,11 +154,11 @@ export function SpecializationManagement() {
   };
 
   // Handle column sort - 3 states: no sort -> asc -> desc -> no sort
-  const handleSort = (column: "name" | "id") => {
+  const handleSort = (column: "name") => {
     const currentSortBy = sortBy;
     const currentSortOrder = sortOrder;
     
-    let newSortBy: "name" | "id" | undefined = column;
+    let newSortBy: "name" | undefined = column;
     let newSortOrder: "asc" | "desc" | undefined = "asc";
     
     // If clicking on the same column, cycle through: undefined -> asc -> desc -> undefined
@@ -185,7 +180,7 @@ export function SpecializationManagement() {
   };
 
   // Get sort icon for a column
-  const getSortIcon = (column: "name" | "id") => {
+  const getSortIcon = (column: "name") => {
     // If this column is not being sorted, show neutral icon
     if (sortBy !== column) {
       return <ArrowUpDown className="w-4 h-4 ml-1 text-gray-400" />;
@@ -216,8 +211,8 @@ export function SpecializationManagement() {
 
   // Handle add specialization
   const handleAddSpecialization = useCallback(
-    async (name: string, domainId: string) => {
-      await createSpecialization({ name, domainId });
+    async (code: number, name: string, domainId: string) => {
+      await createSpecialization({ code, name, domainId });
       await fetchSpecializations(domainId, searchValue);
     },
     [fetchSpecializations, searchValue]

@@ -6,6 +6,7 @@ import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.admin.CreateContactTicketRequest;
 import com.capstone.be.dto.request.admin.UpdateContactTicketRequest;
 import com.capstone.be.dto.response.admin.ContactTicketResponse;
+import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.ContactTicketService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,7 +22,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,28 +41,34 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/contact-tickets")
 @RequiredArgsConstructor
 @Tag(name = "Contact Tickets", description = "APIs for contact ticket management")
-public class ContactTicketController {
+public class
+ContactTicketController {
 
   private final ContactTicketService contactTicketService;
 
   /**
-   * Create a new contact ticket (public endpoint)
-   * POST /api/contact-admin
+   * Create a new contact ticket (public endpoint, supports both guest and authenticated users)
+   * POST /api/contact-tickets
    *
    * @param request     Ticket creation request
    * @param httpRequest HTTP request to extract IP address
+   * @param principal   Optional authenticated user (null for guests)
    * @return Created ticket response
    */
   @PostMapping
-  @Operation(summary = "Create a contact ticket", description = "Submit a support ticket to admin (public endpoint)")
+  @Operation(summary = "Create a contact ticket",
+             description = "Submit a support ticket to admin (supports both guest and authenticated users)")
   public ResponseEntity<ContactTicketResponse> createTicket(
       @Valid @RequestBody CreateContactTicketRequest request,
-      HttpServletRequest httpRequest) {
+      HttpServletRequest httpRequest,
+      @AuthenticationPrincipal UserPrincipal principal) {
 
     String ipAddress = extractIpAddress(httpRequest);
-    log.info("Creating contact ticket from IP: {}", ipAddress);
+    UUID userId = (principal != null) ? principal.getId() : null;
 
-    ContactTicketResponse response = contactTicketService.createTicket(request, ipAddress);
+    log.info("Creating contact ticket from IP: {}, userId: {}", ipAddress, userId);
+
+    ContactTicketResponse response = contactTicketService.createTicket(request, ipAddress, userId);
 
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
@@ -164,27 +171,26 @@ public class ContactTicketController {
 
     return ResponseEntity.ok(response);
   }
-  
 
-  /**
-   * Delete ticket (admin only)
-   * DELETE /api/v1/contact-tickets/{ticketId}
-   *
-   * @param ticketId Ticket ID
-   * @return No content
-   */
-  @DeleteMapping("/{ticketId}")
-  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
-  @Operation(summary = "Delete ticket", description = "Delete contact ticket (admin only)")
-  public ResponseEntity<Void> deleteTicket(
-      @PathVariable(name = "ticketId") UUID ticketId) {
-
-    log.info("Admin deleting ticket: {}", ticketId);
-
-    contactTicketService.deleteTicket(ticketId);
-
-    return ResponseEntity.noContent().build();
-  }
+//  /**
+//   * Delete ticket (admin only)
+//   * DELETE /api/v1/contact-tickets/{ticketId}
+//   *
+//   * @param ticketId Ticket ID
+//   * @return No content
+//   */
+//  @DeleteMapping("/{ticketId}")
+//  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+//  @Operation(summary = "Delete ticket", description = "Delete contact ticket (admin only)")
+//  public ResponseEntity<Void> deleteTicket(
+//      @PathVariable(name = "ticketId") UUID ticketId) {
+//
+//    log.info("Admin deleting ticket: {}", ticketId);
+//
+//    contactTicketService.deleteTicket(ticketId);
+//
+//    return ResponseEntity.noContent().build();
+//  }
 
   /**
    * Extract IP address from HTTP request

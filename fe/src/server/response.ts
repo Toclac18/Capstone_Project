@@ -30,7 +30,26 @@ export async function proxyJsonResponse(
   upstream: Response,
   init?: { mode?: Mode; headers?: Record<string, string> },
 ): Promise<Response> {
+  const status = upstream.status;
   const text = await upstream.text();
+  
+  // For 204 No Content, return empty response without content-type
+  if (status === 204) {
+    const headers: Record<string, string> = {
+      ...(init?.headers ?? {}),
+    };
+    
+    const mode = init?.mode;
+    if (mode) {
+      headers["x-mode"] = String(mode);
+    }
+    
+    return new Response(null, {
+      status: 204,
+      headers,
+    });
+  }
+
   const contentType =
     upstream.headers.get("content-type") ?? "application/json";
 
@@ -45,7 +64,7 @@ export async function proxyJsonResponse(
   }
 
   return new Response(text, {
-    status: upstream.status,
+    status,
     headers,
   });
 }

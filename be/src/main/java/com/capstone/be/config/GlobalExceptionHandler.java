@@ -374,7 +374,7 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(NoResourceFoundException.class)
   public ResponseEntity<ApiResponse<Object>> handleNoResourceFound(
-      HttpMessageNotReadableException ex, HttpServletRequest req) {
+      NoResourceFoundException ex, HttpServletRequest req) {
     log.error("No Resource Found {} : {}", req.getRequestURI(), ex.getMessage());
 
     ApiResponse<Object> response = ApiResponse.error(

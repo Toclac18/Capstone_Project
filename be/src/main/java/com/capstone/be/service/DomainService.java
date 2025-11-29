@@ -1,9 +1,14 @@
 package com.capstone.be.service;
 
+import com.capstone.be.dto.request.domain.CreateDomainRequest;
+import com.capstone.be.dto.request.domain.UpdateDomainRequest;
+import com.capstone.be.dto.response.domain.DomainDetailResponse;
 import com.capstone.be.dto.response.resource.DomainResponse;
 import com.capstone.be.dto.response.resource.DomainWithSpecializationsResponse;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Service interface for Domain and Specialization resources
@@ -33,4 +38,47 @@ public interface DomainService {
    */
   List<DomainWithSpecializationsResponse.SpecializationInfo> getSpecializationsByDomain(
       UUID domainId);
+
+  // ===== ADMIN METHODS =====
+
+  /**
+   * Get all domains (paginated) For Business Admin
+   *
+   * @param name     Filter by name (optional)
+   * @param pageable Pagination parameters
+   * @return Page of DomainDetailResponse
+   */
+  Page<DomainDetailResponse> getAllDomainsForAdmin(String name, Pageable pageable);
+
+  /**
+   * Get domain by ID For Business Admin
+   *
+   * @param domainId Domain ID
+   * @return DomainDetailResponse
+   */
+  DomainDetailResponse getDomainById(UUID domainId);
+
+  /**
+   * Create a new domain For Business Admin
+   *
+   * @param request CreateDomainRequest
+   * @return Created DomainDetailResponse
+   */
+  DomainDetailResponse createDomain(CreateDomainRequest request);
+
+  /**
+   * Update an existing domain For Business Admin
+   *
+   * @param domainId Domain ID (from path parameter)
+   * @param request  UpdateDomainRequest
+   * @return Updated DomainDetailResponse
+   */
+  DomainDetailResponse updateDomain(UUID domainId, UpdateDomainRequest request);
+
+  /**
+   * Delete a domain For Business Admin
+   *
+   * @param domainId Domain ID
+   */
+  void deleteDomain(UUID domainId);
 }

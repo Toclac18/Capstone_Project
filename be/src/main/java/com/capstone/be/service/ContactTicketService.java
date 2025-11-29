@@ -14,13 +14,15 @@ import org.springframework.data.domain.Pageable;
 public interface ContactTicketService {
 
   /**
-   * Create a new contact ticket
+   * Create a new contact ticket (guest or authenticated user)
    *
    * @param request   Ticket creation request
    * @param ipAddress IP address of the requester
+   * @param userId    User ID (null for guest)
    * @return Created ticket response
    */
-  ContactTicketResponse createTicket(CreateContactTicketRequest request, String ipAddress);
+  ContactTicketResponse createTicket(CreateContactTicketRequest request, String ipAddress,
+      UUID userId);
 
   /**
    * Get ticket by ID (admin only)

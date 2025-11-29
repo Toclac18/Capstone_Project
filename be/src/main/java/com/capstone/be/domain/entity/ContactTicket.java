@@ -8,6 +8,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.util.Random;
@@ -19,6 +22,7 @@ import lombok.experimental.SuperBuilder;
 
 /**
  * Contact ticket entity for users to contact admin/support
+ * Supports both authenticated users and guest submissions
  */
 @Getter
 @Setter
@@ -31,6 +35,10 @@ public class ContactTicket extends BaseEntity {
 
   @Column(nullable = false, unique = true, length = 20)
   private String ticketCode;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id")
+  private User user;
 
   @Column(nullable = false, length = 100)
   private String name;

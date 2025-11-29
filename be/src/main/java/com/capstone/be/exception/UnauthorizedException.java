@@ -65,4 +65,11 @@ public class UnauthorizedException extends BusinessException {
         ErrorCode.ACCOUNT_PENDING_APPROVAL.getCode()
     );
   }
+
+  public static UnauthorizedException unauthorized() {
+    return new UnauthorizedException(
+        "Your are unauthorized",
+        ErrorCode.UNAUTHORIZED.getCode()
+    );
+  }
 }

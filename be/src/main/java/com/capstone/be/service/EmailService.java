@@ -79,4 +79,16 @@ public interface EmailService {
    */
   void sendOrganizationInvitation(String email, String fullName, String organizationName,
       UUID enrollmentId);
+
+  /**
+   * Send ticket status update email to guest or user
+   *
+   * @param email      Recipient email address
+   * @param fullName   Recipient full name
+   * @param ticketCode Ticket code for reference
+   * @param status     New status of the ticket
+   * @param adminNotes Optional admin notes/response
+   */
+  void sendTicketStatusUpdateEmail(String email, String fullName, String ticketCode,
+      String status, String adminNotes);
 }

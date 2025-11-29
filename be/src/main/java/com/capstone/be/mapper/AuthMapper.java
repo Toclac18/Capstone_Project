@@ -8,6 +8,7 @@ import com.capstone.be.dto.request.auth.RegisterOrganizationRequest;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
 import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
 import com.capstone.be.dto.response.auth.AuthResponse;
+import com.capstone.be.security.model.UserPrincipal;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -36,6 +37,14 @@ public interface AuthMapper {
   @Mapping(target = "status", source = "user.status")
   @Mapping(target = "tokenType", constant = "Bearer")
   AuthResponse toAuthResponseWithToken(User user, String accessToken);
+
+  @Mapping(target = "userId", source = "principal.id")
+  @Mapping(target = "email", source = "principal.email")
+  @Mapping(target = "fullName", source = "principal.fullName")
+  @Mapping(target = "role", source = "principal.role")
+  @Mapping(target = "status", source = "principal.status")
+  @Mapping(target = "tokenType", constant = "Bearer")
+  AuthResponse toAuthResponseWithToken(UserPrincipal principal, String accessToken);
 
   /**
    * Map RegisterReaderRequest to User entity Note: passwordHash needs to be set manually in service

@@ -2,10 +2,7 @@ import { apiClient } from "./http";
 
 export type UserRole =
   | "READER"
-  | "REVIEWER"
-  | "ORGANIZATION_ADMIN"
-  | "BUSINESS_ADMIN"
-  | "SYSTEM_ADMIN";
+  | "REVIEWER";
 
 // Reader Profile Response
 export interface ReaderProfileResponse {
@@ -38,30 +35,11 @@ export interface ReviewerProfileResponse {
   updatedAt: string;
 }
 
-// Organization Profile Response
-export interface OrganizationProfileResponse {
-  userId: string;
-  email: string;
-  fullName: string;
-  avatarUrl: string | null;
-  point: number | null;
-  status: string;
-  orgName: string;
-  orgType: string;
-  orgEmail: string;
-  orgHotline: string | null;
-  orgLogo: string | null;
-  orgAddress: string | null;
-  orgRegistrationNumber: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
 
 // Unified Profile Response for UI
 export type ProfileResponse = 
   | (ReaderProfileResponse & { role: "READER" })
-  | (ReviewerProfileResponse & { role: "REVIEWER" })
-  | (OrganizationProfileResponse & { role: "ORGANIZATION_ADMIN" });
+  | (ReviewerProfileResponse & { role: "REVIEWER" });
 
 /**
  * Fetch user profile from backend based on role
@@ -76,16 +54,13 @@ export async function getProfile(role: string): Promise<ProfileResponse> {
     case "REVIEWER":
       endpoint = "/reviewer/profile";
       break;
-    case "ORGANIZATION_ADMIN":
-      endpoint = "/org-admin/profile";
-      break;
     default:
-      throw new Error(`Unsupported role: ${role}`);
+      throw new Error(`Unsupported role: ${role}. Profile service only supports READER and REVIEWER.`);
   }
 
   const res = await apiClient.get<ProfileResponse>(endpoint);
   // Response is already parsed by API route (extracted from { success, data, timestamp })
-  return { ...res.data, role: role as UserRole };
+  return { ...res.data, role: role as "READER" | "REVIEWER" } as ProfileResponse;
 }
 
 /**
@@ -93,7 +68,7 @@ export async function getProfile(role: string): Promise<ProfileResponse> {
  */
 export async function updateProfile(
   role: string,
-  data: Partial<ReaderProfileResponse | ReviewerProfileResponse | OrganizationProfileResponse>
+  data: Partial<ReaderProfileResponse | ReviewerProfileResponse>
 ): Promise<ProfileResponse> {
   let endpoint: string;
   
@@ -104,41 +79,13 @@ export async function updateProfile(
     case "REVIEWER":
       endpoint = "/reviewer/profile";
       break;
-    case "ORGANIZATION_ADMIN":
-      endpoint = "/org-admin/profile";
-      break;
     default:
-      throw new Error(`Unsupported role: ${role}`);
+      throw new Error(`Unsupported role: ${role}. Profile service only supports READER and REVIEWER.`);
   }
 
   const res = await apiClient.put<ProfileResponse>(endpoint, data);
   // Response is already parsed by API route (extracted from { success, data, timestamp })
-  return { ...res.data, role: role as UserRole };
-}
-
-/**
- * Upload organization logo
- */
-export async function uploadOrganizationLogo(file: File): Promise<OrganizationProfileResponse> {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  // Use fetch directly for FormData to avoid axios Content-Type issues
-  const res = await fetch("/api/org-admin/profile/logo", {
-    method: "POST",
-    body: formData,
-    credentials: "include", // Send cookies
-  });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: "Failed to upload logo" }));
-    throw new Error(error.error || error.message || "Failed to upload logo");
-  }
-
-  const json = await res.json();
-  // Extract data from { success, data, timestamp } format
-  const data = json.data || json;
-  return data;
+  return { ...res.data, role: role as "READER" | "REVIEWER" } as ProfileResponse;
 }
 
 /**

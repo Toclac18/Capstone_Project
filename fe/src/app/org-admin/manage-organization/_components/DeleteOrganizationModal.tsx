@@ -2,21 +2,23 @@
 
 import { useState, useEffect } from "react";
 import { Trash2, X, AlertCircle } from "lucide-react";
-import styles from "@/app/profile/styles.module.css";
+import styles from "../styles.module.css";
 
-interface DeleteAccountModalProps {
+interface DeleteOrganizationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onDelete: () => Promise<void>;
-  email: string;
+  organizationName: string;
+  email?: string;
 }
 
-export default function DeleteAccountModal({
+export default function DeleteOrganizationModal({
   isOpen,
   onClose,
   onDelete,
-  email,
-}: DeleteAccountModalProps) {
+  organizationName: _organizationName,
+  email = "",
+}: DeleteOrganizationModalProps) {
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -57,7 +59,7 @@ export default function DeleteAccountModal({
       await onDelete();
       onClose();
     } catch (error: any) {
-      setErrors({ submit: error?.message || "Failed to delete account" });
+      setErrors({ submit: error?.message || "Failed to delete organization" });
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +78,7 @@ export default function DeleteAccountModal({
                 <Trash2 className={`${styles["modal-icon"]} ${styles["red"]}`} />
               </div>
               <div>
-                <h3 className={`${styles["modal-title"]} ${styles["red"]}`}>Delete Account</h3>
+                <h3 className={`${styles["modal-title"]} ${styles["red"]}`}>Delete Organization</h3>
                 <p className={styles["modal-subtitle"]}>
                   This action cannot be undone
                 </p>
@@ -98,27 +100,29 @@ export default function DeleteAccountModal({
                   <AlertCircle className={styles["warning-icon"]} />
                   <div>
                     <p className={styles["warning-title"]}>
-                      Warning: This will permanently delete your account
+                      Warning: This will permanently delete your organization
                     </p>
                     <ul className={styles["warning-list"]}>
-                      <li>All your data will be permanently deleted</li>
+                      <li>All your organization data will be permanently deleted</li>
                       <li>You will lose access to all your content</li>
-                      <li>You must contact admin to restore your account</li>
+                      <li>You must contact admin to restore your organization</li>
                       <li>Your documents will be owned by system</li>
                     </ul>
                   </div>
                 </div>
               </div>
 
-              <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
-                <label className={`${styles["field-label"]} ${styles["field-label-sm"]}`}>Account Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  disabled
-                  className={`${styles["field-input"]} ${styles["field-input-sm"]} ${styles["disabled"]}`}
-                />
-              </div>
+              {email && (
+                <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
+                  <label className={`${styles["field-label"]} ${styles["field-label-sm"]}`}>Organization Email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    disabled
+                    className={`${styles["field-input"]} ${styles["field-input-sm"]} ${styles["disabled"]}`}
+                  />
+                </div>
+              )}
 
               <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
                 <label className={`${styles["field-label"]} ${styles["field-label-sm"]}`}>
@@ -186,7 +190,7 @@ export default function DeleteAccountModal({
                   </svg>
                 )}
                 <Trash2 className="w-4 h-4" />
-                {isLoading ? "Deleting..." : "Delete Account"}
+                {isLoading ? "Deleting..." : "Delete Organization"}
               </button>
             </div>
           </form>

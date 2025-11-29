@@ -72,28 +72,46 @@
 
 /* Profile Photo */
 .profile-photo-wrapper {
-  @apply relative z-30 mx-auto -mt-22 h-30 w-full max-w-30 rounded-full bg-white/20 p-1 backdrop-blur sm:h-44 sm:max-w-[176px] sm:p-3;
+  @apply relative z-30 mx-auto -mt-22 h-36 w-full max-w-36 rounded-full bg-white/20 p-1 backdrop-blur sm:h-52 sm:max-w-[208px] sm:p-3;
 }
 
 .profile-photo-container {
-  @apply relative drop-shadow-2;
+  @apply relative drop-shadow-2 w-full h-full rounded-full overflow-visible;
+  aspect-ratio: 1 / 1;
 }
 
 .profile-photo-image {
-  @apply overflow-hidden rounded-full ring-4;
+  @apply overflow-hidden rounded-full ring-4 object-cover;
   @apply ring-white;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1 / 1;
 }
 :global(html.dark) .profile-photo-image {
   @apply ring-gray-dark;
 }
 
 .profile-photo-label {
-  @apply absolute bottom-0 right-0 flex size-9 cursor-pointer items-center justify-center rounded-full shadow-lg transition-all hover:scale-110;
+  @apply absolute bottom-0 right-0 z-50 flex size-9 cursor-pointer items-center justify-center rounded-full shadow-lg transition-all hover:scale-110;
   @apply bg-primary text-white hover:bg-primary/90 sm:bottom-2 sm:right-2;
 }
 
 .profile-photo-input {
   @apply sr-only;
+}
+
+.profile-photo-actions {
+  @apply absolute bottom-0 right-0 z-50 flex gap-2;
+}
+
+.profile-photo-save {
+  @apply flex size-9 cursor-pointer items-center justify-center rounded-full shadow-lg transition-all hover:scale-110;
+  @apply bg-green-500 text-white hover:bg-green-600;
+}
+
+.profile-photo-cancel {
+  @apply flex size-9 cursor-pointer items-center justify-center rounded-full shadow-lg transition-all hover:scale-110;
+  @apply bg-red-500 text-white hover:bg-red-600;
 }
 
 /* User Info */
@@ -512,6 +530,11 @@
 }
 
 .field-input.date-input {
+  @apply pl-13 pr-5;
+}
+
+/* Input with icon on the left - ensure text doesn't overlap icon */
+.field-icon-wrapper > .field-input {
   @apply pl-13 pr-5;
 }
 

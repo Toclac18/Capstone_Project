@@ -3,7 +3,7 @@ import { mockOrganizationAdminDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";
-import { proxyJsonResponse, jsonResponse } from "@/server/response";
+import { jsonResponse } from "@/server/response";
 
 // Helper function to create forward headers
 async function createForwardHeaders(): Promise<Headers> {
@@ -26,22 +26,6 @@ async function createForwardHeaders(): Promise<Headers> {
   return forwardHeaders;
 }
 
-// Helper function to forward request to backend
-async function forwardRequest(
-  url: string,
-  method: string,
-  headers: Headers,
-  body?: FormData | string,
-) {
-  const upstream = await fetch(`${BE_BASE}${url}`, {
-    method,
-    headers,
-    body,
-    cache: "no-store",
-  });
-
-  return proxyJsonResponse(upstream, { mode: "real" });
-}
 
 async function handleGET() {
   if (USE_MOCK) {
@@ -58,11 +42,23 @@ async function handleGET() {
   const fh = await createForwardHeaders();
   fh.set("Content-Type", "application/json");
 
-  return forwardRequest(
-    "/api/organization-admin/manage-organization",
-    "GET",
-    fh,
-  );
+  const upstream = await fetch(`${BE_BASE}/api/organization/profile`, {
+    method: "GET",
+    headers: fh,
+    cache: "no-store",
+  });
+
+  const text = await upstream.text();
+  let data;
+  try {
+    const json = JSON.parse(text);
+    // Extract data from { success, data, timestamp } format
+    data = json.data || json;
+  } catch {
+    data = text;
+  }
+
+  return jsonResponse(data, { status: upstream.status, mode: "real" });
 }
 
 async function handlePUT(request: Request) {
@@ -133,50 +129,68 @@ async function handlePUT(request: Request) {
     }
   }
 
-  return forwardRequest(
-    "/api/organization-admin/manage-organization",
-    "PUT",
-    fh,
+  const upstream = await fetch(`${BE_BASE}/api/organization/profile`, {
+    method: "PUT",
+    headers: fh,
     body,
-  );
+    cache: "no-store",
+  });
+
+  // Return response directly from backend without parsing
+  return new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: upstream.headers,
+  });
 }
 
 async function handleDELETE() {
   if (USE_MOCK) {
     mockOrganizationAdminDB.delete();
-    return new Response(
-      JSON.stringify({ message: "Organization deleted successfully" }),
-      {
-        status: 200,
-        headers: {
-          "content-type": "application/json",
-          "x-mode": "mock",
-        },
-      },
+    return jsonResponse(
+      { message: "Organization deleted successfully" },
+      { status: 200, mode: "mock" },
     );
   }
 
-  const fh = await createForwardHeaders();
-  fh.set("Content-Type", "application/json");
+  const authHeader = await getAuthHeader("delete-account");
 
-  return forwardRequest(
-    "/api/organization-admin/manage-organization",
-    "DELETE",
-    fh,
-  );
+  const fh = new Headers();
+  if (authHeader) fh.set("Authorization", authHeader);
+
+  const upstream = await fetch(`${BE_BASE}/api/user/account`, {
+    method: "DELETE",
+    headers: fh,
+    cache: "no-store",
+  });
+
+  if (upstream.status === 204) {
+    return new Response(null, { status: 204 });
+  }
+
+  const text = await upstream.text();
+  let data;
+  try {
+    const json = JSON.parse(text);
+    data = json.data || json;
+  } catch {
+    data = { error: text || "Failed to delete account" };
+  }
+
+  return jsonResponse(data, { status: upstream.status, mode: "real" });
 }
 
 export const GET = (...args: Parameters<typeof handleGET>) =>
   withErrorBoundary(() => handleGET(...args), {
-    context: "api/organization-admin/manage-organization/route.ts/GET",
+    context: "api/org-admin/manage-organization/route.ts/GET",
   });
 
 export const PUT = (...args: Parameters<typeof handlePUT>) =>
   withErrorBoundary(() => handlePUT(...args), {
-    context: "api/organization-admin/manage-organization/route.ts/PUT",
+    context: "api/org-admin/manage-organization/route.ts/PUT",
   });
 
 export const DELETE = (...args: Parameters<typeof handleDELETE>) =>
   withErrorBoundary(() => handleDELETE(...args), {
-    context: "api/organization-admin/manage-organization/route.ts/DELETE",
+    context: "api/org-admin/manage-organization/route.ts/DELETE",
   });

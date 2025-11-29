@@ -94,7 +94,7 @@ export const ORGANIZATION_ADMIN_NAV_DATA = [
       {
         title: "Organization Information",
         icon: Icons.BuildingIcon,
-        url: "/organization-admin/manage-organization",
+        url: "/org-admin/manage-organization",
       },
       {
         title: "Manage Reader",

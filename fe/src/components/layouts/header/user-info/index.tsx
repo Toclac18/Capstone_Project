@@ -17,9 +17,12 @@ import { useReader } from "@/hooks/useReader";
 export function UserInfo() {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
-  const { email, loading } = useReader();
+  const { email, loading, role } = useReader();
   const [name, setName] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+
+  // Only show profile link for READER and REVIEWER (ORGANIZATION_ADMIN has manage-organization page)
+  const showProfileLink = role === "READER" || role === "REVIEWER";
 
   // Get name from localStorage after component mounts (client-side only)
   useLayoutEffect(() => {
@@ -94,15 +97,17 @@ export function UserInfo() {
         <hr className="border-[#E8E8E8] dark:border-dark-3" />
 
         <div className="p-2 text-base text-[#4B5563] dark:text-dark-6 [&>*]:cursor-pointer">
-          <Link
-            href={"/profile"}
-            onClick={() => setIsOpen(false)}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[9px] hover:bg-gray-2 hover:text-dark dark:hover:bg-dark-3 dark:hover:text-white"
-          >
-            <UserIcon />
+          {showProfileLink && (
+            <Link
+              href={"/profile"}
+              onClick={() => setIsOpen(false)}
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[9px] hover:bg-gray-2 hover:text-dark dark:hover:bg-dark-3 dark:hover:text-white"
+            >
+              <UserIcon />
 
-            <span className="mr-auto text-base font-medium">View profile</span>
-          </Link>
+              <span className="mr-auto text-base font-medium">View profile</span>
+            </Link>
+          )}
 
           <Link
             href={"/pages/settings"}

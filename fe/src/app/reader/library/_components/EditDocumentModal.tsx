@@ -7,6 +7,7 @@ import {
   fetchDocumentTypes,
   fetchTags,
   fetchSpecializations,
+  fetchDomains,
   type DocumentType,
   type Tag,
   type Specialization,
@@ -70,6 +71,7 @@ export default function EditDocumentModal({
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [tagError, setTagError] = useState<string | null>(null);
 
   const titleRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
@@ -114,6 +116,7 @@ export default function EditDocumentModal({
       setShowTagDropdown(false);
       setError(null);
       setErrors({});
+      setTagError(null);
       setTypeId("");
       setDomainId("");
       setSpecializationId("");
@@ -124,14 +127,15 @@ export default function EditDocumentModal({
 
   const loadOptions = async () => {
     try {
-      const [types, tagsData, orgsData] = await Promise.all([
+      const [types, tagsData, orgsData, domainsData] = await Promise.all([
         fetchDocumentTypes(),
         fetchTags(),
         fetchOrganizations(),
+        fetchDomains(),
       ]);
       setDocumentTypes(types);
       setTags(tagsData);
-      setOrganizations(orgsData.items);
+      setOrganizations(orgsData.items || []);
 
       // Find matching type by name
       const matchedType = types.find((t) => t.name === document.type);
@@ -144,10 +148,8 @@ export default function EditDocumentModal({
         }
       }
 
-      // Find domain ID from document.domain by fetching domains once
+      // Find domain ID from document.domain
       // We need domain ID to load specializations
-      const domainsResponse = await fetch("/api/reader/documents/domains");
-      const domainsData = await domainsResponse.json();
       const matchedDomain = domainsData.find(
         (d: { name: string; id: string }) => d.name === document.domain,
       );
@@ -206,20 +208,37 @@ export default function EditDocumentModal({
     const tag = newTagInput.trim();
     if (!tag) return;
 
+    setTagError(null);
+
     // Check if tag already exists in tags list
     const existingTag = tags.find(
       (t) => t.name.toLowerCase() === tag.toLowerCase(),
     );
     if (existingTag) {
-      // If tag exists, add its ID to selectedTagIds instead
-      if (!selectedTagIds.includes(existingTag.id)) {
-        setSelectedTagIds([...selectedTagIds, existingTag.id]);
+      // Check if tag is already selected
+      if (selectedTagIds.includes(existingTag.id)) {
+        setTagError("This tag already exists");
+        return;
       }
-    } else if (!newTags.includes(tag)) {
-      // If tag doesn't exist, add to newTags (will be created on save)
-      setNewTags([...newTags, tag]);
+      // If tag exists but not selected, add its ID to selectedTagIds instead
+      setSelectedTagIds([...selectedTagIds, existingTag.id]);
+      setNewTagInput("");
+      return;
     }
+
+    // Check if tag already exists in newTags (case-insensitive)
+    const existingNewTag = newTags.find(
+      (t) => t.toLowerCase() === tag.toLowerCase(),
+    );
+    if (existingNewTag) {
+      setTagError("This tag already exists");
+      return;
+    }
+
+    // If tag doesn't exist, add to newTags (will be created on save)
+    setNewTags([...newTags, tag]);
     setNewTagInput("");
+    setTagError(null);
   };
 
   const handleRemoveNewTag = (tag: string) => {
@@ -279,7 +298,7 @@ export default function EditDocumentModal({
       if (!organizationId) {
         newErrors.organizationId =
           "Organization is required when visibility is Internal";
-      } else if (organizations.length === 0) {
+      } else if (!organizations || organizations.length === 0) {
         newErrors.organizationId =
           "You must be a member of at least one organization to set visibility as Internal";
       }
@@ -472,7 +491,7 @@ export default function EditDocumentModal({
               <label className={styles["edit-form-label"]}>
                 Organization <span className={styles["edit-required"]}>*</span>
               </label>
-              {organizations.length === 0 ? (
+              {!organizations || organizations.length === 0 ? (
                 <div className={styles["edit-error-message"]}>
                   You must be a member of at least one organization to set
                   visibility as Internal.
@@ -618,20 +637,32 @@ export default function EditDocumentModal({
 
               {/* Add new tag input - between search and selected tags */}
               <div className={styles["edit-new-tag-input"]}>
-                <input
-                  type="text"
-                  value={newTagInput}
-                  onChange={(e) => setNewTagInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddNewTag();
-                    }
-                  }}
-                  className={styles["edit-form-input"]}
-                  placeholder="Add new tag"
-                  disabled={isLoading}
-                />
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={newTagInput}
+                    onChange={(e) => {
+                      setNewTagInput(e.target.value);
+                      if (tagError) {
+                        setTagError(null);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddNewTag();
+                      }
+                    }}
+                    className={`${styles["edit-form-input"]} ${tagError ? styles["edit-input-error"] : ""}`}
+                    placeholder="Add new tag"
+                    disabled={isLoading}
+                  />
+                  {tagError && (
+                    <span className={styles["edit-error-message"]}>
+                      {tagError}
+                    </span>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={handleAddNewTag}

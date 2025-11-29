@@ -9,7 +9,14 @@ async function handlePUT(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: documentId } = await params;
-  const body = await request.json();
+  
+  // Read request body once
+  let body: any;
+  try {
+    body = await request.json();
+  } catch {
+    body = {};
+  }
 
   if (USE_MOCK) {
     try {
@@ -43,15 +50,95 @@ async function handlePUT(
   if (authHeader) {
     fh.set("Authorization", authHeader);
   }
-  const url = `${BE_BASE}/api/reader/library/${documentId}`;
+  fh.set("Content-Type", "application/json");
+  
+  // First, fetch document detail to get current isPremium value
+  const detailUrl = `${BE_BASE}/api/documents/${documentId}`;
+  let currentIsPremium = false;
+  try {
+    const detailResponse = await fetch(detailUrl, {
+      method: "GET",
+      headers: fh,
+      cache: "no-store",
+    });
+    if (detailResponse.ok) {
+      const detailData = await detailResponse.json();
+      currentIsPremium = detailData?.isPremium ?? false;
+    }
+  } catch (error) {
+    console.error("Failed to fetch document detail for isPremium:", error);
+    // Continue with default false
+  }
+
+  // Fetch tags to get tag codes from tag IDs
+  let tagCodes: number[] = [];
+  if (body.tagIds && Array.isArray(body.tagIds) && body.tagIds.length > 0) {
+    try {
+      const tagsResponse = await fetch(`${BE_BASE}/api/tags/all`, {
+        method: "GET",
+        headers: fh,
+        cache: "no-store",
+      });
+      if (tagsResponse.ok) {
+        const tagsData = await tagsResponse.json();
+        const tags = Array.isArray(tagsData) ? tagsData : (tagsData?.data || []);
+        // Map tag IDs to tag codes - only include tags that exist and have ACTIVE status
+        tagCodes = body.tagIds
+          .map((tagId: string) => {
+            const tag = tags.find((t: any) => t.id === tagId);
+            // Only include tags that exist, have a code, and are ACTIVE
+            if (tag && tag.code && tag.status === "ACTIVE") {
+              return Number(tag.code);
+            }
+            if (tag && !tag.code) {
+              console.warn(`Tag ${tagId} found but missing code property`);
+            }
+            if (tag && tag.status !== "ACTIVE") {
+              console.warn(`Tag ${tagId} is not ACTIVE (status: ${tag.status}), skipping`);
+            }
+            if (!tag) {
+              console.warn(`Tag ${tagId} not found in tags list`);
+            }
+            return null;
+          })
+          .filter((code: number | null): code is number => code !== null);
+      }
+    } catch (error) {
+      console.error("Failed to fetch tags for tagCodes:", error);
+    }
+  }
+
+  // Transform frontend request to backend format
+  const backendRequest = {
+    title: body.title,
+    description: body.description,
+    visibility: body.visibility,
+    isPremium: currentIsPremium, // Use current value from document
+    docTypeId: body.typeId, // Map typeId to docTypeId
+    specializationId: body.specializationId,
+    organizationId: body.organizationId || null,
+    tagCodes: tagCodes.length > 0 ? tagCodes : null,
+    newTags: body.newTags || null,
+  };
+
+  const url = `${BE_BASE}/api/documents/${documentId}`;
+
+  // Stringify transformed body for fetch
+  const bodyString = JSON.stringify(backendRequest);
 
   const upstream = await fetch(url, {
     method: "PUT",
     headers: fh,
-    body: JSON.stringify(body),
+    body: bodyString,
     cache: "no-store",
   });
 
+  // Backend returns ResponseEntity<DocumentUploadResponse> directly (not wrapped in ApiResponse)
+  if (!upstream.ok) {
+    return proxyJsonResponse(upstream, { mode: "real" });
+  }
+
+  // Backend returns DocumentUploadResponse directly
   return proxyJsonResponse(upstream, { mode: "real" });
 }
 
@@ -93,7 +180,7 @@ async function handleDELETE(
   if (authHeader) {
     fh.set("Authorization", authHeader);
   }
-  const url = `${BE_BASE}/api/reader/library/${documentId}`;
+  const url = `${BE_BASE}/api/documents/${documentId}`;
 
   const upstream = await fetch(url, {
     method: "DELETE",

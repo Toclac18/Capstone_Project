@@ -21,6 +21,7 @@ public interface ContactTicketMapper {
    * Convert ContactTicket entity to ContactTicketResponse
    */
   @Mapping(source = "id", target = "ticketId")
+  @Mapping(source = "user.id", target = "userId")
   @Mapping(source = "message", target = "ticketMessage")
   ContactTicketResponse toResponse(ContactTicket ticket);
 }

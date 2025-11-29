@@ -532,4 +532,86 @@ public class EmailServiceImpl implements EmailService {
         </html>
         """.formatted(fullName, organizationName, organizationName, acceptanceUrl, acceptanceUrl);
   }
+
+  @Override
+  @Async
+  public void sendTicketStatusUpdateEmail(String email, String fullName, String ticketCode,
+      String status, String adminNotes) {
+    try {
+      String subject = String.format("Ticket Update - %s - Capstone Platform", ticketCode);
+      String htmlContent = buildTicketUpdateEmailHtml(fullName, ticketCode, status, adminNotes);
+
+      sendHtmlEmail(email, subject, htmlContent);
+      log.info("Sent ticket status update email to: {} for ticket: {}", email, ticketCode);
+
+    } catch (Exception e) {
+      log.error("Failed to send ticket status update email to: {} for ticket: {}", email,
+          ticketCode, e);
+      // Don't throw exception - it's not critical
+    }
+  }
+
+  private String buildTicketUpdateEmailHtml(String fullName, String ticketCode, String status,
+      String adminNotes) {
+    String statusColor = switch (status.toUpperCase()) {
+      case "IN_PROGRESS" -> "#2196F3";
+      case "RESOLVED" -> "#4CAF50";
+      case "CLOSED" -> "#9E9E9E";
+      default -> "#FF9800";
+    };
+
+    String adminNotesSection = (adminNotes != null && !adminNotes.trim().isEmpty())
+        ? """
+            <div class="admin-notes">
+                <h3>Admin Response:</h3>
+                <p>%s</p>
+            </div>
+            """.formatted(adminNotes)
+        : "";
+
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #673AB7; color: white; padding: 20px; text-align: center; }
+                .content { padding: 20px; background-color: #f9f9f9; }
+                .ticket-info { background-color: #e3f2fd; border-left: 4px solid #2196F3;
+                              padding: 15px; margin: 20px 0; }
+                .status-box { background-color: %s; color: white; padding: 10px;
+                             text-align: center; border-radius: 5px; margin: 15px 0; }
+                .admin-notes { background-color: #fff3cd; border-left: 4px solid #ffc107;
+                              padding: 15px; margin: 20px 0; }
+                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Support Ticket Update</h1>
+                </div>
+                <div class="content">
+                    <h2>Hello %s,</h2>
+                    <p>Your support ticket has been updated!</p>
+                    <div class="ticket-info">
+                        <p style="margin: 5px 0;"><strong>Ticket Code:</strong> %s</p>
+                    </div>
+                    <div class="status-box">
+                        <strong>New Status: %s</strong>
+                    </div>
+                    %s
+                    <p>You can view your ticket details anytime using your ticket code.</p>
+                    <p>If you have any questions, please don't hesitate to reach out to us.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; 2025 Capstone Platform. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(statusColor, fullName, ticketCode, status, adminNotesSection);
+  }
 }

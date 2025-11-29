@@ -43,8 +43,10 @@ public class AwsS3FileStorageService implements FileStorageService {
   private static final List<String> ALLOWED_CONTENT_TYPES = List.of(
       "application/pdf",
       "image/jpeg",
-      "image/jpg",
       "image/png",
+      "image/jpg",
+      "image/gif",
+      "image/webp",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   );
 

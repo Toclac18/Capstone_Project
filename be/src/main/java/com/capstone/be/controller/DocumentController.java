@@ -6,6 +6,7 @@ import com.capstone.be.dto.request.document.DocumentSearchFilter;
 import com.capstone.be.dto.request.document.DocumentUploadHistoryFilter;
 import com.capstone.be.dto.request.document.UpdateDocumentRequest;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
+import com.capstone.be.dto.request.document.VoteDocumentRequest;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
@@ -13,8 +14,10 @@ import com.capstone.be.dto.response.document.DocumentReadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentSearchResponse;
 import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadResponse;
+import com.capstone.be.dto.response.document.VoteDocumentResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.DocumentService;
+import com.capstone.be.service.DocumentVoteService;
 import com.capstone.be.util.PagingUtil;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -50,6 +53,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class DocumentController {
 
   private final DocumentService documentService;
+  private final DocumentVoteService documentVoteService;
 
   /**
    * Upload a document POST /api/v1/documents/upload
@@ -278,6 +282,51 @@ public class DocumentController {
         pageable);
 
     return ResponseEntity.ok(PagedResponse.of(searchResults));
+  }
+
+  /**
+   * Vote on a document POST /api/documents/vote If vote already exists, it will be updated If
+   * voteValue is 0, the vote will be removed
+   *
+   * @param request       Vote request with documentId and voteValue (-1, 0, 1)
+   * @param userPrincipal Authenticated user
+   * @return Vote response with updated vote counts
+   */
+  @PostMapping("/{documentId}/votes")
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<VoteDocumentResponse> voteDocument(
+      @PathVariable(name = "documentId") UUID documentId,
+      @Valid @RequestBody VoteDocumentRequest request,
+      @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+    UUID userId = userPrincipal.getId();
+    log.info("User {} voting on document {} with value {}", userId, documentId,
+        request.getVoteValue());
+
+    VoteDocumentResponse response = documentVoteService.voteDocument(userId, documentId, request);
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Get user's current vote for a document GET /api/documents/{documentId}/vote
+   *
+   * @param documentId    Document ID
+   * @param userPrincipal Authenticated user
+   * @return Vote response with user's vote and document vote stats
+   */
+  @GetMapping("/{documentId}/votes")
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<VoteDocumentResponse> getUserVote(
+      @PathVariable(name = "documentId") UUID documentId,
+      @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+    UUID userId = userPrincipal.getId();
+    log.info("User {} fetching vote for document {}", userId, documentId);
+
+    VoteDocumentResponse response = documentVoteService.getUserVote(documentId, userId);
+
+    return ResponseEntity.ok(response);
   }
 
 }

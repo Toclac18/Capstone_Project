@@ -37,14 +37,42 @@ export async function PUT(
     fh.set("Authorization", bearerToken);
   }
 
-  const url = `${BE_BASE}/api/business-admin/specializations/${id}`;
+  const url = `${BE_BASE}/api/admin/specializations/${id}`;
+
+  // Read and stringify request body to avoid duplex option error
+  let body: string;
+  try {
+    const jsonBody = await request.json();
+    body = JSON.stringify(jsonBody);
+  } catch {
+    body = JSON.stringify({});
+  }
 
   const upstream = await fetch(url, {
     method: "PUT",
     headers: fh,
-    body: request.body,
+    body,
     cache: "no-store",
   });
 
+  // Backend returns ApiResponse<SpecializationDetailResponse>, extract data
+  if (!upstream.ok) {
     return proxyJsonResponse(upstream, { mode: "real" });
+  }
+
+  const text = await upstream.text();
+  try {
+    const apiResponse = JSON.parse(text);
+    // Extract data from { success, data, timestamp } format
+    const data = apiResponse.data || apiResponse;
+    return jsonResponse(data, {
+      status: upstream.status,
+      headers: {
+        "content-type": "application/json",
+        "x-mode": "real",
+      },
+    });
+  } catch {
+    return proxyJsonResponse(upstream, { mode: "real" });
+  }
 }

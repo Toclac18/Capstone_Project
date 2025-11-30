@@ -1,11 +1,18 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.domain.enums.LogAction;
 import com.capstone.be.dto.request.admin.ChangeRoleRequest;
 import com.capstone.be.dto.request.admin.UserQueryRequest;
 import com.capstone.be.dto.response.admin.UserManagementResponse;
+import com.capstone.be.repository.UserRepository;
 import com.capstone.be.security.model.UserPrincipal;
+import com.capstone.be.service.AuditLogService;
 import com.capstone.be.service.UserService;
+import com.capstone.be.util.HttpRequestUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,12 +35,14 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/system-admin/users")
+@RequestMapping("/system-admin/users")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('SYSTEM_ADMIN')")
 public class SystemAdminController {
 
   private final UserService userService;
+  private final UserRepository userRepository;
+  private final AuditLogService auditLogService;
 
   /**
    * Get all users with optional filters for role management
@@ -77,15 +86,70 @@ public class SystemAdminController {
   public ResponseEntity<UserManagementResponse> changeUserRole(
       @PathVariable(name = "userId") UUID userId,
       @AuthenticationPrincipal UserPrincipal userPrincipal,
-      @Valid @RequestBody ChangeRoleRequest request) {
+      @Valid @RequestBody ChangeRoleRequest request,
+      HttpServletRequest httpRequest) {
+
+    // Extract IP and User-Agent for logging
+    String ipAddress = HttpRequestUtil.extractIpAddress(httpRequest);
+    String userAgent = HttpRequestUtil.extractUserAgent(httpRequest);
 
     log.info("System admin {} changing role for user {} to {}",
         userPrincipal.getId(), userId, request.getRole());
 
-    UserManagementResponse updatedUser = userService.changeUserRole(
-        userId, request, userPrincipal.getId());
+    try {
+      // Get old role before change
+      String oldRole = userRepository.findById(userId)
+          .map(user -> user.getRole().name())
+          .orElse("UNKNOWN");
 
-    return ResponseEntity.ok(updatedUser);
+      // Change role
+      UserManagementResponse updatedUser = userService.changeUserRole(
+          userId, request, userPrincipal.getId());
+
+      // Log successful role change
+      Map<String, Object> details = new HashMap<>();
+      details.put("targetUserId", userId.toString());
+      details.put("oldRole", oldRole);
+      details.put("newRole", request.getRole().name());
+      if (request.getReason() != null && !request.getReason().trim().isEmpty()) {
+        details.put("reason", request.getReason());
+      }
+
+      auditLogService.logActionWithTarget(
+          LogAction.ROLE_CHANGED,
+          userPrincipal,
+          userId,
+          details,
+          ipAddress,
+          userAgent,
+          200 // HTTP 200 OK
+      );
+
+      log.debug("Audit log saved for ROLE_CHANGED action");
+
+      return ResponseEntity.ok(updatedUser);
+    } catch (Exception e) {
+      // Log failed role change attempt
+      Map<String, Object> details = new HashMap<>();
+      details.put("targetUserId", userId.toString());
+      details.put("requestedRole", request.getRole().name());
+      if (request.getReason() != null) {
+        details.put("reason", request.getReason());
+      }
+
+      auditLogService.logFailedAction(
+          LogAction.ROLE_CHANGED,
+          userPrincipal,
+          details,
+          "Failed to change role: " + e.getMessage(),
+          ipAddress,
+          userAgent,
+          500 // HTTP 500 Internal Server Error (or appropriate status code)
+      );
+
+      log.error("Failed to change user role and logged failure", e);
+      throw e; // Re-throw to be handled by GlobalExceptionHandler
+    }
   }
 }
 

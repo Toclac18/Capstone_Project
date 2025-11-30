@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Implementation of AuditLogService
@@ -27,12 +29,14 @@ public class AuditLogServiceImpl implements com.capstone.be.service.AuditLogServ
 
     @Override
     @Async("auditLogExecutor")
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logAction(
         LogAction action,
         UserPrincipal user,
         Map<String, Object> details,
         String ipAddress,
-        String userAgent
+        String userAgent,
+        Integer statusCode
     ) {
         try {
             SystemLog systemLog = buildSystemLog(
@@ -46,25 +50,29 @@ public class AuditLogServiceImpl implements com.capstone.be.service.AuditLogServ
                 userAgent,
                 null,
                 null,
-                null
+                null,
+                statusCode
             );
 
             systemLogRepository.save(systemLog);
+            log.debug("Audit log saved successfully for action: {}", action);
         } catch (Exception e) {
             // Log error but don't throw - don't fail business logic due to logging failure
-            log.error("Failed to save audit log for action {}: {}", action, e.getMessage());
+            log.error("Failed to save audit log for action {}: {}", action, e.getMessage(), e);
         }
     }
 
     @Override
     @Async("auditLogExecutor")
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logActionWithTarget(
         LogAction action,
         UserPrincipal user,
         UUID targetUserId,
         Map<String, Object> details,
         String ipAddress,
-        String userAgent
+        String userAgent,
+        Integer statusCode
     ) {
         try {
             Map<String, Object> fullDetails = addToDetails(details, "targetUserId", targetUserId.toString());
@@ -80,17 +88,20 @@ public class AuditLogServiceImpl implements com.capstone.be.service.AuditLogServ
                 userAgent,
                 null,
                 null,
-                null
+                null,
+                statusCode
             );
 
             systemLogRepository.save(systemLog);
+            log.debug("Audit log saved successfully for action: {}", action);
         } catch (Exception e) {
-            log.error("Failed to save audit log for action {}: {}", action, e.getMessage());
+            log.error("Failed to save audit log for action {}: {}", action, e.getMessage(), e);
         }
     }
 
     @Override
     @Async("auditLogExecutor")
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logActionWithResource(
         LogAction action,
         UserPrincipal user,
@@ -98,7 +109,8 @@ public class AuditLogServiceImpl implements com.capstone.be.service.AuditLogServ
         UUID targetResourceId,
         Map<String, Object> details,
         String ipAddress,
-        String userAgent
+        String userAgent,
+        Integer statusCode
     ) {
         try {
             SystemLog systemLog = buildSystemLog(
@@ -112,24 +124,28 @@ public class AuditLogServiceImpl implements com.capstone.be.service.AuditLogServ
                 userAgent,
                 null,
                 null,
-                null
+                null,
+                statusCode
             );
 
             systemLogRepository.save(systemLog);
+            log.debug("Audit log saved successfully for action: {}", action);
         } catch (Exception e) {
-            log.error("Failed to save audit log for action {}: {}", action, e.getMessage());
+            log.error("Failed to save audit log for action {}: {}", action, e.getMessage(), e);
         }
     }
 
     @Override
     @Async("auditLogExecutor")
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logFailedAction(
         LogAction action,
         UserPrincipal user,
         Map<String, Object> details,
         String errorMessage,
         String ipAddress,
-        String userAgent
+        String userAgent,
+        Integer statusCode
     ) {
         try {
             SystemLog systemLog = buildSystemLog(
@@ -143,12 +159,14 @@ public class AuditLogServiceImpl implements com.capstone.be.service.AuditLogServ
                 userAgent,
                 null,
                 null,
-                errorMessage
+                errorMessage,
+                statusCode
             );
 
             systemLogRepository.save(systemLog);
+            log.debug("Audit log saved successfully for action: {}", action);
         } catch (Exception e) {
-            log.error("Failed to save audit log for action {}: {}", action, e.getMessage());
+            log.error("Failed to save audit log for action {}: {}", action, e.getMessage(), e);
         }
     }
 
@@ -163,7 +181,8 @@ public class AuditLogServiceImpl implements com.capstone.be.service.AuditLogServ
         String userAgent,
         String requestMethod,
         String requestPath,
-        String errorMessage
+        String errorMessage,
+        Integer statusCode
     ) {
         String detailsJson = null;
         if (details != null && !details.isEmpty()) {
@@ -186,6 +205,7 @@ public class AuditLogServiceImpl implements com.capstone.be.service.AuditLogServ
             .userAgent(userAgent)
             .requestMethod(requestMethod)
             .requestPath(requestPath)
+            .statusCode(statusCode)
             .errorMessage(errorMessage)
             .build();
     }

@@ -1,6 +1,6 @@
 // Service for role management API calls
 import { apiClient } from "./http";
-import type { User, UserResponse, UserQueryParams } from "@/types/user";
+import type { UserResponse, UserQueryParams } from "@/types/user";
 import type { ChangeRoleRequest, ChangeRoleResponse } from "@/types/role-management";
 
 // BE response wrapper

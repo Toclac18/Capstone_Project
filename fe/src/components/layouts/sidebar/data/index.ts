@@ -158,3 +158,37 @@ export const BUSINESS_ADMIN_NAV_DATA = [
     ],
   },
 ];
+
+// System Admin menu
+export const SYSTEM_ADMIN_NAV_DATA = [
+  {
+    label: "SYSTEM ADMIN",
+    items: [
+      {
+        title: "Dashboard",
+        icon: Icons.HomeIcon,
+        url: "/admin/dashboard",
+      },
+      {
+        title: "Role Management",
+        icon: Icons.UsersIcon,
+        url: "/admin/role-management",
+      },
+      {
+        title: "System Logs",
+        icon: Icons.ActivityIcon,
+        url: "/admin/system-logs",
+      },
+      {
+        title: "Policies",
+        icon: Icons.FileTextIcon,
+        url: "/admin/policies",
+      },
+      {
+        title: "System Config",
+        icon: Icons.SlidersIcon,
+        url: "/admin/system-config",
+      },
+    ],
+  },
+];

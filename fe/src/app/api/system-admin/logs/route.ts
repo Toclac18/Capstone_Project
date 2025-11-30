@@ -6,7 +6,10 @@ import { getAuthHeader } from "@/server/auth";
 import { jsonResponse } from "@/server/response";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
-function filterLogs(logs: SystemLog[], params: SystemLogQueryParams): SystemLog[] {
+function filterLogs(
+  logs: SystemLog[],
+  params: SystemLogQueryParams,
+): SystemLog[] {
   let filtered = [...logs];
 
   // Filter by action
@@ -21,7 +24,9 @@ function filterLogs(logs: SystemLog[], params: SystemLogQueryParams): SystemLog[
 
   // Filter by targetUserId
   if (params.targetUserId) {
-    filtered = filtered.filter((log) => log.targetUserId === params.targetUserId);
+    filtered = filtered.filter(
+      (log) => log.targetUserId === params.targetUserId,
+    );
   }
 
   // Filter by userRole
@@ -54,7 +59,7 @@ function filterLogs(logs: SystemLog[], params: SystemLogQueryParams): SystemLog[
         log.action.toLowerCase().includes(searchLower) ||
         log.details?.toLowerCase().includes(searchLower) ||
         log.ipAddress?.toLowerCase().includes(searchLower) ||
-        log.userAgent?.toLowerCase().includes(searchLower)
+        log.userAgent?.toLowerCase().includes(searchLower),
     );
   }
 
@@ -123,10 +128,40 @@ async function handleGET(req: NextRequest): Promise<Response> {
   }
 
   try {
-    const queryString = req.nextUrl.searchParams.toString();
+    // Convert limit to size for Spring Data Pageable
+    const sp = req.nextUrl.searchParams;
+    const backendParams = new URLSearchParams();
+
+    // Map frontend params to backend params
+    // Frontend uses 1-based page, Spring Data uses 0-based
+    if (sp.get("page")) {
+      const frontendPage = parseInt(sp.get("page")!, 10);
+      const backendPage = Math.max(0, frontendPage - 1); // Convert to 0-based
+      backendParams.set("page", String(backendPage));
+    }
+    if (sp.get("limit")) backendParams.set("size", sp.get("limit")!); // Spring uses "size" not "limit"
+    if (sp.get("action")) backendParams.set("action", sp.get("action")!);
+    if (sp.get("userId")) backendParams.set("userId", sp.get("userId")!);
+    if (sp.get("targetUserId"))
+      backendParams.set("targetUserId", sp.get("targetUserId")!);
+    if (sp.get("userRole")) backendParams.set("userRole", sp.get("userRole")!);
+    if (sp.get("ipAddress"))
+      backendParams.set("ipAddress", sp.get("ipAddress")!);
+    if (sp.get("startDate"))
+      backendParams.set("startDate", sp.get("startDate")!);
+    if (sp.get("endDate")) backendParams.set("endDate", sp.get("endDate")!);
+    if (sp.get("search")) backendParams.set("search", sp.get("search")!);
+    // Spring Data uses "sort" parameter, not "sortBy" and "sortOrder"
+    if (sp.get("sortBy")) {
+      const sortBy = sp.get("sortBy")!;
+      const sortOrder = sp.get("sortOrder") || "desc";
+      backendParams.set("sort", `${sortBy},${sortOrder}`);
+    }
+
+    const queryString = backendParams.toString();
     const url = queryString
-      ? `${BE_BASE}/api/v1/system-admin/logs?${queryString}`
-      : `${BE_BASE}/api/v1/system-admin/logs`;
+      ? `${BE_BASE}/api/system-admin/logs?${queryString}`
+      : `${BE_BASE}/api/system-admin/logs`;
 
     const authHeader = await getAuthHeader("system-admin-logs");
     const fh = new Headers({ "Content-Type": "application/json" });
@@ -139,6 +174,14 @@ async function handleGET(req: NextRequest): Promise<Response> {
     });
 
     const text = await upstream.text();
+
+    // Debug log
+    console.log("[SystemLogs API] Backend URL:", url);
+    console.log("[SystemLogs API] Response status:", upstream.status);
+    console.log(
+      "[SystemLogs API] Response text (first 500 chars):",
+      text.substring(0, 500),
+    );
 
     if (!text || text.trim() === "") {
       return jsonResponse(
@@ -157,7 +200,8 @@ async function handleGET(req: NextRequest): Promise<Response> {
     let data: any;
     try {
       data = JSON.parse(text);
-    } catch {
+    } catch (e) {
+      console.error("[SystemLogs API] JSON parse error:", e);
       return jsonResponse(
         {
           message: "Invalid JSON response from server",
@@ -172,16 +216,41 @@ async function handleGET(req: NextRequest): Promise<Response> {
       );
     }
 
+    // Debug log parsed data
+    console.log("[SystemLogs API] Parsed data keys:", Object.keys(data || {}));
+    console.log("[SystemLogs API] Has 'data'?", "data" in (data || {}));
+    console.log("[SystemLogs API] Has 'pageInfo'?", "pageInfo" in (data || {}));
+    if (data?.data) {
+      console.log(
+        "[SystemLogs API] data.data length:",
+        Array.isArray(data.data) ? data.data.length : "not array",
+      );
+    }
+    if (data?.pageInfo) {
+      console.log("[SystemLogs API] pageInfo:", JSON.stringify(data.pageInfo));
+    }
+
     // Handle PagedResponse<SystemLogResponse>
-    if (data && typeof data === "object" && "data" in data && "pageInfo" in data) {
+    if (
+      data &&
+      typeof data === "object" &&
+      "data" in data &&
+      "pageInfo" in data
+    ) {
       const items = Array.isArray(data.data) ? data.data : [];
       const pageInfo = data.pageInfo ?? {};
+
+      console.log(
+        "[SystemLogs API] Returning response with",
+        items.length,
+        "items",
+      );
 
       return jsonResponse(
         {
           logs: items,
           total: pageInfo.totalElements ?? items.length ?? 0,
-          page: pageInfo.page ?? pageInfo.pageNumber ?? 1,
+          page: (pageInfo.page ?? pageInfo.pageNumber ?? 0) + 1, // Spring Data uses 0-based, frontend uses 1-based
           limit: pageInfo.size ?? pageInfo.pageSize ?? 10,
           totalPages:
             pageInfo.totalPages ??
@@ -203,7 +272,11 @@ async function handleGET(req: NextRequest): Promise<Response> {
     }
 
     // Generic error wrapper
-    if (data && typeof data === "object" && ("message" in data || "error" in data)) {
+    if (
+      data &&
+      typeof data === "object" &&
+      ("message" in data || "error" in data)
+    ) {
       return jsonResponse(
         {
           message: data.message || data.error || "Error from server",
@@ -242,4 +315,3 @@ export const GET = (...args: Parameters<typeof handleGET>) =>
   withErrorBoundary(() => handleGET(...args), {
     context: "api/system-admin/logs/route.ts/GET",
   });
-

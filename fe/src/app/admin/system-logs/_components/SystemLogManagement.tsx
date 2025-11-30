@@ -164,7 +164,6 @@ export function SystemLogManagement() {
               ) : (
                 logs.map((log) => {
                   const isError = log.statusCode && log.statusCode >= 400;
-                  const details = parseDetails(log.details);
 
                   return (
                     <tr key={log.id} className={styles["table-row"]}>

@@ -32,6 +32,13 @@ public class SystemLogServiceImpl implements SystemLogService {
     public Page<SystemLogResponse> getLogs(SystemLogQueryRequest queryRequest, Pageable pageable) {
         Specification<SystemLog> spec = buildSpecification(queryRequest);
         Page<SystemLog> logs = systemLogRepository.findAll(spec, pageable);
+        
+        log.info("Querying system logs - Found {} logs (page {}, size {}, total {})", 
+            logs.getNumberOfElements(), 
+            logs.getNumber(), 
+            logs.getSize(), 
+            logs.getTotalElements());
+        
         return logs.map(SystemLogResponse::from);
     }
 

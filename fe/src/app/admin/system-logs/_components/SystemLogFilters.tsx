@@ -1,7 +1,6 @@
 // src/app/admin/system-logs/_components/SystemLogFilters.tsx
 "use client";
 
-import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import type { SystemLogQueryParams } from "@/types/system-log";
 import styles from "../styles.module.css";

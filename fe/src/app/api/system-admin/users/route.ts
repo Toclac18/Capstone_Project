@@ -8,6 +8,14 @@ import { getAuthHeader } from "@/server/auth";
 import { jsonResponse } from "@/server/response";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
+async function handleGET(_req: NextRequest): Promise<Response> {
+  // GET is not supported, redirect to POST
+  return jsonResponse(
+    { error: "Method not allowed. Use POST instead." },
+    { status: 405 },
+  );
+}
+
 async function handlePOST(req: NextRequest): Promise<Response> {
   if (USE_MOCK) {
     try {
@@ -55,16 +63,14 @@ async function handlePOST(req: NextRequest): Promise<Response> {
       if (params.dateFrom) {
         const dateFrom = new Date(params.dateFrom);
         filteredUsers = filteredUsers.filter(
-          (user) =>
-            user.createdAt && new Date(user.createdAt) >= dateFrom,
+          (user) => user.createdAt && new Date(user.createdAt) >= dateFrom,
         );
       }
       if (params.dateTo) {
         const dateTo = new Date(params.dateTo);
         dateTo.setHours(23, 59, 59, 999);
         filteredUsers = filteredUsers.filter(
-          (user) =>
-            user.createdAt && new Date(user.createdAt) <= dateTo,
+          (user) => user.createdAt && new Date(user.createdAt) <= dateTo,
         );
       }
 
@@ -139,7 +145,7 @@ async function handlePOST(req: NextRequest): Promise<Response> {
     body = {};
   }
 
-  const url = `${BE_BASE}/api/v1/system-admin/users`;
+  const url = `${BE_BASE}/api/system-admin/users`;
 
   try {
     const authHeader = await getAuthHeader("system-admin-users");
@@ -159,7 +165,10 @@ async function handlePOST(req: NextRequest): Promise<Response> {
       const data = responseBody.data || responseBody;
 
       // Spring Page format
-      if (Array.isArray(data.content) && typeof data.totalElements === "number") {
+      if (
+        Array.isArray(data.content) &&
+        typeof data.totalElements === "number"
+      ) {
         const users = (data.content || []).map((user: any) => ({
           ...user,
           name: user.fullName || user.name || "",
@@ -204,6 +213,11 @@ async function handlePOST(req: NextRequest): Promise<Response> {
     );
   }
 }
+
+export const GET = (...args: Parameters<typeof handleGET>) =>
+  withErrorBoundary(() => handleGET(...args), {
+    context: "api/system-admin/users/route.ts/GET",
+  });
 
 export const POST = (...args: Parameters<typeof handlePOST>) =>
   withErrorBoundary(() => handlePOST(...args), {

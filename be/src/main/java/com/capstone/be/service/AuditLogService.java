@@ -18,13 +18,15 @@ public interface AuditLogService {
      * @param details Additional details as key-value pairs
      * @param ipAddress IP address of the client
      * @param userAgent User agent string
+     * @param statusCode HTTP status code (e.g., 200, 401, 500)
      */
     void logAction(
         LogAction action,
         UserPrincipal user,
         Map<String, Object> details,
         String ipAddress,
-        String userAgent
+        String userAgent,
+        Integer statusCode
     );
 
     /**
@@ -36,6 +38,7 @@ public interface AuditLogService {
      * @param details     Additional details
      * @param ipAddress   IP address
      * @param userAgent   User agent
+     * @param statusCode HTTP status code (e.g., 200, 401, 500)
      */
     void logActionWithTarget(
         LogAction action,
@@ -43,7 +46,8 @@ public interface AuditLogService {
         UUID targetUserId,
         Map<String, Object> details,
         String ipAddress,
-        String userAgent
+        String userAgent,
+        Integer statusCode
     );
 
     /**
@@ -56,6 +60,7 @@ public interface AuditLogService {
      * @param details           Additional details
      * @param ipAddress         IP address
      * @param userAgent         User agent
+     * @param statusCode HTTP status code (e.g., 200, 401, 500)
      */
     void logActionWithResource(
         LogAction action,
@@ -64,7 +69,8 @@ public interface AuditLogService {
         UUID targetResourceId,
         Map<String, Object> details,
         String ipAddress,
-        String userAgent
+        String userAgent,
+        Integer statusCode
     );
 
     /**
@@ -76,6 +82,7 @@ public interface AuditLogService {
      * @param errorMessage Error message
      * @param ipAddress   IP address
      * @param userAgent   User agent
+     * @param statusCode HTTP status code (e.g., 401, 403, 500)
      */
     void logFailedAction(
         LogAction action,
@@ -83,7 +90,8 @@ public interface AuditLogService {
         Map<String, Object> details,
         String errorMessage,
         String ipAddress,
-        String userAgent
+        String userAgent,
+        Integer statusCode
     );
 }
 

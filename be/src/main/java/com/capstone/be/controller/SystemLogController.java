@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/system-admin/logs")
+@RequestMapping("/system-admin/logs")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('SYSTEM_ADMIN')")
 @Tag(name = "System Logs", description = "APIs for viewing system audit logs")

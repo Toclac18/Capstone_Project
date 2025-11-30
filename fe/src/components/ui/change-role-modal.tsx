@@ -29,7 +29,6 @@ export default function ChangeRoleModal({
   onConfirm,
   currentRole,
   userName,
-  userId,
   title,
   description,
   size = 'md',

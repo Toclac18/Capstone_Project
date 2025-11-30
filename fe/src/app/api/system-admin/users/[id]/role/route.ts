@@ -56,7 +56,7 @@ async function handlePATCH(
     );
   }
 
-  const url = `${BE_BASE}/api/v1/system-admin/users/${id}/role`;
+  const url = `${BE_BASE}/api/system-admin/users/${id}/role`;
 
   try {
     const authHeader = await getAuthHeader("system-admin-change-role");

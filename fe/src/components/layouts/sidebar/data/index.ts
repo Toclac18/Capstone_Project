@@ -68,6 +68,11 @@ export const READER_NAV_DATA = [
         icon: Icons.BookIcon,
         url: "/reader/library",
       },
+      {
+        title: "My Statistics",
+        icon: Icons.BarChartIcon,
+        url: "/reader/statistics",
+      },
     ],
   },
 ];
@@ -91,6 +96,11 @@ export const ORGANIZATION_ADMIN_NAV_DATA = [
   {
     label: "ORGANIZATION ADMIN",
     items: [
+      {
+        title: "Dashboard",
+        icon: Icons.BarChartIcon,
+        url: "/org-admin/statistics",
+      },
       {
         title: "Organization Information",
         icon: Icons.BuildingIcon,

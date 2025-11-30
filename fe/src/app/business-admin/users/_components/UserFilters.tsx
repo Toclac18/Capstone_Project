@@ -5,20 +5,16 @@ import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import type { UserQueryParams } from "../api";
 import styles from "../styles.module.css";
 
-const ROLE_OPTIONS = [
-  { value: "", label: "All Roles" },
-  { value: "READER", label: "Reader" },
-  { value: "REVIEWER", label: "Reviewer" },
-  { value: "ORGANIZATION_ADMIN", label: "Organization Admin" },
-] as const;
+// Role filter removed - users are now separated into different tabs
 
 const STATUS_OPTIONS = [
   { value: "", label: "All Status" },
-  { value: "PENDING_VERIFICATION", label: "Pending Verification" },
+  { value: "PENDING_EMAIL_VERIFY", label: "Pending Email Verify" },
+  { value: "PENDING_APPROVE", label: "Pending Approve" },
   { value: "ACTIVE", label: "Active" },
   { value: "INACTIVE", label: "Inactive" },
+  { value: "REJECTED", label: "Rejected" },
   { value: "DELETED", label: "Deleted" },
-  { value: "DEACTIVE", label: "Deactive" },
 ] as const;
 
 const SORT_OPTIONS = [
@@ -36,12 +32,9 @@ const SORT_ORDER_OPTIONS = [
 
 type FilterValues = {
   search: string;
-  role: string;
   status: string;
   sortBy: string;
   sortOrder: "asc" | "desc";
-  dateFrom: string;
-  dateTo: string;
 };
 
 interface UserFiltersProps {
@@ -63,12 +56,9 @@ export function UserFilters({
   } = useForm<FilterValues>({
     defaultValues: {
       search: "",
-      role: "",
       status: "",
       sortBy: "createdAt",
       sortOrder: "desc",
-      dateFrom: "",
-      dateTo: "",
     },
   });
 
@@ -85,12 +75,9 @@ export function UserFilters({
     reset();
     const clearedFilters: UserQueryParams = {
       search: "",
-      role: "",
       status: "",
       sortBy: "createdAt",
       sortOrder: "desc",
-      dateFrom: "",
-      dateTo: "",
       page: 1,
     };
     onFiltersChange(clearedFilters);
@@ -98,25 +85,21 @@ export function UserFilters({
 
   // Watch specific fields instead of entire form to avoid React Compiler warning
   const searchValue = useWatch({ control, name: "search" });
-  const roleValue = useWatch({ control, name: "role" });
   const statusValue = useWatch({ control, name: "status" });
-  const dateFromValue = useWatch({ control, name: "dateFrom" });
-  const dateToValue = useWatch({ control, name: "dateTo" });
   const hasActiveFilters =
     searchValue ||
-    roleValue ||
-    statusValue ||
-    dateFromValue ||
-    dateToValue;
+    statusValue;
 
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
       className={styles["filters-container"]}
     >
-      {/* Search Bar */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-4">
-        <div className="w-full lg:w-auto lg:min-w-[300px] lg:max-w-[400px]">
+      {/* All Filters in One Row */}
+      <div className="flex flex-wrap items-end gap-4">
+        {/* Search */}
+        <div className="flex-1 min-w-[250px] max-w-[400px]">
+          <label className={styles["label"]}>Search</label>
           <div className={styles["search-container"]}>
             <svg
               className={styles["search-icon"]}
@@ -141,46 +124,9 @@ export function UserFilters({
             />
           </div>
         </div>
-        
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            disabled={loading}
-            className={`${styles["btn"]} ${styles["btn-primary"]}`}
-          >
-            {loading ? "Searching..." : "Search"}
-          </button>
 
-          <button
-            type="button"
-            onClick={handleClearFilters}
-            disabled={loading}
-            className={`${styles["btn"]} ${styles["btn-secondary"]}`}
-          >
-            Clear All
-          </button>
-        </div>
-      </div>
-
-      {/* Quick Filters */}
-      <div className="flex flex-wrap gap-4 mb-4">
-        <div className="min-w-[150px]">
-          <label className={styles["label"]}>Role</label>
-          <select
-            id="role"
-            className={`${styles["select"]} ${errors.role ? styles.error : ""}`}
-            disabled={loading}
-            {...register("role")}
-          >
-            {ROLE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="min-w-[150px]">
+        {/* Status */}
+        <div className="w-[160px]">
           <label className={styles["label"]}>Status</label>
           <select
             id="status"
@@ -196,7 +142,8 @@ export function UserFilters({
           </select>
         </div>
 
-        <div className="min-w-[150px]">
+        {/* Sort By */}
+        <div className="w-[160px]">
           <label className={styles["label"]}>Sort By</label>
           <select
             id="sortBy"
@@ -212,7 +159,8 @@ export function UserFilters({
           </select>
         </div>
 
-        <div className="min-w-[150px]">
+        {/* Order */}
+        <div className="w-[140px]">
           <label className={styles["label"]}>Order</label>
           <select
             id="sortOrder"
@@ -228,30 +176,24 @@ export function UserFilters({
           </select>
         </div>
 
-        <div className="min-w-[150px]">
-          <label htmlFor="dateFrom" className={styles["label"]}>
-            From Date
-          </label>
-          <input
-            id="dateFrom"
-            type="date"
-            className={`${styles["input"]} ${errors.dateFrom ? styles.error : ""}`}
+        {/* Action Buttons */}
+        <div className="flex gap-2 flex-shrink-0">
+          <button
+            type="submit"
             disabled={loading}
-            {...register("dateFrom")}
-          />
-        </div>
+            className={`${styles["btn"]} ${styles["btn-primary"]} min-w-[90px]`}
+          >
+            {loading ? "Searching..." : "Search"}
+          </button>
 
-        <div className="min-w-[150px]">
-          <label htmlFor="dateTo" className={styles["label"]}>
-            To Date
-          </label>
-          <input
-            id="dateTo"
-            type="date"
-            className={`${styles["input"]} ${errors.dateTo ? styles.error : ""}`}
+          <button
+            type="button"
+            onClick={handleClearFilters}
             disabled={loading}
-            {...register("dateTo")}
-          />
+            className={`${styles["btn"]} ${styles["btn-secondary"]} min-w-[80px]`}
+          >
+            Clear
+          </button>
         </div>
       </div>
 
@@ -279,23 +221,6 @@ export function UserFilters({
               </button>
             </span>
           )}
-          {roleValue && (
-            <span className={`${styles["filter-tag"]} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`}>
-              Role: {ROLE_OPTIONS.find((r) => r.value === roleValue)?.label}
-              <button
-                type="button"
-                onClick={() => {
-                  const currentValues = getValues();
-                  const updatedFilters = { ...currentValues, role: "" };
-                  reset(updatedFilters);
-                  onSubmit(updatedFilters);
-                }}
-                className="ml-1 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
-              >
-                ×
-              </button>
-            </span>
-          )}
           {statusValue && (
             <span className={`${styles["filter-tag"]} bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200`}>
               Status: {STATUS_OPTIONS.find((s) => s.value === statusValue)?.label}
@@ -308,23 +233,6 @@ export function UserFilters({
                   onSubmit(updatedFilters);
                 }}
                 className="ml-1 text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-200"
-              >
-                ×
-              </button>
-            </span>
-          )}
-          {(dateFromValue || dateToValue) && (
-            <span className={`${styles["filter-tag"]} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`}>
-              Date: {dateFromValue || "Start"} - {dateToValue || "End"}
-              <button
-                type="button"
-                onClick={() => {
-                  const currentValues = getValues();
-                  const updatedFilters = { ...currentValues, dateFrom: "", dateTo: "" };
-                  reset(updatedFilters);
-                  onSubmit(updatedFilters);
-                }}
-                className="ml-1 text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-200"
               >
                 ×
               </button>

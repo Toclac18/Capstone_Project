@@ -117,8 +117,8 @@ export const BUSINESS_ADMIN_NAV_DATA = [
     items: [
       {
         title: "Dashboard",
-        icon: Icons.HomeIcon,
-        url: "/business-admin",
+        icon: Icons.BarChartIcon,
+        url: "/business-admin/dashboard",
       },
       {
         title: "Organization Management",

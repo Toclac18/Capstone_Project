@@ -1,8 +1,8 @@
-import { headers } from "next/headers";
 import { mockDocumentsDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
+import { getAuthHeader } from "@/server/auth";
 
 async function handleGET() {
   if (USE_MOCK) {
@@ -16,21 +16,36 @@ async function handleGET() {
     });
   }
 
-  const h = await headers();
-  const authHeader = h.get("authorization") || "";
-  const cookieHeader = h.get("cookie") || "";
+  const bearerToken = await getAuthHeader("types");
 
   const fh = new Headers({ "Content-Type": "application/json" });
-  if (authHeader) fh.set("Authorization", authHeader);
-  if (cookieHeader) fh.set("Cookie", cookieHeader);
+  if (bearerToken) {
+    fh.set("Authorization", bearerToken);
+  }
 
-  const upstream = await fetch(`${BE_BASE}/api/reader/documents/types`, {
+  const upstream = await fetch(`${BE_BASE}/api/doc-types`, {
     method: "GET",
     headers: fh,
     cache: "no-store",
   });
 
-  return proxyJsonResponse(upstream, { mode: "real" });
+  if (!upstream.ok) {
+    return proxyJsonResponse(upstream, { mode: "real" });
+  }
+
+  // Parse response - backend returns ResponseEntity<List<DocType>> (direct array)
+  const responseData = await upstream.json();
+  const types = Array.isArray(responseData) 
+    ? responseData 
+    : (responseData?.data || []);
+
+  return jsonResponse(types, {
+    status: upstream.status,
+    headers: {
+      "content-type": "application/json",
+      "x-mode": "real",
+    },
+  });
 }
 
 export const GET = (...args: Parameters<typeof handleGET>) =>

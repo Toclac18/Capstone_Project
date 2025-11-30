@@ -20,6 +20,7 @@ import {
   getDocumentTypes,
   getDomains,
 } from "@/services/upload-documents.service";
+import { sanitizeImageUrl } from "@/utils/imageUrl";
 import styles from "./styles.module.css";
 import {
   AlertCircle,
@@ -35,6 +36,8 @@ import {
 type LoadState = "loading" | "success" | "empty" | "error";
 
 const ITEMS_PER_PAGE = 12;
+const THUMBNAIL_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/avatars/";
+const DEFAULT_THUMBNAIL = "/images/document.jpg";
 
 export default function LibraryPage() {
   const { showToast } = useToast();
@@ -67,9 +70,9 @@ export default function LibraryPage() {
         });
         setDocuments(result.documents);
         setTotal(result.total);
-        const limit = params.limit || ITEMS_PER_PAGE;
+        const limit = result.limit || params.limit || ITEMS_PER_PAGE;
         setTotalPages(result.total > 0 ? Math.ceil(result.total / limit) : 1);
-        setCurrentPage(params.page || 1);
+        setCurrentPage(result.page || params.page || 1);
         setState(result.documents.length ? "success" : "empty");
       } catch (e: unknown) {
         const msg =
@@ -269,18 +272,43 @@ export default function LibraryPage() {
                 {/* Card Header - Thumbnail */}
                 <div className={styles["card-thumbnail-container"]}>
                   <div className={styles["card-thumbnail"]}>
-                    {doc.thumbnailUrl ? (
-                      <img
-                        src={doc.thumbnailUrl}
-                        alt={doc.documentName}
-                        className={styles["thumbnail-image"]}
-                      />
-                    ) : (
-                      <div className={styles["thumbnail-placeholder"]}>
-                        <FileText className={styles["thumbnail-icon"]} />
-                        <span className={styles["thumbnail-text"]}>PDF</span>
-                      </div>
-                    )}
+                    {(() => {
+                      const sanitizedThumbnailUrl = sanitizeImageUrl(
+                        doc.thumbnailUrl,
+                        THUMBNAIL_BASE_URL,
+                        DEFAULT_THUMBNAIL
+                      );
+                      
+                      const imageSrc = sanitizedThumbnailUrl || DEFAULT_THUMBNAIL;
+                      const isExternalUrl = imageSrc.startsWith("http://") || imageSrc.startsWith("https://");
+                      const isBlobUrl = imageSrc.startsWith("blob:");
+                      
+                      if (isExternalUrl || isBlobUrl || imageSrc.startsWith("/")) {
+                        return (
+                          <img
+                            src={imageSrc}
+                            alt={doc.documentName}
+                            className={styles["thumbnail-image"]}
+                            onError={(e) => {
+                              const target = e.currentTarget as HTMLImageElement;
+                              // Fallback to default image on error
+                              if (target.src !== DEFAULT_THUMBNAIL) {
+                                target.src = DEFAULT_THUMBNAIL;
+                              }
+                            }}
+                          />
+                        );
+                      }
+                      
+                      // Fallback to default if sanitization fails
+                      return (
+                        <img
+                          src={DEFAULT_THUMBNAIL}
+                          alt={doc.documentName}
+                          className={styles["thumbnail-image"]}
+                        />
+                      );
+                    })()}
                   </div>
                   <span
                     className={`${styles["card-source-badge"]} ${

@@ -1,10 +1,14 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.dto.response.statistics.BusinessAdminDashboardResponse;
+import com.capstone.be.dto.response.statistics.GlobalDocumentStatisticsResponse;
 import com.capstone.be.dto.response.statistics.OrganizationStatisticsResponse;
 import com.capstone.be.dto.response.statistics.PersonalDocumentStatisticsResponse;
+import com.capstone.be.dto.response.statistics.ReportHandlingStatisticsResponse;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.security.model.UserPrincipal;
+import com.capstone.be.service.BusinessAdminStatisticsService;
 import com.capstone.be.service.OrganizationStatisticsService;
 import com.capstone.be.service.PersonalStatisticsService;
 import java.time.Instant;
@@ -33,6 +37,7 @@ public class StatisticsController {
 
   private final PersonalStatisticsService personalStatisticsService;
   private final OrganizationStatisticsService organizationStatisticsService;
+  private final BusinessAdminStatisticsService businessAdminStatisticsService;
   private final OrganizationProfileRepository organizationProfileRepository;
 
   /**
@@ -139,6 +144,93 @@ public class StatisticsController {
 
     OrganizationStatisticsResponse response = organizationStatisticsService.getOrganizationStatistics(
         organizationId, start, end);
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Get Business Admin dashboard overview
+   * GET /api/statistics/business-admin/dashboard
+   *
+   * @param userPrincipal Authenticated business admin
+   * @return Dashboard overview response
+   */
+  @GetMapping("/business-admin/dashboard")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  public ResponseEntity<BusinessAdminDashboardResponse> getDashboardOverview(
+      @AuthenticationPrincipal UserPrincipal userPrincipal) {
+    UUID adminId = userPrincipal.getId();
+    log.info("Business admin {} requesting dashboard overview", adminId);
+
+    BusinessAdminDashboardResponse response = businessAdminStatisticsService.getDashboardOverview();
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Get global document statistics (View Global Document Statistics)
+   * GET /api/statistics/business-admin/documents
+   *
+   * @param userPrincipal Authenticated business admin
+   * @param startDate     Optional start date filter (ISO format: yyyy-MM-dd)
+   * @param endDate       Optional end date filter (ISO format: yyyy-MM-dd)
+   * @return Global document statistics response
+   */
+  @GetMapping("/business-admin/documents")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  public ResponseEntity<GlobalDocumentStatisticsResponse> getGlobalDocumentStatistics(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String startDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String endDate) {
+    UUID adminId = userPrincipal.getId();
+
+    Instant start = startDate != null
+        ? java.time.LocalDate.parse(startDate).atStartOfDay(ZoneId.systemDefault()).toInstant()
+        : null;
+    Instant end = endDate != null
+        ? java.time.LocalDate.parse(endDate).atTime(23, 59, 59).atZone(ZoneId.systemDefault())
+            .toInstant()
+        : null;
+
+    log.info("Business admin {} requesting global document statistics from {} to {}", adminId, start,
+        end);
+
+    GlobalDocumentStatisticsResponse response = businessAdminStatisticsService
+        .getGlobalDocumentStatistics(start, end);
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Get report handling statistics (View Report Handling Statistics)
+   * GET /api/statistics/business-admin/reports
+   *
+   * @param userPrincipal Authenticated business admin
+   * @param startDate     Optional start date filter (ISO format: yyyy-MM-dd)
+   * @param endDate       Optional end date filter (ISO format: yyyy-MM-dd)
+   * @return Report handling statistics response
+   */
+  @GetMapping("/business-admin/reports")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  public ResponseEntity<ReportHandlingStatisticsResponse> getReportHandlingStatistics(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String startDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String endDate) {
+    UUID adminId = userPrincipal.getId();
+
+    Instant start = startDate != null
+        ? java.time.LocalDate.parse(startDate).atStartOfDay(ZoneId.systemDefault()).toInstant()
+        : null;
+    Instant end = endDate != null
+        ? java.time.LocalDate.parse(endDate).atTime(23, 59, 59).atZone(ZoneId.systemDefault())
+            .toInstant()
+        : null;
+
+    log.info("Business admin {} requesting report handling statistics from {} to {}", adminId, start,
+        end);
+
+    ReportHandlingStatisticsResponse response = businessAdminStatisticsService
+        .getReportHandlingStatistics(start, end);
 
     return ResponseEntity.ok(response);
   }

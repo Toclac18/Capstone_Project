@@ -2,9 +2,11 @@ package com.capstone.be.service.impl;
 
 import com.capstone.be.config.constant.FileStorage;
 import com.capstone.be.domain.entity.MemberImportBatch;
+import com.capstone.be.domain.entity.Notification;
 import com.capstone.be.domain.entity.OrgEnrollment;
 import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.User;
+import com.capstone.be.domain.enums.NotificationType;
 import com.capstone.be.domain.enums.OrgEnrollStatus;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.domain.enums.UserStatus;
@@ -24,8 +26,13 @@ import com.capstone.be.repository.UserRepository;
 import com.capstone.be.repository.specification.OrgEnrollmentSpecification;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.service.FileStorageService;
+import com.capstone.be.service.NotificationService;
 import com.capstone.be.service.OrgEnrollmentService;
 import com.capstone.be.util.ExcelUtil;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +40,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.validator.routines.EmailValidator;
+import org.aspectj.weaver.ast.Not;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -49,22 +58,25 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
   private final OrgEnrollmentRepository orgEnrollmentRepository;
   private final OrganizationProfileRepository organizationProfileRepository;
   private final UserRepository userRepository;
-  private final EmailService emailService;
   private final OrgEnrollmentMapper orgEnrollmentMapper;
   private final MemberImportBatchRepository memberImportBatchRepository;
-  private final MemberImportBatchMapper memberImportBatchMapper;
+
+  private final EmailService emailService;
   private final FileStorageService fileStorageService;
+  private final NotificationService notificationService;
+
+
+  private final MemberImportBatchMapper memberImportBatchMapper;
 
   @Override
   @Transactional
   public InviteMembersResponse inviteMembers(UUID organizationAdminId, List<String> emails) {
     log.info("Inviting {} members for organization admin: {}", emails.size(), organizationAdminId);
 
-    return handleInviteMembers(
+    return handleInviteByEmail(
         organizationAdminId,
         emails,
         "MANUAL",
-        null,
         null);
   }
 
@@ -80,25 +92,21 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
     // Parse emails from Excel
     List<String> emails = ExcelUtil.parseEmailListFromExcel(file);
 
-
-
-    return handleInviteMembers(
+    return handleInviteByEmail(
         organizationAdminId,
         emails,
         "EXCEL",
-        file,
-        file.getOriginalFilename());
+        file);
 
   }
 
 
   @Transactional
-  private InviteMembersResponse handleInviteMembers(
+  private InviteMembersResponse handleInviteByEmail(
       UUID organizationAdminId,
       List<String> emails,
       String importSource,
-      MultipartFile file,
-      String fileName
+      MultipartFile file
   ) {
     log.info("Inviting {} members ({}) for admin: {}",
         emails.size(), importSource, organizationAdminId);
@@ -110,15 +118,12 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
     OrganizationProfile organization = getOrganizationByAdminId(organizationAdminId);
     User admin = organization.getAdmin();
 
-
-
     // Create batch
     MemberImportBatch batch = createImportBatch(
         organization,
         admin,
         importSource,
         emails.size(),
-        fileName,
         file
     );
 
@@ -153,84 +158,143 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
             .stream()
             .collect(Collectors.toMap(OrgEnrollment::getMemberEmail, oe -> oe));
 
+    EmailValidator emailValidator = EmailValidator.getInstance();
+    ZoneId zone = ZoneId.of("Asia/Ho_Chi_Minh");
+
     for (String email : emails) {
       try {
-        // Check if already invited or joined
-        OrgEnrollment existingEnrollment = existingEnrollmentsMap.get(email);
+        // Validate email format
+        if (!emailValidator.isValid(email)) {
+          failedInvitations.add(FailedInvitation.builder()
+              .email(email)
+              .reason("Invalid email format")
+              .build());
+          continue;
+        }
 
+        // Check if already has enrollment
+        OrgEnrollment existingEnrollment = existingEnrollmentsMap.get(email);
         if (existingEnrollment != null) {
           // Skip if already pending or joined
-          if (existingEnrollment.getStatus() == OrgEnrollStatus.PENDING_INVITE ||
+          if (
               existingEnrollment.getStatus() == OrgEnrollStatus.JOINED) {
             skippedEmails.add(email);
             log.info("Skipped email (already invited/joined): {}", email);
             continue;
           }
 
-          // If removed, update to pending again
+          // If removed, re-invite, reset expiry
           if (existingEnrollment.getStatus() == OrgEnrollStatus.REMOVED) {
             existingEnrollment.setStatus(OrgEnrollStatus.PENDING_INVITE);
+            Instant expiry = LocalDate.now(zone)
+                .plusDays(8)
+                .atStartOfDay(zone)
+                .toInstant();
+            existingEnrollment.setExpiry(expiry);
             orgEnrollmentRepository.save(existingEnrollment);
 
-            // Send invitation email
-            sendInvitationEmail(existingEnrollment, organization);
+            // Send appropriate notification/email
+            if (existingEnrollment.getMember() != null) {
+              notificationService.createNotification(
+                  existingEnrollment.getMember().getId(),
+                  NotificationType.INFO,
+                  "Organization invitation",
+                  "You have a new invitation from " + organization.getName());
+              sendInvitationEmail(existingEnrollment, organization);
+            } else {
+              emailService.sendAccountCreationInvitation(email, organization.getName());
+            }
+
             successEmails.add(email);
             log.info("Re-invited removed member: {}", email);
             continue;
           }
         }
 
-        // Find user from cached map
-        User user = usersMap.get(email);
+        // User exists in the system
+        if (usersMap.containsKey(email)) {
+          User user = usersMap.get(email);
 
-        if (user == null) {
-          failedInvitations.add(FailedInvitation.builder()
-              .email(email)
-              .reason("User not found")
-              .build());
-          continue;
+          // Validate user role is READER
+          if (user.getRole() != UserRole.READER) {
+            failedInvitations.add(FailedInvitation.builder()
+                .email(email)
+                .reason("Only readers can be invited to organizations")
+                .build());
+            log.warn("Cannot invite non-reader user: {}", email);
+            continue;
+          }
+
+          // Validate user status is ACTIVE
+          if (user.getStatus() != UserStatus.ACTIVE) {
+            failedInvitations.add(FailedInvitation.builder()
+                .email(email)
+                .reason("User account is not active")
+                .build());
+            log.warn("Cannot invite inactive user: {}", email);
+            continue;
+          }
+
+          // Send notification
+          notificationService.createNotification(
+              user.getId(),
+              NotificationType.INFO,
+              "Organization invitation",
+              "You have a new invitation from " + organization.getName());
+
+          // Create enrollment with expiry
+          Instant expiry = LocalDate.now(zone)
+              .plusDays(8)
+              .atStartOfDay(zone)
+              .toInstant();
+
+          OrgEnrollment enrollment = OrgEnrollment.builder()
+              .organization(organization)
+              .member(user)
+              .memberEmail(email)
+              .status(OrgEnrollStatus.PENDING_INVITE)
+              .importBatch(batch)
+              .expiry(expiry)
+              .build();
+
+          orgEnrollmentRepository.save(enrollment);
+
+          // Send invitation email
+          sendInvitationEmail(enrollment, organization);
+
+          successEmails.add(email);
+          log.info("Successfully invited existing user: {}", email);
+
+        } else {
+          // User does NOT exist - send email to create account
+          emailService.sendAccountCreationInvitation(email, organization.getName());
+
+          // Still create enrollment record to track the invitation
+          Instant expiry = LocalDate.now(zone)
+              .plusDays(8)
+              .atStartOfDay(zone)
+              .toInstant();
+
+          OrgEnrollment enrollment = OrgEnrollment.builder()
+              .organization(organization)
+              .member(null)  // No user yet
+              .memberEmail(email)
+              .status(OrgEnrollStatus.PENDING_INVITE)
+              .importBatch(batch)
+              .expiry(expiry)
+              .build();
+
+          orgEnrollmentRepository.save(enrollment);
+
+          successEmails.add(email);
+          log.info("Sent account creation invitation to non-existing user: {}", email);
         }
-
-        // Check if user is a reader
-        if (user.getRole() != UserRole.READER) {
-          failedInvitations.add(FailedInvitation.builder()
-              .email(email)
-              .reason("Only readers can be invited")
-              .build());
-          continue;
-        }
-
-        // Check if user is active
-        if (user.getStatus() != UserStatus.ACTIVE) {
-          failedInvitations.add(FailedInvitation.builder()
-              .email(email)
-              .reason("User account is not active")
-              .build());
-          continue;
-        }
-
-        // Create new enrollment
-        OrgEnrollment enrollment = OrgEnrollment.builder()
-            .organization(organization)
-            .member(user)
-            .memberEmail(email)
-            .status(OrgEnrollStatus.PENDING_INVITE)
-            .importBatch(batch)  // Link to import batch if exists
-            .build();
-
-        orgEnrollmentRepository.save(enrollment);
-
-        // Send invitation email
-        sendInvitationEmail(enrollment, organization);
-
-        successEmails.add(email);
-        log.info("Successfully invited: {}", email);
 
       } catch (Exception e) {
-        log.error("Error inviting email: {}", email, e);
+        log.error("Error processing invitation for email: {}", email, e);
         failedInvitations.add(FailedInvitation.builder()
             .email(email)
-            .reason(e.getMessage())
+            .reason(e.getMessage() != null ? e.getMessage() : "Internal error")
             .build());
       }
     }
@@ -491,7 +555,6 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
       User admin,
       String importSource,
       int totalEmails,
-      String fileName,
       MultipartFile file) {
 
     // Upload Excel file to S3 if provided
@@ -515,7 +578,6 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
         .successCount(0)
         .failedCount(0)
         .skippedCount(0)
-        .fileName(fileName)
         .fileKey(importFileKey)
         .build();
 

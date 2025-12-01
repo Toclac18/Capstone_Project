@@ -38,7 +38,7 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 
     // Apache POI — Excel reader
-    implementation 'org.apache.poi:poi:5.2.5'        // HSSF/XSSF common
+    implementation 'org.apache.poi:poi:5.4.0'
     implementation 'org.apache.poi:poi-ooxml:5.4.0'
 
     // DB driver
@@ -81,8 +81,10 @@ dependencies {
     implementation 'org.apache.pdfbox:pdfbox:2.0.30'
 
     // Word (DOCX) -> PDF
-    implementation 'org.apache.poi:poi-ooxml:5.4.0'
-    implementation 'fr.opensagres.xdocreport:org.apache.poi.xwpf.converter.pdf:1.0.6'
+//    implementation 'org.apache.poi:poi-ooxml:5.4.0'
+//    implementation 'fr.opensagres.xdocreport:org.apache.poi.xwpf.converter.pdf:1.0.6'
+
+    implementation 'commons-validator:commons-validator:1.10.0'
 }
 
 //MapStruct Compiler Configuration

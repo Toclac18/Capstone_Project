@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.validator.routines.EmailValidator;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
@@ -20,11 +21,10 @@ import org.springframework.web.multipart.MultipartFile;
  */
 @Slf4j
 public class ExcelUtil {
-
   private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-  private static final Pattern EMAIL_PATTERN = Pattern.compile(
-      "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
-  );
+//  private static final Pattern EMAIL_PATTERN = Pattern.compile(
+//      "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+//  );
 
   /**
    * Validate Excel file
@@ -82,11 +82,11 @@ public class ExcelUtil {
           email = email.trim().toLowerCase();
 
           // Validate email format
-          if (isValidEmail(email)) {
+//          if (isValidEmail(email)) {
             emails.add(email);
-          } else {
-            log.warn("Invalid email format in row {}: {}", rowIndex + 1, email);
-          }
+//          } else {
+//            log.warn("Invalid email format in row {}: {}", rowIndex + 1, email);
+//          }
         }
       }
 
@@ -122,6 +122,7 @@ public class ExcelUtil {
    * Validate email format
    */
   private static boolean isValidEmail(String email) {
-    return email != null && EMAIL_PATTERN.matcher(email).matches();
+//    return email != null && EMAIL_PATTERN.matcher(email).matches();
+    return EmailValidator.getInstance().isValid(email);
   }
 }

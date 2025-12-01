@@ -102,4 +102,9 @@ public interface OrgEnrollmentRepository extends JpaRepository<OrgEnrollment, UU
    * Used to link enrollments after user registration
    */
   List<OrgEnrollment> findByMemberEmailAndMemberIsNull(String email);
+
+  /**
+   * Find enrollment by member ID and organization ID
+   */
+  Optional<OrgEnrollment> findByMemberIdAndOrganizationId(UUID memberId, UUID organizationId);
 }

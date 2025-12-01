@@ -478,6 +478,40 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
   }
 
   @Override
+  @Transactional
+  public void leaveOrganization(UUID readerId, UUID organizationId) {
+    log.info("Reader {} leaving organization {}", readerId, organizationId);
+
+    User reader = getUserById(readerId);
+    validateUserIsReader(reader);
+
+    // Find the enrollment by reader and organization
+    OrgEnrollment enrollment = orgEnrollmentRepository
+        .findByMemberIdAndOrganizationId(readerId, organizationId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            "Enrollment not found for this reader and organization",
+            "reader_id", readerId,
+            "organization_id", organizationId
+        ));
+
+    // Validate enrollment is currently joined
+    if (enrollment.getStatus() != OrgEnrollStatus.JOINED) {
+      throw new BusinessException(
+          "Cannot leave organization - enrollment is not joined",
+          HttpStatus.BAD_REQUEST,
+          "ENROLLMENT_NOT_JOINED"
+      );
+    }
+
+    // Remove member (Soft delete) - same behavior as admin removing member
+    enrollment.removeMember();
+    orgEnrollmentRepository.save(enrollment);
+
+    log.info("Reader {} successfully left organization {}", readerId,
+        enrollment.getOrganization().getName());
+  }
+
+  @Override
   @Transactional(readOnly = true)
   public OrgEnrollmentResponse getEnrollmentDetail(UUID enrollmentId) {
     log.info("Get enrollment detail: {}", enrollmentId);

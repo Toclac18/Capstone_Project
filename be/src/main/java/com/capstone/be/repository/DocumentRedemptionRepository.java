@@ -5,10 +5,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface DocumentRedemptionRepository extends JpaRepository<DocumentRedemption, UUID> {
+public interface DocumentRedemptionRepository extends JpaRepository<DocumentRedemption, UUID>,
+    JpaSpecificationExecutor<DocumentRedemption> {
 
   Optional<DocumentRedemption> findByReader_IdAndDocument_Id(UUID readerId, UUID documentId);
   boolean existsByReader_IdAndDocument_Id(UUID readerId, UUID documentId);

@@ -838,6 +838,7 @@ public class UserServiceImpl implements UserService {
 
     organizationProfileRepository.findByUserId(user.getId()).ifPresent(profile -> {
       builder
+          .organizationId(profile.getId()) // Add organizationId
           .orgName(profile.getName())
           .orgType(profile.getType() != null ? profile.getType().name() : null)
           .orgEmail(profile.getEmail())

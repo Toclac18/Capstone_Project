@@ -15,6 +15,8 @@ export enum OrganizationType {
 
 export interface Organization extends BaseEntity {
   id: string;
+  userId?: string; // Admin user ID
+  organizationId?: string; // Organization profile ID (for statistics API)
   name: string;
   type: OrganizationType;
   email: string;

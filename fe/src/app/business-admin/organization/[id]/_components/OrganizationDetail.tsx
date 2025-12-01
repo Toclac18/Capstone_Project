@@ -48,6 +48,8 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
     setImageError(false);
 
     try {
+      // Backend API expects userId (admin ID), not organizationId
+      // The organizationId passed here should be the userId from the list
       const data = await getOrganization(organizationId);
       setOrganization(data);
       // Reset imageError again after setting organization to ensure fresh state
@@ -74,14 +76,16 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
     }
   }, [organization]);
 
-  const handleStatusUpdate = async (newStatus: "ACTIVE" | "INACTIVE") => {
+  const handleStatusUpdate = async (newStatus: "PENDING_EMAIL_VERIFY" | "PENDING_APPROVE" | "ACTIVE" | "INACTIVE" | "REJECTED" | "DELETED") => {
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
       if (organization) {
-        const updated = await updateOrganizationStatus(organization.id, newStatus);
+        // Backend API needs userId (admin ID), not organizationId
+        const userId = organization.userId || organization.id;
+        const updated = await updateOrganizationStatus(userId, newStatus);
         setOrganization(updated);
         showToast(toast.success("Status Updated", `Organization status updated to ${newStatus} successfully`));
       }
@@ -93,6 +97,32 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
     } finally {
       setLoading(false);
     }
+  };
+
+  const getStatusBadgeClass = (status?: string) => {
+    switch (status) {
+      case "ACTIVE":
+        return styles["status-active"];
+      case "PENDING_EMAIL_VERIFY":
+      case "PENDING_APPROVE":
+        return styles["status-pending"];
+      case "INACTIVE":
+      case "REJECTED":
+        return styles["status-inactive"];
+      case "DELETED":
+        return styles["status-deleted"];
+      default:
+        return styles["status-inactive"];
+    }
+  };
+
+  const getCurrentStatusForToggle = (status?: string, active?: boolean) => {
+    // For StatusConfirmation, we need to determine if it's "active" or "inactive"
+    // ACTIVE is considered "active", everything else is "inactive"
+    if (status === "ACTIVE" || active) {
+      return "ACTIVE" as const;
+    }
+    return "INACTIVE" as const;
   };
 
   if (loading && !organization) {
@@ -257,11 +287,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                 <label className={styles["label"]}>Status</label>
                 <div className={styles["status-container"]}>
                   <span
-                    className={`${styles["status-badge"]} ${
-                      organization.status === "ACTIVE" || organization.active
-                        ? styles["status-active"]
-                        : styles["status-inactive"]
-                    }`}
+                    className={`${styles["status-badge"]} ${getStatusBadgeClass(organization.status)}`}
                   >
                     {organization.status || (organization.active ? "ACTIVE" : "INACTIVE")}
                   </span>
@@ -332,7 +358,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
             <div className={styles["sidebar-section"]}>
               <StatusConfirmation
                 onConfirm={handleStatusUpdate}
-                currentStatus={(organization.status === "ACTIVE" || organization.active) ? "ACTIVE" : "INACTIVE"}
+                currentStatus={getCurrentStatusForToggle(organization.status, organization.active)}
                 itemName={organization.name || organization.email}
                 title={
                   (organization.status === "ACTIVE" || organization.active)

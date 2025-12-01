@@ -93,8 +93,8 @@ public interface EmailService {
       String status, String adminNotes);
 
   /**
-   * Send invitation to create account and join organization
-   * For users who don't have an account yet
+   * Send invitation to create account and join organization For users who don't have an account
+   * yet
    *
    * @param email            Recipient email address
    * @param organizationName Organization name

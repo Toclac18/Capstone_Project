@@ -2,6 +2,7 @@ package com.capstone.be.service.impl;
 
 import com.capstone.be.config.constant.FileStorage;
 import com.capstone.be.domain.entity.Domain;
+import com.capstone.be.domain.entity.OrgEnrollment;
 import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.ReaderProfile;
 import com.capstone.be.domain.entity.ReviewerDomainLink;
@@ -22,6 +23,7 @@ import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.exception.UnauthorizedException;
 import com.capstone.be.mapper.AuthMapper;
 import com.capstone.be.repository.DomainRepository;
+import com.capstone.be.repository.OrgEnrollmentRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.repository.ReviewerDomainLinkRepository;
@@ -58,6 +60,7 @@ public class AuthServiceImpl implements AuthService {
   private final SpecializationRepository specializationRepository;
   private final ReviewerDomainLinkRepository reviewerDomainLinkRepository;
   private final ReviewerSpecLinkRepository reviewerSpecLinkRepository;
+  private final OrgEnrollmentRepository orgEnrollmentRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtUtil jwtUtil;
   private final AuthenticationManager authenticationManager;
@@ -89,6 +92,9 @@ public class AuthServiceImpl implements AuthService {
     readerProfileRepository.save(readerProfile);
     log.info("Created reader profile for user id: {}", user.getId());
 
+    // Link user to any pending enrollments with this email
+    linkPendingEnrollments(user);
+
     // Generate email verification token (expires in 10 minutes)
     String verificationToken = jwtUtil.generateEmailVerificationToken(
         user.getId(),
@@ -100,6 +106,23 @@ public class AuthServiceImpl implements AuthService {
 
     // Return response WITHOUT access token (user needs to verify email first)
     return authMapper.toAuthResponse(user);
+  }
+
+  /**
+   * Link newly registered user to any pending organization enrollments created before registration
+   */
+  private void linkPendingEnrollments(User user) {
+    List<OrgEnrollment> pendingEnrollments = orgEnrollmentRepository
+        .findByMemberEmailAndMemberIsNull(user.getEmail());
+
+    if (!pendingEnrollments.isEmpty()) {
+      for (OrgEnrollment enrollment : pendingEnrollments) {
+        enrollment.setMember(user);
+      }
+      orgEnrollmentRepository.saveAll(pendingEnrollments);
+      log.info("Linked {} pending organization enrollments to user: {}",
+          pendingEnrollments.size(), user.getEmail());
+    }
   }
 
   @Override

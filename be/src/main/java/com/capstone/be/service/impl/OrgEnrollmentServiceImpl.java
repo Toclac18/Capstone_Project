@@ -2,7 +2,6 @@ package com.capstone.be.service.impl;
 
 import com.capstone.be.config.constant.FileStorage;
 import com.capstone.be.domain.entity.MemberImportBatch;
-import com.capstone.be.domain.entity.Notification;
 import com.capstone.be.domain.entity.OrgEnrollment;
 import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.User;
@@ -32,7 +31,6 @@ import com.capstone.be.util.ExcelUtil;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +39,6 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.routines.EmailValidator;
-import org.aspectj.weaver.ast.Not;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -383,8 +380,17 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
 
     OrgEnrollment enrollment = getEnrollmentById(enrollmentId);
 
-    // Validate enrollment belongs to reader
-    if (!enrollment.getMember().getId().equals(readerId)) {
+    // Validate enrollment belongs to reader (by email or by member)
+    boolean belongsToReader = false;
+    if (enrollment.getMember() != null && enrollment.getMember().getId().equals(readerId)) {
+      belongsToReader = true;
+    } else if (enrollment.getMemberEmail().equalsIgnoreCase(reader.getEmail())) {
+      // Link enrollment to reader if member is null
+      enrollment.setMember(reader);
+      belongsToReader = true;
+    }
+
+    if (!belongsToReader) {
       throw new BusinessException(
           "Enrollment does not belong to this user",
           HttpStatus.FORBIDDEN,
@@ -415,8 +421,17 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
 
     OrgEnrollment enrollment = getEnrollmentById(enrollmentId);
 
-    // Validate enrollment belongs to reader
-    if (!enrollment.getMember().getId().equals(readerId)) {
+    // Validate enrollment belongs to reader (by email or by member)
+    boolean belongsToReader = false;
+    if (enrollment.getMember() != null && enrollment.getMember().getId().equals(readerId)) {
+      belongsToReader = true;
+    } else if (enrollment.getMemberEmail().equalsIgnoreCase(reader.getEmail())) {
+      // Link enrollment to reader if member is null (before rejecting)
+      enrollment.setMember(reader);
+      belongsToReader = true;
+    }
+
+    if (!belongsToReader) {
       throw new BusinessException(
           "Enrollment does not belong to this user",
           HttpStatus.FORBIDDEN,

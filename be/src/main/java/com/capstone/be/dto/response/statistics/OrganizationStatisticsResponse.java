@@ -15,13 +15,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class OrganizationStatisticsResponse {
 
-  // Organization information
+  // Organization basic info
   private OrganizationInfo organization;
 
   // Summary statistics
   private SummaryStatistics summary;
 
-  // Time series data
+  // Time series data for charts
   private List<TimeSeriesData> memberGrowth;
   private List<TimeSeriesData> documentUploads;
   private List<TimeSeriesData> documentViews;
@@ -34,6 +34,8 @@ public class OrganizationStatisticsResponse {
   private List<StatusBreakdown> documentStatusBreakdown;
   private List<VisibilityBreakdown> documentVisibilityBreakdown;
   private PremiumBreakdown premiumBreakdown;
+
+  // Top contributors (optional)
   private List<TopContributor> topContributors;
 
   @Data
@@ -61,7 +63,7 @@ public class OrganizationStatisticsResponse {
     private Long totalComments;
     private Long totalSaves;
     private Long totalPurchases;
-    private Long activeMembers;
+    private Long activeMembers; // Members who uploaded documents
     private Double averageViewsPerDocument;
   }
 

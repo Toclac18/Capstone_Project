@@ -56,7 +56,7 @@ public class PersonalStatisticsServiceImpl implements PersonalStatisticsService 
     log.info("Getting personal document statistics for user {} from {} to {}", userId, startDate,
         endDate);
 
-    // Get all documents uploaded by this user with date filter
+    // Get all documents uploaded by user
     Specification<Document> docSpec = (root, query, cb) -> {
       var predicates = new ArrayList<jakarta.persistence.criteria.Predicate>();
       predicates.add(cb.equal(root.get("uploader").get("id"), userId));
@@ -74,13 +74,17 @@ public class PersonalStatisticsServiceImpl implements PersonalStatisticsService 
         .map(Document::getId)
         .collect(Collectors.toList());
 
+    if (documentIds.isEmpty()) {
+      return buildEmptyResponse();
+    }
+
     // Calculate summary statistics
-    SummaryStatistics summary = calculatePersonalSummaryStatistics(userDocuments, documentIds,
-        startDate, endDate);
+    SummaryStatistics summary = calculateSummaryStatistics(userDocuments, documentIds, startDate,
+        endDate);
 
     // Calculate time series data
-    List<TimeSeriesData> documentUploads = calculatePersonalDocumentUploadsTimeSeries(
-        userDocuments, startDate, endDate);
+    List<TimeSeriesData> documentUploads = calculateDocumentUploadsTimeSeries(userDocuments,
+        startDate, endDate);
     List<TimeSeriesData> documentViews = calculateDocumentViewsTimeSeries(documentIds, startDate,
         endDate);
     List<TimeSeriesData> votesReceived = calculateVotesTimeSeries(documentIds, startDate, endDate);
@@ -89,9 +93,11 @@ public class PersonalStatisticsServiceImpl implements PersonalStatisticsService 
     List<TimeSeriesData> documentsSaved = calculateDocumentsSavedTimeSeries(documentIds, startDate,
         endDate);
 
-    // Calculate breakdowns
-    List<StatusBreakdown> statusBreakdown = calculatePersonalStatusBreakdown(userDocuments);
-    PremiumBreakdown premiumBreakdown = calculatePersonalPremiumBreakdown(userDocuments);
+    // Calculate status breakdown
+    List<StatusBreakdown> statusBreakdown = calculateStatusBreakdown(userDocuments);
+
+    // Calculate premium breakdown
+    PremiumBreakdown premiumBreakdown = calculatePremiumBreakdown(userDocuments);
 
     return PersonalDocumentStatisticsResponse.builder()
         .summary(summary)
@@ -105,11 +111,9 @@ public class PersonalStatisticsServiceImpl implements PersonalStatisticsService 
         .build();
   }
 
-  // Helper methods
-
-  private SummaryStatistics calculatePersonalSummaryStatistics(List<Document> documents,
+  private SummaryStatistics calculateSummaryStatistics(List<Document> documents,
       List<UUID> documentIds, Instant startDate, Instant endDate) {
-    long totalDocumentsUploaded = documents.size();
+    long totalDocuments = documents.size();
     long totalViews = documents.stream()
         .mapToLong(doc -> doc.getViewCount() != null ? doc.getViewCount() : 0L)
         .sum();
@@ -150,7 +154,7 @@ public class PersonalStatisticsServiceImpl implements PersonalStatisticsService 
           return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         });
 
-    // Count purchases
+    // Count purchases (redemptions) for premium documents
     long totalPurchases = documentRedemptionRepository.count(
         (root, query, cb) -> {
           var predicates = new ArrayList<jakarta.persistence.criteria.Predicate>();
@@ -164,14 +168,12 @@ public class PersonalStatisticsServiceImpl implements PersonalStatisticsService 
           return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         });
 
-    double avgViews = totalDocumentsUploaded > 0 ? (double) totalViews / totalDocumentsUploaded
-        : 0.0;
-    double avgVotes = totalDocumentsUploaded > 0
-        ? (double) (totalUpvotes + totalDownvotes) / totalDocumentsUploaded
+    double avgViews = totalDocuments > 0 ? (double) totalViews / totalDocuments : 0.0;
+    double avgVotes = totalDocuments > 0 ? (double) (totalUpvotes + totalDownvotes) / totalDocuments
         : 0.0;
 
     return SummaryStatistics.builder()
-        .totalDocumentsUploaded(totalDocumentsUploaded)
+        .totalDocumentsUploaded(totalDocuments)
         .totalViews(totalViews)
         .totalUpvotes(totalUpvotes)
         .totalDownvotes(totalDownvotes)
@@ -183,7 +185,7 @@ public class PersonalStatisticsServiceImpl implements PersonalStatisticsService 
         .build();
   }
 
-  private List<TimeSeriesData> calculatePersonalDocumentUploadsTimeSeries(List<Document> documents,
+  private List<TimeSeriesData> calculateDocumentUploadsTimeSeries(List<Document> documents,
       Instant startDate, Instant endDate) {
     Map<String, Long> dateCounts = new HashMap<>();
 
@@ -297,7 +299,7 @@ public class PersonalStatisticsServiceImpl implements PersonalStatisticsService 
     return buildTimeSeries(dateCounts, startDate, endDate);
   }
 
-  private List<StatusBreakdown> calculatePersonalStatusBreakdown(List<Document> documents) {
+  private List<StatusBreakdown> calculateStatusBreakdown(List<Document> documents) {
     Map<DocStatus, Long> statusCounts = documents.stream()
         .collect(Collectors.groupingBy(Document::getStatus, Collectors.counting()));
 
@@ -309,7 +311,7 @@ public class PersonalStatisticsServiceImpl implements PersonalStatisticsService 
         .collect(Collectors.toList());
   }
 
-  private PremiumBreakdown calculatePersonalPremiumBreakdown(List<Document> documents) {
+  private PremiumBreakdown calculatePremiumBreakdown(List<Document> documents) {
     long premiumCount = documents.stream()
         .filter(doc -> Boolean.TRUE.equals(doc.getIsPremium()))
         .count();
@@ -342,6 +344,32 @@ public class PersonalStatisticsServiceImpl implements PersonalStatisticsService 
     }
 
     return series;
+  }
+
+  private PersonalDocumentStatisticsResponse buildEmptyResponse() {
+    return PersonalDocumentStatisticsResponse.builder()
+        .summary(SummaryStatistics.builder()
+            .totalDocumentsUploaded(0L)
+            .totalViews(0L)
+            .totalUpvotes(0L)
+            .totalDownvotes(0L)
+            .totalComments(0L)
+            .totalSaves(0L)
+            .totalPurchases(0L)
+            .averageViewsPerDocument(0.0)
+            .averageVotesPerDocument(0.0)
+            .build())
+        .documentUploads(new ArrayList<>())
+        .documentViews(new ArrayList<>())
+        .votesReceived(new ArrayList<>())
+        .commentsReceived(new ArrayList<>())
+        .documentsSaved(new ArrayList<>())
+        .statusBreakdown(new ArrayList<>())
+        .premiumBreakdown(PremiumBreakdown.builder()
+            .premiumCount(0L)
+            .freeCount(0L)
+            .build())
+        .build();
   }
 }
 

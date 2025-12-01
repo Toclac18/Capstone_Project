@@ -50,14 +50,14 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class OrganizationStatisticsServiceImpl implements OrganizationStatisticsService {
 
-  private final OrganizationProfileRepository organizationProfileRepository;
   private final DocumentRepository documentRepository;
-  private final OrgEnrollmentRepository orgEnrollmentRepository;
   private final DocumentReadHistoryRepository documentReadHistoryRepository;
   private final DocumentVoteRepository documentVoteRepository;
   private final CommentRepository commentRepository;
   private final SavedListDocumentRepository savedListDocumentRepository;
   private final DocumentRedemptionRepository documentRedemptionRepository;
+  private final OrganizationProfileRepository organizationProfileRepository;
+  private final OrgEnrollmentRepository orgEnrollmentRepository;
 
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -65,26 +65,14 @@ public class OrganizationStatisticsServiceImpl implements OrganizationStatistics
   @Transactional(readOnly = true)
   public OrganizationStatisticsResponse getOrganizationStatistics(
       UUID organizationId, Instant startDate, Instant endDate) {
-    log.info("Getting organization statistics for organization {} from {} to {}", organizationId,
-        startDate, endDate);
+    log.info("Getting organization statistics for org {} from {} to {}", organizationId, startDate,
+        endDate);
 
     // Get organization
     OrganizationProfile organization = organizationProfileRepository.findById(organizationId)
-        .orElseThrow(() -> new ResourceNotFoundException(
-            "Organization not found with ID: " + organizationId));
+        .orElseThrow(() -> new ResourceNotFoundException("Organization", "id", organizationId));
 
-    // Build organization info
-    OrganizationInfo orgInfo = OrganizationInfo.builder()
-        .id(organization.getId().toString())
-        .name(organization.getName())
-        .type(organization.getType() != null ? organization.getType().name() : "UNKNOWN")
-        .email(organization.getEmail())
-        .createdAt(organization.getCreatedAt() != null
-            ? organization.getCreatedAt().toString()
-            : null)
-        .build();
-
-    // Get all documents for this organization with date filter
+    // Get all documents for this organization
     Specification<Document> docSpec = (root, query, cb) -> {
       var predicates = new ArrayList<jakarta.persistence.criteria.Predicate>();
       predicates.add(cb.equal(root.get("organization").get("id"), organizationId));
@@ -97,12 +85,12 @@ public class OrganizationStatisticsServiceImpl implements OrganizationStatistics
       return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
     };
 
-    List<Document> organizationDocuments = documentRepository.findAll(docSpec);
-    List<UUID> documentIds = organizationDocuments.stream()
+    List<Document> orgDocuments = documentRepository.findAll(docSpec);
+    List<UUID> documentIds = orgDocuments.stream()
         .map(Document::getId)
         .collect(Collectors.toList());
 
-    // Get all enrollments for this organization with date filter
+    // Get all enrollments for this organization
     Specification<OrgEnrollment> enrollmentSpec = (root, query, cb) -> {
       var predicates = new ArrayList<jakarta.persistence.criteria.Predicate>();
       predicates.add(cb.equal(root.get("organization").get("id"), organizationId));
@@ -118,14 +106,14 @@ public class OrganizationStatisticsServiceImpl implements OrganizationStatistics
     List<OrgEnrollment> enrollments = orgEnrollmentRepository.findAll(enrollmentSpec);
 
     // Calculate summary statistics
-    SummaryStatistics summary = calculateOrganizationSummaryStatistics(organizationDocuments,
-        documentIds, enrollments, startDate, endDate);
+    SummaryStatistics summary = calculateSummaryStatistics(
+        organization, orgDocuments, documentIds, enrollments, startDate, endDate);
 
     // Calculate time series data
     List<TimeSeriesData> memberGrowth = calculateMemberGrowthTimeSeries(enrollments, startDate,
         endDate);
-    List<TimeSeriesData> documentUploads = calculateOrganizationDocumentUploadsTimeSeries(
-        organizationDocuments, startDate, endDate);
+    List<TimeSeriesData> documentUploads = calculateDocumentUploadsTimeSeries(orgDocuments,
+        startDate, endDate);
     List<TimeSeriesData> documentViews = calculateDocumentViewsTimeSeries(documentIds, startDate,
         endDate);
     List<TimeSeriesData> votesReceived = calculateVotesTimeSeries(documentIds, startDate, endDate);
@@ -136,12 +124,22 @@ public class OrganizationStatisticsServiceImpl implements OrganizationStatistics
 
     // Calculate breakdowns
     List<StatusBreakdown> memberStatusBreakdown = calculateMemberStatusBreakdown(enrollments);
-    List<StatusBreakdown> documentStatusBreakdown = calculateDocumentStatusBreakdown(
-        organizationDocuments);
+    List<StatusBreakdown> documentStatusBreakdown = calculateDocumentStatusBreakdown(orgDocuments);
     List<VisibilityBreakdown> documentVisibilityBreakdown = calculateDocumentVisibilityBreakdown(
-        organizationDocuments);
-    PremiumBreakdown premiumBreakdown = calculatePremiumBreakdown(organizationDocuments);
-    List<TopContributor> topContributors = calculateTopContributors(organizationDocuments);
+        orgDocuments);
+    PremiumBreakdown premiumBreakdown = calculatePremiumBreakdown(orgDocuments);
+
+    // Calculate top contributors
+    List<TopContributor> topContributors = calculateTopContributors(orgDocuments, enrollments);
+
+    // Build organization info
+    OrganizationInfo orgInfo = OrganizationInfo.builder()
+        .id(organization.getId().toString())
+        .name(organization.getName())
+        .type(organization.getType().name())
+        .email(organization.getEmail())
+        .createdAt(organization.getCreatedAt().toString())
+        .build();
 
     return OrganizationStatisticsResponse.builder()
         .organization(orgInfo)
@@ -160,16 +158,11 @@ public class OrganizationStatisticsServiceImpl implements OrganizationStatistics
         .build();
   }
 
-  // Helper methods
-
-  private SummaryStatistics calculateOrganizationSummaryStatistics(List<Document> documents,
-      List<UUID> documentIds, List<OrgEnrollment> enrollments, Instant startDate,
-      Instant endDate) {
-    long totalMembers = enrollments.size();
-    long activeMembers = enrollments.stream()
-        .filter(e -> e.getStatus() == OrgEnrollStatus.JOINED)
-        .count();
-
+  private SummaryStatistics calculateSummaryStatistics(
+      OrganizationProfile organization, List<Document> documents, List<UUID> documentIds,
+      List<OrgEnrollment> enrollments, Instant startDate, Instant endDate) {
+    long totalMembers = orgEnrollmentRepository.countByOrganizationAndStatus(organization,
+        OrgEnrollStatus.JOINED);
     long totalDocuments = documents.size();
     long totalViews = documents.stream()
         .mapToLong(doc -> doc.getViewCount() != null ? doc.getViewCount() : 0L)
@@ -225,6 +218,13 @@ public class OrganizationStatisticsServiceImpl implements OrganizationStatistics
           return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         });
 
+    // Count active members (members who uploaded documents)
+    long activeMembers = documents.stream()
+        .map(Document::getUploader)
+        .map(uploader -> uploader.getId())
+        .distinct()
+        .count();
+
     double avgViews = totalDocuments > 0 ? (double) totalViews / totalDocuments : 0.0;
 
     return SummaryStatistics.builder()
@@ -246,16 +246,18 @@ public class OrganizationStatisticsServiceImpl implements OrganizationStatistics
     Map<String, Long> dateCounts = new HashMap<>();
 
     for (OrgEnrollment enrollment : enrollments) {
-      LocalDate date = enrollment.getCreatedAt().atZone(ZoneId.systemDefault()).toLocalDate();
-      String dateStr = date.format(DATE_FORMATTER);
-      dateCounts.put(dateStr, dateCounts.getOrDefault(dateStr, 0L) + 1);
+      if (enrollment.getStatus() == OrgEnrollStatus.JOINED) {
+        LocalDate date = enrollment.getCreatedAt().atZone(ZoneId.systemDefault()).toLocalDate();
+        String dateStr = date.format(DATE_FORMATTER);
+        dateCounts.put(dateStr, dateCounts.getOrDefault(dateStr, 0L) + 1);
+      }
     }
 
     return buildTimeSeries(dateCounts, startDate, endDate);
   }
 
-  private List<TimeSeriesData> calculateOrganizationDocumentUploadsTimeSeries(
-      List<Document> documents, Instant startDate, Instant endDate) {
+  private List<TimeSeriesData> calculateDocumentUploadsTimeSeries(List<Document> documents,
+      Instant startDate, Instant endDate) {
     Map<String, Long> dateCounts = new HashMap<>();
 
     for (Document doc : documents) {
@@ -417,35 +419,39 @@ public class OrganizationStatisticsServiceImpl implements OrganizationStatistics
         .build();
   }
 
-  private List<TopContributor> calculateTopContributors(List<Document> documents) {
+  private List<TopContributor> calculateTopContributors(List<Document> documents,
+      List<OrgEnrollment> enrollments) {
+    // Count uploads per member
     Map<UUID, Long> uploadCounts = documents.stream()
         .collect(Collectors.groupingBy(
             doc -> doc.getUploader().getId(),
             Collectors.counting()));
 
+    // Get top 10 contributors
     return uploadCounts.entrySet().stream()
         .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue()))
-        .limit(5) // Top 5 contributors
+        .limit(10)
         .map(entry -> {
-          UUID uploaderId = entry.getKey();
+          UUID memberId = entry.getKey();
           long count = entry.getValue();
 
-          String uploaderName = documents.stream()
-              .filter(doc -> doc.getUploader().getId().equals(uploaderId))
+          // Find member info from enrollments or documents
+          String memberName = documents.stream()
+              .filter(doc -> doc.getUploader().getId().equals(memberId))
               .findFirst()
               .map(doc -> doc.getUploader().getFullName())
               .orElse("Unknown");
 
-          String uploaderEmail = documents.stream()
-              .filter(doc -> doc.getUploader().getId().equals(uploaderId))
+          String memberEmail = documents.stream()
+              .filter(doc -> doc.getUploader().getId().equals(memberId))
               .findFirst()
               .map(doc -> doc.getUploader().getEmail())
-              .orElse("Unknown");
+              .orElse("");
 
           return TopContributor.builder()
-              .memberId(uploaderId.toString())
-              .memberName(uploaderName)
-              .memberEmail(uploaderEmail)
+              .memberId(memberId.toString())
+              .memberName(memberName)
+              .memberEmail(memberEmail)
               .uploadCount(count)
               .build();
         })

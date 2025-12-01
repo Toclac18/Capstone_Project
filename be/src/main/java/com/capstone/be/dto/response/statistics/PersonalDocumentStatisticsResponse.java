@@ -1,5 +1,6 @@
 package com.capstone.be.dto.response.statistics;
 
+import java.time.Instant;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,15 +19,17 @@ public class PersonalDocumentStatisticsResponse {
   // Summary statistics
   private SummaryStatistics summary;
 
-  // Time series data
+  // Time series data for charts
   private List<TimeSeriesData> documentUploads;
   private List<TimeSeriesData> documentViews;
   private List<TimeSeriesData> votesReceived;
   private List<TimeSeriesData> commentsReceived;
   private List<TimeSeriesData> documentsSaved;
 
-  // Breakdowns
+  // Document status breakdown
   private List<StatusBreakdown> statusBreakdown;
+
+  // Premium vs Free documents
   private PremiumBreakdown premiumBreakdown;
 
   @Data
@@ -40,7 +43,7 @@ public class PersonalDocumentStatisticsResponse {
     private Long totalDownvotes;
     private Long totalComments;
     private Long totalSaves;
-    private Long totalPurchases;
+    private Long totalPurchases; // Premium documents purchased by others
     private Double averageViewsPerDocument;
     private Double averageVotesPerDocument;
   }

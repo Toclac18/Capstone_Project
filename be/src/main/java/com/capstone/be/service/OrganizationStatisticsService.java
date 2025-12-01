@@ -10,7 +10,7 @@ import java.util.UUID;
 public interface OrganizationStatisticsService {
 
   /**
-   * Get organization statistics
+   * Get organization statistics (STA3 & STA6)
    *
    * @param organizationId Organization ID
    * @param startDate      Optional start date filter (ISO format)

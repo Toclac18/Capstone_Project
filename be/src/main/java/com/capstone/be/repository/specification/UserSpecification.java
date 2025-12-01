@@ -4,6 +4,7 @@ import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.domain.enums.UserStatus;
 import jakarta.persistence.criteria.Predicate;
+import java.time.Instant;
 import org.springframework.data.jpa.domain.Specification;
 
 /**
@@ -68,6 +69,35 @@ public class UserSpecification {
   }
 
   /**
+   * Filter users by created date range
+   * @param dateFrom start date (nullable)
+   * @param dateTo end date (nullable)
+   * @return Specification that filters by date range, or null if both dates are null
+   */
+  public static Specification<User> createdBetween(Instant dateFrom, Instant dateTo) {
+    return (root, query, criteriaBuilder) -> {
+      if (dateFrom == null && dateTo == null) {
+        return null;
+      }
+
+      Predicate predicate = null;
+      if (dateFrom != null) {
+        predicate = criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), dateFrom);
+      }
+      if (dateTo != null) {
+        Predicate dateToPredicate = criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), dateTo);
+        if (predicate == null) {
+          predicate = dateToPredicate;
+        } else {
+          predicate = criteriaBuilder.and(predicate, dateToPredicate);
+        }
+      }
+
+      return predicate;
+    };
+  }
+
+  /**
    * Combine all user filters
    * @param role the user role to filter by (nullable)
    * @param status the user status to filter by (nullable)
@@ -79,5 +109,23 @@ public class UserSpecification {
         .where(hasRole(role))
         .and(hasStatus(status))
         .and(searchByKeyword(search));
+  }
+
+  /**
+   * Combine all user filters including date range
+   * @param role the user role to filter by (nullable)
+   * @param status the user status to filter by (nullable)
+   * @param search the keyword to search for (nullable)
+   * @param dateFrom start date (nullable)
+   * @param dateTo end date (nullable)
+   * @return Combined Specification with all filters applied
+   */
+  public static Specification<User> withFilters(
+      UserRole role, UserStatus status, String search, Instant dateFrom, Instant dateTo) {
+    return Specification
+        .where(hasRole(role))
+        .and(hasStatus(status))
+        .and(searchByKeyword(search))
+        .and(createdBetween(dateFrom, dateTo));
   }
 }

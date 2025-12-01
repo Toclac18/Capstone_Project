@@ -13,6 +13,7 @@ import com.capstone.be.dto.response.auth.AuthResponse;
 import com.capstone.be.dto.response.auth.VerifyOtpResponse;
 import com.capstone.be.service.AuthService;
 import com.capstone.be.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -72,9 +73,10 @@ public class AuthController {
 
   @PostMapping("/login")
   public ResponseEntity<AuthResponse> login(
-      @Valid @RequestBody LoginRequest request) {
+      @Valid @RequestBody LoginRequest request,
+      HttpServletRequest httpRequest) {
     log.info("Login request for email: {}", request.getEmail());
-    AuthResponse response = authService.login(request);
+    AuthResponse response = authService.login(request, httpRequest);
     return ResponseEntity.ok(response);
   }
 

@@ -1,12 +1,16 @@
 package com.capstone.be.service;
 
+import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.domain.enums.UserStatus;
+import com.capstone.be.dto.request.admin.ChangeRoleRequest;
 import com.capstone.be.dto.request.admin.UpdateUserStatusRequest;
 import com.capstone.be.dto.request.user.ChangeEmailRequest;
 import com.capstone.be.dto.request.user.ChangePasswordRequest;
 import com.capstone.be.dto.response.admin.AdminOrganizationResponse;
 import com.capstone.be.dto.response.admin.AdminReaderResponse;
 import com.capstone.be.dto.response.admin.AdminReviewerResponse;
+import com.capstone.be.dto.response.admin.UserManagementResponse;
+import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -163,4 +167,32 @@ public interface UserService {
    * @return Updated AdminOrganizationResponse
    */
   AdminOrganizationResponse updateOrganizationStatus(UUID userId, UpdateUserStatusRequest request);
+
+  // System Admin operations - Role management
+
+  /**
+   * Get all users with optional filters for role management (System Admin only)
+   *
+   * @param search   Search by email or name (optional)
+   * @param role     Filter by role (optional)
+   * @param status   Filter by status (optional)
+   * @param dateFrom Filter by created date from (optional)
+   * @param dateTo   Filter by created date to (optional)
+   * @param pageable Pagination
+   * @return Page of UserManagementResponse
+   */
+  Page<UserManagementResponse> getAllUsersForRoleManagement(
+      String search, UserRole role, UserStatus status,
+      Instant dateFrom, Instant dateTo, Pageable pageable);
+
+  /**
+   * Change user role (System Admin only)
+   *
+   * @param userId      User ID
+   * @param request     Change role request
+   * @param changedBy   ID of the admin who made the change (for audit log)
+   * @return Updated UserManagementResponse
+   */
+  UserManagementResponse changeUserRole(
+      UUID userId, ChangeRoleRequest request, UUID changedBy);
 }

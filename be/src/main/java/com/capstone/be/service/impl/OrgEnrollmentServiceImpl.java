@@ -516,7 +516,9 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
   }
 
   private OrgEnrollmentResponse buildEnrollmentResponse(OrgEnrollment enrollment) {
-    return orgEnrollmentMapper.toResponse(enrollment);
+    OrgEnrollmentResponse res = orgEnrollmentMapper.toResponse(enrollment);
+    res.setOrganizationType(enrollment.getOrganization().getType().getDisplayName());
+    return res;
   }
 
   @Override

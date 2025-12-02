@@ -1,143 +1,147 @@
-// src/mock/saveList.ts
-// Mock SaveList mapping trực tiếp với mockDocDetails
+// src/mock/save-list.mock.ts
+// Mock SavedList mapping trực tiếp với mockDocDetails
 
-import { mockDocDetails } from "./docs-detail.mock"; // path đúng: "@/mock/docsDetail" nếu cần
+import { mockDocDetails } from "./docs-detail.mock";
 
 export type SaveListMock = {
   id: string;
   name: string;
-  readerId: string;
-  docIds: string[]; // id của DocDetailMock (vd: "11", "12")
-  createdAt: string; // ISO string
+  docIds: string[];
+  createdAt: string;
+  updatedAt: string;
 };
 
-export type SaveListItem = {
+export type SaveListSummaryMock = {
   id: string;
   name: string;
   docCount: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
-// ====== MOCK DATA ======
+export type SaveListDetailMock = SaveListSummaryMock & {
+  documents: any[];
+};
 
-// Giả sử ta có 2 reader mock để test:
-// - "reader-1": bác sĩ nội trú
-// - "reader-2": sinh viên
-const READER_1 = "reader-1";
-const READER_2 = "reader-2";
+type ApiResponse<T> = {
+  success: boolean;
+  data: T;
+  timestamp: string;
+};
 
-// Lấy sẵn id docs từ mockDocDetails cho chắc
-const DOC_11 = mockDocDetails[0]?.id ?? "11"; // Practical Civil Engineering
-const DOC_12 = mockDocDetails[1]?.id ?? "12"; // Advanced Structural Analysis
+const nowIso = () => new Date().toISOString();
 
-const SAVE_LISTS: SaveListMock[] = [
+// ---- In-memory data ----
+let SAVE_LISTS: SaveListMock[] = [
   {
-    id: "savelist-1",
-    name: "Civil Engineering Basics",
-    readerId: READER_1,
-    // mapping CHUẨN với docsDetail: doc 11 (free) + doc 12 (premium)
-    docIds: [DOC_11, DOC_12],
-    createdAt: new Date("2025-11-01T09:00:00.000Z").toISOString(),
-  },
-  {
-    id: "savelist-2",
-    name: "Premium Structural Notes",
-    readerId: READER_1,
-    // chỉ chứa doc premium (12)
-    docIds: [DOC_12],
-    createdAt: new Date("2025-11-05T14:30:00.000Z").toISOString(),
-  },
-  {
-    id: "savelist-3",
-    name: "Student References",
-    readerId: READER_2,
-    // chỉ chứa doc free (11)
-    docIds: [DOC_11],
-    createdAt: new Date("2025-11-02T10:15:00.000Z").toISOString(),
+    id: "c19c2990-b6d6-45b1-9c48-37b60015074d",
+    name: "My first list",
+    docIds: ["1d2eb26d-a92d-3183-ae10-2448113ec466"],
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
   },
 ];
 
-// ====== INTERNAL HELPERS ======
+const toSummary = (list: SaveListMock): SaveListSummaryMock => ({
+  id: list.id,
+  name: list.name,
+  docCount: list.docIds.length,
+  createdAt: list.createdAt,
+  updatedAt: list.updatedAt,
+});
 
-function findByReader(readerId: string) {
-  return SAVE_LISTS.filter((l) => l.readerId === readerId);
-}
+const toDetail = (list: SaveListMock): SaveListDetailMock => {
+  const documents = list.docIds
+    .map((docId) => mockDocDetails.find((d: any) => d.id === docId))
+    .filter(Boolean);
 
-function findById(id: string) {
-  return SAVE_LISTS.find((l) => l.id === id) ?? null;
-}
-
-function toItem(list: SaveListMock): SaveListItem {
   return {
-    id: list.id,
-    name: list.name,
-    docCount: list.docIds.length,
+    ...toSummary(list),
+    documents,
   };
+};
+
+const wrap = <T>(data: T): ApiResponse<T> => ({
+  success: true,
+  data,
+  timestamp: nowIso(),
+});
+
+// ---- Public mock APIs (dùng trong route.ts) ----
+
+// GET /save-lists
+export function mockGetSaveLists(): ApiResponse<SaveListSummaryMock[]> {
+  return wrap(SAVE_LISTS.map(toSummary));
 }
 
-// ====== API-LIKE MOCK FUNCTIONS ======
-
-/**
- * Lấy danh sách Save List (id, name, docCount) của 1 reader
- * → dùng trong GET /api/save-lists?readerId=...
- */
-export function mockFetchSaveLists(readerId: string): SaveListItem[] {
-  return findByReader(readerId).map(toItem);
+// GET /save-lists/:id
+export function mockGetSaveListDetail(
+  id: string,
+): ApiResponse<SaveListDetailMock> | null {
+  const found = SAVE_LISTS.find((l) => l.id === id);
+  if (!found) return null;
+  return wrap(toDetail(found));
 }
 
-/**
- * Tạo mới SaveList và thêm luôn 1 doc (mapping với docsDetail qua docId)
- * → dùng trong POST /api/save-lists (mode mock)
- */
-export function mockCreateSaveListAndAddDoc(payload: {
-  readerId: string;
-  name: string;
-  documentId: string;
-}) {
-  const id = `savelist-${Date.now()}`;
-  const now = new Date().toISOString();
+// POST /save-lists
+export function mockCreateSaveList(
+  name: string,
+  documentId?: string,
+): ApiResponse<SaveListSummaryMock> {
+  const id = crypto.randomUUID();
+  const now = nowIso();
+
+  const docIds: string[] = [];
+  if (documentId) docIds.push(documentId);
 
   const list: SaveListMock = {
     id,
-    name: payload.name,
-    readerId: payload.readerId,
-    docIds: [payload.documentId],
+    name,
+    docIds,
     createdAt: now,
+    updatedAt: now,
   };
 
   SAVE_LISTS.push(list);
-
-  return {
-    list: toItem(list),
-    documentId: payload.documentId,
-    createdAt: now,
-  };
+  return wrap(toSummary(list));
 }
 
-/**
- * Thêm doc vào SaveList có sẵn (nếu chưa có)
- * → dùng trong POST /api/save-lists/[id]/documents (mode mock)
- */
+// POST /save-lists/:id/documents
 export function mockAddDocToSaveList(
   listId: string,
-  payload: { readerId: string; documentId: string },
-) {
-  const list = findById(listId);
+  documentId: string,
+): ApiResponse<SaveListSummaryMock> | null {
+  const list = SAVE_LISTS.find((l) => l.id === listId);
   if (!list) return null;
 
-  // Đảm bảo đúng reader (nếu bạn muốn check)
-  if (list.readerId !== payload.readerId) {
-    // cho nhẹ nhàng: vẫn trả null => 404 ở route
-    return null;
+  if (!list.docIds.includes(documentId)) {
+    list.docIds.push(documentId);
+    list.updatedAt = nowIso();
   }
 
-  // Không thêm trùng
-  if (!list.docIds.includes(payload.documentId)) {
-    list.docIds.push(payload.documentId);
-  }
+  return wrap(toSummary(list));
+}
 
-  return {
-    list: toItem(list),
-    documentId: payload.documentId,
-    updatedAt: new Date().toISOString(),
-  };
+// DELETE /save-lists/:id/documents/:docId
+export function mockRemoveDocFromSaveList(
+  listId: string,
+  docId: string,
+): boolean {
+  const list = SAVE_LISTS.find((l) => l.id === listId);
+  if (!list) return false;
+
+  const before = list.docIds.length;
+  list.docIds = list.docIds.filter((id) => id !== docId);
+  if (list.docIds.length !== before) {
+    list.updatedAt = nowIso();
+    return true;
+  }
+  return false;
+}
+
+// DELETE /save-lists/:id
+export function mockDeleteSaveList(listId: string): boolean {
+  const before = SAVE_LISTS.length;
+  SAVE_LISTS = SAVE_LISTS.filter((l) => l.id !== listId);
+  return SAVE_LISTS.length !== before;
 }

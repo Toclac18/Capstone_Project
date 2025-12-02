@@ -4,13 +4,12 @@
 import { useEffect, useState } from "react";
 import styles from "./styles.module.css";
 import { toast, useToast } from "../ui/toast";
-import { SaveList } from "@/types/saveList";
 import {
+  fetchSaveLists,
   addDocToSaveList,
   createSaveListAndAddDoc,
-  fetchSaveLists,
+  type SaveListSummary,
 } from "@/services/save-list.service";
-import { decodeJwtPayload, extractReaderId } from "@/utils/jwt";
 
 type SaveListModalProps = {
   isOpen: boolean;
@@ -25,20 +24,18 @@ export default function SaveListModal({
 }: SaveListModalProps) {
   const { showToast } = useToast();
 
-  const READER_ID =
-    extractReaderId(decodeJwtPayload(localStorage.getItem("token") || "")) ??
-    "";
-
-  const [saveLists, setSaveLists] = useState<SaveList[]>([]);
+  // Danh sách Save List của user hiện tại
+  const [saveLists, setSaveLists] = useState<SaveListSummary[]>([]);
   const [loadingList, setLoadingList] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  // existing = chọn list có sẵn, new = tạo list mới
   const [mode, setMode] = useState<"existing" | "new">("existing");
   const [newName, setNewName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load danh sách khi mở modal
+  // Khi mở modal thì load danh sách Save List
   useEffect(() => {
     if (!isOpen) return;
 
@@ -46,7 +43,7 @@ export default function SaveListModal({
     setLoadingList(true);
     setSelectedId(null);
 
-    fetchSaveLists(READER_ID)
+    fetchSaveLists()
       .then((lists) => {
         setSaveLists(lists);
         if (lists.length > 0) {
@@ -80,7 +77,8 @@ export default function SaveListModal({
           return;
         }
 
-        await addDocToSaveList(selectedId, docId, READER_ID);
+        // Thêm document vào list có sẵn
+        await addDocToSaveList(selectedId, docId);
       } else {
         const trimmed = newName.trim();
         if (!trimmed) {
@@ -89,16 +87,15 @@ export default function SaveListModal({
           return;
         }
 
-        await createSaveListAndAddDoc(READER_ID, trimmed, docId);
+        // Tạo list mới + add document luôn
+        await createSaveListAndAddDoc(trimmed, docId);
       }
 
-      showToast(toast.success("Document Saved"));
-
+      showToast(toast.success("Document saved to your list."));
       handleClose();
     } catch (e) {
       console.error(e);
       setError("Cannot save document. Please try again later.");
-
       showToast(
         toast.error("Failed to save document. Please try again later."),
       );
@@ -136,6 +133,7 @@ export default function SaveListModal({
               mode === "existing" ? styles.modeBtnActive : styles.modeBtn
             }
             onClick={() => setMode("existing")}
+            disabled={submitting}
           >
             Choose Save List
           </button>
@@ -143,6 +141,7 @@ export default function SaveListModal({
             type="button"
             className={mode === "new" ? styles.modeBtnActive : styles.modeBtn}
             onClick={() => setMode("new")}
+            disabled={submitting}
           >
             Create New Save List
           </button>
@@ -168,11 +167,13 @@ export default function SaveListModal({
                         checked={selectedId === list.id}
                         onChange={() => setSelectedId(list.id)}
                         className={styles.radio}
+                        disabled={submitting}
                       />
                       <span className={styles.name}>{list.name}</span>
                       {typeof list.docCount === "number" && (
                         <span className={styles.counter}>
                           {list.docCount} document
+                          {list.docCount !== 1 ? "s" : ""}
                         </span>
                       )}
                     </label>
@@ -216,7 +217,7 @@ export default function SaveListModal({
             onClick={handleSave}
             disabled={submitting || (mode === "existing" && !selectedId)}
           >
-            {submitting ? "Saving..." : "Saved"}
+            {submitting ? "Saving..." : "Save"}
           </button>
         </div>
       </div>

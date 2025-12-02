@@ -9,16 +9,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { fetchUploadHistory, requestReReview, type DocumentHistory, type UploadHistoryQueryParams } from "./api";
 import { Pagination } from "@/components/ui/pagination";
 import { UploadHistoryFilters } from "./_components/UploadHistoryFilters";
 import ReReviewModal from "./_components/ReReviewModal";
 import { useToast } from "@/components/ui/toast";
 import styles from "./styles.module.css";
-import { AlertCircle, FileText } from "lucide-react";
+import { AlertCircle, FileText, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 type LoadState = "loading" | "success" | "empty" | "error";
+type SortColumn = "documentName" | "uploadDate";
+type SortOrder = "asc" | "desc";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -34,6 +36,8 @@ export default function UploadHistoryPage() {
     page: 1,
     limit: ITEMS_PER_PAGE,
   });
+  const [sortBy, setSortBy] = useState<SortColumn | undefined>(undefined);
+  const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined);
   const [reReviewingId, setReReviewingId] = useState<string | null>(null);
   const [isReReviewModalOpen, setIsReReviewModalOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<DocumentHistory | null>(null);
@@ -144,9 +148,9 @@ export default function UploadHistoryPage() {
 
   const getStatusBadgeClass = (status: string): string => {
     switch (status) {
-      case "APPROVED":
+      case "VERIFIED":
         return styles["status-approved"];
-      case "PENDING":
+      case "VERIFYING":
         return styles["status-pending"];
       case "REJECTED":
         return styles["status-rejected"];
@@ -155,17 +159,58 @@ export default function UploadHistoryPage() {
     }
   };
 
-  const documentTypes = useMemo(() => {
-    const types = new Set<string>();
-    documents.forEach((doc) => types.add(doc.type));
-    return Array.from(types);
-  }, [documents]);
+  // Handle column sort - cycles through: undefined -> asc -> desc -> undefined
+  const handleSort = useCallback((column: SortColumn) => {
+    if (sortBy === column) {
+      if (sortOrder === "asc") {
+        setSortOrder("desc");
+      } else {
+        // desc or undefined -> reset
+        setSortBy(undefined);
+        setSortOrder(undefined);
+      }
+    } else {
+      // New column -> start with asc
+      setSortBy(column);
+      setSortOrder("asc");
+    }
+  }, [sortBy, sortOrder]);
 
-  const domains = useMemo(() => {
-    const domainSet = new Set<string>();
-    documents.forEach((doc) => domainSet.add(doc.domain));
-    return Array.from(domainSet);
-  }, [documents]);
+  // Get sort icon for a column
+  const getSortIcon = (column: SortColumn) => {
+    if (sortBy !== column) {
+      return <ArrowUpDown className="w-4 h-4 ml-1 text-gray-400" />;
+    }
+    return sortOrder === "asc" ? (
+      <ArrowUp className="w-4 h-4 ml-1 text-primary" />
+    ) : (
+      <ArrowDown className="w-4 h-4 ml-1 text-primary" />
+    );
+  };
+
+  // Sort documents in FE
+  const sortedDocuments = useMemo(() => {
+    if (!sortBy || !sortOrder) {
+      return documents;
+    }
+
+    return [...documents].sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
+
+      if (sortBy === "documentName") {
+        aValue = a.documentName.toLowerCase();
+        bValue = b.documentName.toLowerCase();
+      } else {
+        aValue = new Date(a.uploadDate).getTime();
+        bValue = new Date(b.uploadDate).getTime();
+      }
+
+      const comparison = aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+  }, [documents, sortBy, sortOrder]);
+
 
   return (
     <main className={styles["page-container"]}>
@@ -175,8 +220,6 @@ export default function UploadHistoryPage() {
         <UploadHistoryFilters
           onFiltersChange={handleFiltersChange}
           loading={isLoading}
-          documentTypes={documentTypes}
-          domains={domains}
         />
       </div>
 
@@ -208,18 +251,34 @@ export default function UploadHistoryPage() {
           <Table>
             <TableHeader>
               <TableRow className="border-none bg-[#F7F9FC] dark:bg-dark-3 [&>th]:py-4 [&>th]:text-base [&>th]:text-dark [&>th]:dark:text-white">
-                <TableHead className="xl:pl-7.5">Document Name</TableHead>
-                <TableHead>Upload Date/Time</TableHead>
+                <TableHead 
+                  className={`xl:pl-7.5 ${styles["sortable-header"]}`}
+                  onClick={() => handleSort("documentName")}
+                >
+                  <div className="flex items-center cursor-pointer select-none">
+                    Document Name
+                    {getSortIcon("documentName")}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className={styles["sortable-header"]}
+                  onClick={() => handleSort("uploadDate")}
+                >
+                  <div className="flex items-center cursor-pointer select-none">
+                    Upload Date
+                    {getSortIcon("uploadDate")}
+                  </div>
+                </TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Domain</TableHead>
                 <TableHead>Specialization</TableHead>
-                <TableHead>File Size</TableHead>
+                <TableHead>Size</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right xl:pr-10">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {documents.map((doc) => (
+              {sortedDocuments.map((doc) => (
                 <TableRow key={doc.id} className="border-b border-stroke last:border-b-0 dark:border-stroke-dark">
                   <TableCell className="xl:pl-7.5">
                     <div className={styles["document-name"]}>

@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, type SubmitHandler, useWatch } from "react-hook-form";
 import type { UploadHistoryQueryParams, DocumentHistoryStatus } from "../api";
+import { getDocumentTypes, getDomains, type DocumentType, type Domain } from "@/services/upload-documents.service";
 import styles from "../styles.module.css";
 
 const STATUS_OPTIONS = [
   { value: "", label: "All Status" },
-  { value: "PENDING", label: "Pending" },
-  { value: "APPROVED", label: "Approved" },
+  { value: "VERIFYING", label: "Pending" },
+  { value: "VERIFIED", label: "Approved" },
   { value: "REJECTED", label: "Rejected" },
 ] as const;
 
@@ -24,16 +25,15 @@ type FilterValues = {
 interface UploadHistoryFiltersProps {
   onFiltersChange: (filters: UploadHistoryQueryParams) => void;
   loading?: boolean;
-  documentTypes: string[];
-  domains: string[];
 }
 
 export function UploadHistoryFilters({
   onFiltersChange,
   loading = false,
-  documentTypes,
-  domains,
 }: UploadHistoryFiltersProps) {
+  const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
+  const [domains, setDomains] = useState<Domain[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
   const {
     register,
     handleSubmit,
@@ -52,6 +52,26 @@ export function UploadHistoryFilters({
   });
 
   const watchedFilters = useWatch({ control });
+
+  // Fetch document types and domains on mount
+  useEffect(() => {
+    const fetchOptions = async () => {
+      setLoadingOptions(true);
+      try {
+        const [typesData, domainsData] = await Promise.all([
+          getDocumentTypes(),
+          getDomains(),
+        ]);
+        setDocumentTypes(typesData);
+        setDomains(domainsData);
+      } catch (error) {
+        console.error("Failed to fetch filter options:", error);
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+    fetchOptions();
+  }, []);
 
   // Note: Filters are applied on form submit or individual field change
   // Auto-apply is disabled to allow users to set multiple filters before applying
@@ -92,42 +112,23 @@ export function UploadHistoryFilters({
     watchedFilters.status;
 
   const typeOptions = useMemo(() => {
-    const map = new Map<string, { value: string; label: string }>();
-    map.set("", { value: "", label: "All Types" });
-    const defaultTypes = [
-      "Research Paper",
-      "Article",
-      "Book",
-      "Report",
-      "Thesis",
-    ];
-    defaultTypes.forEach((t) => map.set(t, { value: t, label: t }));
-    documentTypes.filter(Boolean).forEach((t) => {
-      if (!map.has(t)) {
-        map.set(t, { value: t, label: t });
+    const options = [{ value: "", label: "All Types" }];
+    documentTypes.forEach((type) => {
+      if (type.id && type.name) {
+        options.push({ value: type.id, label: type.name });
       }
     });
-    return Array.from(map.values());
+    return options;
   }, [documentTypes]);
 
   const domainOptions = useMemo(() => {
-    const map = new Map<string, { value: string; label: string }>();
-    map.set("", { value: "", label: "All Domains" });
-    const defaultDomains = [
-      "Computer Science",
-      "Mathematics",
-      "Physics",
-      "Biology",
-      "Chemistry",
-      "Engineering",
-    ];
-    defaultDomains.forEach((d) => map.set(d, { value: d, label: d }));
-    domains.filter(Boolean).forEach((d) => {
-      if (!map.has(d)) {
-        map.set(d, { value: d, label: d });
+    const options = [{ value: "", label: "All Domains" }];
+    domains.forEach((domain) => {
+      if (domain.id && domain.name) {
+        options.push({ value: domain.id, label: domain.name });
       }
     });
-    return Array.from(map.values());
+    return options;
   }, [domains]);
 
   return (
@@ -218,7 +219,7 @@ export function UploadHistoryFilters({
           <select
             id="type"
             className={`${styles["select"]} ${errors.type ? styles.error : ""}`}
-            disabled={loading}
+            disabled={loading || loadingOptions}
             {...register("type")}
           >
             {typeOptions.map((option) => (
@@ -236,7 +237,7 @@ export function UploadHistoryFilters({
           <select
             id="domain"
             className={`${styles["select"]} ${errors.domain ? styles.error : ""}`}
-            disabled={loading}
+            disabled={loading || loadingOptions}
             {...register("domain")}
           >
             {domainOptions.map((option) => (

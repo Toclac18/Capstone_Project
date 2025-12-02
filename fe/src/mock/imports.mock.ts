@@ -1,303 +1,177 @@
-export type ImportStatus =
-  | "PENDING"
-  | "PROCESSING"
-  | "COMPLETED"
-  | "FAILED"
-  | "CANCELLED";
+// src/mocks/imports.mock.ts
+import type {
+  MemberImportBatch,
+  OrgEnrollment,
+} from "@/services/org-admin-imports.service";
 
-export type RowResult = {
-  row: number;
-  fullName: string;
-  username: string;
-  email: string;
-  imported: boolean;
-  emailSent: boolean;
-  error?: string | null;
-};
+const mockBatchList: MemberImportBatch[] = [
+  {
+    id: "mock-batch-001",
+    importSource: "EXCEL",
+    totalEmails: 3,
+    successCount: 1,
+    failedCount: 0,
+    skippedCount: 2,
+    fileName: "import_example.xlsx",
+    fileUrl: null,
+    notes: null,
+    adminName: "Mock Admin",
+    adminEmail: "mock.admin@example.com",
+    importedAt: new Date().toISOString(),
+  },
+  {
+    id: "mock-batch-002",
+    importSource: "MANUAL",
+    totalEmails: 2,
+    successCount: 2,
+    failedCount: 0,
+    skippedCount: 0,
+    fileName: null,
+    fileUrl: null,
+    notes: null,
+    adminName: "Mock Admin",
+    adminEmail: "mock.admin@example.com",
+    importedAt: new Date().toISOString(),
+  },
+];
 
-export type ImportJob = {
-  id: string;
-  fileName: string;
-  createdAt: string;
-  createdBy: string;
-  totalRows: number;
-  processedRows: number;
-  successCount: number;
-  failureCount: number;
-  status: ImportStatus;
-  results: RowResult[];
-};
-
-// ---- helpers ----
-function isoWithOffset(d: Date) {
-  const pad = (n: number, l = 2) => String(n).padStart(l, "0");
-  const y = d.getFullYear();
-  const m = pad(d.getMonth() + 1);
-  const day = pad(d.getDate());
-  const hh = pad(d.getHours());
-  const mm = pad(d.getMinutes());
-  const ss = pad(d.getSeconds());
-  const ms = pad(d.getMilliseconds(), 3);
-  const tzo = -d.getTimezoneOffset();
-  const sign = tzo >= 0 ? "+" : "-";
-  const oh = pad(Math.floor(Math.abs(tzo) / 60));
-  const om = pad(Math.abs(tzo) % 60);
-  return `${y}-${m}-${day}T${hh}:${mm}:${ss}.${ms}${sign}${oh}:${om}`;
-}
-
-function nowIso() {
-  return isoWithOffset(new Date());
-}
-
-const jobA: ImportJob = {
-  id: "imp-20241015-001",
-  fileName: "users_batch_oct15.xlsx",
-  createdAt: isoWithOffset(new Date("2024-10-15T08:10:00")),
-  createdBy: "alice.nguyen",
-  totalRows: 5,
-  processedRows: 5,
-  successCount: 4,
-  failureCount: 1,
-  status: "COMPLETED",
-  results: [
+const mockEnrollments: Record<string, OrgEnrollment[]> = {
+  "mock-batch-001": [
     {
-      row: 2,
-      fullName: "Jane Roe",
-      username: "jroe",
-      email: "jroe@ex.com",
-      imported: true,
-      emailSent: true,
+      enrollmentId: "e1",
+      memberId: "m1",
+      memberEmail: "john@example.com",
+      memberFullName: "John Doe",
+      memberAvatarUrl: null,
+      organizationId: "mock-org",
+      organizationName: "Mock Organization",
+      status: "APPROVED",
+      invitedAt: new Date().toISOString(),
+      respondedAt: null,
     },
     {
-      row: 3,
-      fullName: "Mark Li",
-      username: "mli",
-      email: "mli@ex.com",
-      imported: true,
-      emailSent: true,
-    },
-    {
-      row: 4,
-      fullName: "Zoë K",
-      username: "zoek",
-      email: "zoek@ex.com",
-      imported: true,
-      emailSent: true,
-    },
-    {
-      row: 5,
-      fullName: "Chris P",
-      username: "chrisp",
-      email: "chrisp@ex.com",
-      imported: false,
-      emailSent: false,
-      error: "Duplicate username",
-    },
-    {
-      row: 6,
-      fullName: "Ana M",
-      username: "anam",
-      email: "anam@ex.com",
-      imported: true,
-      emailSent: true,
+      enrollmentId: "e2",
+      memberId: "m2",
+      memberEmail: "anna@example.com",
+      memberFullName: "Anna Lee",
+      memberAvatarUrl: null,
+      organizationId: "mock-org",
+      organizationName: "Mock Organization",
+      status: "APPROVED",
+      invitedAt: new Date().toISOString(),
+      respondedAt: null,
     },
   ],
+  "mock-batch-002": [],
 };
 
-const jobB: ImportJob = {
-  id: "imp-20241102-009",
-  fileName: "readers_nov.xlsx",
-  createdAt: isoWithOffset(new Date("2024-11-02T14:30:00")),
-  createdBy: "bob.tran",
-  totalRows: 3,
-  processedRows: 3,
-  successCount: 3,
-  failureCount: 0,
-  status: "COMPLETED",
-  results: [
-    {
-      row: 2,
-      fullName: "Hana T",
-      username: "hanat",
-      email: "hana@ex.com",
-      imported: true,
-      emailSent: true,
-    },
-    {
-      row: 3,
-      fullName: "Ivo N",
-      username: "ivon",
-      email: "ivo@ex.com",
-      imported: true,
-      emailSent: true,
-    },
-    {
-      row: 4,
-      fullName: "Quynh P",
-      username: "quynhp",
-      email: "quynh@ex.com",
-      imported: true,
-      emailSent: true,
-    },
-  ],
-};
-
-const extras: ImportJob[] = Array.from({ length: 20 }).map((_, i) => {
-  const idx = i + 1;
-  const ok = idx % 5 !== 0;
-  const created = new Date(2025, 0, Math.min(28, (idx % 27) + 1), idx % 23);
+function makePageInfo(
+  page: number,
+  size: number,
+  totalElements: number,
+): {
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+  hasNext: boolean;
+  hasPrevious: boolean;
+} {
+  const totalPages = Math.max(Math.ceil(totalElements / size), 1);
+  const first = page === 0;
+  const last = page >= totalPages - 1;
   return {
-    id: `imp-2025${String(100 + idx).slice(1)}-${String(idx).padStart(3, "0")}`,
-    fileName: `batch_${idx}.xlsx`,
-    createdAt: isoWithOffset(created),
-    createdBy: idx % 2 ? "system" : "charlie.le",
-    totalRows: 20,
-    processedRows: 20,
-    successCount: ok ? 20 : 17,
-    failureCount: ok ? 0 : 3,
-    status: ok ? "COMPLETED" : "FAILED",
-    results: Array.from({ length: 20 }).map((__, r) => ({
-      row: r + 2,
-      fullName: `User ${idx}-${r}`,
-      username: `user${idx}_${r}`,
-      email: `user${idx}_${r}@example.com`,
-      imported: ok,
-      emailSent: ok,
-      error: ok ? null : r % 7 === 0 ? "Email invalid" : null,
-    })),
+    page,
+    size,
+    totalElements,
+    totalPages,
+    first,
+    last,
+    hasNext: !last,
+    hasPrevious: !first,
   };
-});
+}
 
-export const mockImports: ImportJob[] = [jobA, jobB, ...extras];
-
-export type ImportListQuery = {
+/** MOCK list: GIỐNG HỆT BE: { success, data, pageInfo, timestamp } */
+export async function mockFetchImports(params: {
+  q?: string;
+  status?: string;
   page?: number;
   pageSize?: number;
-  q?: string;
-  status?: ImportStatus | "ALL";
-};
-export type ImportListResponse = {
-  items: Omit<ImportJob, "results">[];
-  total: number;
-  page: number;
-  pageSize: number;
-};
+}) {
+  const page = (params.page ?? 1) - 1; // FE 1-based -> mock 0-based
+  const size = params.pageSize ?? 10;
 
-function normalize(q: ImportListQuery = {}) {
-  const page = Math.max(1, q.page ?? 1);
-  const pageSize = Math.max(1, q.pageSize ?? 10);
-  const kw = (q.q ?? "").trim().toLowerCase();
-  const status = q.status ?? "ALL";
-  return { page, pageSize, kw, status };
-}
+  let filtered = mockBatchList;
 
-export async function mockFetchImports(
-  q: ImportListQuery = {},
-): Promise<ImportListResponse> {
-  const { page, pageSize, kw, status } = normalize(q);
-  let data = mockImports.slice();
+  const kw = (params.q ?? "").trim().toLowerCase();
   if (kw) {
-    data = data.filter((x) =>
-      [x.fileName, x.createdBy, x.status].some((v) =>
-        String(v).toLowerCase().includes(kw),
-      ),
+    filtered = filtered.filter(
+      (b) =>
+        b.fileName?.toLowerCase().includes(kw) ||
+        b.adminEmail.toLowerCase().includes(kw),
     );
   }
-  if (status !== "ALL") data = data.filter((x) => x.status === status);
-  data.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const total = data.length;
-  const start = (page - 1) * pageSize;
-  const end = start + pageSize;
-  const items = data.slice(start, end).map(({ ...rest }) => rest);
-  await new Promise((res) => setTimeout(res, 60)); // latency
-  return { items, total, page, pageSize };
+
+  const totalElements = filtered.length;
+  const start = page * size;
+  const data = filtered.slice(start, start + size);
+
+  return {
+    success: true,
+    data,
+    pageInfo: makePageInfo(page, size, totalElements),
+    timestamp: new Date().toISOString(),
+  };
 }
 
-export async function mockFetchImportDetail(
-  id: string,
-): Promise<ImportJob | null> {
-  await new Promise((res) => setTimeout(res, 40));
-  return mockImports.find((x) => x.id === id) ?? null;
+/** MOCK detail enrollments: { success, data, pageInfo, timestamp } */
+export async function mockFetchImportDetail(params: {
+  id: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const page = (params.page ?? 1) - 1;
+  const size = params.pageSize ?? 10;
+
+  const all = mockEnrollments[params.id] ?? [];
+  const totalElements = all.length;
+  const start = page * size;
+  const data = all.slice(start, start + size);
+
+  return {
+    success: true,
+    data,
+    pageInfo: makePageInfo(page, size, totalElements),
+    timestamp: new Date().toISOString(),
+  };
 }
 
-export async function mockCreateImport(
-  file: File,
-  createdBy: string,
-): Promise<ImportJob> {
-  await new Promise((r) => setTimeout(r, 120)); // giả lập upload
-
-  const id = `imp-${cryptoRandom()}`;
-  const job: ImportJob = {
-    id,
-    fileName: file.name,
-    createdAt: nowIso(),
-    createdBy,
-    totalRows: 0,
-    processedRows: 0,
+/** MOCK create import: trả về wrapper giống BE nếu cần */
+export async function mockCreateImport(file: File, createdBy: string) {
+  const batch: MemberImportBatch = {
+    id: `mock-${Date.now()}`,
+    importSource: "EXCEL",
+    totalEmails: 0,
     successCount: 0,
-    failureCount: 0,
-    status: "PROCESSING",
-    results: [],
+    failedCount: 0,
+    skippedCount: 0,
+    fileName: file.name,
+    fileUrl: null,
+    notes: null,
+    adminName: createdBy,
+    adminEmail: createdBy,
+    importedAt: new Date().toISOString(),
   };
 
-  mockImports.unshift(job);
+  mockBatchList.unshift(batch);
+  mockEnrollments[batch.id] = [];
 
-  setTimeout(() => {
-    const results: RowResult[] = [
-      {
-        row: 2,
-        fullName: "Sample A",
-        username: "samplea",
-        email: "a@ex.com",
-        imported: true,
-        emailSent: true,
-      },
-      {
-        row: 3,
-        fullName: "Sample B",
-        username: "sampleb",
-        email: "b@ex.com",
-        imported: false,
-        emailSent: false,
-        error: "Duplicate email",
-      },
-      {
-        row: 4,
-        fullName: "Sample C",
-        username: "samplec",
-        email: "c@ex.com",
-        imported: true,
-        emailSent: true,
-      },
-      {
-        row: 5,
-        fullName: "Sample D",
-        username: "sampled",
-        email: "d@ex.com",
-        imported: true,
-        emailSent: true,
-      },
-    ];
-    const idx = mockImports.findIndex((x) => x.id === id);
-    if (idx >= 0) {
-      const ok = results.filter((r) => r.imported).length;
-      mockImports[idx] = {
-        ...mockImports[idx],
-        totalRows: results.length,
-        processedRows: results.length,
-        successCount: ok,
-        failureCount: results.length - ok,
-        status: "COMPLETED",
-        results,
-      };
-    }
-  }, 1200);
-
-  return job;
-}
-
-// simple id
-function cryptoRandom() {
-  // use milliseconds and a small random to keep it readable
-  return `${Date.now().toString(16)}-${Math.floor(Math.random() * 1e6).toString(16)}`;
+  return {
+    success: true,
+    data: batch,
+    timestamp: new Date().toISOString(),
+  };
 }

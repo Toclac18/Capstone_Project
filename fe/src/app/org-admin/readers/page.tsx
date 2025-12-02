@@ -95,12 +95,16 @@ function ReadersContent() {
       <div className={styles["table-container"]}>
         <table className={styles["table"]}>
           <colgroup>
-            <col />
-            <col />
-            <col className={styles["col-email"]} />
-            <col /> {/* Status */}
-            <col className={styles["col-coins"]} />
-            <col className={styles["col-actions"]} />
+            {[
+              {},
+              {},
+              { className: styles["col-email"] },
+              {},
+              { className: styles["col-coins"] },
+              { className: styles["col-actions"] },
+            ].map((props, idx) => (
+              <col key={idx} {...props} />
+            ))}
           </colgroup>
 
           <thead>

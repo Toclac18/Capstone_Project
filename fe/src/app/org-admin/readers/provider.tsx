@@ -1,4 +1,3 @@
-// src/app/contact-admin/ReadersProvider.tsx
 "use client";
 
 import React, {
@@ -16,15 +15,15 @@ import {
 } from "@/services/org-admin-reader.service";
 
 /**
- * NOTE:
- * - We KEEP orgAdmin-reader.ts as-is (no breaking changes).
- * - For list fetching (pagination/search), we call the Next.js route directly:
- *   GET /api/org-admin/readers?page=&pageSize=&q=&status=
- *   and expect { items, total, page, pageSize }.
- * - changeReaderAccess still goes through ./api (service layer) to keep contracts stable.
+ * CHUẨN HÓA:
+ * - FE UI và Provider dùng URL cố định: /api/org-admin/readers
+ * - NextJS API route ở: app/api/org-admin/readers/route.ts
+ * - route.ts proxy → BE /api/organization/members
+ * => Không đổi UI, không đổi service, không đổi folder API.
  */
 
 export type ReaderStatus = "ACTIVE" | "SUSPENDED" | "PENDING_VERIFICATION";
+
 type ReadersListResponse = {
   items: ReaderResponse[];
   total: number;
@@ -38,7 +37,6 @@ interface ReadersContextValue {
   error: string | null;
   info: string | null;
 
-  // pagination & search
   page: number;
   pageSize: number;
   total: number;
@@ -65,7 +63,6 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
-  // pagination & search state
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [total, setTotal] = useState<number>(0);
@@ -74,37 +71,48 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
 
   const { showToast } = useToast();
 
-  /** Build URL for Next API route with query params */
+  /**
+   * Build URL Next API route
+   * FE → /api/org-admin/readers → Next route → BE /organization/members
+   */
   const buildUrl = () => {
     const url = new URL(
       "/api/org-admin/readers",
       typeof window !== "undefined"
         ? window.location.origin
-        : "http://localhost",
+        : "http://localhost:3000",
     );
     url.searchParams.set("page", String(page));
     url.searchParams.set("pageSize", String(pageSize));
     if (q.trim()) url.searchParams.set("q", q.trim());
-    if (status && status !== "ALL") url.searchParams.set("status", status);
+    if (status !== "ALL") url.searchParams.set("status", status);
     return url.toString();
   };
 
-  /** Load list of readers via Next route (supports mock or real BE) */
+  /** Load readers via NextJS route */
   const reload = useCallback(async () => {
     setLoading(true);
     setError(null);
+
     try {
       const url = buildUrl();
-      const res = await fetch(url, { method: "GET", cache: "no-store" });
+
+      const res = await fetch(url, {
+        method: "GET",
+        cache: "no-store",
+      });
+
       if (!res.ok) {
         const text = await res.text();
         throw new Error(text || `Failed to load readers (${res.status})`);
       }
+
       const data = (await res.json()) as ReadersListResponse;
+
       setReaders(data.items || []);
       setTotal(Number(data.total ?? 0));
-    } catch (e: any) {
-      const msg = e?.message || "Failed to load readers";
+    } catch (err: any) {
+      const msg = err?.message ?? "Failed to load readers";
       setError(msg);
       showToast(toast.error("Load failed", msg));
     } finally {
@@ -112,45 +120,44 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
     }
   }, [page, pageSize, q, status, showToast]);
 
-  /** Toggle access with optimistic UI; uses service API for the action */
+  /** Enable/Disable access */
   const toggleAccess = useCallback(
     async (id: string, enable: boolean) => {
-      const snapshot = readers;
-
+      const prev = readers;
       setError(null);
       setInfo(null);
-      // optimistic update
-      setReaders((arr) =>
-        arr.map((r) =>
+
+      // Optimistic UI
+      setReaders((list) =>
+        list.map((r) =>
           r.id === id ? { ...r, status: enable ? "ACTIVE" : "SUSPENDED" } : r,
         ),
       );
 
       try {
         const updated = await changeReaderAccess({ userId: id, enable });
-        setReaders((arr) =>
-          arr.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)),
+
+        setReaders((list) =>
+          list.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)),
         );
 
         const msg = enable
           ? "Access enabled successfully"
           : "Access removed successfully";
+
         setInfo(msg);
         showToast(
           enable
             ? toast.success("Access Enabled", msg)
             : toast.error("Access Removed", msg),
         );
-
-        // Optional: ensure server ordering/policies are reflected
-        // await reload();
-      } catch (e: any) {
+      } catch (err: any) {
         // rollback
-        setReaders(snapshot);
-        const msg = e?.message ?? "Failed to update access";
+        setReaders(prev);
+        const msg = err?.message ?? "Failed to update access";
         setError(msg);
         showToast(toast.error("Action failed", msg));
-        throw e;
+        throw err;
       }
     },
     [readers, showToast],
@@ -202,6 +209,8 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
 
 export function useReaders() {
   const ctx = useContext(ReadersContext);
-  if (!ctx) throw new Error("useReaders must be used inside ReadersProvider");
+  if (!ctx) {
+    throw new Error("useReaders must be used inside ReadersProvider");
+  }
   return ctx;
 }

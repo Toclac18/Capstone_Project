@@ -1,4 +1,5 @@
 "use client";
+
 import {
   createContext,
   useContext,
@@ -11,13 +12,14 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   fetchImports,
-  ImportListResponse,
+  PagedResult,
+  MemberImportBatch,
 } from "@/services/org-admin-imports.service";
 
 type Filters = { q: string; status: string; page: number; pageSize: number };
 
 type Ctx = {
-  data?: ImportListResponse;
+  data?: PagedResult<MemberImportBatch>;
   loading: boolean;
   filters: Filters;
   setFilters: (f: Partial<Filters>) => void;
@@ -35,20 +37,29 @@ export function useImportHistory() {
   return ctx;
 }
 
+function parsePositiveInt(value: string | null, fallback: number): number {
+  if (!value) return fallback;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return fallback;
+  return Math.floor(n);
+}
+
 function ImportHistoryInner({ children }: { children: React.ReactNode }) {
   const sp = useSearchParams();
   const router = useRouter();
 
-  const [data, setData] = useState<ImportListResponse | undefined>();
+  const [data, setData] = useState<
+    PagedResult<MemberImportBatch> | undefined
+  >();
   const [loading, setLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const filters: Filters = useMemo(
     () => ({
-      q: String(sp.get("q") ?? ""),
-      status: String(sp.get("status") ?? "ALL"),
-      page: Number(sp.get("page") ?? 1),
-      pageSize: Number(sp.get("pageSize") ?? 10),
+      q: sp.get("q") ?? "",
+      status: sp.get("status") ?? "ALL",
+      page: parsePositiveInt(sp.get("page"), 1),
+      pageSize: parsePositiveInt(sp.get("pageSize"), 10),
     }),
     [sp],
   );
@@ -76,10 +87,24 @@ function ImportHistoryInner({ children }: { children: React.ReactNode }) {
   }, [filters.q, filters.status, filters.page, filters.pageSize]);
 
   const setFilters = (partial: Partial<Filters>) => {
-    const next = { ...filters, ...partial };
+    const next: Filters = {
+      ...filters,
+      ...partial,
+    };
+
+    // Nếu đổi q hoặc status -> reset page về 1 cho chắc
+    if (
+      (partial.q !== undefined && partial.q !== filters.q) ||
+      (partial.status !== undefined && partial.status !== filters.status)
+    ) {
+      next.page = 1;
+    }
+
     const params = new URLSearchParams();
     if (next.q) params.set("q", next.q);
-    if (next.status) params.set("status", next.status);
+    if (next.status && next.status !== "ALL") {
+      params.set("status", next.status);
+    }
     params.set("page", String(next.page));
     params.set("pageSize", String(next.pageSize));
     router.push(`/org-admin/imports?${params.toString()}`);

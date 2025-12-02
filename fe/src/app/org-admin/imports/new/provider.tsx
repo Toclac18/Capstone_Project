@@ -1,3 +1,4 @@
+// src/app/org-admin/imports/provider/index.tsx
 "use client";
 import React, { createContext, useContext, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -31,7 +32,7 @@ export default function UploadProvider({
   const submit = async () => {
     setError(null);
     if (!file) {
-      setError("Vui lòng chọn file .xlsx đúng định dạng");
+      setError("Please use true format file");
       return;
     }
     try {
@@ -40,7 +41,9 @@ export default function UploadProvider({
       form.append("file", file);
       form.append("createdBy", "org-admin");
       const job = await createImport(form);
-      router.push(`/org-admin/imports/${job.id}`);
+      if (job?.id) {
+        router.push(`/org-admin/imports/${job.id}`);
+      }
     } catch (e: any) {
       setError(e?.message ?? "Upload failed");
     } finally {

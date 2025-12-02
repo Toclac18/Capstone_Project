@@ -489,10 +489,7 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
     OrgEnrollment enrollment = orgEnrollmentRepository
         .findByMemberIdAndOrganizationId(readerId, organizationId)
         .orElseThrow(() -> new ResourceNotFoundException(
-            "Enrollment not found for this reader and organization",
-            "reader_id", readerId,
-            "organization_id", organizationId
-        ));
+            "Enrollment not found for this reader and organization"));
 
     // Validate enrollment is currently joined
     if (enrollment.getStatus() != OrgEnrollStatus.JOINED) {

@@ -92,6 +92,14 @@ public interface OrgEnrollmentService {
   void removeMember(UUID organizationAdminId, UUID enrollmentId);
 
   /**
+   * Reader leaves an organization
+   *
+   * @param readerId       Reader user ID
+   * @param organizationId Organization ID
+   */
+  void leaveOrganization(UUID readerId, UUID organizationId);
+
+  /**
    * Get enrollment detail
    *
    * @param enrollmentId Enrollment ID

@@ -2,6 +2,7 @@ package com.capstone.be.mapper;
 
 import com.capstone.be.domain.entity.Document;
 import com.capstone.be.domain.entity.Tag;
+import com.capstone.be.dto.response.document.AdminDocumentListResponse;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
 import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
@@ -115,4 +116,21 @@ public interface DocumentMapper {
   @Mapping(target = "tagNames", ignore = true)
   @Mapping(target = "userRelation", ignore = true)
   DocumentLibraryResponse toLibraryResponse(Document document);
+
+  /**
+   * Convert Document entity to AdminDocumentListResponse DTO
+   * Lightweight mapping for admin list view
+   *
+   * @param document Document entity
+   * @return AdminDocumentListResponse DTO
+   */
+  @Mapping(source = "thumbnailKey", target = "thumbnailUrl")
+  @Mapping(source = "docType.name", target = "docTypeName")
+  @Mapping(source = "specialization.name", target = "specializationName")
+  @Mapping(source = "uploader.id", target = "uploader.id")
+  @Mapping(source = "uploader.fullName", target = "uploader.fullName")
+  @Mapping(source = "uploader.email", target = "uploader.email")
+  @Mapping(source = "organization.id", target = "organization.id")
+  @Mapping(source = "organization.name", target = "organization.name")
+  AdminDocumentListResponse toAdminListResponse(Document document);
 }

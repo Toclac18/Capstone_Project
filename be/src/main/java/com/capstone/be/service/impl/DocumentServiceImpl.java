@@ -12,6 +12,7 @@ import com.capstone.be.domain.entity.Specialization;
 import com.capstone.be.domain.entity.Tag;
 import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.DocStatus;
+import com.capstone.be.domain.enums.DocVisibility;
 import com.capstone.be.domain.enums.OrgEnrollStatus;
 import com.capstone.be.domain.enums.TagStatus;
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
@@ -19,6 +20,7 @@ import com.capstone.be.dto.request.document.DocumentSearchFilter;
 import com.capstone.be.dto.request.document.DocumentUploadHistoryFilter;
 import com.capstone.be.dto.request.document.UpdateDocumentRequest;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
+import com.capstone.be.dto.response.document.AdminDocumentListResponse;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
@@ -44,6 +46,7 @@ import com.capstone.be.repository.TagRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.repository.specification.DocumentLibrarySpecification;
 import com.capstone.be.repository.specification.DocumentSearchSpecification;
+import com.capstone.be.repository.specification.DocumentSpecification;
 import com.capstone.be.repository.specification.DocumentUploadHistorySpecification;
 import com.capstone.be.service.DocumentAccessService;
 import com.capstone.be.service.DocumentService;
@@ -839,5 +842,93 @@ public class DocumentServiceImpl implements DocumentService {
         responsePage.getTotalPages());
 
     return responsePage;
+  }
+
+  // ===== Admin-only methods implementation =====
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<AdminDocumentListResponse> getAllDocumentsForAdmin(
+      String title,
+      UUID uploaderId,
+      UUID organizationId,
+      UUID docTypeId,
+      UUID specializationId,
+      DocStatus status,
+      DocVisibility visibility,
+      Boolean isPremium,
+      Pageable pageable) {
+    log.info(
+        "Admin fetching documents - title: {}, uploaderId: {}, organizationId: {}, docTypeId: {}, "
+            + "specializationId: {}, status: {}, visibility: {}, isPremium: {}, page: {}, size: {}",
+        title, uploaderId, organizationId, docTypeId, specializationId, status, visibility,
+        isPremium, pageable.getPageNumber(), pageable.getPageSize());
+
+    Specification<Document> spec = DocumentSpecification.withFilters(
+        title, uploaderId, organizationId, docTypeId, specializationId, status, visibility,
+        isPremium);
+
+    Page<Document> documentPage = documentRepository.findAll(spec, pageable);
+
+    return documentPage.map(documentMapper::toAdminListResponse);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public DocumentDetailResponse getDocumentDetailForAdmin(UUID documentId) {
+    log.info("Admin requesting document detail for document {}", documentId);
+
+    Document document = documentRepository.findById(documentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+
+    DocumentDetailResponse response = documentMapper.toDetailResponse(document);
+
+    Integer downvoteCount = document.getUpvoteCount() - document.getVoteScore();
+    response.setDownvoteCount(Math.max(0, downvoteCount));
+
+    List<DocumentTagLink> tagLinks = documentTagLinkRepository.findByDocument(document);
+    List<DocumentDetailResponse.TagInfo> tagInfos = tagLinks.stream()
+        .map(link -> {
+          Tag tag = link.getTag();
+          return DocumentDetailResponse.TagInfo.builder()
+              .id(tag.getId())
+              .code(tag.getCode())
+              .name(tag.getName())
+              .build();
+        })
+        .toList();
+    response.setTags(tagInfos);
+
+    log.info("Successfully retrieved document detail for admin for document {}", documentId);
+    return response;
+  }
+
+  @Override
+  @Transactional
+  public void activateDocument(UUID documentId) {
+    log.info("Admin activating document {}", documentId);
+
+    Document document = documentRepository.findById(documentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+
+    document.setStatus(DocStatus.ACTIVE);
+    documentRepository.save(document);
+
+    log.info("Successfully activated document {}", documentId);
+  }
+
+  @Override
+  @Transactional
+  public void deactivateDocument(UUID documentId) {
+    log.info("Admin deactivating document {}", documentId);
+
+    Document document = documentRepository.findById(documentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+
+//    if (document.getStatus().eq)
+    document.setStatus(DocStatus.INACTIVE);
+    documentRepository.save(document);
+
+    log.info("Successfully deactivated document {}", documentId);
   }
 }

@@ -35,7 +35,7 @@ public class OrganizationController {
    * Get organization profile
    * GET /api/v1/organization/profile
    *
-   * @param authentication Spring Security authentication
+   * @param userPrincipal Spring Security authentication
    * @return OrganizationProfileResponse
    */
   @GetMapping("/profile")

@@ -70,12 +70,6 @@ public class MemberImportBatch extends BaseEntity {
   private Integer skippedCount;
 
   /**
-   * Original filename for Excel imports (nullable for manual imports)
-   */
-  @Column(length = 500)
-  private String fileName;
-
-  /**
    * S3 URL of the uploaded Excel file (nullable for manual imports)
    */
   @Column(length = 1000)

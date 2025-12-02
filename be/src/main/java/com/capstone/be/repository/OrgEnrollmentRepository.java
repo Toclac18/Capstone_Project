@@ -96,4 +96,15 @@ public interface OrgEnrollmentRepository extends JpaRepository<OrgEnrollment, UU
    * Delete all enrollments for an organization
    */
   void deleteByOrganization(OrganizationProfile organization);
+
+  /**
+   * Find pending enrollments by email where member is null
+   * Used to link enrollments after user registration
+   */
+  List<OrgEnrollment> findByMemberEmailAndMemberIsNull(String email);
+
+  /**
+   * Find enrollment by member ID and organization ID
+   */
+  Optional<OrgEnrollment> findByMemberIdAndOrganizationId(UUID memberId, UUID organizationId);
 }

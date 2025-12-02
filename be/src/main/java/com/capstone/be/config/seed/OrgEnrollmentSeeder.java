@@ -10,6 +10,7 @@ import com.capstone.be.repository.MemberImportBatchRepository;
 import com.capstone.be.repository.OrgEnrollmentRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.UserRepository;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
@@ -50,7 +51,7 @@ public class OrgEnrollmentSeeder {
         orgAdmin,
         "MANUAL",
         2, 2, 0, 0,
-        null, null, null);
+        null, null);
 
     MemberImportBatch savedBatch = batchRepository.save(batch);
 
@@ -61,6 +62,7 @@ public class OrgEnrollmentSeeder {
         .organization(orgProfile)
         .memberEmail(reader1.getEmail())
         .importBatch(savedBatch)
+        .expiry(Instant.parse("2025-12-31T23:59:59.00Z"))
         .build();
 
     OrgEnrollment enrollment2 = OrgEnrollment.builder()
@@ -70,6 +72,7 @@ public class OrgEnrollmentSeeder {
         .organization(orgProfile)
         .memberEmail(reader2.getEmail())
         .importBatch(savedBatch)
+        .expiry(Instant.parse("2025-12-31T23:59:59.00Z"))
         .build();
 
     enrollmentRepository.save(enrollment1);

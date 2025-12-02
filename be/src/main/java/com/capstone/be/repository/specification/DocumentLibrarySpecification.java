@@ -5,10 +5,16 @@ import com.capstone.be.domain.entity.DocumentRedemption;
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.domain.Specification;
@@ -23,7 +29,7 @@ public class DocumentLibrarySpecification {
    * user
    *
    * @param userId User ID
-   * @param filter Filter criteria (searchKeyword, isPremium, isOwned, isPurchased)
+   * @param filter Filter criteria (searchKeyword, isPremium, isOwned, isPurchased, dateFrom, dateTo, docTypeId, domainId)
    * @return Combined specification
    */
   public static Specification<Document> buildLibrarySpec(UUID userId,
@@ -51,6 +57,32 @@ public class DocumentLibrarySpecification {
         if (filter.getIsPremium() != null) {
           predicates.add(cb.equal(root.get("isPremium"), filter.getIsPremium()));
         }
+
+        // Filter by date range (createdAt)
+        if (filter.getDateFrom() != null) {
+          ZonedDateTime startOfDay = filter.getDateFrom().atStartOfDay(ZoneId.systemDefault());
+          Date dateFrom = Date.from(startOfDay.toInstant());
+          predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), dateFrom));
+        }
+
+        if (filter.getDateTo() != null) {
+          ZonedDateTime endOfDay = filter.getDateTo().atTime(LocalTime.MAX)
+              .atZone(ZoneId.systemDefault());
+          Date dateTo = Date.from(endOfDay.toInstant());
+          predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), dateTo));
+        }
+
+        // Filter by document type
+        if (filter.getDocTypeId() != null) {
+          predicates.add(cb.equal(root.get("docType").get("id"), filter.getDocTypeId()));
+        }
+
+        // Filter by domain (through specialization)
+        if (filter.getDomainId() != null) {
+          Join<Object, Object> specializationJoin = root.join("specialization", JoinType.LEFT);
+          predicates.add(
+              cb.equal(specializationJoin.get("domain").get("id"), filter.getDomainId()));
+        }
       }
 
       return cb.and(predicates.toArray(new Predicate[0]));
@@ -58,38 +90,35 @@ public class DocumentLibrarySpecification {
   }
 
   /**
-   * Build predicate for library membership (owned OR purchased)
+   * Builds the predicate to filter documents in the user's library.
    */
-  private static Predicate buildLibraryPredicate(UUID userId, DocumentLibraryFilter filter,
+  private static Predicate buildLibraryPredicate(
+      UUID userId,
+      DocumentLibraryFilter filter,
       Root<Document> root,
       CriteriaQuery<?> query,
       CriteriaBuilder cb) {
 
-    List<Predicate> libraryPredicates = new ArrayList<>();
+    // Base predicate: documents uploaded by the user
+    Predicate owned = cb.equal(root.get("uploader").get("id"), userId);
 
-    // If specific ownership filter is requested
-    if (filter != null && filter.getIsOwned() != null && filter.getIsOwned()) {
-      libraryPredicates.add(cb.equal(root.get("uploader").get("id"), userId));
-    } else if (filter != null && filter.getIsPurchased() != null && filter.getIsPurchased()) {
-      // Only purchased documents
-      Subquery<UUID> purchaseSubquery = query.subquery(UUID.class);
-      var redemptionRoot = purchaseSubquery.from(DocumentRedemption.class);
-      purchaseSubquery.select(redemptionRoot.get("document").get("id"))
-          .where(cb.equal(redemptionRoot.get("reader").get("id"), userId));
-      libraryPredicates.add(root.get("id").in(purchaseSubquery));
-    } else {
-      // Default: both owned AND purchased
-      Predicate ownedPredicate = cb.equal(root.get("uploader").get("id"), userId);
-
-      Subquery<UUID> purchaseSubquery = query.subquery(UUID.class);
-      var redemptionRoot = purchaseSubquery.from(DocumentRedemption.class);
-      purchaseSubquery.select(redemptionRoot.get("document").get("id"))
-          .where(cb.equal(redemptionRoot.get("reader").get("id"), userId));
-      Predicate purchasedPredicate = root.get("id").in(purchaseSubquery);
-
-      libraryPredicates.add(cb.or(ownedPredicate, purchasedPredicate));
+    // Check filter flags (mutually exclusive by design)
+    if (filter != null && Boolean.TRUE.equals(filter.getIsOwned())) {
+      return owned;
     }
 
-    return cb.or(libraryPredicates.toArray(new Predicate[0]));
+    // Subquery: documents purchased by the user
+    Subquery<UUID> purchasedSubquery = query.subquery(UUID.class);
+    Root<DocumentRedemption> r = purchasedSubquery.from(DocumentRedemption.class);
+    purchasedSubquery.select(r.get("document").get("id"))
+        .where(cb.equal(r.get("reader").get("id"), userId));
+    Predicate purchased = root.get("id").in(purchasedSubquery);
+
+    if (filter != null && Boolean.TRUE.equals(filter.getIsPurchased())) {
+      return purchased;
+    }
+
+    // Default: show everything in user's library → uploaded OR purchased
+    return cb.or(owned, purchased);
   }
 }

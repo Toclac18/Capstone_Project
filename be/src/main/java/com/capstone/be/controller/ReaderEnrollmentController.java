@@ -111,4 +111,24 @@ public class ReaderEnrollmentController {
 
     return ResponseEntity.ok("Invitation rejected successfully");
   }
+
+  /**
+   * Leave an organization
+   * POST /api/v1/reader/enrollments/organizations/{organizationId}/leave
+   *
+   * @param userPrincipal  Reader
+   * @param organizationId Organization ID
+   * @return 200 OK with message
+   */
+  @PostMapping("/organizations/{organizationId}/leave")
+  public ResponseEntity<String> leaveOrganization(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "organizationId") UUID organizationId) {
+    UUID readerId = userPrincipal.getId();
+    log.info("Reader {} leaving organization: {}", readerId, organizationId);
+
+    orgEnrollmentService.leaveOrganization(readerId, organizationId);
+
+    return ResponseEntity.ok("Successfully left the organization");
+  }
 }

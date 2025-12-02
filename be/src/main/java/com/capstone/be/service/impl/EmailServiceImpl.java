@@ -614,4 +614,81 @@ public class EmailServiceImpl implements EmailService {
         </html>
         """.formatted(statusColor, fullName, ticketCode, status, adminNotesSection);
   }
+
+  @Override
+  @Async
+  public void sendAccountCreationInvitation(String email, String organizationName) {
+    try {
+      String subject = "Invitation to Join " + organizationName + " - Capstone Platform";
+      String htmlContent = buildAccountCreationInvitationHtml(email, organizationName);
+
+      sendHtmlEmail(email, subject, htmlContent);
+      log.info("Sent account creation invitation to: {} for organization: {}", email,
+          organizationName);
+
+    } catch (Exception e) {
+      log.error("Failed to send account creation invitation to: {}", email, e);
+      // Don't throw exception - enrollment tracking is more important
+    }
+  }
+
+  private String buildAccountCreationInvitationHtml(String email, String organizationName) {
+    String registerUrl = verificationBaseUrl.replace("/verify-email", "/register");
+
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #673AB7; color: white; padding: 20px; text-align: center; }
+                .content { padding: 20px; background-color: #f9f9f9; }
+                .invitation-box { background-color: #ede7f6; border-left: 4px solid #673AB7;
+                                 padding: 15px; margin: 20px 0; }
+                .button { display: inline-block; padding: 12px 30px; background-color: #673AB7;
+                         color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+                .info-box { background-color: #e3f2fd; border-left: 4px solid #2196F3;
+                           padding: 15px; margin: 20px 0; }
+                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>You're Invited!</h1>
+                </div>
+                <div class="content">
+                    <h2>Hello,</h2>
+                    <p>You have been invited to join <strong>%s</strong> on the Capstone Platform!</p>
+                    <div class="invitation-box">
+                        <p style="margin: 0;"><strong>Organization:</strong> %s</p>
+                        <p style="margin: 10px 0 0 0;"><strong>Your Email:</strong> %s</p>
+                    </div>
+                    <p>To accept this invitation and join the organization, you need to create an account on the Capstone Platform first.</p>
+                    <div class="info-box">
+                        <p style="margin: 0;"><strong>Next Steps:</strong></p>
+                        <ol style="margin: 10px 0 0 0; padding-left: 20px;">
+                            <li>Create your account using the button below</li>
+                            <li>Verify your email address</li>
+                            <li>Log in and accept the organization invitation</li>
+                        </ol>
+                    </div>
+                    <p style="text-align: center;">
+                        <a href="%s" class="button">Create Account</a>
+                    </p>
+                    <p>Or copy and paste this link into your browser:</p>
+                    <p style="word-break: break-all; color: #673AB7;">%s</p>
+                    <p><strong>Note:</strong> Please use the email address <strong>%s</strong> when registering to receive your organization invitation.</p>
+                    <p>If you did not expect this invitation, you can safely ignore this email.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; 2025 Capstone Platform. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(organizationName, organizationName, email, registerUrl, registerUrl, email);
+  }
 }

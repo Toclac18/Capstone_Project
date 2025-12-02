@@ -9,7 +9,8 @@ public enum DocStatus {
   VERIFYING("Verifying"),
   VERIFIED("Verified"),
   REJECTED("Rejected"),
-  //  HIDDEN("Hidden"),
+  ACTIVE("Active"),
+  INACTIVE("Inactive"),
   DELETED("Deleted");
 
   private final String displayName;

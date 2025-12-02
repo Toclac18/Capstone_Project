@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,7 +29,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Entity
 @Table(name = "org_enrollments", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"organization_id", "member_id"})
+    @UniqueConstraint(columnNames = {"organization_id", "memberEmail"})
 })
 public class OrgEnrollment extends BaseEntity {
 
@@ -40,11 +41,17 @@ public class OrgEnrollment extends BaseEntity {
   private OrganizationProfile organization;
 
   /**
+   * Email of the invited membe
+   */
+  @Column(nullable = false)
+  private String memberEmail;
+
+  /**
    * User (Reader) who is invited/enrolled
    */
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "member_id", nullable = false)
-  private User member;
+  @JoinColumn(name = "member_id", nullable = true)
+  private User member;  //can be null
 
   /**
    * Enrollment status: PENDING_INVITE, JOINED, REMOVED
@@ -53,11 +60,8 @@ public class OrgEnrollment extends BaseEntity {
   @Enumerated(EnumType.STRING)
   private OrgEnrollStatus status;
 
-  /**
-   * Email of the invited member (for tracking before acceptance)
-   */
   @Column(nullable = false)
-  private String memberEmail;
+  private Instant expiry;
 
   /**
    * Import batch that this enrollment was created from (nullable for manual invites)

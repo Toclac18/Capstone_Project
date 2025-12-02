@@ -26,6 +26,7 @@ public class OrgEnrollmentResponse {
 
   private UUID organizationId;
   private String organizationName;
+  private String organizationType;
 
   private OrgEnrollStatus status;
 

@@ -91,4 +91,13 @@ public interface EmailService {
    */
   void sendTicketStatusUpdateEmail(String email, String fullName, String ticketCode,
       String status, String adminNotes);
+
+  /**
+   * Send invitation to create account and join organization For users who don't have an account
+   * yet
+   *
+   * @param email            Recipient email address
+   * @param organizationName Organization name
+   */
+  void sendAccountCreationInvitation(String email, String organizationName);
 }

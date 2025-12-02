@@ -1,166 +1,161 @@
-"use client";
+ "use client";
 
-import { useState, useEffect } from "react";
-import type { OrganizationStatistics, LoadState, StatisticsQueryParams } from "@/types/statistics";
-import type { Organization } from "@/app/business-admin/organization/api";
-import { useToast } from "@/components/ui/toast";
-import { SearchableOrganizationSelect } from "./SearchableOrganizationSelect";
-import { OrganizationCharts } from "./OrganizationCharts";
-import { OrganizationBreakdowns } from "./OrganizationBreakdowns";
-import { TopContributors } from "./TopContributors";
+import type { GlobalDocumentStatistics, LoadState } from "@/types/statistics";
+import dynamic from "next/dynamic";
+import type { ApexOptions } from "apexcharts";
+
+const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 interface OrganizationStatisticsTabProps {
   state: LoadState;
-  statistics: OrganizationStatistics | null;
+  statistics: GlobalDocumentStatistics | null;
   error: string | null;
-  selectedOrgId: string | null;
-  onOrgSelect: (orgId: string | null) => void;
-  filters: StatisticsQueryParams;
 }
 
 export function OrganizationStatisticsTab({
   state,
   statistics,
   error,
-  selectedOrgId,
-  onOrgSelect,
 }: OrganizationStatisticsTabProps) {
-  const { showToast } = useToast();
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [loadingOrgs, setLoadingOrgs] = useState(false);
-
-  // Load organizations list
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadOrganizations = async () => {
-      try {
-        if (!isMounted) return;
-        setLoadingOrgs(true);
-        const response = await fetch(
-          `/api/business-admin/organizations?page=1&limit=100`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to load organizations");
-        }
-        const data = await response.json();
-        if (!isMounted) return;
-        setOrganizations(data.organizations || []);
-      } catch (err: any) {
-        if (!isMounted) return;
-        showToast({
-          type: "error",
-          title: "Error",
-          message: err.message || "Failed to load organizations",
-        });
-      } finally {
-        if (isMounted) {
-          setLoadingOrgs(false);
-        }
-      }
-    };
-
-    loadOrganizations();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [showToast]);
-
-
-  if (loadingOrgs) {
+  if (state === "loading") {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading organizations...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading organization statistics...</p>
         </div>
       </div>
     );
   }
 
+  if (state === "error" || !statistics) {
+    return (
+      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
+        <p className="text-red-600 dark:text-red-400">
+          {error || "Failed to load organization statistics"}
+        </p>
+      </div>
+    );
+  }
+
+  const { summary, organizationBreakdown } = statistics;
+
+  const orgSummaryCards = [
+    {
+      title: "Total Organizations",
+      value: summary.totalOrganizations,
+    },
+    {
+      title: "Total Uploaders",
+      value: summary.totalUploaders,
+    },
+    {
+      title: "Total Documents",
+      value: summary.totalDocuments,
+    },
+  ];
+
+  const topOrganizations = organizationBreakdown.slice(0, 10);
+
+  const orgChartOptions: ApexOptions = {
+    chart: {
+      type: "bar",
+      height: 400,
+      toolbar: { show: false },
+    },
+    plotOptions: {
+      bar: {
+        horizontal: true,
+        borderRadius: 4,
+      },
+    },
+    dataLabels: {
+      enabled: false,
+    },
+    xaxis: {
+      categories: topOrganizations.map((org) => org.organizationName),
+      labels: {
+        style: {
+          fontSize: "12px",
+        },
+      },
+    },
+    colors: ["#3C50E0"],
+    title: {
+      text: "Top Organizations by Document Count",
+      style: {
+        fontSize: "16px",
+        fontWeight: 600,
+      },
+    },
+  };
+
+  const orgChartSeries = [
+    {
+      name: "Documents",
+      data: topOrganizations.map((org) => org.documentCount),
+    },
+  ];
+
   return (
-    <div className="space-y-6 relative">
-      {/* Organization Selector */}
-      <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark relative" style={{ overflow: 'visible' }}>
-        <SearchableOrganizationSelect
-          organizations={organizations}
-          selectedOrgId={selectedOrgId}
-          onSelect={onOrgSelect}
-          loading={loadingOrgs}
-        />
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {orgSummaryCards.map((card) => (
+          <div
+            key={card.title}
+            className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card"
+          >
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              {card.title}
+            </p>
+            <p className="mt-2 text-2xl font-bold text-dark dark:text-white">
+              {card.value.toLocaleString()}
+            </p>
+          </div>
+        ))}
       </div>
 
-      {/* Statistics Display */}
-      {!selectedOrgId && (
-        <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
-          <p className="text-center text-gray-600 dark:text-gray-400">
-            Please select an organization to view statistics
-          </p>
-        </div>
-      )}
+      {/* Top Organizations Chart */}
+      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
+        <Chart options={orgChartOptions} series={orgChartSeries} type="bar" height={400} />
+      </div>
 
-      {selectedOrgId && state === "loading" && (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading statistics...</p>
+      {/* Top Organizations Table */}
+      {organizationBreakdown.length > 0 && (
+        <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
+          <h3 className="mb-4 text-lg font-semibold text-dark dark:text-white">
+            Organizations Overview
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-stroke dark:border-dark-3">
+                  <th className="p-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Organization
+                  </th>
+                  <th className="p-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Documents
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {organizationBreakdown.map((org) => (
+                  <tr
+                    key={org.organizationId}
+                    className="border-b border-stroke last:border-0 dark:border-dark-3"
+                  >
+                    <td className="p-3 text-sm text-dark dark:text-white">
+                      {org.organizationName}
+                    </td>
+                    <td className="p-3 text-right text-sm font-semibold text-dark dark:text-white">
+                      {org.documentCount.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
-      )}
-
-      {selectedOrgId && state === "error" && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-800 dark:bg-red-900/20">
-          <p className="text-red-800 dark:text-red-200">
-            {error || "Failed to load statistics"}
-          </p>
-        </div>
-      )}
-
-      {selectedOrgId && state === "success" && statistics && (
-        <div className="space-y-6">
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Total Members
-              </p>
-              <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
-                {statistics.summary.totalMembers.toLocaleString()}
-              </p>
-            </div>
-            <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Total Documents
-              </p>
-              <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
-                {statistics.summary.totalDocuments.toLocaleString()}
-              </p>
-            </div>
-            <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Views</p>
-              <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
-                {statistics.summary.totalViews.toLocaleString()}
-              </p>
-            </div>
-            <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Active Members
-              </p>
-              <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
-                {statistics.summary.activeMembers.toLocaleString()}
-              </p>
-            </div>
-          </div>
-
-          {/* Charts */}
-          <OrganizationCharts statistics={statistics} />
-
-          {/* Breakdowns */}
-          <OrganizationBreakdowns statistics={statistics} />
-
-          {/* Top Contributors */}
-          <TopContributors statistics={statistics} />
         </div>
       )}
     </div>

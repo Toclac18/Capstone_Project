@@ -161,7 +161,7 @@ export function OrganizationCharts({ statistics }: OrganizationChartsProps) {
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <Chart
           options={memberGrowthOptions}
           series={memberGrowthSeries}
@@ -170,7 +170,7 @@ export function OrganizationCharts({ statistics }: OrganizationChartsProps) {
         />
       </div>
 
-      <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <Chart
           options={documentUploadsOptions}
           series={documentUploadsSeries}
@@ -179,7 +179,7 @@ export function OrganizationCharts({ statistics }: OrganizationChartsProps) {
         />
       </div>
 
-      <div className="lg:col-span-2 rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="lg:col-span-2 rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <Chart
           options={activityOptions}
           series={activitySeries}

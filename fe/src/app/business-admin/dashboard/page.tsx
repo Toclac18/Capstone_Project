@@ -6,13 +6,12 @@ import {
   getBusinessAdminDashboard,
   getGlobalDocumentStatistics,
   getReportHandlingStatistics,
-  getOrganizationStatistics,
+  getUserStatistics,
 } from "@/services/statistics.service";
 import type {
   BusinessAdminDashboard,
   GlobalDocumentStatistics,
   ReportHandlingStatistics,
-  OrganizationStatistics,
   StatisticsQueryParams,
 } from "@/types/statistics";
 import { StatisticsFilters } from "./_components/StatisticsFilters";
@@ -21,9 +20,11 @@ import { DashboardOverview } from "./_components/DashboardOverview";
 import { DocumentStatisticsTab } from "./_components/DocumentStatisticsTab";
 import { ReportStatisticsTab } from "./_components/ReportStatisticsTab";
 import { OrganizationStatisticsTab } from "./_components/OrganizationStatisticsTab";
+import { UserStatisticsTab } from "./_components/UserStatisticsTab";
+import type { UserStatistics } from "./_components/UserStatisticsTab";
 
 type LoadState = "loading" | "success" | "error";
-type TabType = "overview" | "documents" | "reports" | "organizations";
+type TabType = "overview" | "documents" | "reports" | "organizations" | "users";
 
 export default function BusinessAdminDashboardPage() {
   const { showToast } = useToast();
@@ -45,53 +46,10 @@ export default function BusinessAdminDashboardPage() {
   const [reportStats, setReportStats] = useState<ReportHandlingStatistics | null>(null);
   const [reportError, setReportError] = useState<string | null>(null);
 
-  // Organization statistics state (will be loaded when needed)
-  const [orgState, setOrgState] = useState<LoadState>("loading");
-  const [orgStats, setOrgStats] = useState<OrganizationStatistics | null>(null);
-  const [orgError, setOrgError] = useState<string | null>(null);
-  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
-
-  // Load organization statistics when organization is selected
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadOrgStats = async () => {
-      // Reset state if conditions not met
-      if (activeTab !== "organizations" || !selectedOrgId) {
-        if (!isMounted) return;
-        setOrgStats(null);
-        setOrgState("loading");
-        return;
-      }
-
-      try {
-        if (!isMounted) return;
-        setOrgState("loading");
-        setOrgError(null);
-        // The selectedOrgId might be userId, we need to get organizationId
-        // For now, pass it as is and let the API route handle the conversion
-        const data = await getOrganizationStatistics({ ...filters, organizationId: selectedOrgId });
-        if (!isMounted) return;
-        setOrgStats(data);
-        setOrgState("success");
-      } catch (err: any) {
-        if (!isMounted) return;
-        setOrgError(err.message || "Failed to load statistics");
-        setOrgState("error");
-        showToast({
-          type: "error",
-          title: "Error",
-          message: err.message || "Failed to load statistics",
-        });
-      }
-    };
-
-    loadOrgStats();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [activeTab, selectedOrgId, filters, showToast]);
+  // User statistics state
+  const [userState, setUserState] = useState<LoadState>("loading");
+  const [userStats, setUserStats] = useState<UserStatistics | null>(null);
+  const [userError, setUserError] = useState<string | null>(null);
 
   // Load dashboard overview
   useEffect(() => {
@@ -125,9 +83,9 @@ export default function BusinessAdminDashboardPage() {
     };
   }, [showToast]);
 
-  // Load document statistics when tab is active
+  // Load document statistics when tab is active (documents or organizations views)
   useEffect(() => {
-    if (activeTab !== "documents") return;
+    if (activeTab !== "documents" && activeTab !== "organizations") return;
 
     let isMounted = true;
 
@@ -158,6 +116,42 @@ export default function BusinessAdminDashboardPage() {
       isMounted = false;
     };
   }, [activeTab, filters, showToast]);
+
+  // Load user statistics when tab is active
+  useEffect(() => {
+    if (activeTab !== "users") return;
+
+    let isMounted = true;
+
+    const loadUserStats = async () => {
+      try {
+        if (!isMounted) return;
+        setUserState("loading");
+        setUserError(null);
+
+        const stats = await getUserStatistics();
+
+        if (!isMounted) return;
+        setUserStats(stats);
+        setUserState("success");
+      } catch (err: any) {
+        if (!isMounted) return;
+        setUserError(err.message || "Failed to load user statistics");
+        setUserState("error");
+        showToast({
+          type: "error",
+          title: "Error",
+          message: err.message || "Failed to load user statistics",
+        });
+      }
+    };
+
+    loadUserStats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, showToast]);
 
   // Load report statistics when tab is active
   useEffect(() => {
@@ -202,6 +196,7 @@ export default function BusinessAdminDashboardPage() {
     { id: "documents" as TabType, label: "Documents" },
     { id: "reports" as TabType, label: "Reports" },
     { id: "organizations" as TabType, label: "Organizations" },
+    { id: "users" as TabType, label: "Users" },
   ];
 
   return (
@@ -209,16 +204,16 @@ export default function BusinessAdminDashboardPage() {
       <Breadcrumb pageName="Dashboard" />
 
       {/* Tabs */}
-      <div className="mb-6 rounded-lg border border-stroke bg-white p-4 shadow-default dark:border-strokedark dark:bg-boxdark">
-        <div className="flex space-x-1 border-b border-stroke dark:border-strokedark">
+      <div className="mb-6 rounded-[10px] bg-white p-2 shadow-1 dark:bg-gray-dark dark:shadow-card">
+        <div className="flex gap-1 border-b border-transparent">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-3 text-sm font-medium transition-colors ${
+              className={`rounded-t-md px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === tab.id
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                  ? "bg-primary text-white shadow-sm dark:bg-primary"
+                  : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
               }`}
             >
               {tab.label}
@@ -261,13 +256,14 @@ export default function BusinessAdminDashboardPage() {
 
       {activeTab === "organizations" && (
         <OrganizationStatisticsTab
-          state={orgState}
-          statistics={orgStats}
-          error={orgError}
-          selectedOrgId={selectedOrgId}
-          onOrgSelect={setSelectedOrgId}
-          filters={filters}
+          state={docState}
+          statistics={docStats}
+          error={docError}
         />
+      )}
+
+      {activeTab === "users" && (
+        <UserStatisticsTab state={userState} statistics={userStats} error={userError} />
       )}
     </>
   );

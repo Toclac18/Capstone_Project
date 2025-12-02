@@ -9,7 +9,7 @@ interface TopContributorsProps {
 export function TopContributors({ statistics }: TopContributorsProps) {
   if (!statistics.topContributors || statistics.topContributors.length === 0) {
     return (
-      <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <p className="text-center text-gray-600 dark:text-gray-400">
           No contributors data available
         </p>
@@ -18,7 +18,7 @@ export function TopContributors({ statistics }: TopContributorsProps) {
   }
 
   return (
-    <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+    <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
       <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
         Top Contributors
       </h3>

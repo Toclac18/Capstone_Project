@@ -6,6 +6,7 @@ import type {
   ReportHandlingStatistics,
   StatisticsQueryParams,
 } from "@/types/statistics";
+import type { UserStatistics } from "@/app/business-admin/dashboard/_components/UserStatisticsTab";
 
 export async function getPersonalStatistics(
   params?: StatisticsQueryParams
@@ -132,6 +133,21 @@ export async function getReportHandlingStatistics(
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: "Failed to fetch statistics" }));
     throw new Error(error.error || "Failed to fetch statistics");
+  }
+
+  const data = await response.json();
+  return data;
+}
+
+export async function getUserStatistics(): Promise<UserStatistics> {
+  const response = await fetch("/api/business-admin/statistics/users", {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Failed to fetch user statistics" }));
+    throw new Error(error.error || "Failed to fetch user statistics");
   }
 
   const data = await response.json();

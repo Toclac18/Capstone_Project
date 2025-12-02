@@ -297,6 +297,7 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
     }
 
     return InviteMembersResponse.builder()
+        .batch(batch.getId())
         .totalEmails(emails.size())
         .successCount(successEmails.size())
         .successEmails(successEmails)

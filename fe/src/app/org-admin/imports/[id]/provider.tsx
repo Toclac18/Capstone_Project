@@ -17,7 +17,7 @@ import React, {
 export type ImportSummaryStatus = "WAITING" | "PROCESSING" | "COMPLETED";
 
 export type ImportSummary = {
-  fileName?: string | null; // tạm thời chưa có -> "—" trên UI
+  fileName?: string | null;
   createdAt?: string | null;
   createdBy?: string | null;
   status: ImportSummaryStatus;
@@ -82,7 +82,7 @@ function buildSummary(rows?: DetailData): ImportSummary {
   else status = "COMPLETED";
 
   return {
-    fileName: null, // hiện BE detail chưa trả -> để "—"
+    fileName: null,
     createdAt: null,
     createdBy: null,
     status,

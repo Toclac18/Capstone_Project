@@ -53,6 +53,18 @@ export type ImportListFilters = {
   pageSize?: number;
 };
 
+type CreateImportApiResponse = {
+  success: boolean;
+  data: {
+    importBatchId: string;
+    totalEmails: number;
+    successCount: number;
+    failedCount: number;
+    skippedCount: number;
+  };
+  timestamp: string;
+};
+
 /* ====================== HELPERS ====================== */
 
 function normalizePagedResult<T>(
@@ -158,18 +170,22 @@ export async function fetchImportDetail(
 /**
  * UPLOAD IMPORT (Excel)
  */
-export async function createImport(form: FormData) {
-  const res = await apiClient.post("org-admin/imports", form);
-  return res.data;
-}
+export async function createImport(form: FormData): Promise<{ id: string }> {
+  const res = await apiClient.post<CreateImportApiResponse>(
+    "org-admin/imports",
+    form,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    },
+  );
 
-/**
- * DOWNLOAD CSV
- */
-export async function downloadImportResult(batchId: string): Promise<Blob> {
-  const res = await apiClient.get("org-admin/imports", {
-    params: { id: batchId, download: "csv" },
-    responseType: "blob",
-  });
-  return res.data;
+  const id = res.data?.data?.importBatchId;
+
+  if (!id) {
+    throw new Error("Cannot detect importBatchId from server response");
+  }
+
+  return { id };
 }

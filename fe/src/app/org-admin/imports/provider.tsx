@@ -92,7 +92,6 @@ function ImportHistoryInner({ children }: { children: React.ReactNode }) {
       ...partial,
     };
 
-    // Nếu đổi q hoặc status -> reset page về 1 cho chắc
     if (
       (partial.q !== undefined && partial.q !== filters.q) ||
       (partial.status !== undefined && partial.status !== filters.status)

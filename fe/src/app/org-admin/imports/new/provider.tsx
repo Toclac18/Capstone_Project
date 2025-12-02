@@ -1,5 +1,5 @@
-// src/app/org-admin/imports/provider/index.tsx
 "use client";
+
 import React, { createContext, useContext, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createImport } from "@/services/org-admin-imports.service";
@@ -13,6 +13,7 @@ type Ctx = {
 };
 
 const UploadCtx = createContext<Ctx | null>(null);
+
 export const useUpload = () => {
   const ctx = useContext(UploadCtx);
   if (!ctx) throw new Error("useUpload must be used within UploadProvider");
@@ -31,20 +32,24 @@ export default function UploadProvider({
 
   const submit = async () => {
     setError(null);
+
     if (!file) {
       setError("Please use true format file");
       return;
     }
+
     try {
       setBusy(true);
+
       const form = new FormData();
       form.append("file", file);
       form.append("createdBy", "org-admin");
-      const job = await createImport(form);
-      if (job?.id) {
-        router.push(`/org-admin/imports/${job.id}`);
-      }
+
+      const { id } = await createImport(form);
+
+      router.push(`/org-admin/imports/${id}`);
     } catch (e: any) {
+      console.error(e);
       setError(e?.message ?? "Upload failed");
     } finally {
       setBusy(false);

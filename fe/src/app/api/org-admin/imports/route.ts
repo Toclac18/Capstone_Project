@@ -1,3 +1,5 @@
+//src/app/api/org-admin/imports/route.ts;
+
 import { NextRequest } from "next/server";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
@@ -82,13 +84,11 @@ async function handleGET(req: NextRequest) {
 
   try {
     const json = JSON.parse(text);
-    // json: { success, data, pageInfo, timestamp }  (giống response bạn gửi)
     return jsonResponse(json, {
       status: upstream.status,
       headers: { "x-mode": "real" },
     });
   } catch {
-    // phòng khi content-type không phải JSON
     return new Response(text, { status: upstream.status });
   }
 }
@@ -98,7 +98,6 @@ async function handleGET(req: NextRequest) {
 async function handlePOST(req: NextRequest) {
   const form = await req.formData();
 
-  // MOCK
   if (USE_MOCK) {
     const f = form.get("file");
     if (!(f instanceof File)) {
@@ -109,7 +108,6 @@ async function handlePOST(req: NextRequest) {
     }
 
     const created = await mockCreateImport(f, "mock.admin@example.com");
-    // created cũng nên ở dạng wrapper { success, data, timestamp }
     return jsonResponse(created, {
       status: 201,
       headers: { "x-mode": "mock" },

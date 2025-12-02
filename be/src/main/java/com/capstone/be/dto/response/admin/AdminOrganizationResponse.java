@@ -23,6 +23,7 @@ public class AdminOrganizationResponse {
   private UserStatus status;
 
   // Organization profile info
+  private UUID organizationId; // Add organizationId for statistics API
   private String orgName;
   private String orgType;
   private String orgEmail;

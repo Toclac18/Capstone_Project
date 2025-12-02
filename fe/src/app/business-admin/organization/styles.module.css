@@ -45,9 +45,10 @@
 /* Inputs / Select */
 .input,
 .select {
-  @apply w-full h-13 rounded-lg border p-3.5 text-base shadow-sm transition-all duration-200 ease-in-out;
+  @apply w-full h-10 rounded-lg border px-3.5 py-2.5 text-base shadow-sm transition-all duration-200 ease-in-out;
   @apply border-stroke bg-white text-dark placeholder-gray-6;
   @apply focus:border-primary focus:ring-2 focus:ring-primary/60;
+  @apply flex items-center;
 }
 :global(html.dark) .input,
 :global(html.dark) .select {
@@ -72,8 +73,9 @@
 
 /* Buttons */
 .btn {
-  @apply rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-200 ease-in-out;
+  @apply h-10 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-200 ease-in-out;
   @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+  @apply flex items-center justify-center;
 }
 :global(html.dark) .btn {
   @apply focus:ring-offset-dark-2;
@@ -290,9 +292,10 @@
 }
 
 .search-input {
-  @apply w-full pl-10 pr-4 py-2.5 rounded-lg border text-base;
+  @apply w-full h-10 pl-10 pr-4 py-2.5 rounded-lg border text-base;
   @apply border-stroke bg-white text-dark placeholder-gray-6;
   @apply focus:border-primary focus:ring-2 focus:ring-primary/60;
+  @apply flex items-center;
 }
 :global(html.dark) .search-input {
   @apply border-stroke-dark bg-dark-3 text-dark-8 placeholder-dark-6;

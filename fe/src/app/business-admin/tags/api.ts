@@ -5,6 +5,7 @@ export {
   updateTag,
   deleteTag,
   approveTag,
+  rejectTag,
 } from "@/services/manage-tag.service";
 
 export type {

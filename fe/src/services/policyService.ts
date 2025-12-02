@@ -96,12 +96,25 @@ export async function updatePolicyByType(
  * Accept policy (for users)
  */
 export async function acceptPolicy(id: string): Promise<{ message: string }> {
-  const res = await apiClient.post<SuccessResponse<{ message: string }>>(
-    `/policies/${id}/accept`
-  );
-  
-  if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-    return (res.data as SuccessResponse<{ message: string }>).data;
+  try {
+    const res = await apiClient.post<SuccessResponse<{ message: string }>>(
+      `/policies/${id}/accept`
+    );
+    
+    // Backend returns 204 NO_CONTENT, axios may not parse body
+    if (res.status === 204 || !res.data) {
+      return { message: "Policy accepted successfully" };
+    }
+    
+    if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+      return (res.data as SuccessResponse<{ message: string }>).data;
+    }
+    return res.data as { message: string };
+  } catch (error: any) {
+    // If axios throws error but status is 204, it's actually success
+    if (error?.response?.status === 204) {
+      return { message: "Policy accepted successfully" };
+    }
+    throw error;
   }
-  return res.data as { message: string };
 }

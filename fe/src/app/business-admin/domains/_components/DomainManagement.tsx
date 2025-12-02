@@ -71,7 +71,7 @@ export function DomainManagement() {
         const { sortBy: _sortBy, sortOrder: _sortOrder, page: _page, limit: _limit, ...filterParams } = queryParams;
         const response: DomainResponse = await getDomains(filterParams);
         setAllDomains(response.domains);
-        setTotalItems(response.domains.length); // Total after filtering (before pagination)
+        setTotalItems(response.total); // Use total from backend response
         setCurrentPage(queryParams.page || 1);
       } catch (e: unknown) {
         const errorMessage =
@@ -145,8 +145,8 @@ export function DomainManagement() {
 
   // Handle add domain
   const handleAddDomain = useCallback(
-    async (name: string) => {
-      await createDomain({ name });
+    async (code: number, name: string) => {
+      await createDomain({ code, name });
       await fetchDomains(filters);
     },
     [filters, fetchDomains]
@@ -174,11 +174,11 @@ export function DomainManagement() {
 
 
   // Handle column sort
-  const handleSort = useCallback((column: "name" | "createdDate" | "id") => {
+  const handleSort = useCallback((column: "name" | "createdDate") => {
     const currentSortBy = filters.sortBy;
     const currentSortOrder = filters.sortOrder;
     
-    let newSortBy: "name" | "createdDate" | "id" | undefined = column;
+    let newSortBy: "name" | "createdDate" | undefined = column;
     let newSortOrder: "asc" | "desc" | undefined = "asc";
     
     // If clicking on the same column, cycle through: undefined -> asc -> desc -> undefined
@@ -224,9 +224,6 @@ export function DomainManagement() {
       if (sortBy === "name") {
         aValue = a.name.toLowerCase();
         bValue = b.name.toLowerCase();
-      } else if (sortBy === "id") {
-        aValue = a.id.toLowerCase();
-        bValue = b.id.toLowerCase();
       } else {
         aValue = new Date(a.createdDate).getTime();
         bValue = new Date(b.createdDate).getTime();
@@ -246,7 +243,7 @@ export function DomainManagement() {
   }, [allDomains, filters.sortBy, filters.sortOrder, currentPage, itemsPerPage]);
 
   // Get sort icon for a column
-  const getSortIcon = (column: "name" | "createdDate" | "id") => {
+  const getSortIcon = (column: "name" | "createdDate") => {
     const sortBy = filters.sortBy;
     const sortOrder = filters.sortOrder;
     
@@ -311,7 +308,7 @@ export function DomainManagement() {
                 type="text"
                 {...register("search")}
                 className={styles["search-input"]}
-                placeholder="Search by domain name or ID..."
+                placeholder="Search by domain name..."
                 disabled={loading}
               />
             </div>
@@ -338,7 +335,7 @@ export function DomainManagement() {
         </div>
 
         {/* Filter Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
             <label htmlFor="dateFrom" className={styles["label"]}>
               Date From
@@ -437,22 +434,12 @@ export function DomainManagement() {
           <>
             <table className={styles["table"]}>
               <colgroup>
-                <col className={styles["col-id"]} />
                 <col className={styles["col-name"]} />
                 <col className={styles["col-date"]} />
                 <col className={styles["col-action"]} />
               </colgroup>
               <thead className={styles["table-header"]}>
                 <tr>
-                  <th 
-                    className={styles["table-header-cell"] + " " + styles["sortable-header"]}
-                    onClick={() => handleSort("id")}
-                  >
-                    <div className="flex items-center">
-                      Domain ID
-                      {getSortIcon("id")}
-                    </div>
-                  </th>
                   <th 
                     className={styles["table-header-cell"] + " " + styles["sortable-header"]}
                     onClick={() => handleSort("name")}
@@ -477,9 +464,6 @@ export function DomainManagement() {
               <tbody className={styles["table-body"]}>
                 {sortedAndPaginatedDomains.map((domain) => (
                   <tr key={domain.id} className={styles["table-row"]}>
-                    <td className={styles["table-cell"]}>
-                      <span className={styles["table-cell-main"]}>{domain.id}</span>
-                    </td>
                     <td className={styles["table-cell"]}>
                       <span className={styles["table-cell-main"]}>{domain.name}</span>
                     </td>

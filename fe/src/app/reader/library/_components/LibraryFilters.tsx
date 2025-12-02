@@ -119,6 +119,12 @@ export function LibraryFilters({
               {...register("search")}
               className={styles["search-input"]}
               disabled={loading}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleSubmit(onSubmit)();
+                }
+              }}
             />
           </div>
           <div className={styles["filters-actions"]}>
@@ -281,11 +287,9 @@ export function LibraryFilters({
                   </button>
                 </span>
               )}
-              {watchedFilters.dateFrom && (
-                <span
-                  className={`${styles["filter-tag"]} ${styles["filter-tag-date"]}`}
-                >
-                  From: {new Date(watchedFilters.dateFrom).toLocaleDateString()}
+              {(watchedFilters.dateFrom || watchedFilters.dateTo) && (
+                <span className={`${styles["filter-tag"]} ${styles["filter-tag-date"]}`}>
+                  Date: {watchedFilters.dateFrom || "Start"} - {watchedFilters.dateTo || "End"}
                   <button
                     type="button"
                     onClick={() => {
@@ -294,31 +298,6 @@ export function LibraryFilters({
                         uploaded: watchedFilters.uploaded || false,
                         redeemed: watchedFilters.redeemed || false,
                         dateFrom: "",
-                        dateTo: watchedFilters.dateTo || "",
-                        type: watchedFilters.type || "",
-                        domain: watchedFilters.domain || "",
-                      };
-                      reset(updatedFilters);
-                    }}
-                    className={`${styles["filter-tag-remove"]} ${styles["filter-tag-remove-date"]}`}
-                  >
-                    <X className={styles["filter-tag-icon"]} />
-                  </button>
-                </span>
-              )}
-              {watchedFilters.dateTo && (
-                <span
-                  className={`${styles["filter-tag"]} ${styles["filter-tag-date"]}`}
-                >
-                  To: {new Date(watchedFilters.dateTo).toLocaleDateString()}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const updatedFilters: FilterValues = {
-                        search: watchedFilters.search || "",
-                        uploaded: watchedFilters.uploaded || false,
-                        redeemed: watchedFilters.redeemed || false,
-                        dateFrom: watchedFilters.dateFrom || "",
                         dateTo: "",
                         type: watchedFilters.type || "",
                         domain: watchedFilters.domain || "",

@@ -8,21 +8,22 @@ interface ChangeEmailModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentEmail: string;
-  onSave: (newEmail: string, password: string) => Promise<void>;
+  onRequestEmailChange: (newEmail: string, otp?: string) => Promise<{ step: string } | { step: string }>;
 }
 
 export default function ChangeEmailModal({
   isOpen,
   onClose,
   currentEmail,
-  onSave,
+  onRequestEmailChange,
 }: ChangeEmailModalProps) {
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [step, setStep] = useState<"request" | "verify">("request");
+  const [newEmail, setNewEmail] = useState("");
   const [formData, setFormData] = useState({
     newEmail: "",
-    confirmEmail: "",
-    password: "",
+    otp: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -32,12 +33,14 @@ export default function ChangeEmailModal({
 
   useEffect(() => {
     if (isOpen) {
-      setFormData({ newEmail: "", confirmEmail: "", password: "" });
+      setStep("request");
+      setNewEmail("");
+      setFormData({ newEmail: "", otp: "" });
       setErrors({});
     }
   }, [isOpen]);
 
-  const validateForm = (): boolean => {
+  const validateRequestForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.newEmail) {
@@ -48,30 +51,52 @@ export default function ChangeEmailModal({
       newErrors.newEmail = "New email must be different from current email";
     }
 
-    if (!formData.confirmEmail) {
-      newErrors.confirmEmail = "Please confirm your email";
-    } else if (formData.newEmail !== formData.confirmEmail) {
-      newErrors.confirmEmail = "Emails do not match";
-    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    if (!formData.password) {
-      newErrors.password = "Password is required";
+  const validateVerifyForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.otp) {
+      newErrors.otp = "OTP is required";
+    } else if (!/^[0-9]{6}$/.test(formData.otp)) {
+      newErrors.otp = "OTP must be 6 digits";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateRequestForm()) return;
 
     try {
       setIsLoading(true);
-      await onSave(formData.newEmail, formData.password);
+      const result = await onRequestEmailChange(formData.newEmail);
+      if (result.step === "verify") {
+        setNewEmail(formData.newEmail);
+        setStep("verify");
+        setFormData({ ...formData, newEmail: "", otp: "" });
+      }
+    } catch (error: any) {
+      setErrors({ submit: error?.message || "Failed to request email change" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateVerifyForm()) return;
+
+    try {
+      setIsLoading(true);
+      await onRequestEmailChange(newEmail, formData.otp);
       onClose();
     } catch (error: any) {
-      setErrors({ submit: error?.message || "Failed to change email" });
+      setErrors({ submit: error?.message || "Failed to verify OTP" });
     } finally {
       setIsLoading(false);
     }
@@ -105,130 +130,173 @@ export default function ChangeEmailModal({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className={styles["modal-form"]}>
-            <div className={styles["form-fields"]}>
-              <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
-                <label className={`${styles["field-label"]} ${styles["field-label-sm"]}`}>Current Email</label>
-                <input
-                  type="email"
-                  value={currentEmail}
-                  disabled
-                  className={`${styles["field-input"]} ${styles["field-input-sm"]} ${styles["disabled"]}`}
-                />
-              </div>
-
-              <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
-                <label className={`${styles["field-label"]} ${styles["field-label-sm"]}`}>
-                  New Email <span className={`${styles["field-label-required"]} ${styles["field-label-required-sm"]}`}>*</span>
-                </label>
-                <input
-                  type="email"
-                  value={formData.newEmail}
-                  onChange={(e) => {
-                    setFormData({ ...formData, newEmail: e.target.value });
-                    if (errors.newEmail) setErrors({ ...errors, newEmail: "" });
-                  }}
-                  placeholder="Enter new email"
-                  className={`${styles["field-input"]} ${styles["field-input-sm"]} ${errors.newEmail ? styles.error : ""}`}
-                />
-                {errors.newEmail && (
-                  <div className={`${styles["field-error"]} ${styles["field-error-inline"]}`}>
-                    <AlertCircle className={styles["error-icon"]} />
-                    {errors.newEmail}
-                  </div>
-                )}
-              </div>
-
-              <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
-                <label className={`${styles["field-label"]} ${styles["field-label-sm"]}`}>
-                  Confirm New Email <span className={`${styles["field-label-required"]} ${styles["field-label-required-sm"]}`}>*</span>
-                </label>
-                <input
-                  type="email"
-                  value={formData.confirmEmail}
-                  onChange={(e) => {
-                    setFormData({ ...formData, confirmEmail: e.target.value });
-                    if (errors.confirmEmail)
-                      setErrors({ ...errors, confirmEmail: "" });
-                  }}
-                  placeholder="Confirm new email"
-                  className={`${styles["field-input"]} ${styles["field-input-sm"]} ${errors.confirmEmail ? styles.error : ""}`}
-                />
-                {errors.confirmEmail && (
-                  <div className={`${styles["field-error"]} ${styles["field-error-inline"]}`}>
-                    <AlertCircle className={styles["error-icon"]} />
-                    {errors.confirmEmail}
-                  </div>
-                )}
-              </div>
-
-              <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
-                <label className={`${styles["field-label"]} ${styles["field-label-sm"]}`}>
-                  Current Password <span className={`${styles["field-label-required"]} ${styles["field-label-required-sm"]}`}>*</span>
-                </label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => {
-                    setFormData({ ...formData, password: e.target.value });
-                    if (errors.password) setErrors({ ...errors, password: "" });
-                  }}
-                  placeholder="Enter your password"
-                  className={`${styles["field-input"]} ${styles["field-input-sm"]} ${errors.password ? styles.error : ""}`}
-                />
-                {errors.password && (
-                  <div className={`${styles["field-error"]} ${styles["field-error-inline"]}`}>
-                    <AlertCircle className={styles["error-icon"]} />
-                    {errors.password}
-                  </div>
-                )}
-              </div>
-
-              {errors.submit && (
-                <div className={styles["alert-error"]}>
-                  <div className={styles["alert-error-content"]}>
-                    <AlertCircle className={styles["alert-icon"]} />
-                    {errors.submit}
-                  </div>
+          {step === "request" ? (
+            <form onSubmit={handleRequestSubmit} className={styles["modal-form"]}>
+              <div className={styles["form-fields"]}>
+                <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
+                  <label className={`${styles["field-label"]} ${styles["field-label-sm"]}`}>Current Email</label>
+                  <input
+                    type="email"
+                    value={currentEmail}
+                    disabled
+                    className={`${styles["field-input"]} ${styles["field-input-sm"]} ${styles["disabled"]}`}
+                  />
                 </div>
-              )}
-            </div>
 
-            <div className={`${styles["modal-actions"]} ${styles["modal-actions-end"]}`}>
-              <button
-                type="button"
-                onClick={onClose}
-                className={`${styles["btn-cancel"]} ${styles["btn-cancel-sm"]}`}
-                disabled={isLoading}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`${styles["btn-submit"]} ${styles["blue"]} ${styles["btn-submit-sm"]}`}
-              >
-                {isLoading && (
-                  <svg className={styles["spinner"]} fill="none" viewBox="0 0 24 24">
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
+                <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
+                  <label className={`${styles["field-label"]} ${styles["field-label-sm"]}`}>
+                    New Email <span className={`${styles["field-label-required"]} ${styles["field-label-required-sm"]}`}>*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.newEmail}
+                    onChange={(e) => {
+                      setFormData({ ...formData, newEmail: e.target.value });
+                      if (errors.newEmail) setErrors({ ...errors, newEmail: "" });
+                    }}
+                    placeholder="Enter new email"
+                    className={`${styles["field-input"]} ${styles["field-input-sm"]} ${errors.newEmail ? styles.error : ""}`}
+                  />
+                  {errors.newEmail && (
+                    <div className={`${styles["field-error"]} ${styles["field-error-inline"]}`}>
+                      <AlertCircle className={styles["error-icon"]} />
+                      {errors.newEmail}
+                    </div>
+                  )}
+                </div>
+
+                {errors.submit && (
+                  <div className={styles["alert-error"]}>
+                    <div className={styles["alert-error-content"]}>
+                      <AlertCircle className={styles["alert-icon"]} />
+                      {errors.submit}
+                    </div>
+                  </div>
                 )}
-                {isLoading ? "Changing..." : "Change Email"}
-              </button>
-            </div>
-          </form>
+              </div>
+
+              <div className={`${styles["modal-actions"]} ${styles["modal-actions-end"]}`}>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className={`${styles["btn-cancel"]} ${styles["btn-cancel-sm"]}`}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`${styles["btn-submit"]} ${styles["blue"]} ${styles["btn-submit-sm"]}`}
+                >
+                  {isLoading && (
+                    <svg className={styles["spinner"]} fill="none" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                  )}
+                  {isLoading ? "Sending..." : "Send OTP"}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifySubmit} className={styles["modal-form"]}>
+              <div className={styles["form-fields"]}>
+                <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
+                  <label className={`${styles["field-label"]} ${styles["field-label-sm"]}`}>New Email</label>
+                  <input
+                    type="email"
+                    value={newEmail}
+                    disabled
+                    className={`${styles["field-input"]} ${styles["field-input-sm"]} ${styles["disabled"]}`}
+                  />
+                </div>
+
+                <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
+                  <label className={`${styles["field-label"]} ${styles["field-label-sm"]}`}>
+                    OTP <span className={`${styles["field-label-required"]} ${styles["field-label-required-sm"]}`}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.otp}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                      setFormData({ ...formData, otp: value });
+                      if (errors.otp) setErrors({ ...errors, otp: "" });
+                    }}
+                    placeholder="Enter 6-digit OTP"
+                    className={`${styles["field-input"]} ${styles["field-input-sm"]} ${errors.otp ? styles.error : ""}`}
+                    maxLength={6}
+                  />
+                  {errors.otp && (
+                    <div className={`${styles["field-error"]} ${styles["field-error-inline"]}`}>
+                      <AlertCircle className={styles["error-icon"]} />
+                      {errors.otp}
+                    </div>
+                  )}
+                </div>
+
+                {errors.submit && (
+                  <div className={styles["alert-error"]}>
+                    <div className={styles["alert-error-content"]}>
+                      <AlertCircle className={styles["alert-icon"]} />
+                      {errors.submit}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className={`${styles["modal-actions"]} ${styles["modal-actions-end"]}`}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep("request");
+                    setFormData({ ...formData, otp: "" });
+                    setErrors({});
+                  }}
+                  className={`${styles["btn-cancel"]} ${styles["btn-cancel-sm"]}`}
+                  disabled={isLoading}
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`${styles["btn-submit"]} ${styles["blue"]} ${styles["btn-submit-sm"]}`}
+                >
+                  {isLoading && (
+                    <svg className={styles["spinner"]} fill="none" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                  )}
+                  {isLoading ? "Verifying..." : "Verify & Change Email"}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </div>

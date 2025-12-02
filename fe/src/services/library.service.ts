@@ -23,6 +23,8 @@ export type LibraryDocument = {
 export type LibraryResponse = {
   documents: LibraryDocument[];
   total: number;
+  page: number;
+  limit: number;
 };
 
 export type LibraryQueryParams = {

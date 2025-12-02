@@ -21,6 +21,7 @@ export interface SpecializationResponse {
 }
 
 export interface CreateSpecializationRequest {
+  code: number;
   name: string;
   domainId: string;
 }

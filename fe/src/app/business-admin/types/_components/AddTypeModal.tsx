@@ -8,11 +8,13 @@ import styles from "../styles.module.css";
 interface AddTypeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (name: string) => Promise<void>;
+  onAdd: (code: number, name: string, description?: string) => Promise<void>;
 }
 
 export function AddTypeModal({ isOpen, onClose, onAdd }: AddTypeModalProps) {
+  const [code, setCode] = useState("");
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { showToast } = useToast();
@@ -22,6 +24,17 @@ export function AddTypeModal({ isOpen, onClose, onAdd }: AddTypeModalProps) {
       e.preventDefault();
       setError(null);
 
+      if (!code.trim()) {
+        setError("Type code cannot be empty.");
+        return;
+      }
+
+      const codeNum = parseInt(code.trim(), 10);
+      if (isNaN(codeNum) || codeNum < 1) {
+        setError("Type code must be a positive number.");
+        return;
+      }
+
       if (!name.trim()) {
         setError("Type name cannot be empty.");
         return;
@@ -29,8 +42,10 @@ export function AddTypeModal({ isOpen, onClose, onAdd }: AddTypeModalProps) {
 
       try {
         setIsLoading(true);
-        await onAdd(name.trim());
+        await onAdd(codeNum, name.trim(), description.trim() || undefined);
+        setCode("");
         setName("");
+        setDescription("");
         onClose();
         showToast({
           type: "success",
@@ -52,12 +67,14 @@ export function AddTypeModal({ isOpen, onClose, onAdd }: AddTypeModalProps) {
         setIsLoading(false);
       }
     },
-    [name, onAdd, onClose, showToast]
+    [code, name, description, onAdd, onClose, showToast]
   );
 
   const handleClose = useCallback(() => {
     if (isLoading) return;
+    setCode("");
     setName("");
+    setDescription("");
     setError(null);
     onClose();
   }, [isLoading, onClose]);
@@ -89,6 +106,23 @@ export function AddTypeModal({ isOpen, onClose, onAdd }: AddTypeModalProps) {
           {/* Content */}
           <form id="addTypeForm" onSubmit={handleSubmit} className={styles["modal-content"]}>
             <div className={styles["form-group"]}>
+              <label htmlFor="typeCode" className={styles["form-label"]}>
+                Type Code <span className={styles["required"]}>*</span>
+              </label>
+              <input
+                id="typeCode"
+                type="number"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className={styles["form-input"]}
+                placeholder="Enter type code (positive number)"
+                disabled={isLoading}
+                min="1"
+                autoFocus
+              />
+            </div>
+
+            <div className={styles["form-group"]}>
               <label htmlFor="typeName" className={styles["form-label"]}>
                 Type Name <span className={styles["required"]}>*</span>
               </label>
@@ -100,10 +134,25 @@ export function AddTypeModal({ isOpen, onClose, onAdd }: AddTypeModalProps) {
                 className={styles["form-input"]}
                 placeholder="Enter type name"
                 disabled={isLoading}
-                autoFocus
               />
-              {error && <p className={styles["form-error"]}>{error}</p>}
             </div>
+
+            <div className={styles["form-group"]}>
+              <label htmlFor="typeDescription" className={styles["form-label"]}>
+                Description
+              </label>
+              <textarea
+                id="typeDescription"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className={styles["form-input"]}
+                placeholder="Enter type description"
+                disabled={isLoading}
+                rows={4}
+              />
+            </div>
+
+            {error && <p className={styles["form-error"]}>{error}</p>}
           </form>
 
           {/* Footer */}
@@ -120,7 +169,7 @@ export function AddTypeModal({ isOpen, onClose, onAdd }: AddTypeModalProps) {
               type="submit"
               form="addTypeForm"
               className={styles["modal-button-submit"]}
-              disabled={isLoading || !name.trim()}
+              disabled={isLoading || !code.trim() || !name.trim()}
             >
               {isLoading ? "Saving..." : "Add Type"}
             </button>

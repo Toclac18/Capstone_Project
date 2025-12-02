@@ -1,59 +1,59 @@
 // app/api/profile/change-password/route.ts
-import { headers } from "next/headers";
+
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { jsonResponse, badRequest } from "@/server/response";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
-import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 export const dynamic = "force-dynamic";
 
-async function handlePOST(req: Request) {
-  let body: { currentPassword: string; newPassword: string };
-  try {
-    body = await req.json();
-  } catch {
-    return jsonResponse(
-      { error: "Invalid JSON body" },
-      {
-        status: 400,
-        headers: { "content-type": "application/json" },
-      },
-    );
+async function handlePUT(req: Request) {
+  const body = await req.json().catch(() => null);
+
+  if (!body || !body.currentPassword || !body.newPassword || !body.confirmPassword) {
+    return badRequest("Missing required fields: currentPassword, newPassword, confirmPassword");
   }
 
   if (USE_MOCK) {
-    return new Response(
-      JSON.stringify({
-        message: "Password changed successfully. (mock)",
-      }),
-      {
-        status: 200,
-        headers: {
-          "content-type": "application/json",
-          "x-mode": "mock",
-        },
-      },
+    return jsonResponse(
+      { message: "Password changed successfully" },
+      { status: 200, mode: "mock" },
     );
   }
 
-  const h = await headers();
-  const authHeader = h.get("authorization") || "";
-  const cookieHeader = h.get("cookie") || "";
+  const authHeader = await getAuthHeader("change-password");
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (authHeader) fh.set("Authorization", authHeader);
-  if (cookieHeader) fh.set("Cookie", cookieHeader);
 
-  const upstream = await fetch(`${BE_BASE}/api/profile/change-password`, {
-    method: "POST",
+  const upstream = await fetch(`${BE_BASE}/api/user/change-password`, {
+    method: "PUT",
     headers: fh,
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      currentPassword: body.currentPassword,
+      newPassword: body.newPassword,
+      confirmPassword: body.confirmPassword,
+    }),
     cache: "no-store",
   });
 
-  return proxyJsonResponse(upstream, { mode: "real" });
+  if (upstream.status === 204) {
+    return new Response(null, { status: 204 });
+  }
+
+  const text = await upstream.text();
+  let data;
+  try {
+    const json = JSON.parse(text);
+    data = json.data || json;
+  } catch {
+    data = { error: text || "Failed to change password" };
+  }
+
+  return jsonResponse(data, { status: upstream.status, mode: "real" });
 }
 
-export const POST = (...args: Parameters<typeof handlePOST>) =>
-  withErrorBoundary(() => handlePOST(...args), {
-    context: "api/profile/change-password/route.ts/POST",
+export const PUT = (...args: Parameters<typeof handlePUT>) =>
+  withErrorBoundary(() => handlePUT(...args), {
+    context: "api/profile/change-password/route.ts/PUT",
   });

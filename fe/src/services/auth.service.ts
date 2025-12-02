@@ -134,7 +134,7 @@ export async function registerOrganization(
 export type LoginPayload = {
   email: string;
   password: string;
-  role: "READER" | "REVIEWER" | "ORGANIZATION" | "SYSTEM_ADMIN" | "BUSINESS_ADMIN";
+  role: "READER" | "REVIEWER" | "ORGANIZATION_ADMIN" | "SYSTEM_ADMIN" | "BUSINESS_ADMIN";
   remember?: boolean;
 };
 

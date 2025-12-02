@@ -1013,60 +1013,70 @@ export const mockDomainsDB = {
 const _businessAdminTypes: BusinessAdminType[] = [
   {
     id: "type-1",
+    code: 1,
     name: "Research Paper",
     createdAt: "2025-01-10T10:00:00Z",
     updatedAt: "2025-01-10T10:00:00Z",
   },
   {
     id: "type-2",
+    code: 2,
     name: "Article",
     createdAt: "2025-01-11T11:00:00Z",
     updatedAt: "2025-01-11T11:00:00Z",
   },
   {
     id: "type-3",
+    code: 3,
     name: "Book",
     createdAt: "2025-01-12T12:00:00Z",
     updatedAt: "2025-01-12T12:00:00Z",
   },
   {
     id: "type-4",
+    code: 4,
     name: "Report",
     createdAt: "2025-01-13T13:00:00Z",
     updatedAt: "2025-01-13T13:00:00Z",
   },
   {
     id: "type-5",
+    code: 5,
     name: "Thesis",
     createdAt: "2025-01-14T14:00:00Z",
     updatedAt: "2025-01-14T14:00:00Z",
   },
   {
     id: "type-6",
+    code: 6,
     name: "Tutorial",
     createdAt: "2025-01-15T15:00:00Z",
     updatedAt: "2025-01-15T15:00:00Z",
   },
   {
     id: "type-7",
+    code: 7,
     name: "Technical Report",
     createdAt: "2025-01-16T16:00:00Z",
     updatedAt: "2025-01-16T16:00:00Z",
   },
   {
     id: "type-8",
+    code: 8,
     name: "Case Study",
     createdAt: "2025-01-17T17:00:00Z",
     updatedAt: "2025-01-17T17:00:00Z",
   },
   {
     id: "type-9",
+    code: 9,
     name: "Review",
     createdAt: "2025-01-18T18:00:00Z",
     updatedAt: "2025-01-18T18:00:00Z",
   },
   {
     id: "type-10",
+    code: 10,
     name: "Conference Paper",
     createdAt: "2025-01-19T19:00:00Z",
     updatedAt: "2025-01-19T19:00:00Z",
@@ -1119,7 +1129,7 @@ export const mockTypesDB = {
   get(id: string): BusinessAdminType | undefined {
     return _businessAdminTypes.find((type) => type.id === id);
   },
-  create(data: { name: string }): BusinessAdminType {
+  create(data: { code: number; name: string; description?: string }): BusinessAdminType {
     // Check for duplicate name (case-insensitive)
     const existingType = _businessAdminTypes.find(
       (type) =>
@@ -1130,15 +1140,31 @@ export const mockTypesDB = {
       throw new Error("Type name already in use. Please choose another name.");
     }
 
+    // Check for duplicate code
+    const existingCode = _businessAdminTypes.find(
+      (type) => type.code === data.code,
+    );
+
+    if (existingCode) {
+      throw new Error("Type code already in use. Please choose another code.");
+    }
+
     // Validate name is not empty
     if (!data.name || !data.name.trim()) {
       throw new Error("Type name cannot be empty.");
     }
 
+    // Validate code is positive
+    if (!data.code || data.code < 1) {
+      throw new Error("Type code must be a positive number.");
+    }
+
     const now = new Date().toISOString();
     const newType: BusinessAdminType = {
       id: `type-${Date.now()}`,
+      code: data.code,
       name: data.name.trim(),
+      description: data.description?.trim(),
       createdAt: now,
       updatedAt: now,
     };
@@ -1146,7 +1172,7 @@ export const mockTypesDB = {
     _businessAdminTypes.unshift(newType);
     return newType;
   },
-  update(id: string, data: { name?: string }): BusinessAdminType {
+  update(id: string, data: { code?: number; name?: string; description?: string }): BusinessAdminType {
     const typeIndex = _businessAdminTypes.findIndex((type) => type.id === id);
 
     if (typeIndex === -1) {
@@ -1178,9 +1204,22 @@ export const mockTypesDB = {
       }
 
       existingType.name = trimmedName;
-      existingType.updatedAt = new Date().toISOString();
     }
 
+    // Update code if provided
+    if (data.code !== undefined) {
+      if (data.code < 1) {
+        throw new Error("Type code must be a positive number.");
+      }
+      existingType.code = data.code;
+    }
+
+    // Update description if provided
+    if (data.description !== undefined) {
+      existingType.description = data.description.trim() || undefined;
+    }
+
+    existingType.updatedAt = new Date().toISOString();
     return existingType;
   },
   reset(): void {
@@ -1188,60 +1227,70 @@ export const mockTypesDB = {
     _businessAdminTypes.push(
       {
         id: "type-1",
+        code: 1,
         name: "Research Paper",
         createdAt: "2025-01-10T10:00:00Z",
         updatedAt: "2025-01-10T10:00:00Z",
       },
       {
         id: "type-2",
+        code: 2,
         name: "Article",
         createdAt: "2025-01-11T11:00:00Z",
         updatedAt: "2025-01-11T11:00:00Z",
       },
       {
         id: "type-3",
+        code: 3,
         name: "Book",
         createdAt: "2025-01-12T12:00:00Z",
         updatedAt: "2025-01-12T12:00:00Z",
       },
       {
         id: "type-4",
+        code: 4,
         name: "Report",
         createdAt: "2025-01-13T13:00:00Z",
         updatedAt: "2025-01-13T13:00:00Z",
       },
       {
         id: "type-5",
+        code: 5,
         name: "Thesis",
         createdAt: "2025-01-14T14:00:00Z",
         updatedAt: "2025-01-14T14:00:00Z",
       },
       {
         id: "type-6",
+        code: 6,
         name: "Tutorial",
         createdAt: "2025-01-15T15:00:00Z",
         updatedAt: "2025-01-15T15:00:00Z",
       },
       {
         id: "type-7",
+        code: 7,
         name: "Technical Report",
         createdAt: "2025-01-16T16:00:00Z",
         updatedAt: "2025-01-16T16:00:00Z",
       },
       {
         id: "type-8",
+        code: 8,
         name: "Case Study",
         createdAt: "2025-01-17T17:00:00Z",
         updatedAt: "2025-01-17T17:00:00Z",
       },
       {
         id: "type-9",
+        code: 9,
         name: "Review",
         createdAt: "2025-01-18T18:00:00Z",
         updatedAt: "2025-01-18T18:00:00Z",
       },
       {
         id: "type-10",
+        code: 10,
         name: "Conference Paper",
         createdAt: "2025-01-19T19:00:00Z",
         updatedAt: "2025-01-19T19:00:00Z",

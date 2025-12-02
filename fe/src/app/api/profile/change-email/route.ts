@@ -1,58 +1,49 @@
 // app/api/profile/change-email/route.ts
-import { headers } from "next/headers";
-import { mockProfileDB } from "@/mock/db.mock";
+
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { jsonResponse, badRequest } from "@/server/response";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
-import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 export const dynamic = "force-dynamic";
 
 async function handlePOST(req: Request) {
-  let body: { newEmail: string; password: string };
-  try {
-    body = await req.json();
-  } catch {
-    return jsonResponse(
-      { error: "Invalid JSON body" },
-      {
-        status: 400,
-        headers: { "content-type": "application/json" },
-      },
-    );
+  const body = await req.json().catch(() => null);
+
+  if (!body || !body.newEmail) {
+    return badRequest("Missing required field: newEmail");
   }
 
   if (USE_MOCK) {
-    mockProfileDB.update({ email: body.newEmail });
-    return new Response(
-      JSON.stringify({
-        message: "Email changed successfully. (mock)",
-      }),
-      {
-        status: 200,
-        headers: {
-          "content-type": "application/json",
-          "x-mode": "mock",
-        },
-      },
+    return jsonResponse(
+      { message: "OTP has been sent to your current email address" },
+      { status: 200, mode: "mock" },
     );
   }
 
-  const h = await headers();
-  const authHeader = h.get("authorization") || "";
-  const cookieHeader = h.get("cookie") || "";
+  const authHeader = await getAuthHeader("change-email");
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (authHeader) fh.set("Authorization", authHeader);
-  if (cookieHeader) fh.set("Cookie", cookieHeader);
 
-  const upstream = await fetch(`${BE_BASE}/api/profile/change-email`, {
+  const upstream = await fetch(`${BE_BASE}/api/user/change-email`, {
     method: "POST",
     headers: fh,
-    body: JSON.stringify(body),
+    body: JSON.stringify({ newEmail: body.newEmail }),
     cache: "no-store",
   });
 
-  return proxyJsonResponse(upstream, { mode: "real" });
+  const text = await upstream.text();
+  let data;
+  try {
+    const json = JSON.parse(text);
+    data = json.data || json;
+  } catch {
+    // Backend returns plain text message
+    data = { message: text || "OTP has been sent to your current email address" };
+  }
+
+  return jsonResponse(data, { status: upstream.status, mode: "real" });
 }
 
 export const POST = (...args: Parameters<typeof handlePOST>) =>

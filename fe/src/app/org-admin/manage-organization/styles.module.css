@@ -1,0 +1,612 @@
+/* Manage Organization Page Styles – Dark/Light Mode Support */
+
+/* Page Container */
+.page-container {
+  @apply mx-auto w-full max-w-5xl px-4 py-6 sm:py-8;
+}
+
+/* Card Base */
+.card {
+  @apply rounded-2xl border border-stroke bg-white p-6 sm:p-8 lg:p-10 shadow-lg;
+  @apply transition-shadow hover:shadow-xl;
+}
+:global(html.dark) .card {
+  @apply border-dark-3 bg-dark-2 shadow-2xl;
+}
+
+/* Header Section */
+.header-section {
+  @apply flex items-start gap-6 sm:gap-8 pb-8 border-b border-stroke/50;
+  @apply flex-wrap lg:flex-nowrap;
+}
+:global(html.dark) .header-section {
+  @apply border-dark-3/50;
+}
+
+.logo-container {
+  @apply flex-shrink-0;
+}
+
+.logo {
+  @apply h-28 w-28 sm:h-32 sm:w-32 rounded-2xl object-cover border-2 border-stroke shadow-lg;
+  @apply ring-4 ring-white/50;
+  @apply transition-transform hover:scale-105;
+}
+:global(html.dark) .logo {
+  @apply border-dark-3 ring-dark-2/50;
+}
+
+.logo-fallback {
+  @apply flex h-28 w-28 sm:h-32 sm:w-32 items-center justify-center rounded-2xl;
+  @apply bg-gradient-to-br from-primary/10 via-primary/5 to-gray-100 border-2 border-stroke;
+  @apply shadow-lg ring-4 ring-white/50;
+  @apply transition-transform hover:scale-105;
+}
+:global(html.dark) .logo-fallback {
+  @apply from-primary/20 via-primary/10 to-dark-3 border-dark-3 ring-dark-2/50;
+}
+
+.logo-fallback-text {
+  @apply text-4xl sm:text-5xl font-bold text-primary;
+}
+:global(html.dark) .logo-fallback-text {
+  @apply text-primary;
+}
+
+.header-info {
+  @apply flex-1 min-w-0 flex flex-col gap-3;
+}
+
+.header-info-top {
+  @apply flex items-start justify-between gap-4;
+}
+
+.header-primary-actions {
+  @apply flex items-center gap-2 sm:gap-3;
+  @apply flex-shrink-0;
+}
+
+.header-secondary-actions {
+  @apply flex items-center gap-2 sm:gap-3;
+  @apply flex-wrap;
+}
+
+.org-name {
+  @apply text-2xl sm:text-3xl font-bold text-dark mb-2;
+  @apply leading-tight;
+}
+:global(html.dark) .org-name {
+  @apply text-white;
+}
+
+.org-type {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
+  @apply bg-primary/10 text-primary;
+}
+:global(html.dark) .org-type {
+  @apply bg-primary/20 text-primary;
+}
+
+/* Details Section */
+.details-section {
+  @apply pt-8 sm:pt-10 space-y-8 sm:space-y-10;
+}
+
+.info-section {
+  @apply space-y-4 sm:space-y-6;
+}
+
+.section-header {
+  @apply flex items-center gap-3 mb-4 sm:mb-6;
+}
+
+.section-icon {
+  @apply w-5 h-5 sm:w-6 sm:h-6 text-primary;
+}
+
+.section-title {
+  @apply text-base sm:text-lg font-bold text-dark;
+}
+:global(html.dark) .section-title {
+  @apply text-white;
+}
+
+/* Organization Details Grid */
+.details-grid {
+  @apply grid gap-4 sm:gap-6 sm:grid-cols-2;
+}
+
+.detail-field {
+  @apply space-y-2 pb-4 border-b border-stroke/20 last:border-b-0 last:pb-0;
+  @apply transition-colors hover:bg-gray-50/50 rounded-lg p-3 -m-3;
+}
+:global(html.dark) .detail-field {
+  @apply border-dark-3/20 hover:bg-dark-3/20;
+}
+
+.detail-field-full {
+  @apply detail-field sm:col-span-2;
+}
+
+.detail-label {
+  @apply text-xs font-bold uppercase tracking-wider text-dark-4 mb-2;
+  @apply flex items-center gap-2;
+}
+:global(html.dark) .detail-label {
+  @apply text-dark-6;
+}
+
+.detail-value {
+  @apply text-base sm:text-lg font-normal text-dark;
+  @apply break-words;
+}
+:global(html.dark) .detail-value {
+  @apply text-white;
+}
+
+.detail-link {
+  @apply text-sm sm:text-base font-medium text-primary hover:underline transition-colors;
+}
+:global(html.dark) .detail-link {
+  @apply text-primary;
+}
+
+/* Loading State */
+.loading-container {
+  @apply mt-6 rounded-xl border border-stroke bg-white p-6 shadow-sm;
+}
+:global(html.dark) .loading-container {
+  @apply border-dark-3 bg-dark-2;
+}
+
+.loading-skeleton {
+  @apply h-6 w-48 animate-pulse rounded bg-gray-200;
+}
+:global(html.dark) .loading-skeleton {
+  @apply bg-dark-3;
+}
+
+.loading-skeleton-large {
+  @apply mt-6 h-40 animate-pulse rounded bg-gray-200;
+}
+:global(html.dark) .loading-skeleton-large {
+  @apply bg-dark-3;
+}
+
+/* Error State */
+.error-container {
+  @apply mt-6 rounded-lg border-l-4 border-red bg-red-light-6 p-4 text-red-dark;
+}
+:global(html.dark) .error-container {
+  @apply border-red bg-dark-2 text-red-400;
+}
+
+/* Update Button */
+.btn-update {
+  @apply inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold;
+  @apply bg-primary text-white shadow-md hover:shadow-lg;
+  @apply transition-all duration-200 hover:scale-105 active:scale-95;
+  @apply hover:bg-primary/90;
+}
+
+/* Change Email and Change Password Buttons */
+.btn-change-email,
+.btn-change-password {
+  @apply inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium;
+  @apply border-stroke bg-white text-dark;
+  @apply shadow-sm hover:shadow transition-all duration-200;
+  @apply hover:border-primary hover:bg-primary/5 hover:text-primary;
+  @apply active:scale-95;
+}
+:global(html.dark) .btn-change-email,
+:global(html.dark) .btn-change-password {
+  @apply border-dark-3 bg-dark-3 text-white;
+  @apply hover:border-primary hover:bg-primary/10 hover:text-primary;
+}
+
+/* ============================================
+   MODAL COMPONENTS
+   ============================================ */
+
+/* Modal overlay */
+.modal-overlay {
+  @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+}
+
+.modal-backdrop {
+  @apply absolute inset-0 bg-black/50 backdrop-blur-sm;
+}
+
+.modal-container {
+  @apply relative z-10 w-full mx-4;
+}
+
+.modal-container-md {
+  @apply max-w-md;
+}
+
+.modal-container-lg {
+  @apply max-w-2xl max-h-[90vh] flex flex-col;
+}
+
+/* Modal card */
+.modal-card {
+  @apply rounded-lg shadow-xl border;
+  @apply bg-white border-stroke;
+}
+:global(html.dark) .modal-card {
+  @apply bg-gray-dark border-dark-3;
+}
+
+.modal-card-flex {
+  @apply overflow-hidden flex flex-col;
+}
+
+/* Modal header */
+.modal-header {
+  @apply flex items-center justify-between p-4 border-b;
+  @apply border-stroke;
+}
+:global(html.dark) .modal-header {
+  @apply border-dark-3;
+}
+
+.modal-header-left {
+  @apply flex items-center gap-3;
+}
+
+.modal-icon-wrapper {
+  @apply flex items-center justify-center w-10 h-10 rounded-full;
+}
+
+.modal-icon-wrapper.primary {
+  @apply bg-primary/10;
+}
+:global(html.dark) .modal-icon-wrapper.primary {
+  @apply bg-primary/20;
+}
+
+.modal-icon {
+  @apply w-5 h-5;
+}
+
+.modal-icon.primary {
+  @apply text-primary;
+}
+
+.modal-title {
+  @apply text-lg font-semibold;
+  @apply text-gray-900;
+}
+:global(html.dark) .modal-title {
+  @apply text-white;
+}
+
+.modal-subtitle {
+  @apply text-sm;
+  @apply text-gray-500;
+}
+:global(html.dark) .modal-subtitle {
+  @apply text-gray-400;
+}
+
+.modal-close-btn {
+  @apply transition-colors;
+  @apply text-gray-400;
+}
+.modal-close-btn:hover {
+  @apply text-gray-600;
+}
+:global(html.dark) .modal-close-btn:hover {
+  @apply text-gray-300;
+}
+
+/* Form */
+.modal-form {
+  @apply p-6 overflow-y-auto flex-1;
+  @apply max-h-[calc(100vh-200px)];
+}
+
+.form-fields {
+  @apply space-y-4;
+}
+
+/* Field group */
+.field-group {
+  @apply mb-5.5;
+}
+
+.field-group.space-y {
+  @apply block;
+}
+
+.field-label {
+  @apply mb-2 block text-body-sm font-medium;
+  @apply text-dark;
+}
+:global(html.dark) .field-label {
+  @apply text-white;
+}
+
+.field-label-required {
+  @apply text-red;
+}
+
+.field-label-sm {
+  @apply text-sm;
+  @apply text-gray-700;
+}
+:global(html.dark) .field-label-sm {
+  @apply text-gray-300;
+}
+
+.field-label-required-sm {
+  @apply text-red-500;
+}
+
+.field-label-confirm {
+  @apply font-mono text-red-600;
+}
+:global(html.dark) .field-label-confirm {
+  @apply text-red-400;
+}
+
+/* Input */
+.field-input {
+  @apply w-full rounded-lg border-[1.5px] bg-transparent px-4 py-2.5;
+  @apply text-dark placeholder:text-dark-6 outline-none transition;
+  @apply border-stroke focus:border-primary;
+}
+:global(html.dark) .field-input {
+  @apply bg-dark-2 text-white placeholder:text-dark-7;
+  @apply border-dark-3 focus:border-primary;
+}
+
+.field-input.error {
+  @apply border-red focus:border-red;
+}
+
+.field-input-sm {
+  @apply px-3 py-2 border rounded-lg;
+  @apply border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+  @apply bg-white text-dark;
+}
+:global(html.dark) .field-input-sm {
+  @apply bg-gray-700 border-gray-600 text-white;
+}
+
+.field-input.disabled {
+  @apply bg-gray-50 cursor-not-allowed;
+  @apply text-gray-500;
+}
+:global(html.dark) .field-input.disabled {
+  @apply bg-gray-700 text-gray-400;
+}
+
+.field-input-mono {
+  @apply font-mono;
+}
+
+.field-select {
+  @apply cursor-pointer;
+  @apply bg-white border-stroke text-dark;
+}
+:global(html.dark) .field-select {
+  @apply bg-dark-2 border-dark-3 text-white;
+}
+
+/* File Upload */
+.file-upload-wrapper {
+  @apply flex items-center gap-3;
+}
+
+.file-input {
+  @apply hidden;
+}
+
+.btn-upload {
+  @apply inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors;
+  @apply border-stroke text-dark hover:bg-gray-50;
+}
+:global(html.dark) .btn-upload {
+  @apply border-dark-3 text-white hover:bg-dark-3;
+}
+
+.file-name {
+  @apply text-sm text-dark-6 truncate max-w-xs;
+}
+:global(html.dark) .file-name {
+  @apply text-dark-6;
+}
+
+/* Error message */
+.field-error {
+  @apply mt-1.5 text-xs;
+  @apply text-red-600;
+}
+:global(html.dark) .field-error {
+  @apply text-red-400;
+}
+
+.field-error-inline {
+  @apply flex items-center gap-2 mt-1 text-sm;
+}
+
+.error-icon {
+  @apply w-4 h-4;
+}
+
+/* Alert */
+.alert-error {
+  @apply mb-4 rounded-lg p-3 border;
+  @apply bg-red-50 border-red-200;
+}
+:global(html.dark) .alert-error {
+  @apply bg-red-900/10 border-red-800;
+}
+
+.alert-error-content {
+  @apply flex items-center gap-2 text-sm;
+  @apply text-red-600;
+}
+:global(html.dark) .alert-error-content {
+  @apply text-red-400;
+}
+
+.alert-icon {
+  @apply w-4 h-4;
+}
+
+/* Actions */
+.modal-actions {
+  @apply flex justify-end gap-3 pt-3 border-t;
+  @apply border-stroke;
+}
+:global(html.dark) .modal-actions {
+  @apply border-dark-3;
+}
+
+.modal-actions-end {
+  @apply flex items-center justify-end mt-6;
+}
+
+.btn-cancel {
+  @apply rounded-lg border px-6 py-[7px] font-medium transition-colors;
+  @apply border-stroke text-dark hover:shadow-1;
+}
+:global(html.dark) .btn-cancel {
+  @apply border-dark-3 text-white;
+}
+
+.btn-cancel-sm {
+  @apply px-4 py-2 text-sm rounded-lg;
+  @apply text-gray-700 bg-white border-gray-300 hover:bg-gray-50;
+}
+:global(html.dark) .btn-cancel-sm {
+  @apply text-gray-300 bg-gray-700 border-gray-600 hover:bg-gray-600;
+}
+
+.btn-submit {
+  @apply rounded-lg px-6 py-[7px] font-medium transition-colors flex items-center gap-2;
+  @apply bg-primary text-gray-2 hover:bg-opacity-90;
+}
+.btn-submit:disabled {
+  @apply bg-primary/50;
+}
+
+.spinner {
+  @apply w-4 h-4 animate-spin;
+}
+
+/* Delete Modal Styles */
+.modal-card.red-border {
+  @apply border-red-200;
+}
+:global(html.dark) .modal-card.red-border {
+  @apply border-red-800;
+}
+
+.modal-header.red-border {
+  @apply border-red-200;
+}
+:global(html.dark) .modal-header.red-border {
+  @apply border-red-800;
+}
+
+.modal-actions.red-border {
+  @apply border-red-200;
+}
+:global(html.dark) .modal-actions.red-border {
+  @apply border-red-800;
+}
+
+.modal-icon-wrapper.red {
+  @apply bg-red-100;
+}
+:global(html.dark) .modal-icon-wrapper.red {
+  @apply bg-red-900/20;
+}
+
+.modal-icon.red {
+  @apply text-red-600;
+}
+:global(html.dark) .modal-icon.red {
+  @apply text-red-400;
+}
+
+.modal-title.red {
+  @apply text-red-600;
+}
+:global(html.dark) .modal-title.red {
+  @apply text-red-400;
+}
+
+.btn-submit.red {
+  @apply bg-red-600 hover:bg-red-700 text-white;
+}
+.btn-submit.red:disabled {
+  @apply bg-red-400;
+}
+
+.btn-submit-sm {
+  @apply px-4 py-2 text-sm;
+}
+
+/* Warning Alert */
+.warning-alert {
+  @apply rounded-lg p-4 border mb-4;
+  @apply bg-yellow-50 border-yellow-200;
+}
+:global(html.dark) .warning-alert {
+  @apply bg-yellow-900/10 border-yellow-800;
+}
+
+.warning-content {
+  @apply flex items-start gap-3;
+}
+
+.warning-icon {
+  @apply w-5 h-5 mt-0.5 flex-shrink-0;
+  @apply text-yellow-600;
+}
+:global(html.dark) .warning-icon {
+  @apply text-yellow-400;
+}
+
+.warning-title {
+  @apply text-sm font-semibold mb-2;
+  @apply text-yellow-800;
+}
+:global(html.dark) .warning-title {
+  @apply text-yellow-200;
+}
+
+.warning-text {
+  @apply text-sm leading-relaxed;
+  @apply text-yellow-700;
+}
+:global(html.dark) .warning-text {
+  @apply text-yellow-300;
+}
+
+.warning-list {
+  @apply text-sm space-y-1 list-disc list-inside;
+  @apply text-red-600;
+}
+:global(html.dark) .warning-list {
+  @apply text-red-400;
+}
+
+/* Delete Button */
+.btn-delete {
+  @apply inline-flex items-center gap-2 rounded-xl border-2 px-5 py-2.5 text-sm font-semibold;
+  @apply border-red-300 bg-white text-red-600;
+  @apply shadow-sm hover:shadow-md transition-all duration-200;
+  @apply hover:border-red-400 hover:bg-red-50 hover:text-red-700;
+  @apply active:scale-95;
+}
+:global(html.dark) .btn-delete {
+  @apply border-red-700 bg-dark-3 text-red-400;
+  @apply hover:bg-red-900/20 hover:border-red-600 hover:text-red-300;
+}
+

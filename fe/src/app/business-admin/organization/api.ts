@@ -14,65 +14,43 @@ export type {
   OrganizationStatus,
 };
 
-// BE response wrapper
-interface SuccessResponse<T> {
-  data: T;
-  meta?: any;
-}
-
 /**
  * Get list organizations with query parameters
+ * Uses GET /api/business-admin/organizations
  */
 export async function getOrganizations(
   params?: OrganizationQueryParams,
 ): Promise<OrganizationResponse> {
-  const res = await apiClient.post<SuccessResponse<OrganizationResponse>>(
-    "/organizations",
-    params || {},
-  );
-  // Handle SuccessResponse wrapper
-  if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-    return (res.data as SuccessResponse<OrganizationResponse>).data;
+  const queryParams = new URLSearchParams();
+  if (params?.page) {
+    queryParams.append("page", String(params.page));
   }
-  return res.data as OrganizationResponse;
-}
+  if (params?.limit) {
+    queryParams.append("limit", String(params.limit));
+  }
+  if (params?.search) {
+    queryParams.append("search", params.search);
+  }
+  if (params?.status) {
+    queryParams.append("status", params.status);
+  }
+  if (params?.sortBy) {
+    queryParams.append("sort", params.sortBy);
+  }
+  if (params?.sortOrder) {
+    queryParams.append("order", params.sortOrder);
+  }
 
-/**
- * Update organization status (PENDING_VERIFICATION, ACTIVE, DEACTIVE, DELETED)
- */
-export async function updateOrganizationStatus(
-  id: string,
-  status: OrganizationStatus | "ACTIVE" | "INACTIVE" | "DEACTIVE" | "PENDING_VERIFICATION" | "DELETED",
-): Promise<Organization & {
-  totalMembers?: number;
-  totalDocuments?: number;
-}> {
-  // Map legacy "INACTIVE" to "DEACTIVE"
-  if (status === "INACTIVE") {
-    status = "DEACTIVE";
-  }
-  const res = await apiClient.patch<SuccessResponse<Organization & {
-    totalMembers?: number;
-    totalDocuments?: number;
-  }>>(
-    `/organizations/${id}/status`,
-    { status },
-  );
-  // Handle SuccessResponse wrapper
-  if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-    return (res.data as SuccessResponse<Organization & {
-      totalMembers?: number;
-      totalDocuments?: number;
-    }>).data;
-  }
-  return res.data as Organization & {
-    totalMembers?: number;
-    totalDocuments?: number;
-  };
+  const queryString = queryParams.toString();
+  const url = `/business-admin/organizations${queryString ? `?${queryString}` : ""}`;
+
+  const res = await apiClient.get<OrganizationResponse>(url);
+  return res.data;
 }
 
 /**
  * Get organization detail by ID
+ * Uses GET /api/business-admin/organizations/[userId]
  */
 export async function getOrganization(
   id: string,
@@ -80,37 +58,51 @@ export async function getOrganization(
   totalMembers?: number;
   totalDocuments?: number;
 }> {
-  const res = await apiClient.get<SuccessResponse<Organization & {
+  const res = await apiClient.get<Organization & {
     totalMembers?: number;
     totalDocuments?: number;
-  }>>(`/organizations/${id}`);
-  // Handle SuccessResponse wrapper
-  if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-    return (res.data as SuccessResponse<Organization & {
-      totalMembers?: number;
-      totalDocuments?: number;
-    }>).data;
-  }
-  return res.data as Organization & {
-    totalMembers?: number;
-    totalDocuments?: number;
-  };
+  }>(`/business-admin/organizations/${id}`);
+  return res.data;
 }
 
 /**
- * Delete organization
+ * Update organization status (PENDING_VERIFICATION, ACTIVE, DEACTIVE, DELETED)
+ * Uses PUT /api/business-admin/organizations/[userId]/status
+ */
+export async function updateOrganizationStatus(
+  id: string,
+  status: OrganizationStatus | "PENDING_EMAIL_VERIFY" | "PENDING_APPROVE" | "ACTIVE" | "INACTIVE" | "REJECTED" | "DELETED",
+): Promise<Organization & {
+  totalMembers?: number;
+  totalDocuments?: number;
+}> {
+  // Backend uses UserStatus enum directly, no mapping needed
+  // Valid values: PENDING_EMAIL_VERIFY, PENDING_APPROVE, ACTIVE, INACTIVE, REJECTED, DELETED
+  const backendStatus = status.toUpperCase();
+
+  const res = await apiClient.put<Organization & {
+    totalMembers?: number;
+    totalDocuments?: number;
+  }>(
+    `/business-admin/organizations/${id}/status`,
+    { status: backendStatus },
+  );
+  return res.data;
+}
+
+/**
+ * Delete organization (if backend supports this endpoint)
+ * Note: Backend may not have delete endpoint, only status update
  */
 export async function deleteOrganization(
   id: string,
 ): Promise<{ message: string }> {
-  const res = await apiClient.delete<SuccessResponse<{ message: string }>>(
-    `/organizations/${id}`,
-  );
-  // Handle SuccessResponse wrapper - delete might return null data
-  if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-    const data = (res.data as SuccessResponse<{ message: string } | null>).data;
-    return data || { message: "Organization deleted successfully" };
+  // If backend doesn't support delete, we can update status to DELETED instead
+  try {
+    await updateOrganizationStatus(id, "DELETED");
+    return { message: "Organization deleted successfully" };
+  } catch (error) {
+    throw new Error("Failed to delete organization");
   }
-  return res.data as { message: string } || { message: "Organization deleted successfully" };
 }
 

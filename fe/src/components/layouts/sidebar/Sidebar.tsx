@@ -11,6 +11,7 @@ import {
   REVIEWER_NAV_DATA,
   ORGANIZATION_ADMIN_NAV_DATA,
   BUSINESS_ADMIN_NAV_DATA,
+  SYSTEM_ADMIN_NAV_DATA,
 } from "./data";
 import { ArrowLeftIcon, ChevronUp } from "@/components/icons";
 import { useSidebarContext } from "./SidebarContext";
@@ -63,10 +64,12 @@ export function Sidebar({
         return READER_NAV_DATA as unknown as NavSection[];
       case "REVIEWER":
         return REVIEWER_NAV_DATA as unknown as NavSection[];
-      case "ORGANIZATION":
+      case "ORGANIZATION_ADMIN":
         return ORGANIZATION_ADMIN_NAV_DATA as unknown as NavSection[];
       case "BUSINESS_ADMIN":
         return BUSINESS_ADMIN_NAV_DATA as unknown as NavSection[];
+      case "SYSTEM_ADMIN":
+        return SYSTEM_ADMIN_NAV_DATA as unknown as NavSection[];
       default:
         return NAV_DATA as unknown as NavSection[];
     }

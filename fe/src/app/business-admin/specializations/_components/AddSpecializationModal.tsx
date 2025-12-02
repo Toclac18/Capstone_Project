@@ -10,7 +10,7 @@ interface AddSpecializationModalProps {
   onClose: () => void;
   domainId: string;
   domainName: string;
-  onAdd: (name: string, domainId: string) => Promise<void>;
+  onAdd: (code: number, name: string, domainId: string) => Promise<void>;
 }
 
 export function AddSpecializationModal({
@@ -20,6 +20,7 @@ export function AddSpecializationModal({
   domainName,
   onAdd,
 }: AddSpecializationModalProps) {
+  const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +31,17 @@ export function AddSpecializationModal({
       e.preventDefault();
       setError(null);
 
+      if (!code.trim()) {
+        setError("Specialization code cannot be empty.");
+        return;
+      }
+
+      const codeNum = parseInt(code.trim(), 10);
+      if (isNaN(codeNum) || codeNum < 1) {
+        setError("Specialization code must be a positive number.");
+        return;
+      }
+
       if (!name.trim()) {
         setError("Specialization name cannot be empty.");
         return;
@@ -37,7 +49,8 @@ export function AddSpecializationModal({
 
       try {
         setIsLoading(true);
-        await onAdd(name.trim(), domainId);
+        await onAdd(codeNum, name.trim(), domainId);
+        setCode("");
         setName("");
         onClose();
         showToast({
@@ -60,11 +73,12 @@ export function AddSpecializationModal({
         setIsLoading(false);
       }
     },
-    [name, domainId, onAdd, onClose, showToast]
+    [code, name, domainId, onAdd, onClose, showToast]
   );
 
   const handleClose = useCallback(() => {
     if (isLoading) return;
+    setCode("");
     setName("");
     setError(null);
     onClose();
@@ -106,6 +120,23 @@ export function AddSpecializationModal({
             className={styles["modal-content"]}
           >
             <div className={styles["form-group"]}>
+              <label htmlFor="specializationCode" className={styles["form-label"]}>
+                Specialization Code <span className={styles["required"]}>*</span>
+              </label>
+              <input
+                id="specializationCode"
+                type="number"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className={styles["form-input"]}
+                placeholder="Enter specialization code (positive number)"
+                disabled={isLoading}
+                min="1"
+                autoFocus
+              />
+            </div>
+
+            <div className={styles["form-group"]}>
               <label htmlFor="specializationName" className={styles["form-label"]}>
                 Specialization Name <span className={styles["required"]}>*</span>
               </label>
@@ -117,10 +148,10 @@ export function AddSpecializationModal({
                 className={styles["form-input"]}
                 placeholder="Enter specialization name"
                 disabled={isLoading}
-                autoFocus
               />
-              {error && <p className={styles["form-error"]}>{error}</p>}
             </div>
+
+            {error && <p className={styles["form-error"]}>{error}</p>}
           </form>
 
           {/* Footer */}
@@ -137,7 +168,7 @@ export function AddSpecializationModal({
               type="submit"
               form="addSpecializationForm"
               className={styles["modal-button-submit"]}
-              disabled={isLoading || !name.trim()}
+              disabled={isLoading || !code.trim() || !name.trim()}
             >
               {isLoading ? "Saving..." : "Add Specialization"}
             </button>

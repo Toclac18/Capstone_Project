@@ -78,20 +78,20 @@
 }
 
 /* Column widths */
-.col-id {
-  @apply w-[15%];
+.col-name {
+  @apply w-[20%];
 }
 
-.col-name {
-  @apply w-[40%];
+.col-description {
+  @apply w-[35%];
 }
 
 .col-date {
-  @apply w-[30%];
+  @apply w-[20%];
 }
 
 .col-action {
-  @apply w-[15%];
+  @apply w-[25%];
 }
 
 .table-header {
@@ -149,6 +149,13 @@
 }
 :global(html.dark) .table-cell-main {
   @apply text-white;
+}
+
+.table-cell-description {
+  @apply text-sm text-gray-600 line-clamp-2;
+}
+:global(html.dark) .table-cell-description {
+  @apply text-gray-400;
 }
 
 /* Action Cell */

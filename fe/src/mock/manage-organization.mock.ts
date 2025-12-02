@@ -13,7 +13,7 @@ export function setupMockManageOrganization() {
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
 
-    if (url.includes("/api/organization-admin/manage-organization")) {
+    if (url.includes("/api/org-admin/manage-organization")) {
       if (init?.method === "GET") {
         const orgInfo = mockOrganizationAdminDB.get();
         return new Response(JSON.stringify(orgInfo), {

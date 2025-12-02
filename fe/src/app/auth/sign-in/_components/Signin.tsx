@@ -4,11 +4,12 @@ import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, type SubmitHandler } from "react-hook-form";
+import { Eye, EyeOff } from "lucide-react";
 import {
   login,
   type LoginPayload,
 } from "../api";
-import { EmailIcon, GoogleIcon, PasswordIcon } from "@/assets/icons";
+import { EmailIcon, GoogleIcon } from "@/assets/icons";
 import { useToast } from "@/components/ui/toast";
 import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
@@ -17,7 +18,7 @@ import styles from "../styles.module.css";
 type FormValues = {
   email: string;
   password: string;
-  role: "READER" | "REVIEWER" | "ORGANIZATION" | "SYSTEM_ADMIN" | "BUSINESS_ADMIN";
+  role: "READER" | "REVIEWER" | "ORGANIZATION_ADMIN" | "SYSTEM_ADMIN" | "BUSINESS_ADMIN";
   remember: boolean;
 };
 
@@ -40,6 +41,7 @@ export default function Signin() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setLoading(true);
@@ -66,7 +68,7 @@ export default function Signin() {
       const roleRoutes: Record<typeof data.role, string> = {
         READER: '/',
         REVIEWER: '/reviewer',
-        ORGANIZATION: '/organization-admin',
+        ORGANIZATION_ADMIN: '/org-admin',
         SYSTEM_ADMIN: '/admin',
         BUSINESS_ADMIN: '/business-admin',
       };
@@ -127,7 +129,7 @@ export default function Signin() {
               >
                 <option value="READER">Reader</option>
                 <option value="REVIEWER">Reviewer</option>
-                <option value="ORGANIZATION">Organization</option>
+                <option value="ORGANIZATION_ADMIN">Organization Admin</option>
                 <option value="SYSTEM_ADMIN">System Admin</option>
                 <option value="BUSINESS_ADMIN">Business Admin</option>
               </select>
@@ -179,7 +181,7 @@ export default function Signin() {
             <div className="relative">
               <input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
                 className={`w-full rounded-lg border-[1.5px] bg-transparent px-5.5 py-[15px] pr-12.5 outline-none transition placeholder:text-dark-6 dark:bg-dark-2 dark:text-white ${
                   errors.password
@@ -195,7 +197,18 @@ export default function Signin() {
                 })}
                 aria-invalid={!!errors.password}
               />
-              <PasswordIcon className="absolute right-4.5 top-1/2 -translate-y-1/2" />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4.5 top-1/2 -translate-y-1/2 text-dark-6 hover:text-dark dark:text-dark-6 dark:hover:text-white focus:outline-none"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
             </div>
             <p className="mt-1 h-5 overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-5 text-red">
               {errors.password?.message || "\u00A0"}

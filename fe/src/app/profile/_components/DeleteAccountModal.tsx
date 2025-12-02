@@ -7,7 +7,7 @@ import styles from "@/app/profile/styles.module.css";
 interface DeleteAccountModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onDelete: (password: string, confirmText: string) => Promise<void>;
+  onDelete: () => Promise<void>;
   email: string;
 }
 
@@ -20,7 +20,6 @@ export default function DeleteAccountModal({
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    password: "",
     confirmText: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -33,17 +32,13 @@ export default function DeleteAccountModal({
 
   useEffect(() => {
     if (isOpen) {
-      setFormData({ password: "", confirmText: "" });
+      setFormData({ confirmText: "" });
       setErrors({});
     }
   }, [isOpen]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    }
 
     if (formData.confirmText !== CONFIRM_TEXT) {
       newErrors.confirmText = `Please type "${CONFIRM_TEXT}" to confirm`;
@@ -59,7 +54,7 @@ export default function DeleteAccountModal({
 
     try {
       setIsLoading(true);
-      await onDelete(formData.password, formData.confirmText);
+      await onDelete();
       onClose();
     } catch (error: any) {
       setErrors({ submit: error?.message || "Failed to delete account" });
@@ -108,7 +103,8 @@ export default function DeleteAccountModal({
                     <ul className={styles["warning-list"]}>
                       <li>All your data will be permanently deleted</li>
                       <li>You will lose access to all your content</li>
-                      <li>This action cannot be reversed</li>
+                      <li>You must contact admin to restore your account</li>
+                      <li>Your documents will be owned by system</li>
                     </ul>
                   </div>
                 </div>
@@ -122,28 +118,6 @@ export default function DeleteAccountModal({
                   disabled
                   className={`${styles["field-input"]} ${styles["field-input-sm"]} ${styles["disabled"]}`}
                 />
-              </div>
-
-              <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
-                <label className={`${styles["field-label"]} ${styles["field-label-sm"]}`}>
-                  Password <span className={`${styles["field-label-required"]} ${styles["field-label-required-sm"]}`}>*</span>
-                </label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => {
-                    setFormData({ ...formData, password: e.target.value });
-                    if (errors.password) setErrors({ ...errors, password: "" });
-                  }}
-                  placeholder="Enter your password to confirm"
-                  className={`${styles["field-input"]} ${styles["field-input-sm"]} ${errors.password ? styles.error : ""}`}
-                />
-                {errors.password && (
-                  <div className={`${styles["field-error"]} ${styles["field-error-inline"]}`}>
-                    <AlertCircle className={styles["error-icon"]} />
-                    {errors.password}
-                  </div>
-                )}
               </div>
 
               <div className={`${styles["field-group"]} ${styles["space-y"]}`}>

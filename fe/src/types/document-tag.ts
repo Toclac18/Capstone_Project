@@ -6,7 +6,7 @@ export interface DocumentTag extends BaseEntity {
   documents: Document[];
 }
 
-export type TagStatus = "ACTIVE" | "INACTIVE" | "PENDING";
+export type TagStatus = "ACTIVE" | "INACTIVE" | "PENDING" | "REJECTED";
 
 export interface Tag {
   id: string;
@@ -22,7 +22,7 @@ export interface TagQueryParams {
   status?: TagStatus;
   dateFrom?: string;
   dateTo?: string;
-  sortBy?: "name" | "createdDate" | "id";
+  sortBy?: "name" | "createdDate";
   sortOrder?: "asc" | "desc";
 }
 

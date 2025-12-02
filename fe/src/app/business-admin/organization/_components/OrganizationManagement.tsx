@@ -125,8 +125,11 @@ export function OrganizationManagement() {
     }
   };
 
-  const handleDetail = (orgId: string) => {
-    window.location.href = `/business-admin/organization/${orgId}`;
+  const handleDetail = (orgId: string, org: Organization) => {
+    // Backend API needs userId (admin ID), not organizationId
+    // Use userId if available, otherwise fallback to id
+    const userId = org.userId || orgId;
+    window.location.href = `/business-admin/organization/${userId}`;
   };
 
   return (
@@ -153,6 +156,9 @@ export function OrganizationManagement() {
         onFiltersChange={handleFiltersChange}
         loading={loading}
       />
+
+      {/* Spacing between filters and table */}
+      <div className="mb-4"></div>
 
       {/* Organizations Table */}
       <div className={styles["table-container"]}>
@@ -239,6 +245,10 @@ export function OrganizationManagement() {
                         className={`${styles["status-badge"]} ${
                           org.status === "ACTIVE" || org.active
                             ? styles["status-active"]
+                            : org.status === "PENDING_EMAIL_VERIFY" || org.status === "PENDING_APPROVE"
+                            ? styles["status-pending"]
+                            : org.status === "DELETED"
+                            ? styles["status-deleted"]
                             : styles["status-inactive"]
                         }`}
                       >
@@ -253,7 +263,7 @@ export function OrganizationManagement() {
                     <td className={styles["table-cell"]}>
                       <div className={styles["action-cell"]}>
                         <button
-                          onClick={() => handleDetail(org.id)}
+                          onClick={() => handleDetail(org.id, org)}
                           className={styles["action-icon-btn"]}
                           title="View Details"
                         >

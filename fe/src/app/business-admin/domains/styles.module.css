@@ -78,20 +78,16 @@
 }
 
 /* Column widths */
-.col-id {
-  @apply w-[15%];
-}
-
 .col-name {
-  @apply w-[35%];
+  @apply w-[40%];
 }
 
 .col-date {
-  @apply w-[30%];
+  @apply w-[35%];
 }
 
 .col-action {
-  @apply w-[15%];
+  @apply w-[25%];
 }
 
 .table-header {

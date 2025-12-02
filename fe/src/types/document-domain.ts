@@ -10,7 +10,7 @@ export interface DomainQueryParams {
   search?: string;
   dateFrom?: string;
   dateTo?: string;
-  sortBy?: "name" | "createdDate" | "id";
+  sortBy?: "name" | "createdDate";
   sortOrder?: "asc" | "desc";
 }
 
@@ -22,6 +22,7 @@ export interface DomainResponse {
 }
 
 export interface CreateDomainRequest {
+  code: number;
   name: string;
 }
 

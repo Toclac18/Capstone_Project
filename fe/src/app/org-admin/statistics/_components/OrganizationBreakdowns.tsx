@@ -40,10 +40,13 @@ export function OrganizationBreakdowns({
     },
     dataLabels: {
       enabled: true,
-      formatter: function (opts: any) {
-        const value = opts.w.globals.series[opts.seriesIndex];
-        const total = opts.w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0);
-        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : "0";
+      formatter: function (val: number, opts: any) {
+        if (!opts?.w?.globals) return "0%";
+        const total = opts.w.globals.seriesTotals.reduce(
+          (a: number, b: number) => a + b,
+          0,
+        );
+        const percentage = total > 0 ? ((val / total) * 100).toFixed(1) : "0";
         return `${percentage}%`;
       },
       style: {
@@ -82,10 +85,13 @@ export function OrganizationBreakdowns({
     },
     dataLabels: {
       enabled: true,
-      formatter: function (opts: any) {
-        const value = opts.w.globals.series[opts.seriesIndex];
-        const total = opts.w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0);
-        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : "0";
+      formatter: function (val: number, opts: any) {
+        if (!opts?.w?.globals) return "0%";
+        const total = opts.w.globals.seriesTotals.reduce(
+          (a: number, b: number) => a + b,
+          0,
+        );
+        const percentage = total > 0 ? ((val / total) * 100).toFixed(1) : "0";
         return `${percentage}%`;
       },
       style: {
@@ -124,10 +130,13 @@ export function OrganizationBreakdowns({
     },
     dataLabels: {
       enabled: true,
-      formatter: function (opts: any) {
-        const value = opts.w.globals.series[opts.seriesIndex];
-        const total = opts.w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0);
-        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : "0";
+      formatter: function (val: number, opts: any) {
+        if (!opts?.w?.globals) return "0%";
+        const total = opts.w.globals.seriesTotals.reduce(
+          (a: number, b: number) => a + b,
+          0,
+        );
+        const percentage = total > 0 ? ((val / total) * 100).toFixed(1) : "0";
         return `${percentage}%`;
       },
       style: {
@@ -166,10 +175,13 @@ export function OrganizationBreakdowns({
     },
     dataLabels: {
       enabled: true,
-      formatter: function (opts: any) {
-        const value = opts.w.globals.series[opts.seriesIndex];
-        const total = opts.w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0);
-        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : "0";
+      formatter: function (val: number, opts: any) {
+        if (!opts?.w?.globals) return "0%";
+        const total = opts.w.globals.seriesTotals.reduce(
+          (a: number, b: number) => a + b,
+          0,
+        );
+        const percentage = total > 0 ? ((val / total) * 100).toFixed(1) : "0";
         return `${percentage}%`;
       },
       style: {

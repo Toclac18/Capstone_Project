@@ -1,18 +1,9 @@
 // src/app/api/org-admin/readers/route.ts
-import { mockReaders } from "@/mock/readers.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { jsonResponse } from "@/server/response";
 import { getAuthHeader } from "@/server/auth";
-
-type Reader = {
-  id: string;
-  fullName: string;
-  username: string;
-  email: string;
-  status: "ACTIVE" | "SUSPENDED" | "PENDING_VERIFICATION";
-  coinBalance: number;
-};
+import { mockFetchReaders } from "@/mock/readers.mock";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 10;
@@ -31,48 +22,29 @@ async function handleGET(request: Request): Promise<Response> {
   // 1. MOCK MODE
   // ==========================
   if (USE_MOCK) {
-    let items: Reader[] = mockReaders;
+    const payload = await mockFetchReaders({
+      page,
+      pageSize,
+      q,
+      status,
+    });
 
-    if (q) {
-      const keyword = q.toLowerCase();
-      items = items.filter(
-        (r) =>
-          r.fullName.toLowerCase().includes(keyword) ||
-          r.username.toLowerCase().includes(keyword) ||
-          r.email.toLowerCase().includes(keyword),
-      );
-    }
-
-    if (status && status !== "ALL") {
-      items = items.filter((r) => r.status === status);
-    }
-
-    const total = items.length;
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    const pageItems = items.slice(start, end);
-
-    return jsonResponse(
-      {
-        items: pageItems,
-        total,
-        page,
-        pageSize,
+    return jsonResponse(payload, {
+      status: 200,
+      headers: {
+        "content-type": "application/json",
+        "x-mode": "mock",
       },
-      {
-        status: 200,
-        headers: {
-          "content-type": "application/json",
-          "x-mode": "mock",
-        },
-      },
-    );
+    });
   }
 
   // ==========================
   // 2. REAL BE MODE
   // ==========================
 
+  // Tùy bạn chỉnh lại path này cho đúng với BE thực tế.
+  // Hiện đang giả định BE mapping ở /api/organization/members và
+  // nhận page (0-based) + size (pageSize).
   const upstreamUrl = new URL(`${BE_BASE}/api/organization/members`);
 
   // Spring Pageable:
@@ -81,17 +53,22 @@ async function handleGET(request: Request): Promise<Response> {
   upstreamUrl.searchParams.set("page", String(Math.max(page - 1, 0)));
   upstreamUrl.searchParams.set("size", String(pageSize));
 
-  // search param BE là 'search', không phải 'q'
-  if (q) upstreamUrl.searchParams.set("search", q);
-  if (status && status !== "ALL")
+  // Search & filter
+  if (q) {
+    // Nếu BE dùng param khác (vd: "search"), bạn chỉnh lại ở đây
+    upstreamUrl.searchParams.set("search", q);
+  }
+  if (status && status !== "ALL") {
     upstreamUrl.searchParams.set("status", status);
+  }
 
-  // Get authentication from shared helper
+  // Auth header
   const authHeader = await getAuthHeader();
   const fh = new Headers();
   if (authHeader) {
     fh.set("Authorization", authHeader);
   }
+
   const upstream = await fetch(upstreamUrl.toString(), {
     method: "GET",
     headers: fh,
@@ -99,7 +76,6 @@ async function handleGET(request: Request): Promise<Response> {
   });
 
   if (!upstream.ok) {
-    // Nếu BE trả JSON lỗi thì cứ trả lại
     const text = await upstream.text();
     return new Response(text || upstream.statusText, {
       status: upstream.status,
@@ -110,51 +86,17 @@ async function handleGET(request: Request): Promise<Response> {
     });
   }
 
+  // BE được kỳ vọng trả đúng format success + data + pageInfo + timestamp
   const payload = await upstream.json();
 
-  // Chuẩn hóa lại cho FE
-  const items: Reader[] = payload.items ?? payload.content ?? [];
-
-  const total: number =
-    typeof payload.total === "number"
-      ? payload.total
-      : typeof payload.totalElements === "number"
-        ? payload.totalElements
-        : Array.isArray(items)
-          ? items.length
-          : 0;
-
-  const backendPage: number =
-    typeof payload.page === "number"
-      ? payload.page
-      : typeof payload.number === "number"
-        ? payload.number
-        : Math.max(page - 1, 0);
-
-  const backendSize: number =
-    typeof payload.pageSize === "number"
-      ? payload.pageSize
-      : typeof payload.size === "number"
-        ? payload.size
-        : pageSize;
-
-  const currentPage = backendPage + 1; // FE vẫn dùng 1-based
-
-  return jsonResponse(
-    {
-      items,
-      total,
-      page: currentPage,
-      pageSize: backendSize,
+  return jsonResponse(payload, {
+    status: 200,
+    headers: {
+      "content-type":
+        upstream.headers.get("content-type") ?? "application/json",
+      "x-mode": "real",
     },
-    {
-      status: 200,
-      headers: {
-        "content-type": "application/json",
-        "x-mode": "real",
-      },
-    },
-  );
+  });
 }
 
 export const GET = (...args: Parameters<typeof handleGET>) =>

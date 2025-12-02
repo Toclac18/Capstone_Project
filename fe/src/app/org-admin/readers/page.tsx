@@ -60,7 +60,7 @@ function ReadersContent() {
             setPage(1); // reset to first page when searching
             setQ(e.target.value);
           }}
-          placeholder="Search by name, username, email, or status…"
+          placeholder="Search by name, email, organization, or status…"
           className={styles["readers-search"]}
         />
 
@@ -96,12 +96,12 @@ function ReadersContent() {
         <table className={styles["table"]}>
           <colgroup>
             {[
-              {},
-              {},
-              { className: styles["col-email"] },
-              {},
-              { className: styles["col-coins"] },
-              { className: styles["col-actions"] },
+              {}, // full name
+              {}, // email
+              { className: styles["col-email"] }, // organization
+              {}, // status
+              { className: styles["col-coins"] }, // invited at
+              { className: styles["col-actions"] }, // actions
             ].map((props, idx) => (
               <col key={idx} {...props} />
             ))}
@@ -110,13 +110,13 @@ function ReadersContent() {
           <thead>
             <tr>
               <th>Full name</th>
-              <th>Username</th>
               <th className={styles["col-email"]}>Email</th>
+              <th>Organization</th>
               <th>Status</th>
               <th
                 className={`${styles["header-right"]} ${styles["col-coins"]}`}
               >
-                Coins
+                Invited at
               </th>
               <th className={styles["header-right"]}>Actions</th>
             </tr>
@@ -137,27 +137,34 @@ function ReadersContent() {
               </tr>
             ) : (
               readers.map((r) => {
-                const statusUpper = String(r.status).toUpperCase();
+                const statusRaw = r.status as
+                  | "PENDING_INVITE"
+                  | "JOINED"
+                  | "REMOVED";
 
-                const isActive = statusUpper === "ACTIVE";
-                const isPending = statusUpper === "PENDING_VERIFICATION";
+                const isPending = statusRaw === "PENDING_INVITE";
+                const isJoined = statusRaw === "JOINED";
+                const isRemoved = statusRaw === "REMOVED";
 
-                const badgeClass = isActive
+                // Badge style
+                const badgeClass = isJoined
                   ? styles["status-active"]
                   : isPending
                     ? styles["status-pending"]
                     : styles["status-suspended"];
 
-                const statusLabel =
-                  statusUpper === "PENDING_VERIFICATION"
-                    ? "PENDING_VERIFICATION"
-                    : statusUpper;
+                // Nếu muốn dùng displayName đẹp hơn thì map thêm, tạm dùng statusRaw
+                const statusLabel = statusRaw;
+
+                const invitedDisplay = r.invitedAt
+                  ? new Date(r.invitedAt).toLocaleString()
+                  : "-";
 
                 return (
-                  <tr key={r.id} className={styles["table-row"]}>
-                    <td>{r.fullName}</td>
-                    <td>{r.username}</td>
-                    <td className={styles["col-email"]}>{r.email}</td>
+                  <tr key={r.enrollmentId} className={styles["table-row"]}>
+                    <td>{r.memberFullName}</td>
+                    <td className={styles["col-email"]}>{r.memberEmail}</td>
+                    <td>{r.organizationName}</td>
                     <td>
                       <span
                         className={`${styles["status-badge"]} ${badgeClass}`}
@@ -168,27 +175,32 @@ function ReadersContent() {
                     <td
                       className={`${styles["cell-right"]} ${styles["col-coins"]}`}
                     >
-                      {r.coinBalance.toLocaleString()}
+                      {invitedDisplay}
                     </td>
                     <td className={styles["cell-right"]}>
-                      {!isActive ? (
-                        <EnableButton
-                          onClick={() => onEnable(r.id)}
-                          disabled={busyId === r.id}
-                          loading={busyId === r.id}
-                          className={styles["action-btn"]}
-                          title="Enable reader’s access"
-                        />
-                      ) : (
+                      {isPending ? (
+                        // Pending invite → không có action, chỉ hiển thị dấu '-'
+                        <span className={styles["action-placeholder"]}>-</span>
+                      ) : isJoined ? (
+                        // Joined → cho phép Remove (chuyển sang REMOVED)
                         <DeleteConfirmation
-                          onDelete={() => onDelete(r.id)}
-                          itemId={r.id}
-                          itemName={`${r.fullName} (${r.email})`}
+                          onDelete={() => onDelete(r.enrollmentId)}
+                          itemId={r.enrollmentId}
+                          itemName={`${r.memberFullName} (${r.memberEmail})`}
                           title="Remove reader’s access"
                           description="This action cannot be undone. The reader will lose access to all resources."
                           size="sm"
                           variant="outline"
                           className={styles["action-btn"]}
+                        />
+                      ) : (
+                        // Removed → cho phép Enable (chuyển sang JOINED)
+                        <EnableButton
+                          onClick={() => onEnable(r.enrollmentId)}
+                          disabled={busyId === r.enrollmentId || loading}
+                          loading={busyId === r.enrollmentId}
+                          className={styles["action-btn"]}
+                          title="Enable reader’s access"
                         />
                       )}
                     </td>

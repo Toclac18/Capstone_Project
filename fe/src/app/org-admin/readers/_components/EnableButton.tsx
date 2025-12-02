@@ -8,6 +8,8 @@ interface EnableButtonProps {
   loading?: boolean;
   className?: string;
   title?: string;
+  label?: string;
+  loadingLabel?: string;
 }
 
 export default function EnableButton({
@@ -16,13 +18,19 @@ export default function EnableButton({
   loading,
   className = "",
   title = "Enable access",
+  label = "Enable",
+  loadingLabel = "Enabling…",
 }: EnableButtonProps) {
+  const isDisabled = disabled || loading;
+
   return (
     <button
       type="button"
       onClick={onClick}
-      disabled={disabled || loading}
+      disabled={isDisabled}
       title={title}
+      aria-disabled={isDisabled}
+      aria-busy={loading || false}
       className={`${styles["enable-btn"]} ${className}`}
     >
       {loading ? (
@@ -32,6 +40,7 @@ export default function EnableButton({
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <circle
               className={styles["loading-circle"]}
@@ -40,17 +49,17 @@ export default function EnableButton({
               r="10"
               stroke="currentColor"
               strokeWidth="4"
-            ></circle>
+            />
             <path
               className={styles["loading-path"]}
               fill="currentColor"
               d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-            ></path>
+            />
           </svg>
-          Enabling…
+          <span>{loadingLabel}</span>
         </span>
       ) : (
-        "Enable"
+        <span>{label}</span>
       )}
     </button>
   );

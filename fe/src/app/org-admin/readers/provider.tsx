@@ -10,26 +10,28 @@ import React, {
 } from "react";
 import { toast, useToast } from "@/components/ui/toast";
 import {
-  changeReaderAccess,
+  // nếu bạn đã update service theo BE mới, ReaderResponse sẽ là item trong mảng "data"
   ReaderResponse,
+  ReadersListBackendResponse,
 } from "@/services/org-admin-reader.service";
 
 /**
  * CHUẨN HÓA:
  * - FE UI và Provider dùng URL cố định: /api/org-admin/readers
  * - NextJS API route ở: app/api/org-admin/readers/route.ts
- * - route.ts proxy → BE /api/organization/members
- * => Không đổi UI, không đổi service, không đổi folder API.
+ * - route.ts proxy → BE (hoặc mock) và luôn trả về format:
+ *
+ *   {
+ *     success: boolean;
+ *     data: ReaderResponse[];
+ *     pageInfo: { ... };
+ *     timestamp: string;
+ *   }
  */
 
-export type ReaderStatus = "ACTIVE" | "SUSPENDED" | "PENDING_VERIFICATION";
+export type ReaderStatus = ReaderResponse["status"];
 
-type ReadersListResponse = {
-  items: ReaderResponse[];
-  total: number;
-  page: number;
-  pageSize: number;
-};
+type ReadersBackendEnvelope = ReadersListBackendResponse;
 
 interface ReadersContextValue {
   readers: ReaderResponse[];
@@ -49,7 +51,7 @@ interface ReadersContextValue {
   setPage: (p: number) => void;
   setPageSize: (s: number) => void;
   setQ: (q: string) => void;
-  setStatus: (s: ReadersContextValue["status"]) => void;
+  setStatus: (s: ReaderStatus | "ALL") => void;
 
   setError: React.Dispatch<React.SetStateAction<string | null>>;
   setInfo: React.Dispatch<React.SetStateAction<string | null>>;
@@ -73,7 +75,7 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
 
   /**
    * Build URL Next API route
-   * FE → /api/org-admin/readers → Next route → BE /organization/members
+   * FE → /api/org-admin/readers → Next route → BE
    */
   const buildUrl = () => {
     const url = new URL(
@@ -107,10 +109,17 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
         throw new Error(text || `Failed to load readers (${res.status})`);
       }
 
-      const data = (await res.json()) as ReadersListResponse;
+      const payload = (await res.json()) as ReadersBackendEnvelope;
 
-      setReaders(data.items || []);
-      setTotal(Number(data.total ?? 0));
+      // Theo BE response:
+      // {
+      //   success: true,
+      //   data: ReaderResponse[],
+      //   pageInfo: { ... },
+      //   timestamp: string
+      // }
+      setReaders(payload.data || []);
+      setTotal(Number(payload.pageInfo?.totalElements ?? 0));
     } catch (err: any) {
       const msg = err?.message ?? "Failed to load readers";
       setError(msg);
@@ -120,48 +129,24 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
     }
   }, [page, pageSize, q, status, showToast]);
 
-  /** Enable/Disable access */
-  const toggleAccess = useCallback(
-    async (id: string, enable: boolean) => {
-      const prev = readers;
-      setError(null);
-      setInfo(null);
-
-      // Optimistic UI
-      setReaders((list) =>
-        list.map((r) =>
-          r.id === id ? { ...r, status: enable ? "ACTIVE" : "SUSPENDED" } : r,
-        ),
-      );
-
-      try {
-        const updated = await changeReaderAccess({ userId: id, enable });
-
-        setReaders((list) =>
-          list.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)),
-        );
-
-        const msg = enable
-          ? "Access enabled successfully"
-          : "Access removed successfully";
-
-        setInfo(msg);
-        showToast(
-          enable
-            ? toast.success("Access Enabled", msg)
-            : toast.error("Access Removed", msg),
-        );
-      } catch (err: any) {
-        // rollback
-        setReaders(prev);
-        const msg = err?.message ?? "Failed to update access";
-        setError(msg);
-        showToast(toast.error("Action failed", msg));
-        throw err;
-      }
-    },
-    [readers, showToast],
-  );
+  /**
+   * toggleAccess: tạm thời là stub, không gọi BE.
+   * Khi bạn có API real, chỉ cần sửa lại implementation này.
+   */
+  const toggleAccess = useCallback(async (id: string, enable: boolean) => {
+    console.warn(
+      "[ReadersProvider] toggleAccess called but not implemented yet",
+      { id, enable },
+    );
+    // Nếu muốn có UI "ảo" (optimistic), có thể update state cục bộ ở đây:
+    // setReaders((list) =>
+    //   list.map((r) =>
+    //     r.enrollmentId === id
+    //       ? { ...r, status: enable ? "ACTIVE" : "SUSPENDED" }
+    //       : r,
+    //   ),
+    // );
+  }, []);
 
   useEffect(() => {
     reload();
@@ -210,7 +195,7 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
 export function useReaders() {
   const ctx = useContext(ReadersContext);
   if (!ctx) {
-    throw new Error("useReaders must be used inside ReadersProvider");
+    throw new Error("Cannot change access");
   }
   return ctx;
 }

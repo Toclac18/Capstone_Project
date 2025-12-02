@@ -39,7 +39,7 @@ async function handlePOST(req: Request) {
   if (ip) fh.set("X-Forwarded-For", ip);
 
   const upstream = await fetch(
-    `${BE_BASE}/api/org-admin/reader-change-access`,
+    `${BE_BASE}/api/organization/change-reader-access`,
     {
       method: "POST",
       headers: fh,
@@ -53,5 +53,5 @@ async function handlePOST(req: Request) {
 
 export const POST = (...args: Parameters<typeof handlePOST>) =>
   withErrorBoundary(() => handlePOST(...args), {
-    context: "api/org-admin/reader-change-access/route.ts/POST",
+    context: "api/organization/change-reader-access/route.ts/POST",
   });

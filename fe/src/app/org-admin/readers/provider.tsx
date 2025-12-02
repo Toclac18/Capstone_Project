@@ -15,6 +15,7 @@ import {
   OrgEnrollment,
   OrgEnrollStatus,
   OrgEnrollmentListResponse,
+  changeEnrollmentStatus,
 } from "@/services/org-admin-reader.service";
 
 export type ReaderStatusFilter = OrgEnrollStatus | "ALL";
@@ -64,7 +65,6 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
 
   const { showToast } = useToast();
 
-  /** Load readers từ API route (route đang dùng mock hoặc BE tùy USE_MOCK) */
   const reload = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -100,27 +100,35 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
    */
   const toggleAccess = useCallback(
     async (enrollmentId: string, enable: boolean) => {
-      try {
-        // TODO: sau này gọi API thật ở đây
+      // enable = true  => JOINED
+      // enable = false => REMOVED
+      const nextStatus: OrgEnrollStatus = enable ? "JOINED" : "REMOVED";
 
-        // Optimistic update local state
-        setReaders((prev) =>
-          prev.map((r) =>
-            r.enrollmentId === enrollmentId
-              ? {
-                  ...r,
-                  status: enable ? "JOINED" : "REMOVED",
-                }
-              : r,
-          ),
-        );
+      // Lưu lại state cũ để rollback nếu lỗi
+      const prevReaders = readers;
+
+      // 1. Optimistic update
+      setReaders((prev) =>
+        prev.map((r) =>
+          r.enrollmentId === enrollmentId ? { ...r, status: nextStatus } : r,
+        ),
+      );
+
+      try {
+        // 2. Gọi API thật qua service
+        await changeEnrollmentStatus({
+          enrollmentId,
+          status: nextStatus,
+        });
       } catch (err: any) {
         const msg = err?.message ?? "Failed to change reader access";
         setError(msg);
         showToast(toast.error("Update failed", msg));
+        // 3. Rollback state nếu lỗi
+        setReaders(prevReaders);
       }
     },
-    [showToast],
+    [readers, showToast],
   );
 
   useEffect(() => {

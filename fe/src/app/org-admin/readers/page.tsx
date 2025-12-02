@@ -127,7 +127,6 @@ function ReadersContent() {
 
                 const isPending = status === "PENDING_INVITE";
                 const isJoined = status === "JOINED";
-                const isRemoved = status === "REMOVED";
 
                 const badgeClass = isJoined
                   ? styles["status-active"]
@@ -135,7 +134,7 @@ function ReadersContent() {
                     ? styles["status-pending"]
                     : styles["status-suspended"];
 
-                const statusLabel = status; // BE sau này có thể map sang displayName nếu muốn
+                const statusLabel = status;
 
                 const invitedDisplay = r.invitedAt
                   ? new Date(r.invitedAt).toLocaleString()

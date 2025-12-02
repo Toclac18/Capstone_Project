@@ -37,9 +37,10 @@ function createSseResponse(
 
 async function handleGET(
   _req: NextRequest,
-  ctx: { params: { id: string } },
+  ctx: { params: Promise<{ id: string }> },
 ): Promise<Response> {
-  const { id } = ctx.params;
+  // Await params để lấy id
+  const { id } = await ctx.params;
 
   // ---------------- MOCK MODE ----------------
   if (USE_MOCK) {
@@ -60,27 +61,17 @@ async function handleGET(
   }
 
   // ---------------- REAL BE MODE ----------------
-  // Nếu BE chưa có SSE riêng, có thể trả luôn "complete"
-  // để FE không chờ mãi.
-  // Nếu BE có endpoint SSE thực, bạn có thể proxy ở đây.
   const auth = await getAuthHeader();
   const beEventsUrl = `${BE_BASE}/api/organization/members/import-batches/${encodeURIComponent(
     id,
   )}/enrollments`;
 
   try {
-    // Nếu BE CHƯA có SSE, đừng proxy, chỉ trả complete:
-    // return createSseResponse((send, close) => {
-    //   send("complete", { batchId: id });
-    //   close();
-    // });
-
     const res = await fetch(beEventsUrl, {
       headers: auth ? { Authorization: auth } : {},
     });
 
     if (!res.ok || !res.body) {
-      // fallback: coi như complete
       return createSseResponse((send, close) => {
         send("complete", { batchId: id });
         close();
@@ -105,7 +96,11 @@ async function handleGET(
   }
 }
 
-export const GET = (req: NextRequest, ctx: { params: { id: string } }) =>
+// Update Type ở export function để khớp với handleGET
+export const GET = (
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> },
+) =>
   withErrorBoundary(() => handleGET(req, ctx), {
     context: "api/org-admin/imports/[id]/events/route.ts/GET",
   });

@@ -1,16 +1,22 @@
 // src/services/org-admin-reader.service.ts
 import { apiClient } from "./http";
 
-/**
- * Trùng với enum OrgEnrollStatus ở BE:
- *
- * public enum OrgEnrollStatus {
- *   PENDING_INVITE("Pending invite"),
- *   JOINED("Joined"),
- *   REMOVED("Removed");
- * }
- */
 export type OrgEnrollStatus = "PENDING_INVITE" | "JOINED" | "REMOVED";
+
+export interface ChangeEnrollmentStatusPayload {
+  enrollmentId: string;
+  status: OrgEnrollStatus; // "JOINED" hoặc "REMOVED"
+}
+
+export async function changeEnrollmentStatus(
+  payload: ChangeEnrollmentStatusPayload,
+): Promise<OrgEnrollment> {
+  const res = await apiClient.patch<OrgEnrollment>(
+    "org-admin/readers/status", // => /api/org-admin/readers/status
+    payload,
+  );
+  return res.data;
+}
 
 export interface OrgEnrollment {
   enrollmentId: string;
@@ -27,7 +33,7 @@ export interface OrgEnrollment {
 }
 
 export interface OrgEnrollmentPageInfo {
-  page: number; // 0-based (theo BE)
+  page: number;
   size: number;
   totalElements: number;
   totalPages: number;
@@ -45,24 +51,12 @@ export interface OrgEnrollmentListResponse {
 }
 
 export interface FetchReadersParams {
-  page?: number; // 1-based cho FE, route sẽ convert sang 0-based nếu cần
+  page?: number;
   pageSize?: number;
   q?: string;
   status?: OrgEnrollStatus | "ALL";
 }
 
-/**
- * Gọi Next API route: GET /api/org-admin/readers
- * (với apiClient baseURL = "/api" => path = "org-admin/readers")
- *
- * Trả về đúng format BE:
- * {
- *   success,
- *   data: OrgEnrollment[],
- *   pageInfo,
- *   timestamp
- * }
- */
 export async function fetchReaders(
   params: FetchReadersParams = {},
 ): Promise<OrgEnrollmentListResponse> {

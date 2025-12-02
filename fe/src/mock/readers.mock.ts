@@ -13,8 +13,6 @@ export type MockReadersQuery = {
   status?: OrgEnrollStatus | "ALL";
 };
 
-/* ---------- Seed cố định (ít bản ghi) ---------- */
-
 const seed: OrgEnrollment[] = [
   {
     enrollmentId: "0df3e29e-ad76-4d7a-b40a-593a2e4d59bf",
@@ -56,8 +54,6 @@ const seed: OrgEnrollment[] = [
     respondedAt: null,
   },
 ];
-
-/* ---------- Generate thêm dữ liệu giả ---------- */
 
 function generateExtra(count: number): OrgEnrollment[] {
   const rows: OrgEnrollment[] = [];
@@ -188,14 +184,6 @@ export async function mockFetchReaders(
   };
 }
 
-/**
- * Đổi status trong mockReaders (để BE sau này bắt chước API này):
- *
- *  - enable = true  => JOINED
- *  - enable = false => REMOVED
- *
- *  PENDING_INVITE không được gọi hàm này (UI không cho action).
- */
 export function mockChangeReaderAccess(enrollmentId: string, enable: boolean) {
   const r = mockReaders.find((x) => x.enrollmentId === enrollmentId);
   if (!r) {

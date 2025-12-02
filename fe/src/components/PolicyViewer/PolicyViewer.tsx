@@ -2,18 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import { getActivePolicyByType, getPolicyView, acceptPolicy } from "@/services/policyService";
+import {
+  getActivePolicyByType,
+  getPolicyView,
+  acceptPolicy,
+} from "@/services/policyService";
 import { decodeJwtPayload, extractReaderId } from "@/utils/jwt";
 import type { Policy, PolicyType } from "@/types/policy";
 import styles from "./styles.module.css";
 
 function getUserIdFromToken(): string | null {
   if (typeof document === "undefined") return null;
-  
+
   const all = document.cookie || "";
   const match = all.match(/(?:^|;\s*)Authorization=([^;]+)/);
   if (!match) return null;
-  
+
   try {
     const token = decodeURIComponent(match[1]);
     const payload = decodeJwtPayload(token);
@@ -30,6 +34,7 @@ interface PolicyViewerProps {
   userId?: string;
   onAccept?: () => void;
   showAcceptButton?: boolean;
+  disableClose?: boolean; // Prevent closing when true (e.g., when user must accept)
 }
 
 export default function PolicyViewer({
@@ -39,13 +44,14 @@ export default function PolicyViewer({
   userId,
   onAccept,
   showAcceptButton = false,
+  disableClose = false,
 }: PolicyViewerProps) {
   const [policy, setPolicy] = useState<Policy | null>(null);
   const [hasAccepted, setHasAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Auto-get userId from token if not provided
   const effectiveUserId = userId || getUserIdFromToken();
 
@@ -62,11 +68,14 @@ export default function PolicyViewer({
         const activePolicy = await getActivePolicyByType(policyType);
         if (mounted) {
           setPolicy(activePolicy);
-          
+
           // If userId available, check acceptance status
           if (effectiveUserId && activePolicy) {
             try {
-              const result = await getPolicyView(activePolicy.id, effectiveUserId);
+              const result = await getPolicyView(
+                activePolicy.id,
+                effectiveUserId,
+              );
               if (mounted) {
                 setHasAccepted(result.hasAccepted);
               }
@@ -82,7 +91,8 @@ export default function PolicyViewer({
         }
       } catch (e: unknown) {
         if (mounted) {
-          const errorMessage = e instanceof Error ? e.message : "Failed to load policy";
+          const errorMessage =
+            e instanceof Error ? e.message : "Failed to load policy";
           setError(errorMessage);
         }
       } finally {
@@ -111,13 +121,13 @@ export default function PolicyViewer({
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || disableClose) return;
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, disableClose]);
 
   const handleAccept = async () => {
     if (!policy || hasAccepted || !effectiveUserId) return;
@@ -128,7 +138,8 @@ export default function PolicyViewer({
       setHasAccepted(true);
       onAccept?.();
     } catch (e: unknown) {
-      const errorMessage = e instanceof Error ? e.message : "Failed to accept policy";
+      const errorMessage =
+        e instanceof Error ? e.message : "Failed to accept policy";
       setError(errorMessage);
     } finally {
       setAccepting(false);
@@ -137,31 +148,43 @@ export default function PolicyViewer({
 
   if (!isOpen) return null;
 
+  const handleBackdropClick = () => {
+    if (!disableClose) {
+      onClose();
+    }
+  };
+
   return (
-    <div className={styles.backdrop} onClick={onClose} role="dialog" aria-modal="true">
+    <div
+      className={styles.backdrop}
+      onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+    >
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.headerContent}>
-            <h2 className={styles.title}>
-              {policy?.title || "Policy"}
-            </h2>
+            <h2 className={styles.title}>{policy?.title || "Policy"}</h2>
             {policy && policy.updatedAt && (
               <div className={styles.meta}>
                 <span className={styles.date}>
-                  Last updated: {new Date(policy.updatedAt).toLocaleDateString()}
+                  Last updated:{" "}
+                  {new Date(policy.updatedAt).toLocaleDateString()}
                 </span>
               </div>
             )}
           </div>
-          <button
-            type="button"
-            className={styles.closeButton}
-            onClick={onClose}
-            aria-label="Close"
-          >
-            <X className={styles.closeIcon} />
-          </button>
+          {!disableClose && (
+            <button
+              type="button"
+              className={styles.closeButton}
+              onClick={onClose}
+              aria-label="Close"
+            >
+              <X className={styles.closeIcon} />
+            </button>
+          )}
         </div>
 
         {/* Content */}
@@ -195,13 +218,15 @@ export default function PolicyViewer({
             </div>
           )}
           <div className={styles.actions}>
-            <button
-              type="button"
-              className={styles.btnSecondary}
-              onClick={onClose}
-            >
-              {hasAccepted ? "Close" : "Cancel"}
-            </button>
+            {!disableClose && (
+              <button
+                type="button"
+                className={styles.btnSecondary}
+                onClick={onClose}
+              >
+                {hasAccepted ? "Close" : "Cancel"}
+              </button>
+            )}
             {showAcceptButton && !hasAccepted && policy && effectiveUserId && (
               <button
                 type="button"
@@ -218,4 +243,3 @@ export default function PolicyViewer({
     </div>
   );
 }
-

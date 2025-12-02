@@ -45,8 +45,19 @@ apiClient.interceptors.request.use((config) => {
 });
 
 apiClient.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    // Handle 204 NO_CONTENT responses (no body)
+    if (res.status === 204) {
+      // Return response with empty data object for consistency
+      res.data = res.data || { message: "Success" };
+    }
+    return res;
+  },
   (err) => {
+    // If error is 204, treat it as success (some servers return 204 differently)
+    if (err?.response?.status === 204) {
+      return { status: 204, data: { message: "Success" } };
+    }
     const msg =
       err?.response?.data?.error ||
       err?.response?.data?.message ||

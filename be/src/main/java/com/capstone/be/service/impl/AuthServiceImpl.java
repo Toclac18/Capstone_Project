@@ -33,13 +33,20 @@ import com.capstone.be.repository.SpecializationRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.security.jwt.JwtUtil;
 import com.capstone.be.security.model.UserPrincipal;
+import com.capstone.be.domain.enums.LogAction;
+import com.capstone.be.service.AuditLogService;
 import com.capstone.be.service.AuthService;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.service.FileStorageService;
+import com.capstone.be.util.HttpRequestUtil;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -67,6 +74,7 @@ public class AuthServiceImpl implements AuthService {
   private final EmailService emailService;
   private final FileStorageService fileStorageService;
   private final AuthMapper authMapper;
+  private final AuditLogService auditLogService;
 
   @Override
   @Transactional
@@ -179,32 +187,98 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   @Transactional(readOnly = true)
-  public AuthResponse login(LoginRequest request) {
-    // Authenticate user (will throw BadCredentialsException if wrong credentials)
-    Authentication authentication = authenticationManager.authenticate(
-        new UsernamePasswordAuthenticationToken(
-            request.getEmail(),
-            request.getPassword()
-        )
-    );
+  public AuthResponse login(LoginRequest request, HttpServletRequest httpRequest) {
+    String ipAddress = HttpRequestUtil.extractIpAddress(httpRequest);
+    String userAgent = HttpRequestUtil.extractUserAgent(httpRequest);
+    
+    try {
+      // Authenticate user (will throw BadCredentialsException if wrong credentials)
+      Authentication authentication = authenticationManager.authenticate(
+          new UsernamePasswordAuthenticationToken(
+              request.getEmail(),
+              request.getPassword()
+          )
+      );
 
-    UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+      UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
 
-    if (request.getRole() != null && !principal.getRole().equals(request.getRole().name())) {
-      throw UnauthorizedException.invalidCredentials();
+      if (request.getRole() != null && !principal.getRole().equals(request.getRole().name())) {
+        // Log failed login - role mismatch
+        Map<String, Object> details = new HashMap<>();
+        details.put("email", request.getEmail());
+        details.put("requestedRole", request.getRole().name());
+        details.put("actualRole", principal.getRole());
+        details.put("reason", "Role mismatch");
+        auditLogService.logFailedAction(
+            LogAction.USER_LOGIN_FAILED,
+            principal,
+            details,
+            "Role mismatch: requested " + request.getRole().name() + " but user has " + principal.getRole(),
+            ipAddress,
+            userAgent,
+            401 // HTTP 401 Unauthorized
+        );
+        throw UnauthorizedException.invalidCredentials();
+      }
+
+      if (!principal.isEnabled()) {
+        // Log failed login - account disabled
+        Map<String, Object> details = new HashMap<>();
+        details.put("email", request.getEmail());
+        details.put("reason", "Account disabled");
+        auditLogService.logFailedAction(
+            LogAction.USER_LOGIN_FAILED,
+            principal,
+            details,
+            "Account is disabled",
+            ipAddress,
+            userAgent,
+            401 // HTTP 401 Unauthorized
+        );
+        throw UnauthorizedException.accountDisabled();
+      }
+
+      String token = jwtUtil.generateToken(
+          principal.getId(),
+          principal.getEmail(),
+          principal.getRole()
+      );
+
+      // Log successful login
+      Map<String, Object> details = new HashMap<>();
+      details.put("email", request.getEmail());
+      details.put("role", principal.getRole());
+      log.debug("Calling auditLogService.logAction for USER_LOGIN_SUCCESS, email: {}, IP: {}", 
+          request.getEmail(), ipAddress);
+      auditLogService.logAction(
+          LogAction.USER_LOGIN_SUCCESS,
+          principal,
+          details,
+          ipAddress,
+          userAgent,
+          200 // HTTP 200 OK for successful login
+      );
+      log.debug("auditLogService.logAction called successfully");
+
+      return authMapper.toAuthResponseWithToken(principal, token);
+    } catch (BadCredentialsException e) {
+      Map<String, Object> details = new HashMap<>();
+      details.put("email", request.getEmail());
+      details.put("reason", "Bad credentials");
+      log.debug("Calling auditLogService.logFailedAction for USER_LOGIN_FAILED, email: {}, IP: {}", 
+          request.getEmail(), ipAddress);
+      auditLogService.logFailedAction(
+          LogAction.USER_LOGIN_FAILED,
+          null,
+          details,
+          "Bad credentials",
+          ipAddress,
+          userAgent,
+          401 // HTTP 401 Unauthorized
+      );
+      log.debug("auditLogService.logFailedAction called successfully");
+      throw e;
     }
-
-    if (!principal.isEnabled()) {
-      throw UnauthorizedException.accountDisabled();
-    }
-
-    String token = jwtUtil.generateToken(
-        principal.getId(),
-        principal.getEmail(),
-        principal.getRole()
-    );
-
-    return authMapper.toAuthResponseWithToken(principal, token);
   }
 
   @Override

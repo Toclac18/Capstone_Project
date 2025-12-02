@@ -5,6 +5,7 @@ import com.capstone.be.dto.request.auth.RegisterOrganizationRequest;
 import com.capstone.be.dto.request.auth.RegisterReaderRequest;
 import com.capstone.be.dto.request.auth.RegisterReviewerRequest;
 import com.capstone.be.dto.response.auth.AuthResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -53,9 +54,10 @@ public interface AuthService {
    * Only works for verified accounts
    *
    * @param request Login request
+   * @param httpRequest HTTP request for extracting IP and User-Agent
    * @return Auth response with access token
    */
-  AuthResponse login(LoginRequest request);
+  AuthResponse login(LoginRequest request, HttpServletRequest httpRequest);
 
   /**
    * Resend email verification when the old code has expired

@@ -1,3 +1,4 @@
+// src/app/org-admin/readers/_components/EnableButton.tsx
 "use client";
 
 import styles from "./styles.module.css";
@@ -34,16 +35,16 @@ export default function EnableButton({
       className={`${styles["enable-btn"]} ${className}`}
     >
       {loading ? (
-        <span className={styles["loading-wrap"]}>
+        <span className={styles["enable-loading-wrap"]}>
+          {/* spinner */}
           <svg
-            className={styles["loading-icon"]}
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
+            className={styles["enable-loading-icon"]}
             viewBox="0 0 24 24"
+            fill="none"
             aria-hidden="true"
           >
             <circle
-              className={styles["loading-circle"]}
+              className={styles["enable-loading-circle"]}
               cx="12"
               cy="12"
               r="10"
@@ -51,7 +52,7 @@ export default function EnableButton({
               strokeWidth="4"
             />
             <path
-              className={styles["loading-path"]}
+              className={styles["enable-loading-path"]}
               fill="currentColor"
               d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
             />
@@ -59,7 +60,24 @@ export default function EnableButton({
           <span>{loadingLabel}</span>
         </span>
       ) : (
-        <span>{label}</span>
+        <span className={styles["enable-content"]}>
+          {/* tick xanh lá */}
+          <svg
+            className={styles["enable-icon"]}
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M20 6L9 17L4 12"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span>{label}</span>
+        </span>
       )}
     </button>
   );

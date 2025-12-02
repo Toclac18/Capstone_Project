@@ -1,4 +1,4 @@
-// src/app/contact-admin/page.tsx
+// src/app/org-admin/readers/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -24,25 +24,24 @@ function ReadersContent() {
 
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  // derive range & buttons
   const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const end = Math.min(page * pageSize, total);
   const hasPrev = page > 1;
   const hasNext = end < total;
 
-  async function onEnable(id: string) {
-    setBusyId(id);
+  async function onEnable(enrollmentId: string) {
+    setBusyId(enrollmentId);
     try {
-      await toggleAccess(id, true); // ACTIVE
+      await toggleAccess(enrollmentId, true); // → JOINED
     } finally {
       setBusyId(null);
     }
   }
 
-  async function onDelete(id: string) {
-    setBusyId(id);
+  async function onRemove(enrollmentId: string) {
+    setBusyId(enrollmentId);
     try {
-      await toggleAccess(id, false); // SUSPENDED
+      await toggleAccess(enrollmentId, false); // → REMOVED
     } finally {
       setBusyId(null);
     }
@@ -57,7 +56,7 @@ function ReadersContent() {
         <input
           value={q}
           onChange={(e) => {
-            setPage(1); // reset to first page when searching
+            setPage(1);
             setQ(e.target.value);
           }}
           placeholder="Search by name, email, organization, or status…"
@@ -67,7 +66,7 @@ function ReadersContent() {
         <select
           value={pageSize}
           onChange={(e) => {
-            setPage(1); // reset page
+            setPage(1);
             setPageSize(Number(e.target.value));
           }}
           className={styles["readers-pagesize"]}
@@ -94,19 +93,6 @@ function ReadersContent() {
       {/* Table */}
       <div className={styles["table-container"]}>
         <table className={styles["table"]}>
-          <colgroup>
-            {[
-              {}, // full name
-              {}, // email
-              { className: styles["col-email"] }, // organization
-              {}, // status
-              { className: styles["col-coins"] }, // invited at
-              { className: styles["col-actions"] }, // actions
-            ].map((props, idx) => (
-              <col key={idx} {...props} />
-            ))}
-          </colgroup>
-
           <thead>
             <tr>
               <th>Full name</th>
@@ -137,28 +123,25 @@ function ReadersContent() {
               </tr>
             ) : (
               readers.map((r) => {
-                const statusRaw = r.status as
-                  | "PENDING_INVITE"
-                  | "JOINED"
-                  | "REMOVED";
+                const status = r.status; // "PENDING_INVITE" | "JOINED" | "REMOVED"
 
-                const isPending = statusRaw === "PENDING_INVITE";
-                const isJoined = statusRaw === "JOINED";
-                const isRemoved = statusRaw === "REMOVED";
+                const isPending = status === "PENDING_INVITE";
+                const isJoined = status === "JOINED";
+                const isRemoved = status === "REMOVED";
 
-                // Badge style
                 const badgeClass = isJoined
                   ? styles["status-active"]
                   : isPending
                     ? styles["status-pending"]
                     : styles["status-suspended"];
 
-                // Nếu muốn dùng displayName đẹp hơn thì map thêm, tạm dùng statusRaw
-                const statusLabel = statusRaw;
+                const statusLabel = status; // BE sau này có thể map sang displayName nếu muốn
 
                 const invitedDisplay = r.invitedAt
                   ? new Date(r.invitedAt).toLocaleString()
                   : "-";
+
+                const isBusy = busyId === r.enrollmentId;
 
                 return (
                   <tr key={r.enrollmentId} className={styles["table-row"]}>
@@ -179,12 +162,10 @@ function ReadersContent() {
                     </td>
                     <td className={styles["cell-right"]}>
                       {isPending ? (
-                        // Pending invite → không có action, chỉ hiển thị dấu '-'
                         <span className={styles["action-placeholder"]}>-</span>
                       ) : isJoined ? (
-                        // Joined → cho phép Remove (chuyển sang REMOVED)
                         <DeleteConfirmation
-                          onDelete={() => onDelete(r.enrollmentId)}
+                          onDelete={() => onRemove(r.enrollmentId)}
                           itemId={r.enrollmentId}
                           itemName={`${r.memberFullName} (${r.memberEmail})`}
                           title="Remove reader’s access"
@@ -194,13 +175,14 @@ function ReadersContent() {
                           className={styles["action-btn"]}
                         />
                       ) : (
-                        // Removed → cho phép Enable (chuyển sang JOINED)
                         <EnableButton
                           onClick={() => onEnable(r.enrollmentId)}
-                          disabled={busyId === r.enrollmentId || loading}
-                          loading={busyId === r.enrollmentId}
+                          disabled={isBusy || loading}
+                          loading={isBusy}
                           className={styles["action-btn"]}
                           title="Enable reader’s access"
+                          label="Enable"
+                          loadingLabel="Enabling..."
                         />
                       )}
                     </td>

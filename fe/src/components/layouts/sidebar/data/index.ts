@@ -49,7 +49,7 @@ export const READER_NAV_DATA = [
     label: "READER",
     items: [
       {
-        title: "My Organizations List",
+        title: "My Organizations",
         icon: Icons.BuildingIcon,
         url: "/reader/organizations",
       },

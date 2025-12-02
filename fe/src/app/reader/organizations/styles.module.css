@@ -2,7 +2,28 @@
 
 /* Page Container */
 .page-container {
-  @apply px-4 py-8;
+  @apply px-4 py-8 max-w-7xl mx-auto;
+}
+
+/* Page Header */
+.page-header {
+  @apply flex items-center justify-between mb-8;
+}
+
+.header-info {
+  @apply flex items-center gap-2 text-sm text-dark-6;
+}
+
+:global(html.dark) .header-info {
+  @apply text-dark-6;
+}
+
+.header-icon {
+  @apply h-5 w-5;
+}
+
+.header-count {
+  @apply font-semibold;
 }
 
 /* Page Title */
@@ -15,40 +36,113 @@
 
 /* Loading State */
 .loading-container {
-  @apply mt-6 rounded-xl border border-stroke bg-white p-6 shadow-lg;
+  @apply mt-6;
 }
-:global(html.dark) .loading-container {
+
+.loading-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-10;
+}
+
+.loading-card {
+  @apply rounded-3xl border border-stroke bg-white p-12 shadow-xl;
+}
+
+:global(html.dark) .loading-card {
   @apply border-stroke-dark bg-dark-2;
 }
 
-.loading-skeleton {
-  @apply h-6 w-48 animate-pulse rounded bg-gray-200;
+.loading-skeleton-logo {
+  @apply h-40 w-40 rounded-3xl animate-pulse bg-gray-200 mb-8;
 }
-:global(html.dark) .loading-skeleton {
+
+:global(html.dark) .loading-skeleton-logo {
   @apply bg-dark-3;
 }
 
-.loading-skeleton-large {
-  @apply mt-6 h-40 animate-pulse rounded bg-gray-200;
+.loading-skeleton-text {
+  @apply h-6 w-3/4 animate-pulse rounded bg-gray-200 mb-4;
 }
-:global(html.dark) .loading-skeleton-large {
+
+:global(html.dark) .loading-skeleton-text {
+  @apply bg-dark-3;
+}
+
+.loading-skeleton-text-small {
+  @apply h-4 w-1/2 animate-pulse rounded bg-gray-200;
+}
+
+:global(html.dark) .loading-skeleton-text-small {
   @apply bg-dark-3;
 }
 
 /* Error State */
 .error-container {
-  @apply mt-6 rounded-lg border-l-4 border-red bg-red-light-6 p-4 text-red-dark;
+  @apply mt-6 rounded-2xl border border-red bg-red-light-6 p-12 text-center;
 }
+
 :global(html.dark) .error-container {
-  @apply border-red bg-dark-2 text-red;
+  @apply border-red bg-dark-2;
+}
+
+.error-content {
+  @apply flex flex-col items-center gap-4;
+}
+
+.error-icon {
+  @apply h-16 w-16 text-red;
+}
+
+.error-message {
+  @apply text-lg font-medium text-red-dark;
+}
+
+:global(html.dark) .error-message {
+  @apply text-red;
 }
 
 /* Empty State */
 .empty-container {
-  @apply mt-6 rounded-xl border border-stroke bg-white p-10 text-center text-dark shadow-lg;
+  @apply mt-6 rounded-2xl border border-stroke bg-white p-20 text-center shadow-lg;
 }
+
 :global(html.dark) .empty-container {
-  @apply border-stroke-dark bg-dark-2 text-dark-8;
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.empty-content {
+  @apply flex flex-col items-center gap-6;
+}
+
+.empty-icon-wrapper {
+  @apply h-32 w-32 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mb-4;
+}
+
+:global(html.dark) .empty-icon-wrapper {
+  @apply from-dark-3 to-dark-4;
+}
+
+.empty-icon {
+  @apply h-16 w-16 text-gray-400;
+}
+
+:global(html.dark) .empty-icon {
+  @apply text-dark-6;
+}
+
+.empty-title {
+  @apply text-2xl font-bold text-dark;
+}
+
+:global(html.dark) .empty-title {
+  @apply text-white;
+}
+
+.empty-description {
+  @apply text-base text-dark-6 max-w-md;
+}
+
+:global(html.dark) .empty-description {
+  @apply text-dark-6;
 }
 
 /* Card Base */
@@ -183,59 +277,107 @@
   @apply bg-dark-2 border-red text-red hover:bg-dark-3;
 }
 
-/* Table Container */
-.table-container {
-  @apply mt-6 rounded-xl border border-stroke bg-white p-4 shadow-lg sm:p-7.5;
+/* Organizations Grid */
+.organizations-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-10 mt-8;
 }
-:global(html.dark) .table-container {
+
+/* Organization Card */
+.org-card {
+  @apply rounded-3xl border-2 border-stroke bg-white p-12 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer;
+}
+
+:global(html.dark) .org-card {
   @apply border-stroke-dark bg-dark-2;
 }
 
-/* Table Logo */
-.table-logo {
-  @apply h-10 w-10 rounded-lg object-cover border border-stroke;
+.org-card:hover {
+  @apply border-primary/30 -translate-y-2 scale-[1.02];
 }
-:global(html.dark) .table-logo {
+
+:global(html.dark) .org-card:hover {
+  @apply border-primary/50;
+}
+
+.org-card-header {
+  @apply flex items-start justify-between mb-8;
+}
+
+.org-logo-wrapper {
+  @apply flex-shrink-0;
+}
+
+.org-logo {
+  @apply h-40 w-40 rounded-3xl object-cover border-2 border-stroke shadow-lg;
+}
+
+:global(html.dark) .org-logo {
   @apply border-stroke-dark;
 }
 
-.table-logo-fallback {
-  @apply flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 border border-stroke;
-}
-:global(html.dark) .table-logo-fallback {
-  @apply bg-dark-3 border-stroke-dark;
+.org-logo-fallback {
+  @apply flex h-40 w-40 items-center justify-center rounded-3xl bg-gradient-to-br from-primary/10 to-primary/20 border-2 border-primary/20 shadow-lg;
 }
 
-.table-logo-fallback-text {
-  @apply text-sm font-bold text-gray-400;
-}
-:global(html.dark) .table-logo-fallback-text {
-  @apply text-dark-6;
+:global(html.dark) .org-logo-fallback {
+  @apply from-primary/20 to-primary/30 border-primary/30;
 }
 
-.table-org-name {
-  @apply font-medium text-dark;
+.org-logo-fallback-text {
+  @apply text-6xl font-bold text-primary;
 }
-:global(html.dark) .table-org-name {
+
+:global(html.dark) .org-logo-fallback-text {
+  @apply text-primary;
+}
+
+.btn-view-card {
+  @apply h-14 w-14 rounded-2xl border-2 border-stroke bg-white flex items-center justify-center text-dark hover:bg-primary hover:text-white hover:border-primary transition-all duration-200 opacity-0 group-hover:opacity-100;
+}
+
+:global(html.dark) .btn-view-card {
+  @apply border-stroke-dark bg-dark-3 text-dark-8 hover:bg-primary hover:text-white hover:border-primary;
+}
+
+.org-card-body {
+  @apply space-y-6;
+}
+
+.org-card-name {
+  @apply text-3xl font-bold text-dark line-clamp-2 leading-tight;
+}
+
+:global(html.dark) .org-card-name {
   @apply text-white;
 }
 
-.table-org-cell {
-  @apply flex items-center gap-3;
+.org-card-info {
+  @apply space-y-4;
 }
 
-.table-text {
+.org-info-item {
+  @apply flex items-center gap-4 text-base;
+}
+
+.info-icon {
+  @apply h-6 w-6 text-dark-5 flex-shrink-0;
+}
+
+:global(html.dark) .info-icon {
   @apply text-dark-6;
 }
-:global(html.dark) .table-text {
-  @apply text-dark-7;
+
+.info-text {
+  @apply text-dark-6;
 }
 
-.btn-view {
-  @apply rounded-lg border border-stroke px-3 py-1.5 text-sm font-semibold text-dark hover:bg-gray-2;
+:global(html.dark) .info-text {
+  @apply text-dark-6;
 }
-:global(html.dark) .btn-view {
-  @apply border-stroke-dark text-dark-8 hover:bg-dark-3;
+
+/* Pagination Wrapper */
+.pagination-wrapper {
+  @apply mt-12 flex justify-center;
 }
 
 /* Modal */
@@ -304,5 +446,205 @@
 /* Cards Spacing */
 .cards-container {
   @apply mt-6 space-y-6;
+}
+
+/* Detail Page Specific Styles */
+.page-header-detail {
+  @apply flex items-center justify-between mb-6;
+}
+
+.btn-back-header {
+  @apply flex items-center gap-2 rounded-lg border border-stroke bg-white px-4 py-2 text-sm font-medium text-dark hover:bg-gray-1 transition-colors;
+}
+
+:global(html.dark) .btn-back-header {
+  @apply border-stroke-dark bg-dark-2 text-dark-8 hover:bg-dark-3;
+}
+
+.detail-container {
+  @apply mt-6 space-y-6;
+}
+
+/* Detail Header Card */
+.detail-header-card {
+  @apply rounded-xl border border-stroke bg-white p-8 shadow-sm;
+}
+
+:global(html.dark) .detail-header-card {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.detail-header-content {
+  @apply flex items-start gap-8;
+}
+
+.detail-logo-section {
+  @apply flex-shrink-0;
+}
+
+.detail-logo {
+  @apply h-40 w-40 rounded-2xl object-cover border border-stroke;
+}
+
+:global(html.dark) .detail-logo {
+  @apply border-stroke-dark;
+}
+
+.detail-logo-fallback {
+  @apply flex h-40 w-40 items-center justify-center rounded-2xl bg-gray-100 border border-stroke;
+}
+
+:global(html.dark) .detail-logo-fallback {
+  @apply bg-dark-3 border-stroke-dark;
+}
+
+.detail-logo-fallback-text {
+  @apply text-6xl font-semibold text-gray-500;
+}
+
+:global(html.dark) .detail-logo-fallback-text {
+  @apply text-dark-6;
+}
+
+.detail-header-info {
+  @apply flex-1;
+}
+
+.detail-org-name {
+  @apply text-3xl font-bold text-dark mb-3;
+}
+
+:global(html.dark) .detail-org-name {
+  @apply text-white;
+}
+
+.detail-org-meta {
+  @apply flex items-center gap-3 flex-wrap text-sm text-dark-6;
+}
+
+:global(html.dark) .detail-org-meta {
+  @apply text-dark-6;
+}
+
+.detail-org-type {
+  @apply font-medium;
+}
+
+.detail-meta-separator {
+  @apply text-dark-4;
+}
+
+:global(html.dark) .detail-meta-separator {
+  @apply text-dark-5;
+}
+
+.detail-meta-count {
+  @apply flex items-center text-dark-6;
+}
+
+:global(html.dark) .detail-meta-count {
+  @apply text-dark-6;
+}
+
+/* Detail Info Card */
+.detail-info-card {
+  @apply rounded-xl border border-stroke bg-white p-8 shadow-sm;
+}
+
+:global(html.dark) .detail-info-card {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.detail-section-title {
+  @apply text-xl font-semibold text-dark mb-6;
+}
+
+:global(html.dark) .detail-section-title {
+  @apply text-white;
+}
+
+.detail-info-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-6;
+}
+
+.detail-info-item {
+  @apply flex items-start gap-4;
+}
+
+.detail-info-icon-wrapper {
+  @apply flex-shrink-0 h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center;
+}
+
+:global(html.dark) .detail-info-icon-wrapper {
+  @apply bg-dark-3;
+}
+
+.detail-info-icon {
+  @apply h-5 w-5 text-dark-6;
+}
+
+:global(html.dark) .detail-info-icon {
+  @apply text-dark-6;
+}
+
+.detail-info-content {
+  @apply flex-1 min-w-0;
+}
+
+.detail-info-label {
+  @apply text-xs font-medium text-dark-5 mb-1.5 uppercase tracking-wide;
+}
+
+:global(html.dark) .detail-info-label {
+  @apply text-dark-6;
+}
+
+.detail-info-value {
+  @apply text-base text-dark break-words;
+}
+
+:global(html.dark) .detail-info-value {
+  @apply text-dark-8;
+}
+
+/* Detail Actions Card */
+.detail-actions-card {
+  @apply rounded-xl border border-stroke bg-white p-6 shadow-sm;
+}
+
+:global(html.dark) .detail-actions-card {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.detail-actions-content {
+  @apply flex items-center justify-between gap-6;
+}
+
+.detail-actions-info {
+  @apply flex-1;
+}
+
+.detail-actions-title {
+  @apply text-base font-semibold text-dark mb-1;
+}
+
+:global(html.dark) .detail-actions-title {
+  @apply text-white;
+}
+
+.detail-actions-description {
+  @apply text-sm text-dark-6;
+}
+
+:global(html.dark) .detail-actions-description {
+  @apply text-dark-6;
+}
+
+.btn-leave-org {
+  @apply rounded-lg border border-red bg-white px-5 py-2.5 text-sm font-medium text-red hover:bg-red-light-6 transition-colors whitespace-nowrap;
+}
+
+:global(html.dark) .btn-leave-org {
+  @apply bg-dark-2 border-red text-red hover:bg-dark-3;
 }
 

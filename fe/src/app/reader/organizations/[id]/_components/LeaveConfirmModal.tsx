@@ -21,27 +21,24 @@ export default function LeaveConfirmModal({
   onSuccess,
 }: Props) {
   const { showToast } = useToast();
-  const [password, setPassword] = useState<string>("");
   const [leaving, setLeaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
-    if (!password) {
-      setError("Password is required");
-      return;
-    }
-
     setError(null);
     setLeaving(true);
     try {
-      await leaveOrganization(orgId, password);
+      await leaveOrganization(orgId);
       showToast({
         type: "success",
         title: "Left Organization",
         message: `You have successfully left ${orgName}`,
         duration: 3000,
       });
-      onSuccess();
+      // Wait 1.5 seconds before navigating
+      setTimeout(() => {
+        onSuccess();
+      }, 1500);
     } catch (e: any) {
       setError(e?.message || "Failed to leave organization");
       showToast({
@@ -50,13 +47,11 @@ export default function LeaveConfirmModal({
         message: e?.message || "Failed to leave organization. Please try again.",
         duration: 5000,
       });
-    } finally {
       setLeaving(false);
     }
   };
 
   const handleClose = () => {
-    setPassword("");
     setError(null);
     onClose();
   };
@@ -77,29 +72,9 @@ export default function LeaveConfirmModal({
           </p>
         </div>
 
-        <div className="mb-4">
-          <label className={styles["modal-label"]}>
-            Enter your password to confirm
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setError(null);
-            }}
-            placeholder="Password"
-            className={styles["modal-input"]}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSubmit();
-              }
-            }}
-          />
-          {error && (
-            <div className={styles["modal-error"]}>{error}</div>
-          )}
-        </div>
+        {error && (
+          <div className={`mb-4 ${styles["modal-error"]}`}>{error}</div>
+        )}
 
         <div className={styles["modal-actions"]}>
           <button
@@ -111,7 +86,7 @@ export default function LeaveConfirmModal({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={leaving || !password}
+            disabled={leaving}
             className={styles["btn-submit"]}
           >
             {leaving ? "Leaving..." : "Leave Organization"}

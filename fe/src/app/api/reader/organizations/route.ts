@@ -19,11 +19,11 @@ async function handleGET() {
     );
   }
 
-  const bearerToken = await getAuthHeader("organizations");
-
+  // Get authentication from shared helper
+  const authHeader = await getAuthHeader();
   const fh = new Headers({ "Content-Type": "application/json" });
-  if (bearerToken) {
-    fh.set("Authorization", bearerToken);
+  if (authHeader) {
+    fh.set("Authorization", authHeader);
   }
 
   const upstream = await fetch(`${BE_BASE}/api/reader/enrollments/organizations`, {
@@ -32,7 +32,42 @@ async function handleGET() {
     cache: "no-store",
   });
 
-  return proxyJsonResponse(upstream, { mode: "real" });
+  if (!upstream.ok) {
+    return proxyJsonResponse(upstream, { mode: "real" });
+  }
+
+  // Backend returns PagedResponse<PublicOrganizationResponse>
+  const text = await upstream.text();
+  try {
+    const backendResponse = JSON.parse(text);
+    
+    // Backend format: { success, message, data: OrgEnrollmentResponse[], pageInfo: { page, size, totalElements, ... }, timestamp }
+    const enrollments = Array.isArray(backendResponse.data) ? backendResponse.data : [];
+    const pageInfo = backendResponse.pageInfo || {};
+    
+    // Transform to FE format - OrgEnrollmentResponse contains organizationId, organizationName, and respondedAt
+    const transformed = {
+      items: enrollments.map((enrollment: any) => ({
+        id: enrollment.organizationId || enrollment.id,
+        name: enrollment.organizationName || "",
+        type: enrollment.organizationType || "",
+        logo: enrollment.memberAvatarUrl || null,
+        joinDate: enrollment.respondedAt || "",
+      })),
+      total: pageInfo.totalElements ?? enrollments.length,
+    };
+    
+    return jsonResponse(transformed, {
+      status: 200,
+      headers: {
+        "content-type": "application/json",
+        "x-mode": "real",
+      },
+    });
+  } catch (error: any) {
+    console.error("Error parsing organizations response:", error);
+    return proxyJsonResponse(upstream, { mode: "real" });
+  }
 }
 
 export const GET = (...args: Parameters<typeof handleGET>) =>

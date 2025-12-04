@@ -4,10 +4,6 @@
 import { useState, useEffect, useRef } from "react";
 import styles from "../styles.module.css";
 
-/**
- * HomePager dùng để phân trang cho specialization groups
- * Mọi paging là client-side state.
- */
 export default function HomePager({
   totalPages,
   defaultGroupsPerPage = 3,
@@ -22,25 +18,26 @@ export default function HomePager({
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(defaultGroupsPerPage);
 
-  // 1. Tạo ref để lưu giá trị page mà không gây re-render
+  // 1. Tạo ref để đọc giá trị page mới nhất trong useEffect
   const pageRef = useRef(page);
 
   useEffect(() => {
     pageRef.current = page;
-  }, [page]);
+  }); // Không cần dependency, chạy sau mỗi lần render để luôn update ref
 
-  // 3. Logic xử lý khi totalPages thay đổi
   useEffect(() => {
-    // Lấy giá trị page hiện tại từ ref (đảm bảo không bị stale closure)
     const currentPage = pageRef.current;
 
     if (totalPages > 0 && currentPage > totalPages) {
       const newPage = Math.max(1, totalPages);
+
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       setPage(newPage);
       onPageChange?.(newPage);
     }
-    // Dependency chỉ có totalPages và onPageChange
-  }, [totalPages, onPageChange]);
+    // Chỉ chạy khi totalPages thay đổi
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalPages]);
 
   const handlePrev = () => {
     const newPage = Math.max(1, page - 1);
@@ -63,7 +60,6 @@ export default function HomePager({
     onPageChange?.(1);
   };
 
-  // Nếu không có trang nào, có thể return null hoặc vẫn hiện tuỳ UI
   if (totalPages <= 0) return null;
 
   return (

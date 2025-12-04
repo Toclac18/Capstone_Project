@@ -159,6 +159,52 @@
   @apply h-4 w-4;
 }
 
+/* Invitations Banner */
+.invitations-banner {
+  @apply mx-auto mt-6 mb-4 flex items-center gap-4 rounded-lg border px-4 py-3 cursor-pointer transition-all;
+  @apply border-purple-300 bg-purple-50 hover:bg-purple-100 hover:shadow-sm;
+  max-width: 720px;
+}
+:global(html.dark) .invitations-banner {
+  @apply border-purple-700 bg-purple-900/30 hover:bg-purple-900/40;
+}
+
+.invitations-banner-icon {
+  @apply flex h-9 w-9 items-center justify-center rounded-full;
+  @apply bg-purple-200 text-purple-700;
+}
+:global(html.dark) .invitations-banner-icon {
+  @apply bg-purple-800 text-purple-300;
+}
+
+.invitations-banner-content {
+  @apply flex-1;
+}
+
+.invitations-banner-title {
+  @apply text-sm font-semibold;
+  @apply text-gray-900;
+}
+:global(html.dark) .invitations-banner-title {
+  @apply text-white;
+}
+
+.invitations-banner-subtitle {
+  @apply mt-0.5 text-xs;
+  @apply text-gray-600;
+}
+:global(html.dark) .invitations-banner-subtitle {
+  @apply text-gray-400;
+}
+
+.invitations-badge {
+  @apply flex h-7 w-7 items-center justify-center rounded-full;
+  @apply bg-purple-600 text-white text-xs font-bold;
+}
+:global(html.dark) .invitations-badge {
+  @apply bg-purple-500;
+}
+
 /* Profile Details Card */
 .profile-details-card {
   @apply mx-auto mb-5.5 mt-8 grid max-w-[720px] grid-cols-1 gap-4 rounded-[10px] border p-6 text-left shadow-1;
@@ -289,6 +335,158 @@
 }
 
 /* ============================================
+   INVITATIONS MODAL STYLES
+   ============================================ */
+
+.invitations-loading {
+  @apply flex flex-col items-center justify-center py-12;
+}
+
+.invitations-loading-text {
+  @apply mt-4 text-sm;
+  @apply text-gray-600;
+}
+:global(html.dark) .invitations-loading-text {
+  @apply text-gray-400;
+}
+
+.invitations-empty {
+  @apply flex flex-col items-center justify-center py-12 text-center;
+}
+
+.invitations-empty-icon {
+  @apply h-16 w-16 mb-4;
+  @apply text-gray-400;
+}
+
+.invitations-empty-title {
+  @apply text-base font-semibold mb-2;
+  @apply text-gray-900;
+}
+:global(html.dark) .invitations-empty-title {
+  @apply text-white;
+}
+
+.invitations-empty-subtitle {
+  @apply text-sm;
+  @apply text-gray-600;
+}
+:global(html.dark) .invitations-empty-subtitle {
+  @apply text-gray-400;
+}
+
+.invitations-list {
+  @apply space-y-3;
+}
+
+.invitation-card {
+  @apply flex items-center gap-4 rounded-lg border p-4 transition-all;
+  @apply border-stroke bg-white hover:border-purple-300 hover:shadow-sm;
+}
+:global(html.dark) .invitation-card {
+  @apply border-dark-3 bg-gray-700 hover:border-purple-600;
+}
+
+.invitation-logo {
+  @apply flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg;
+  @apply bg-gray-100;
+}
+:global(html.dark) .invitation-logo {
+  @apply bg-dark-3;
+}
+
+.invitation-logo-image {
+  @apply h-full w-full object-cover;
+}
+
+.invitation-logo-fallback {
+  @apply flex h-full w-full items-center justify-center text-xl font-semibold;
+  @apply text-gray-500;
+}
+:global(html.dark) .invitation-logo-fallback {
+  @apply text-gray-400;
+}
+
+.invitation-content {
+  @apply flex-1 min-w-0;
+}
+
+.invitation-org-name {
+  @apply text-base font-semibold mb-1 truncate;
+  @apply text-gray-900;
+}
+:global(html.dark) .invitation-org-name {
+  @apply text-white;
+}
+
+.invitation-org-type {
+  @apply text-sm mb-1.5;
+  @apply text-gray-600;
+}
+:global(html.dark) .invitation-org-type {
+  @apply text-gray-400;
+}
+
+.invitation-date {
+  @apply flex items-center gap-1.5 text-xs;
+  @apply text-gray-500;
+}
+:global(html.dark) .invitation-date {
+  @apply text-gray-500;
+}
+
+.invitation-date-icon {
+  @apply h-3.5 w-3.5;
+}
+
+.invitation-actions {
+  @apply flex gap-2 flex-shrink-0;
+}
+
+.invitation-btn {
+  @apply inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all;
+  @apply disabled:opacity-60 disabled:cursor-not-allowed;
+}
+
+.invitation-btn-accept {
+  @apply bg-green-600 text-white hover:bg-green-700;
+}
+:global(html.dark) .invitation-btn-accept {
+  @apply bg-green-600 hover:bg-green-700;
+}
+
+.invitation-btn-reject {
+  @apply bg-red-600 text-white hover:bg-red-700;
+}
+:global(html.dark) .invitation-btn-reject {
+  @apply bg-red-600 hover:bg-red-700;
+}
+
+.invitations-pagination {
+  @apply flex items-center justify-center gap-3 mt-6 pt-4 border-t;
+  @apply border-stroke;
+}
+:global(html.dark) .invitations-pagination {
+  @apply border-dark-3;
+}
+
+.invitations-pagination-btn {
+  @apply rounded-lg border px-4 py-2 text-sm font-medium transition-all;
+  @apply border-stroke bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+:global(html.dark) .invitations-pagination-btn {
+  @apply border-dark-3 bg-gray-700 text-gray-300 hover:bg-gray-600;
+}
+
+.invitations-pagination-info {
+  @apply text-sm;
+  @apply text-gray-600;
+}
+:global(html.dark) .invitations-pagination-info {
+  @apply text-gray-400;
+}
+
+/* ============================================
    MODAL COMPONENTS (Shared)
    ============================================ */
 
@@ -389,6 +587,13 @@
   @apply bg-red-900/20;
 }
 
+.modal-icon-wrapper.purple {
+  @apply bg-purple-100;
+}
+:global(html.dark) .modal-icon-wrapper.purple {
+  @apply bg-purple-900/20;
+}
+
 .modal-icon {
   @apply w-5 h-5;
 }
@@ -416,6 +621,13 @@
 }
 :global(html.dark) .modal-icon.red {
   @apply text-red-400;
+}
+
+.modal-icon.purple {
+  @apply text-purple-600;
+}
+:global(html.dark) .modal-icon.purple {
+  @apply text-purple-400;
 }
 
 .modal-title {

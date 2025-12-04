@@ -29,13 +29,16 @@ import {
   Camera,
   GraduationCap,
   FileText,
+  Bell,
 } from "lucide-react";
 import ChangeEmailModal from "./_components/ChangeEmailModal";
 import ChangePasswordModal from "./_components/ChangePasswordModal";
 import EditProfileModal from "./_components/EditProfileModal";
 import DeleteAccountModal from "./_components/DeleteAccountModal";
+import InvitationsModal from "./_components/InvitationsModal";
 import { useToast } from "@/components/ui/toast";
 import { sanitizeImageUrl } from "@/utils/imageUrl";
+import { getPendingInvitations } from "@/services/enrollments.service";
 import styles from "@/app/profile/styles.module.css";
 
 const AVATAR_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/avatars/";
@@ -53,6 +56,8 @@ export default function Page() {
   const [isChangeEmailOpen, setIsChangeEmailOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
+  const [isInvitationsOpen, setIsInvitationsOpen] = useState(false);
+  const [invitationCount, setInvitationCount] = useState<number | null>(null);
 
   const { showToast } = useToast();
 
@@ -88,6 +93,22 @@ export default function Page() {
       setLoading(false);
     }
   }, [authLoading, isAuthenticated, role, loadProfile]);
+
+  // Load invitation count for READER
+  useEffect(() => {
+    if (role === "READER" && !authLoading && isAuthenticated) {
+      const loadInvitationCount = async () => {
+        try {
+          const response = await getPendingInvitations({ page: 0, size: 1 });
+          setInvitationCount(response.totalElements);
+        } catch (error) {
+          // Silently fail - don't show error for invitation count
+          setInvitationCount(0);
+        }
+      };
+      loadInvitationCount();
+    }
+  }, [role, authLoading, isAuthenticated]);
 
   useEffect(() => {
     return () => {
@@ -450,6 +471,29 @@ export default function Page() {
               </button>
             </div>
 
+            {/* Invitations Banner - Only for READER, only show when there are invitations */}
+            {role === "READER" && invitationCount !== null && invitationCount > 0 && (
+              <div
+                className={styles["invitations-banner"]}
+                onClick={() => setIsInvitationsOpen(true)}
+              >
+                <div className={styles["invitations-banner-icon"]}>
+                  <Bell className="h-5 w-5" />
+                </div>
+                <div className={styles["invitations-banner-content"]}>
+                  <p className={styles["invitations-banner-title"]}>
+                    You have {invitationCount} pending {invitationCount === 1 ? "invitation" : "invitations"}
+                  </p>
+                  <p className={styles["invitations-banner-subtitle"]}>
+                    Click to view and manage
+                  </p>
+                </div>
+                <div className={styles["invitations-badge"]}>
+                  {invitationCount}
+                </div>
+              </div>
+            )}
+
             {/* Profile Details Card */}
             <div
               className={`${styles["profile-details-card"]} ${styles["sm-cols-2"]}`}
@@ -669,6 +713,26 @@ export default function Page() {
         email={profile?.email || ""}
         onDelete={() => handleDeleteAccount()}
       />
+      {role === "READER" && (
+        <InvitationsModal
+          isOpen={isInvitationsOpen}
+          onClose={() => setIsInvitationsOpen(false)}
+          onInvitationAccepted={() => {
+            // Decrease invitation count directly without reloading
+            setInvitationCount((prev) => {
+              if (prev === null || prev <= 0) return 0;
+              return prev - 1;
+            });
+          }}
+          onInvitationRejected={() => {
+            // Decrease invitation count directly without reloading
+            setInvitationCount((prev) => {
+              if (prev === null || prev <= 0) return 0;
+              return prev - 1;
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -25,12 +25,12 @@ export default function HomePager({
 
   // Khi totalPages thay đổi → clamp page nếu out of range
   useEffect(() => {
-    if (page > totalPages) {
+    if (totalPages > 0 && page > totalPages) {
       const newPage = Math.max(1, totalPages);
       setPage(newPage);
       onPageChange?.(newPage);
     }
-  }, [totalPages]);
+  }, [totalPages, page, onPageChange]);
 
   const handlePrev = () => {
     const newPage = Math.max(1, page - 1);

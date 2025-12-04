@@ -22,23 +22,24 @@ export default function HomePager({
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(defaultGroupsPerPage);
 
-  // FIX: Sử dụng useRef để lưu giá trị page mới nhất
-  // Giúp đọc được page trong useEffect mà không cần thêm vào dependency array
+  // 1. Tạo ref để lưu giá trị page mà không gây re-render
   const pageRef = useRef(page);
 
-  // Luôn cập nhật ref mỗi khi component render
-  pageRef.current = page;
-
-  // Khi totalPages thay đổi (ví dụ do filter), kiểm tra xem page hiện tại
   useEffect(() => {
-    const currentPage = pageRef.current; // Lấy giá trị page từ ref
+    pageRef.current = page;
+  }, [page]);
+
+  // 3. Logic xử lý khi totalPages thay đổi
+  useEffect(() => {
+    // Lấy giá trị page hiện tại từ ref (đảm bảo không bị stale closure)
+    const currentPage = pageRef.current;
 
     if (totalPages > 0 && currentPage > totalPages) {
       const newPage = Math.max(1, totalPages);
       setPage(newPage);
       onPageChange?.(newPage);
     }
-    // Chỉ chạy lại khi totalPages thay đổi
+    // Dependency chỉ có totalPages và onPageChange
   }, [totalPages, onPageChange]);
 
   const handlePrev = () => {
@@ -58,12 +59,11 @@ export default function HomePager({
     setSize(safe);
     onPageSizeChange?.(safe);
 
-    // Reset về trang 1 khi đổi size để tránh dữ liệu rỗng
     setPage(1);
     onPageChange?.(1);
   };
 
-  // Ẩn pager nếu không có dữ liệu hoặc chỉ có 1 trang
+  // Nếu không có trang nào, có thể return null hoặc vẫn hiện tuỳ UI
   if (totalPages <= 0) return null;
 
   return (

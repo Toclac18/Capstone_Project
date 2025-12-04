@@ -1,207 +1,132 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+
 import type { DocumentItem } from "@/types/documentResponse";
 import {
-  mockContinueReading,
-  mockSpecializationGroups,
-  mockTopUpvoted,
-} from "@/mock/documents.mock";
+  fetchHomepageSections,
+  type HomepageSections,
+} from "@/services/homepage.service";
 
-type SpecGroup = { name: string; items: DocumentItem[] };
+import { toDocumentItem } from "@/lib/mappers/toDocumentItem";
+
+// =============================
+// Types
+// =============================
+type SpecGroup = {
+  name: string;
+  items: DocumentItem[];
+};
 
 type HomepageCtx = {
   continueReading: DocumentItem[];
   topUpvoted: DocumentItem[];
   specGroups: SpecGroup[];
+  totalSpecGroups: number;
+  hasMoreSpecs: boolean;
+  loadMoreSpecs: () => void;
+
   loading: boolean;
   q: string;
   setQ: (v: string) => void;
 };
 
 const Ctx = createContext<HomepageCtx | null>(null);
-export const useHomepage = () => {
+
+export function useHomepage() {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error("useHomepage must be used within HomepageProvider");
   return ctx;
-};
-
-const THIS_YEAR = new Date().getFullYear();
-
-const num = (v: any, fb = 0) =>
-  typeof v === "number" && Number.isFinite(v)
-    ? v
-    : typeof v === "string" && v.trim() !== "" && !Number.isNaN(+v)
-      ? +v
-      : fb;
-
-const str = (v: any, fb = "") => (typeof v === "string" ? v : fb);
-
-const coalesce = <T,>(...vals: T[]) =>
-  vals.find((x) => x !== undefined && x !== null);
-
-function toDocumentItem(raw: any): DocumentItem {
-  const isPremium = !!coalesce(raw?.isPremium, raw?.premium, false);
-
-  const ptsRaw = isPremium
-    ? coalesce(raw?.points, raw?.price, raw?.credits)
-    : null;
-  const pts = typeof ptsRaw === "number" ? ptsRaw : null;
-
-  return {
-    id: String(coalesce(raw?.id, raw?.docId, raw?._id, "")),
-    title: str(coalesce(raw?.title, raw?.name), "Untitled"),
-    orgName: str(coalesce(raw?.orgName, raw?.org_name, raw?.organization), "—"),
-    domain: str(
-      coalesce(raw?.domain, raw?.subjectDomain, raw?.topic),
-      "General",
-    ),
-    specialization: str(
-      coalesce(raw?.specialization, raw?.spec, raw?.category),
-      "General",
-    ),
-    uploader: str(
-      coalesce(raw?.uploader, raw?.author, raw?.owner, raw?.createdBy),
-      "unknown",
-    ),
-    publicYear: num(coalesce(raw?.publicYear, raw?.year), THIS_YEAR),
-    isPremium,
-    points: pts,
-
-    description: str(
-      coalesce(
-        raw?.description,
-        raw?.desc,
-        raw?.overview,
-        raw?.abstract,
-        raw?.summary_text,
-        "",
-      ),
-      "",
-    ),
-    summarizations: {
-      short: str(
-        coalesce(
-          raw?.summarizations?.short,
-          raw?.summaries?.short,
-          raw?.summary?.short,
-          raw?.shortSummary,
-          raw?.summary_short,
-          "",
-        ),
-        "",
-      ),
-      medium: str(
-        coalesce(
-          raw?.summarizations?.medium,
-          raw?.summaries?.medium,
-          raw?.summary?.medium,
-          raw?.summary,
-          raw?.summaryContent,
-          raw?.summary_content,
-          "",
-        ),
-        "",
-      ),
-      detailed: str(
-        coalesce(
-          raw?.summarizations?.detailed,
-          raw?.summaries?.detailed,
-          raw?.summary?.detailed,
-          raw?.longSummary,
-          raw?.summary_long,
-          "",
-        ),
-        "",
-      ),
-    },
-
-    upvote_counts: num(
-      coalesce(raw?.upvote_counts, raw?.upvotes, raw?.likes),
-      0,
-    ),
-    downvote_counts: num(
-      coalesce(raw?.downvote_counts, raw?.downvotes, raw?.dislikes),
-      0,
-    ),
-    thumbnail: str(
-      coalesce(raw?.thumbnail, raw?.thumb, raw?.cover, raw?.image),
-      "data:image/svg+xml,",
-    ),
-  };
 }
 
+// =============================
+// Provider Implementation
+// =============================
+
+const INITIAL_GROUPS_SHOW = 3;
+const GROUPS_INCREMENT = 3;
+
 export function HomepageProvider({ children }: { children: React.ReactNode }) {
+  const [loading, setLoading] = useState(true);
+
   const [continueReading, setContinueReading] = useState<DocumentItem[]>([]);
   const [topUpvoted, setTopUpvoted] = useState<DocumentItem[]>([]);
-  const [specGroups, setSpecGroups] = useState<SpecGroup[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [allSpecGroups, setAllSpecGroups] = useState<SpecGroup[]>([]);
+
+  const [visibleGroupsCount, setVisibleGroupsCount] =
+    useState(INITIAL_GROUPS_SHOW);
+
   const [q, setQ] = useState("");
+
+  const searchParams = useSearchParams();
+  const searchKey = searchParams?.toString() ?? "";
+  const str = (v: any, fb = "") => (typeof v === "string" ? v : fb);
 
   useEffect(() => {
     let alive = true;
-    (async () => {
+
+    async function load() {
       setLoading(true);
       try {
-        const res = await fetch("/api/homepage", { cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-
+        const data: HomepageSections = await fetchHomepageSections();
         if (!alive) return;
 
-        const cr: DocumentItem[] = Array.isArray(data?.continueReading)
-          ? data.continueReading.map(toDocumentItem)
-          : [];
+        // 1. Continue Reading
+        setContinueReading((data.continueReading ?? []).map(toDocumentItem));
 
-        const tu: DocumentItem[] = Array.isArray(data?.topUpvoted)
-          ? data.topUpvoted.map(toDocumentItem)
-          : [];
+        // 2. Top Upvoted
+        setTopUpvoted((data.topUpvoted ?? []).map(toDocumentItem));
 
-        const rawGroups = Array.isArray(data?.specGroups)
-          ? data.specGroups
-          : Array.isArray(data?.specializations)
-            ? data.specializations
-            : [];
-
-        const groups: SpecGroup[] = rawGroups.map((g: any) => ({
-          name: String(g?.name ?? ""),
-          items: Array.isArray(g?.items) ? g.items.map(toDocumentItem) : [],
+        // 3. Spec Groups
+        const groups = (data.specGroups ?? []).map((g) => ({
+          name: str(g.name, "General"),
+          items: (g.items ?? []).map(toDocumentItem),
         }));
 
-        setContinueReading(cr);
-        setTopUpvoted(tu);
-        setSpecGroups(groups);
-      } catch (e) {
-        console.error(
-          "fetch /api/homepage failed, falling back to mock data",
-          e,
-        );
+        setAllSpecGroups(groups);
+      } catch (err) {
+        console.error("Homepage load failed:", err);
         if (alive) {
-          const cr = mockContinueReading.map(toDocumentItem);
-          const tu = mockTopUpvoted.map(toDocumentItem);
-          const groups: SpecGroup[] = (mockSpecializationGroups ?? []).map(
-            (g: any) => ({
-              name: String(g?.name ?? ""),
-              items: Array.isArray(g?.items) ? g.items.map(toDocumentItem) : [],
-            }),
-          );
-
-          setContinueReading(cr);
-          setTopUpvoted(tu);
-          setSpecGroups(groups);
+          setContinueReading([]);
+          setTopUpvoted([]);
+          setAllSpecGroups([]);
         }
       } finally {
         if (alive) setLoading(false);
       }
-    })();
+    }
+
+    load();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [searchKey]);
+
+  const visibleSpecGroups = useMemo(() => {
+    return allSpecGroups.slice(0, visibleGroupsCount);
+  }, [allSpecGroups, visibleGroupsCount]);
+
+  const hasMoreSpecs = visibleGroupsCount < allSpecGroups.length;
+
+  const loadMoreSpecs = () =>
+    setVisibleGroupsCount((c) =>
+      Math.min(c + GROUPS_INCREMENT, allSpecGroups.length),
+    );
 
   return (
     <Ctx.Provider
-      value={{ continueReading, topUpvoted, specGroups, loading, q, setQ }}
+      value={{
+        continueReading,
+        topUpvoted,
+        specGroups: visibleSpecGroups,
+        totalSpecGroups: allSpecGroups.length,
+        hasMoreSpecs,
+        loadMoreSpecs,
+        loading,
+        q,
+        setQ,
+      }}
     >
       {children}
     </Ctx.Provider>

@@ -1,7 +1,7 @@
 "use client";
 
 import styles from "../styles.module.css";
-import DocCard, { type DocCardItem } from "./DocCard";
+import DocCard from "./DocCard";
 import { useHomepage } from "../provider";
 import { useModalPreview } from "@/components/ModalPreview";
 import { useMemo } from "react";
@@ -11,7 +11,7 @@ function buildRecommended(
   continueReading: DocumentItem[],
   topUpvoted: DocumentItem[],
   specGroups: { name: string; items: DocumentItem[] }[],
-): DocCardItem[] {
+): DocumentItem[] {
   const base: DocumentItem[] = [...topUpvoted];
 
   if (!base.length && specGroups.length) {

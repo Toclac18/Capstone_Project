@@ -1,12 +1,11 @@
+// src/app/homepage/_components/HomePager.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import styles from "../styles.module.css";
 
 /**
  * HomePager dùng để phân trang cho specialization groups
- * nhưng không còn ghi vào URL nữa.
- *
  * Mọi paging là client-side state.
  */
 export default function HomePager({
@@ -23,14 +22,24 @@ export default function HomePager({
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(defaultGroupsPerPage);
 
-  // Khi totalPages thay đổi → clamp page nếu out of range
+  // FIX: Sử dụng useRef để lưu giá trị page mới nhất
+  // Giúp đọc được page trong useEffect mà không cần thêm vào dependency array
+  const pageRef = useRef(page);
+
+  // Luôn cập nhật ref mỗi khi component render
+  pageRef.current = page;
+
+  // Khi totalPages thay đổi (ví dụ do filter), kiểm tra xem page hiện tại
   useEffect(() => {
-    if (totalPages > 0 && page > totalPages) {
+    const currentPage = pageRef.current; // Lấy giá trị page từ ref
+
+    if (totalPages > 0 && currentPage > totalPages) {
       const newPage = Math.max(1, totalPages);
       setPage(newPage);
       onPageChange?.(newPage);
     }
-  }, [totalPages, page, onPageChange]);
+    // Chỉ chạy lại khi totalPages thay đổi
+  }, [totalPages, onPageChange]);
 
   const handlePrev = () => {
     const newPage = Math.max(1, page - 1);
@@ -48,9 +57,14 @@ export default function HomePager({
     const safe = Math.max(1, newSize);
     setSize(safe);
     onPageSizeChange?.(safe);
+
+    // Reset về trang 1 khi đổi size để tránh dữ liệu rỗng
     setPage(1);
     onPageChange?.(1);
   };
+
+  // Ẩn pager nếu không có dữ liệu hoặc chỉ có 1 trang
+  if (totalPages <= 0) return null;
 
   return (
     <div className={styles.footerPager}>
@@ -75,6 +89,7 @@ export default function HomePager({
           disabled={page <= 1}
           type="button"
           onClick={handlePrev}
+          aria-label="Previous page"
         >
           ‹
         </button>
@@ -88,6 +103,7 @@ export default function HomePager({
           disabled={page >= totalPages}
           type="button"
           onClick={handleNext}
+          aria-label="Next page"
         >
           ›
         </button>

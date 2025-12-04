@@ -7,6 +7,7 @@ import {
   getGlobalDocumentStatistics,
   getReportHandlingStatistics,
   getUserStatistics,
+  getGlobalOrganizationStatistics,
 } from "@/services/statistics.service";
 import type {
   BusinessAdminDashboard,
@@ -20,6 +21,7 @@ import { DashboardOverview } from "./_components/DashboardOverview";
 import { DocumentStatisticsTab } from "./_components/DocumentStatisticsTab";
 import { ReportStatisticsTab } from "./_components/ReportStatisticsTab";
 import { OrganizationStatisticsTab } from "./_components/OrganizationStatisticsTab";
+import type { GlobalOrganizationStatistics } from "./_components/OrganizationStatisticsTab";
 import { UserStatisticsTab } from "./_components/UserStatisticsTab";
 import type { UserStatistics } from "./_components/UserStatisticsTab";
 
@@ -50,6 +52,11 @@ export default function BusinessAdminDashboardPage() {
   const [userState, setUserState] = useState<LoadState>("loading");
   const [userStats, setUserStats] = useState<UserStatistics | null>(null);
   const [userError, setUserError] = useState<string | null>(null);
+
+  // Organization statistics state
+  const [orgState, setOrgState] = useState<LoadState>("loading");
+  const [orgStats, setOrgStats] = useState<GlobalOrganizationStatistics | null>(null);
+  const [orgError, setOrgError] = useState<string | null>(null);
 
   // Load dashboard overview
   useEffect(() => {
@@ -129,19 +136,21 @@ export default function BusinessAdminDashboardPage() {
         setUserState("loading");
         setUserError(null);
 
-        const stats = await getUserStatistics();
+        const stats = await getUserStatistics(filters);
 
         if (!isMounted) return;
         setUserStats(stats);
         setUserState("success");
       } catch (err: any) {
         if (!isMounted) return;
-        setUserError(err.message || "Failed to load user statistics");
+        const errorMessage = err.message || "Failed to load user statistics";
+        console.error("Error loading user statistics:", err);
+        setUserError(errorMessage);
         setUserState("error");
         showToast({
           type: "error",
           title: "Error",
-          message: err.message || "Failed to load user statistics",
+          message: errorMessage,
         });
       }
     };
@@ -151,7 +160,7 @@ export default function BusinessAdminDashboardPage() {
     return () => {
       isMounted = false;
     };
-  }, [activeTab, showToast]);
+  }, [activeTab, filters, showToast]);
 
   // Load report statistics when tab is active
   useEffect(() => {
@@ -181,6 +190,42 @@ export default function BusinessAdminDashboardPage() {
     };
 
     loadReportStats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, filters, showToast]);
+
+  // Load organization statistics when organizations tab is active
+  useEffect(() => {
+    if (activeTab !== "organizations") return;
+
+    let isMounted = true;
+
+    const loadOrgStats = async () => {
+      try {
+        if (!isMounted) return;
+        setOrgState("loading");
+        setOrgError(null);
+        const data = await getGlobalOrganizationStatistics(filters);
+        if (!isMounted) return;
+        setOrgStats(data);
+        setOrgState("success");
+      } catch (err: any) {
+        if (!isMounted) return;
+        const errorMessage = err.message || "Failed to load organization statistics";
+        console.error("Error loading organization statistics:", err);
+        setOrgError(errorMessage);
+        setOrgState("error");
+        showToast({
+          type: "error",
+          title: "Error",
+          message: errorMessage,
+        });
+      }
+    };
+
+    loadOrgStats();
 
     return () => {
       isMounted = false;
@@ -256,9 +301,9 @@ export default function BusinessAdminDashboardPage() {
 
       {activeTab === "organizations" && (
         <OrganizationStatisticsTab
-          state={docState}
-          statistics={docStats}
-          error={docError}
+          state={orgState}
+          statistics={orgStats}
+          error={orgError}
         />
       )}
 

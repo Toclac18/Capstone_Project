@@ -12,47 +12,51 @@ async function handleGET(request: Request) {
     // Mock response matching backend structure
     const mockStats = {
       summary: {
-        totalUsers: 1250,
-        activeUsers: 980,
-        inactiveUsers: 150,
-        pendingVerificationUsers: 120,
-        totalReaders: 800,
-        totalReviewers: 300,
-        totalOrganizationAdmins: 150,
-        newUsersThisMonth: 45,
-        newUsersLastMonth: 38,
-        growthRate: 18.42,
+        totalOrganizations: 45,
+        totalMembers: 1250,
+        totalDocuments: 3200,
+        totalViews: 125000,
+        totalUpvotes: 8500,
+        totalComments: 2100,
+        activeOrganizations: 38,
+        averageMembersPerOrganization: 27.8,
+        averageDocumentsPerOrganization: 71.1,
+        averageViewsPerOrganization: 2777.8,
       },
-      userGrowth: [],
-      activeUsersGrowth: [],
-      roleBreakdown: [
+      organizationGrowth: [],
+      memberGrowth: [],
+      documentUploads: [],
+      documentViews: [],
+      topOrganizations: [
         {
-          role: "READER",
-          total: 800,
-          active: 650,
-          inactive: 100,
-          pendingVerification: 50,
+          organizationId: "1",
+          organizationName: "Organization A",
+          memberCount: 150,
+          documentCount: 450,
+          viewCount: 25000,
+          totalScore: 5000,
         },
         {
-          role: "REVIEWER",
-          total: 300,
-          active: 250,
-          inactive: 30,
-          pendingVerification: 20,
-        },
-        {
-          role: "ORGANIZATION_ADMIN",
-          total: 150,
-          active: 80,
-          inactive: 20,
-          pendingVerification: 50,
+          organizationId: "2",
+          organizationName: "Organization B",
+          memberCount: 120,
+          documentCount: 380,
+          viewCount: 22000,
+          totalScore: 4500,
         },
       ],
-      statusBreakdown: [
-        { status: "ACTIVE", count: 980 },
-        { status: "DEACTIVE", count: 150 },
-        { status: "PENDING_EMAIL_VERIFY", count: 100 },
-        { status: "PENDING_APPROVE", count: 20 },
+      organizationTypeBreakdown: [
+        { type: "TYPE1", count: 20 },
+        { type: "TYPE2", count: 15 },
+        { type: "TYPE3", count: 10 },
+      ],
+      memberCountBreakdown: [
+        { range: "1-50", count: 20 },
+        { range: "51-100", count: 15 },
+        { range: "101-200", count: 7 },
+        { range: "201-500", count: 2 },
+        { range: "501-1000", count: 1 },
+        { range: "1000+", count: 0 },
       ],
     };
 
@@ -78,7 +82,7 @@ async function handleGET(request: Request) {
   if (startDate) queryParams.append("startDate", startDate);
   if (endDate) queryParams.append("endDate", endDate);
 
-  const url = `${BE_BASE}/api/statistics/business-admin/users${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+  const url = `${BE_BASE}/api/statistics/business-admin/organizations${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
 
   const response = await fetch(url, {
     method: "GET",
@@ -92,14 +96,14 @@ async function handleGET(request: Request) {
     try {
       errorData = JSON.parse(errorText);
     } catch {
-      errorData = { error: errorText || "Failed to fetch user statistics" };
+      errorData = { error: errorText || "Failed to fetch organization statistics" };
     }
-    console.error("User statistics API error:", {
+    console.error("Organization statistics API error:", {
       status: response.status,
       statusText: response.statusText,
       error: errorData,
     });
-    throw new Error(errorData.error || errorData.message || "Failed to fetch user statistics");
+    throw new Error(errorData.error || errorData.message || "Failed to fetch organization statistics");
   }
 
   const responseData = await response.json();
@@ -117,8 +121,7 @@ async function handleGET(request: Request) {
 
 export async function GET(request: Request) {
   return withErrorBoundary(() => handleGET(request), {
-    context: "api/business-admin/statistics/users/route.ts/GET",
+    context: "api/business-admin/statistics/organizations/route.ts/GET",
   });
 }
-
 

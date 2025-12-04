@@ -11,49 +11,53 @@ async function handleGET(request: Request) {
   if (USE_MOCK) {
     // Mock response matching backend structure
     const mockStats = {
-      summary: {
+      overview: {
         totalUsers: 1250,
-        activeUsers: 980,
-        inactiveUsers: 150,
-        pendingVerificationUsers: 120,
+        totalOrganizations: 45,
+        totalDocuments: 3200,
+      },
+      accessStatistics: {
+        loginSuccessTrend: [],
+        loginFailedTrend: [],
+        activeUsersTrend: [],
+        totalLoginsToday: 245,
+        totalLoginsThisWeek: 1850,
+        totalLoginsThisMonth: 8200,
+        failedLoginsToday: 12,
+        failedLoginsThisWeek: 85,
+        failedLoginsThisMonth: 320,
+        activeUsersLast7Days: 680,
+        activeUsersLast30Days: 980,
+      },
+      userActivity: {
+        userGrowthByRole: [],
+        userStatusBreakdown: [
+          { status: "ACTIVE", count: 980 },
+          { status: "INACTIVE", count: 150 },
+          { status: "PENDING_EMAIL_VERIFY", count: 100 },
+          { status: "PENDING_APPROVE", count: 20 },
+        ],
+        newUsersRegistration: [],
         totalReaders: 800,
         totalReviewers: 300,
         totalOrganizationAdmins: 150,
-        newUsersThisMonth: 45,
-        newUsersLastMonth: 38,
-        growthRate: 18.42,
+        totalBusinessAdmins: 0,
+        newUsersToday: 5,
+        newUsersThisWeek: 28,
+        newUsersThisMonth: 95,
       },
-      userGrowth: [],
-      activeUsersGrowth: [],
-      roleBreakdown: [
-        {
-          role: "READER",
-          total: 800,
-          active: 650,
-          inactive: 100,
-          pendingVerification: 50,
-        },
-        {
-          role: "REVIEWER",
-          total: 300,
-          active: 250,
-          inactive: 30,
-          pendingVerification: 20,
-        },
-        {
-          role: "ORGANIZATION_ADMIN",
-          total: 150,
-          active: 80,
-          inactive: 20,
-          pendingVerification: 50,
-        },
-      ],
-      statusBreakdown: [
-        { status: "ACTIVE", count: 980 },
-        { status: "DEACTIVE", count: 150 },
-        { status: "PENDING_EMAIL_VERIFY", count: 100 },
-        { status: "PENDING_APPROVE", count: 20 },
-      ],
+      systemActivity: {
+        documentsUploaded: [],
+        organizationsCreated: [],
+        systemActionsBreakdown: [
+          { action: "DOCUMENT_UPLOAD", count: 450 },
+          { action: "DOCUMENT_VIEW", count: 3200 },
+          { action: "ORGANIZATION_CREATE", count: 12 },
+          { action: "USER_REGISTER", count: 95 },
+          { action: "DOCUMENT_COMMENT", count: 280 },
+        ],
+        systemActionsTrend: [],
+      },
     };
 
     return jsonResponse(mockStats, {
@@ -78,7 +82,7 @@ async function handleGET(request: Request) {
   if (startDate) queryParams.append("startDate", startDate);
   if (endDate) queryParams.append("endDate", endDate);
 
-  const url = `${BE_BASE}/api/statistics/business-admin/users${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+  const url = `${BE_BASE}/api/statistics/system-admin/dashboard${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
 
   const response = await fetch(url, {
     method: "GET",
@@ -92,14 +96,14 @@ async function handleGET(request: Request) {
     try {
       errorData = JSON.parse(errorText);
     } catch {
-      errorData = { error: errorText || "Failed to fetch user statistics" };
+      errorData = { error: errorText || "Failed to fetch dashboard statistics" };
     }
-    console.error("User statistics API error:", {
+    console.error("System Admin dashboard API error:", {
       status: response.status,
       statusText: response.statusText,
       error: errorData,
     });
-    throw new Error(errorData.error || errorData.message || "Failed to fetch user statistics");
+    throw new Error(errorData.error || errorData.message || "Failed to fetch dashboard statistics");
   }
 
   const responseData = await response.json();
@@ -117,8 +121,7 @@ async function handleGET(request: Request) {
 
 export async function GET(request: Request) {
   return withErrorBoundary(() => handleGET(request), {
-    context: "api/business-admin/statistics/users/route.ts/GET",
+    context: "api/system-admin/statistics/dashboard/route.ts/GET",
   });
 }
-
 

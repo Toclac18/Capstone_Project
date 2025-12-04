@@ -5,12 +5,14 @@ import com.capstone.be.dto.response.statistics.GlobalDocumentStatisticsResponse;
 import com.capstone.be.dto.response.statistics.OrganizationStatisticsResponse;
 import com.capstone.be.dto.response.statistics.PersonalDocumentStatisticsResponse;
 import com.capstone.be.dto.response.statistics.ReportHandlingStatisticsResponse;
+import com.capstone.be.dto.response.statistics.SystemAdminDashboardResponse;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.BusinessAdminStatisticsService;
 import com.capstone.be.service.OrganizationStatisticsService;
 import com.capstone.be.service.PersonalStatisticsService;
+import com.capstone.be.service.SystemAdminStatisticsService;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.UUID;
@@ -38,6 +40,7 @@ public class StatisticsController {
   private final PersonalStatisticsService personalStatisticsService;
   private final OrganizationStatisticsService organizationStatisticsService;
   private final BusinessAdminStatisticsService businessAdminStatisticsService;
+  private final SystemAdminStatisticsService systemAdminStatisticsService;
   private final OrganizationProfileRepository organizationProfileRepository;
 
   /**
@@ -231,6 +234,104 @@ public class StatisticsController {
 
     ReportHandlingStatisticsResponse response = businessAdminStatisticsService
         .getReportHandlingStatistics(start, end);
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Get user statistics (View User Participation Statistics)
+   * GET /api/statistics/business-admin/users
+   *
+   * @param userPrincipal Authenticated business admin
+   * @param startDate     Optional start date filter (ISO format: yyyy-MM-dd)
+   * @param endDate       Optional end date filter (ISO format: yyyy-MM-dd)
+   * @return User statistics response
+   */
+  @GetMapping("/business-admin/users")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  public ResponseEntity<com.capstone.be.dto.response.statistics.UserStatisticsResponse> getUserStatistics(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String startDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String endDate) {
+    UUID adminId = userPrincipal.getId();
+
+    Instant start = startDate != null
+        ? java.time.LocalDate.parse(startDate).atStartOfDay(ZoneId.systemDefault()).toInstant()
+        : null;
+    Instant end = endDate != null
+        ? java.time.LocalDate.parse(endDate).atTime(23, 59, 59).atZone(ZoneId.systemDefault())
+            .toInstant()
+        : null;
+
+    log.info("Business admin {} requesting user statistics from {} to {}", adminId, start, end);
+
+    com.capstone.be.dto.response.statistics.UserStatisticsResponse response = businessAdminStatisticsService
+        .getUserStatistics(start, end);
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Get global organization statistics (View Organization Statistics)
+   * GET /api/statistics/business-admin/organizations
+   *
+   * @param userPrincipal Authenticated business admin
+   * @param startDate     Optional start date filter (ISO format: yyyy-MM-dd)
+   * @param endDate       Optional end date filter (ISO format: yyyy-MM-dd)
+   * @return Global organization statistics response
+   */
+  @GetMapping("/business-admin/organizations")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  public ResponseEntity<com.capstone.be.dto.response.statistics.GlobalOrganizationStatisticsResponse> getGlobalOrganizationStatistics(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String startDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String endDate) {
+    UUID adminId = userPrincipal.getId();
+
+    Instant start = startDate != null
+        ? java.time.LocalDate.parse(startDate).atStartOfDay(ZoneId.systemDefault()).toInstant()
+        : null;
+    Instant end = endDate != null
+        ? java.time.LocalDate.parse(endDate).atTime(23, 59, 59).atZone(ZoneId.systemDefault())
+            .toInstant()
+        : null;
+
+    log.info("Business admin {} requesting global organization statistics from {} to {}", adminId, start, end);
+
+    com.capstone.be.dto.response.statistics.GlobalOrganizationStatisticsResponse response = businessAdminStatisticsService
+        .getGlobalOrganizationStatistics(start, end);
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Get System Admin dashboard statistics (STA7 - View Access Statistics + System Overview)
+   * GET /api/statistics/system-admin/dashboard
+   *
+   * @param userPrincipal Authenticated system admin
+   * @param startDate     Optional start date filter (ISO format: yyyy-MM-dd)
+   * @param endDate       Optional end date filter (ISO format: yyyy-MM-dd)
+   * @return System Admin dashboard response
+   */
+  @GetMapping("/system-admin/dashboard")
+  @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+  public ResponseEntity<SystemAdminDashboardResponse> getSystemAdminDashboard(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String startDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String endDate) {
+    UUID adminId = userPrincipal.getId();
+
+    Instant start = startDate != null
+        ? java.time.LocalDate.parse(startDate).atStartOfDay(ZoneId.systemDefault()).toInstant()
+        : null;
+    Instant end = endDate != null
+        ? java.time.LocalDate.parse(endDate).atTime(23, 59, 59).atZone(ZoneId.systemDefault())
+            .toInstant()
+        : null;
+
+    log.info("System admin {} requesting dashboard statistics from {} to {}", adminId, start, end);
+
+    SystemAdminDashboardResponse response = systemAdminStatisticsService.getDashboardStatistics(start, end);
 
     return ResponseEntity.ok(response);
   }

@@ -49,5 +49,27 @@ public interface BusinessAdminStatisticsService {
    */
   com.capstone.be.dto.response.statistics.OrganizationStatisticsResponse getOrganizationStatistics(
       UUID organizationId, Instant startDate, Instant endDate);
+
+  /**
+   * Get user statistics (BA - View User Participation Statistics)
+   * Focuses on user participation numbers and growth trends
+   *
+   * @param startDate Optional start date filter (ISO format)
+   * @param endDate   Optional end date filter (ISO format)
+   * @return User statistics response
+   */
+  com.capstone.be.dto.response.statistics.UserStatisticsResponse getUserStatistics(
+      Instant startDate, Instant endDate);
+
+  /**
+   * Get global organization statistics (BA - View Organization Statistics)
+   * Focuses on overall organization participation, documents, and members
+   *
+   * @param startDate Optional start date filter (ISO format)
+   * @param endDate   Optional end date filter (ISO format)
+   * @return Global organization statistics response
+   */
+  com.capstone.be.dto.response.statistics.GlobalOrganizationStatisticsResponse getGlobalOrganizationStatistics(
+      Instant startDate, Instant endDate);
 }
 

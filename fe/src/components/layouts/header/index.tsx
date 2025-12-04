@@ -26,10 +26,10 @@ export function Header() {
   const showUploadButton = useMemo(() => {
     // Don't show on auth pages
     if (pathname?.startsWith("/auth")) return false;
-    
+
     // Don't show if still loading
     if (loading) return false;
-    
+
     // Only show for READER role
     return role === "READER" || role === "REVIEWER";
   }, [role, loading, pathname]);
@@ -49,7 +49,7 @@ export function Header() {
 
       {!isOpen && (
         <div className="ml-4 flex items-center max-xl:hidden">
-          <Link href="/" className="flex items-center h-8">
+          <Link href="/" className="flex h-8 items-center">
             <Logo />
           </Link>
         </div>
@@ -72,7 +72,7 @@ export function Header() {
             <ThemeToggleSwitch />
             <Link
               href="/auth/sign-in"
-              className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:bg-primary/90 hover:shadow-xl hover:scale-105 active:scale-100 dark:bg-primary dark:text-white dark:hover:bg-primary/90"
+              className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:scale-105 hover:bg-primary/90 hover:shadow-xl active:scale-100 dark:bg-primary dark:text-white dark:hover:bg-primary/90"
               title="Sign In"
             >
               <span>Sign In</span>
@@ -84,7 +84,7 @@ export function Header() {
             {showUploadButton && (
               <Link
                 href="/reader/upload-document"
-                className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:bg-primary/90 hover:shadow-xl hover:scale-105 active:scale-100 dark:bg-primary dark:text-white dark:hover:bg-primary/90"
+                className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:scale-105 hover:bg-primary/90 hover:shadow-xl active:scale-100 dark:bg-primary dark:text-white dark:hover:bg-primary/90"
                 title="Upload Document"
               >
                 <Upload className="h-5 w-5" />

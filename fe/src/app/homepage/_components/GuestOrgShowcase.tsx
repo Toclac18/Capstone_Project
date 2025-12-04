@@ -7,44 +7,42 @@ import { useModalPreview } from "@/components/ModalPreview";
 import { useMemo } from "react";
 import type { DocumentItem } from "@/types/documentResponse";
 
-type OrgGroup = { orgName: string; items: DocumentItem[] };
-
-export default function OrgHighlights() {
-  const { continueReading, topUpvoted, specGroups } = useHomepage();
+export default function GuestOrgShowcase() {
+  const { topUpvoted, specGroups } = useHomepage();
   const { open } = useModalPreview();
 
-  const groups = useMemo<OrgGroup[]>(() => {
+  const groups = useMemo(() => {
     const all: DocumentItem[] = [
-      ...continueReading,
-      ...topUpvoted,
+      ...(topUpvoted ?? []),
       ...specGroups.flatMap((g) => g.items),
     ];
+
     const byOrg = new Map<string, DocumentItem[]>();
+
     for (const d of all) {
-      const org = (d as any).orgName ?? "Unknown organization";
+      const org = d.orgName ?? "Independent authors";
       const list = byOrg.get(org) ?? [];
       if (!list.find((x) => x.id === d.id)) {
-        list.push({ ...d, viewCount: (d as any).viewCount ?? 0 });
+        list.push(d);
       }
       byOrg.set(org, list);
     }
-    const entries = Array.from(byOrg.entries())
-      .filter(([, items]) => items.length > 0)
-      .sort((a, b) => b[1].length - a[1].length)
-      .slice(0, 2);
 
-    return entries.map(([orgName, items]) => ({
-      orgName,
-      items: items.slice(0, 3),
-    }));
-  }, [continueReading, topUpvoted, specGroups]);
+    return Array.from(byOrg.entries())
+      .sort((a, b) => b[1].length - a[1].length)
+      .slice(0, 2)
+      .map(([orgName, items]) => ({
+        orgName,
+        items: items.slice(0, 3),
+      }));
+  }, [topUpvoted, specGroups]);
 
   if (!groups.length) return null;
 
   return (
     <section className={`${styles.section} ${styles.orgSection}`}>
       <div className={styles.sectionHeaderRow}>
-        <div className={styles.sectionHeader}>From your organizations</div>
+        <div className={styles.sectionHeader}>Hot organizations</div>
       </div>
 
       <div className={styles.orgGrid}>

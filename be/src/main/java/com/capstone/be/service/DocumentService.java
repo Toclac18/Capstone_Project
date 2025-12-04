@@ -177,4 +177,5 @@ public interface DocumentService {
    */
   void deactivateDocument(UUID documentId);
 
+  Page<DocumentDetailResponse> getHomepageDocuments(UUID userId, int page, int size);
 }

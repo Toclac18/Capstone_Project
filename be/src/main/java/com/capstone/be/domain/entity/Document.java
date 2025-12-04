@@ -3,13 +3,7 @@ package com.capstone.be.domain.entity;
 import com.capstone.be.domain.entity.common.BaseEntity;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.DocVisibility;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -76,4 +70,7 @@ public class Document extends BaseEntity {
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "specialization_id")
   private Specialization specialization;
+
+  @Embedded
+  private DocumentSummarization summarizations;
 }

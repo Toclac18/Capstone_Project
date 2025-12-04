@@ -65,7 +65,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -461,63 +463,34 @@ public class DocumentServiceImpl implements DocumentService {
   public DocumentDetailResponse getDocumentDetail(UUID userId, UUID documentId) {
     log.info("User {} requesting document detail for document {}", userId, documentId);
 
-    // Fetch document with all required relationships
     Document document = documentRepository.findById(documentId)
-        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+            .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
 
-    // Use mapper for base mapping
-    DocumentDetailResponse response = documentMapper.toDetailResponse(document);
-
-    // Calculate downvotes
-    Integer downvoteCount = document.getUpvoteCount() - document.getVoteScore();
-    response.setDownvoteCount(Math.max(0, downvoteCount));
-
-    // Fetch and map tags
-    List<DocumentTagLink> tagLinks = documentTagLinkRepository.findByDocument(document);
-    List<DocumentDetailResponse.TagInfo> tagInfos = tagLinks.stream()
-        .map(link -> {
-          Tag tag = link.getTag();
-          return DocumentDetailResponse.TagInfo.builder()
-              .id(tag.getId())
-              .code(tag.getCode())
-              .name(tag.getName())
-              .build();
-        })
-        .toList();
-    response.setTags(tagInfos);
-
-    // Build user-specific information if userId is provided
-    if (userId != null) {
-      User user = userRepository.findById(userId).orElse(null);
-
-      boolean hasAccess = documentAccessService.hasAccess(userId, documentId);
-      boolean isUploader = document.getUploader().getId().equals(userId);
-      boolean hasRedeemed = false;
-      if (document.getIsPremium()) {
-        hasRedeemed = documentRedemptionRepository.existsByReader_IdAndDocument_Id(userId,
-            documentId);
-      }
-
-      boolean isMemberOfOrganization = false;
-      if (document.getOrganization() != null && user != null) {
-        isMemberOfOrganization = orgEnrollmentRepository.findByOrganizationAndMember(
-                document.getOrganization(), user)
-            .map(enrollment -> enrollment.getStatus() == OrgEnrollStatus.JOINED)
-            .orElse(false);
-      }
-
-      DocumentDetailResponse.UserDocumentInfo userInfo = DocumentDetailResponse.UserDocumentInfo.builder()
-          .hasAccess(hasAccess)
-          .isUploader(isUploader)
-          .hasRedeemed(hasRedeemed)
-          .isMemberOfOrganization(isMemberOfOrganization)
-          .build();
-
-      response.setUserInfo(userInfo);
-    }
+    DocumentDetailResponse response = mapDocumentToDetailResponse(document, userId);
 
     log.info("Successfully retrieved document detail for document {}", documentId);
     return response;
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<DocumentDetailResponse> getHomepageDocuments(UUID userId, int page, int size) {
+    // 1. Tạo Pageable
+    Pageable pageable = PageRequest.of(
+            page,
+            size,
+            Sort.by(Sort.Direction.DESC, "voteScore", "createdAt")
+    );
+
+    // 2. Query DB: Lấy bài Public & Verified
+    Page<Document> documentPage = documentRepository.findByStatusAndVisibility(
+            DocStatus.VERIFIED,
+            DocVisibility.PUBLIC,
+            pageable
+    );
+
+    // 3. Map sang DTO (truyền userId vào để xử lý logic Guest/User)
+    return documentPage.map(doc -> mapDocumentToDetailResponse(doc, userId));
   }
 
   @Override
@@ -931,4 +904,73 @@ public class DocumentServiceImpl implements DocumentService {
 
     log.info("Successfully deactivated document {}", documentId);
   }
+  private DocumentDetailResponse mapDocumentToDetailResponse(Document document, UUID userId) {
+    DocumentDetailResponse response = documentMapper.toDetailResponse(document);
+
+    // 2. Calculate downvotes
+    Integer downvoteCount = document.getUpvoteCount() - document.getVoteScore();
+    response.setDownvoteCount(Math.max(0, downvoteCount));
+
+    // 3. Fetch tags
+    List<DocumentTagLink> tagLinks = documentTagLinkRepository.findByDocument(document);
+    List<DocumentDetailResponse.TagInfo> tagInfos = tagLinks.stream()
+            .map(link -> DocumentDetailResponse.TagInfo.builder()
+                    .id(link.getTag().getId())
+                    .code(link.getTag().getCode())
+                    .name(link.getTag().getName())
+                    .build())
+            .toList();
+    response.setTags(tagInfos);
+
+    DocumentDetailResponse.UserDocumentInfo userInfo;
+
+    if (userId != null) {
+      boolean hasAccess = documentAccessService.hasAccess(userId, document.getId());
+
+      boolean isUploader = document.getUploader() != null && document.getUploader().getId().equals(userId);
+
+      boolean hasRedeemed = false;
+      if (Boolean.TRUE.equals(document.getIsPremium())) {
+        hasRedeemed = documentRedemptionRepository
+                .existsByReader_IdAndDocument_Id(userId, document.getId());
+      }
+
+      boolean isMemberOfOrganization = false;
+      if (document.getOrganization() != null) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user != null) {
+          isMemberOfOrganization = orgEnrollmentRepository
+                  .findByOrganizationAndMember(document.getOrganization(), user)
+                  .map(enrollment -> enrollment.getStatus() == OrgEnrollStatus.JOINED)
+                  .orElse(false);
+        }
+      }
+
+      userInfo = DocumentDetailResponse.UserDocumentInfo.builder()
+              .hasAccess(hasAccess)
+              .isUploader(isUploader)
+              .hasRedeemed(hasRedeemed)
+              .isMemberOfOrganization(isMemberOfOrganization)
+              .build();
+
+    } else {
+      boolean hasAccess = false;
+      if (!Boolean.TRUE.equals(document.getIsPremium())) {
+        hasAccess = true;
+      }
+
+      userInfo = DocumentDetailResponse.UserDocumentInfo.builder()
+              .hasAccess(hasAccess)
+              .isUploader(false)
+              .hasRedeemed(false)
+              .isMemberOfOrganization(false)
+              .build();
+    }
+
+    // Set vào response
+    response.setUserInfo(userInfo);
+
+    return response;
+  }
+
 }

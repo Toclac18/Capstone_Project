@@ -52,6 +52,7 @@ public class SecurityConfig {
         .authorizeHttpRequests(auth -> auth
             // Public endpoints
             .requestMatchers(
+                    "/documents/homepage/**",
                 "/auth/**",
 
                 "/v3/api-docs/**",

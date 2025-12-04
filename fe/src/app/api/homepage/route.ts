@@ -1,4 +1,9 @@
 // src/app/api/homepage/route.ts
+import { NextRequest } from "next/server";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { jsonResponse, parseError } from "@/server/response";
+import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
 import {
   mockContinueReading,
@@ -6,113 +11,221 @@ import {
   mockSpecializationGroups,
   mockTopUpvoted,
 } from "@/mock/documents.mock";
-import { NextRequest } from "next/server";
-import { BE_BASE, USE_MOCK } from "@/server/config";
-import { getAuthHeader } from "@/server/auth";
-import { jsonResponse, parseError } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 
-type GroupType = "continueReading" | "topUpvoted" | "bySpecialization" | "all";
+const toQs = (params: Record<string, any>) => {
+  const qs = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null) qs.set(k, String(v));
+  });
+  return qs.toString();
+};
+
+async function fetchReadHistory(authHeader: string | null) {
+  if (!authHeader) return [];
+
+  const res = await fetch(`${BE_BASE}/documents/read-history?page=0&size=20`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: authHeader,
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const txt = await res.text();
+    console.error("BE /documents/read-history error:", res.status, txt);
+    return [];
+  }
+
+  const txt = await res.text();
+  const raw = JSON.parse(txt);
+
+  // Shape: { success, data: [ { id, readAt, document: {...} } ], pageInfo, ... }
+  const items = Array.isArray(raw?.data) ? raw.data : [];
+
+  // Ta chỉ cần phần document bên trong cho continueReading
+  return items.map((h: any) => h?.document).filter((d: any) => !!d);
+}
 
 async function handleGET(req: NextRequest): Promise<Response> {
   const url = new URL(req.url);
-  const q = (url.searchParams.get("q") || "").trim().toLowerCase();
-  const group = (url.searchParams.get("group") || "all") as GroupType;
-  const specialization = (url.searchParams.get("specialization") || "").trim();
+  const mode = url.searchParams.get("mode") || "bulk";
+
+  // Paged params
+  const q = (url.searchParams.get("q") || "").trim();
   const page = Number(url.searchParams.get("page") || 1);
   const pageSize = Number(url.searchParams.get("pageSize") || 12);
-  const mode = (url.searchParams.get("mode") || "").toLowerCase();
 
+  // ===========================
+  // MOCK MODE
+  // ===========================
   if (USE_MOCK) {
-    // Paged / grouped mode
-    if (mode === "paged" || group !== "all") {
-      let pool = mockLibraryDocs;
+    if (mode === "paged") {
+      let pool = [...mockLibraryDocs];
 
-      if (group === "continueReading") pool = mockContinueReading;
-      if (group === "topUpvoted") pool = mockTopUpvoted;
-      if (group === "bySpecialization" && specialization) {
-        pool = mockLibraryDocs.filter(
-          (d) => d.specialization === specialization,
-        );
+      if (q) {
+        const lower = q.toLowerCase();
+        pool = pool.filter((d) => d.title.toLowerCase().includes(lower));
       }
 
-      const filtered = pool.filter((d) => {
-        if (!q) return true;
-        const hay = [
-          d.title,
-          d.points || "",
-          d.specialization,
-          d.uploader,
-          d.orgName,
-        ]
-          .join(" ")
-          .toLowerCase();
-        return hay.includes(q);
-      });
-
       const start = (page - 1) * pageSize;
-      const items = filtered.slice(start, start + pageSize);
+      const items = pool.slice(start, start + pageSize);
 
       return jsonResponse(
-        { items, total: filtered.length, page, pageSize },
+        { items, total: pool.length, page, pageSize },
         { status: 200, mode: "mock-paged" },
       );
     }
 
-    // Bulk mode
+    const specGroups = (mockSpecializationGroups || []).map((g) => ({
+      name: g.name,
+      items: g.items,
+    }));
+
     return jsonResponse(
       {
         continueReading: mockContinueReading,
         topUpvoted: mockTopUpvoted,
-        specializations: mockSpecializationGroups,
+        specGroups,
       },
       { status: 200, mode: "mock-bulk" },
     );
   }
 
-  const qs = new URLSearchParams();
-  if (q) qs.set("q", q);
-  if (group && group !== "all") qs.set("group", group);
-  if (specialization) qs.set("specialization", specialization);
-  qs.set("page", String(page));
-  qs.set("pageSize", String(pageSize));
+  // ===========================
+  // REAL BACKEND MODE
+  // ===========================
 
   const authHeader = await getAuthHeader("homepage");
 
   const fh = new Headers({ "Content-Type": "application/json" });
   if (authHeader) fh.set("Authorization", authHeader);
 
-  const upstream = await fetch(`${BE_BASE}/api/homepage?${qs.toString()}`, {
-    method: "GET",
-    headers: fh,
-    cache: "no-store",
-  });
+  // ────────────────────────────────────────────────
+  // A. PAGED MODE: dùng cho search/filter
+  // ────────────────────────────────────────────────
+  if (mode === "paged") {
+    try {
+      const bePage = page > 0 ? page - 1 : 0;
 
-  const text = await upstream.text();
+      const qs = toQs({
+        page: bePage,
+        size: pageSize,
+        q,
+      });
 
-  if (!upstream.ok) {
-    return jsonResponse(
-      {
-        error: parseError(text, "Homepage fetch failed"),
-      },
-      { status: upstream.status, mode: "real" },
-    );
+      const url = `${BE_BASE}/api/documents/homepage?${qs}`;
+
+      const res = await fetch(url, {
+        method: "GET",
+        headers: fh,
+        cache: "no-store",
+      });
+
+      const txt = await res.text();
+      if (!res.ok) {
+        return jsonResponse(
+          { error: parseError(txt, "Homepage paged search failed") },
+          { status: res.status },
+        );
+      }
+
+      const raw = JSON.parse(txt);
+      const pageData = raw?.data || raw;
+
+      const items = pageData?.content || [];
+      const total = pageData?.totalElements ?? items.length;
+
+      return jsonResponse(
+        { items, total, page, pageSize },
+        { status: 200, mode: "real-paged" },
+      );
+    } catch (e: any) {
+      return jsonResponse({ error: e.message }, { status: 500 });
+    }
   }
 
+  // ────────────────────────────────────────────────
+  // B. BULK MODE = LOAD HOMEPAGE
+  // ────────────────────────────────────────────────
+
   try {
-    const raw = JSON.parse(text);
-    const payload = (raw as any)?.data ?? raw;
-    return jsonResponse(payload, { status: 200, mode: "real" });
-  } catch {
+    // Lấy 50 tài liệu cho homepage
+    const qs = toQs({ page: 0, size: 50 });
+    const homepageUrl = `${BE_BASE}/api/documents/homepage?${qs}`;
+
+    const res = await fetch(homepageUrl, {
+      method: "GET",
+      headers: fh,
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      const txt = await res.text();
+      console.error("BE /documents/homepage error:", txt);
+      return jsonResponse(
+        { continueReading: [], topUpvoted: [], specGroups: [] },
+        { status: 200, mode: "fallback" },
+      );
+    }
+
+    const txt = await res.text();
+    const raw = JSON.parse(txt);
+    const pageData = raw?.data || raw;
+
+    const docs: any[] = pageData?.content || [];
+
+    // ────────────────────────────────────────────────
+    // 1. Continue reading → gọi BE /read-history nếu login
+    // ────────────────────────────────────────────────
+    const continueReading = authHeader
+      ? await fetchReadHistory(authHeader)
+      : [];
+
+    // ────────────────────────────────────────────────
+    // 2. Top upvoted = sort theo voteScore then createdAt
+    // ────────────────────────────────────────────────
+    const topUpvoted = [...docs]
+      .sort(
+        (a, b) =>
+          (b.voteScore ?? 0) - (a.voteScore ?? 0) ||
+          new Date(b.createdAt ?? 0).getTime() -
+            new Date(a.createdAt ?? 0).getTime(),
+      )
+      .slice(0, 8);
+
+    // ────────────────────────────────────────────────
+    // 3. Spec groups = group theo specialization.name
+    // ────────────────────────────────────────────────
+    const map = new Map<string, any[]>();
+
+    docs.forEach((d) => {
+      const spec = d.specialization?.name || "General";
+      if (!map.has(spec)) map.set(spec, []);
+      const arr = map.get(spec)!;
+      if (arr.length < 8) arr.push(d);
+    });
+
+    const specGroups = Array.from(map.entries()).map(([name, items]) => ({
+      name,
+      items,
+    }));
+
     return jsonResponse(
-      { error: "Failed to parse upstream homepage response" },
-      { status: 500, mode: "real" },
+      { continueReading, topUpvoted, specGroups },
+      { status: 200, mode: "real-bulk" },
+    );
+  } catch (e: any) {
+    console.error("Homepage bulk error:", e);
+    return jsonResponse(
+      { continueReading: [], topUpvoted: [], specGroups: [] },
+      { status: 200, mode: "error" },
     );
   }
 }
 
-// Wrapped with global error boundary
 export const GET = (...args: Parameters<typeof handleGET>) =>
   withErrorBoundary(() => handleGET(...args), {
-    context: "api/homepage/route.ts/GET",
+    context: "api/homepage/GET",
   });

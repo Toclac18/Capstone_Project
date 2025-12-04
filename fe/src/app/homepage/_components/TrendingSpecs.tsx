@@ -2,12 +2,18 @@
 
 import styles from "../styles.module.css";
 import { useHomepage } from "../provider";
-import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 
-export default function TrendingSpecs() {
+/**
+ * TrendingSpecs không đẩy URL.
+ * Nếu parent muốn điều hướng trang search, parent truyền onSelect().
+ */
+export default function TrendingSpecs({
+  onSelect,
+}: {
+  onSelect?: (name: string) => void;
+}) {
   const { specGroups } = useHomepage();
-  const router = useRouter();
 
   const names = useMemo(() => {
     const ns = specGroups.map((g) => g.name).filter(Boolean);
@@ -17,21 +23,17 @@ export default function TrendingSpecs() {
 
   if (!names.length) return null;
 
-  const goToSpecialization = (name: string) => {
-    const encoded = encodeURIComponent(name);
-    router.push(`/search?specialization=${encoded}`);
-  };
-
   return (
     <div className={styles.trendingRow}>
       <span className={styles.trendingLabel}>Trending specializations:</span>
+
       <div className={styles.trendingPills}>
         {names.map((name) => (
           <button
             key={name}
             type="button"
             className={styles.trendingPill}
-            onClick={() => goToSpecialization(name)}
+            onClick={() => onSelect?.(name)}
           >
             {name}
           </button>

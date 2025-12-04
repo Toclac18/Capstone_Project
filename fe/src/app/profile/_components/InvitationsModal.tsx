@@ -184,7 +184,7 @@ export default function InvitationsModal({
                 <Building2 className={styles["invitations-empty-icon"]} />
                 <p className={styles["invitations-empty-title"]}>No pending invitations</p>
                 <p className={styles["invitations-empty-subtitle"]}>
-                  You don't have any organization invitations at the moment
+                  You don&apos;t have any organization invitations at the moment
                 </p>
               </div>
             ) : (

@@ -107,7 +107,9 @@ export default function ImportDetailProvider({
   useEffect(() => {
     if (!id) return;
     let mounted = true;
-    setLoading(true);
+    Promise.resolve().then(() => {
+      if (mounted) setLoading(true);
+    });
 
     fetchImportDetail(id)
       .then((d) => {

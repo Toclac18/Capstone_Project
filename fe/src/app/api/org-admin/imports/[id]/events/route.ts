@@ -1,103 +1,106 @@
-// app/api/org-admin/imports/[id]/events/route.ts
-
+// src/app/api/org-admin/imports/[id]/events/route.ts
 import { NextRequest } from "next/server";
-import { headers } from "next/headers";
-import { BE_BASE } from "@/server/config";
-import { getAuthHeader } from "@/server/auth";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
 
-export const runtime = "nodejs";
+function createSseResponse(
+  write: (
+    send: (event: string, data: unknown) => void,
+    close: () => void,
+  ) => void,
+): Response {
+  const stream = new ReadableStream({
+    start(controller) {
+      const encoder = new TextEncoder();
 
-/**
- * Proxies Server-Sent Events (SSE) from the backend:
- *   BE_BASE/api/org-admin/imports/{id}/events
- */
+      const send = (event: string, data: unknown) => {
+        const chunk = `event: ${event}\n` + `data: ${JSON.stringify(data)}\n\n`;
+        controller.enqueue(encoder.encode(chunk));
+      };
+
+      const close = () => controller.close();
+
+      write(send, close);
+    },
+  });
+
+  return new Response(stream, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/event-stream",
+      Connection: "keep-alive",
+      "Cache-Control": "no-cache",
+    },
+  });
+}
+
 async function handleGET(
   _req: NextRequest,
-  context: { params: Promise<{ id: string }> },
+  ctx: { params: Promise<{ id: string }> },
 ): Promise<Response> {
-  const { id } = await context.params;
+  // Await params để lấy id
+  const { id } = await ctx.params;
 
-  if (!id) {
-    return new Response("Missing import id", {
-      status: 400,
-      headers: { "Content-Type": "text/plain" },
+  // ---------------- MOCK MODE ----------------
+  if (USE_MOCK) {
+    return createSseResponse((send, close) => {
+      // Gửi 1 event progress + 1 event complete cho màn mock
+      send("progress", {
+        batchId: id,
+        processed: 2,
+        total: 2,
+        success: 2,
+        failed: 0,
+        percent: 100,
+      });
+
+      send("complete", { batchId: id });
+      close();
     });
   }
 
-  const incomingHeaders = await headers();
-  const authHeader = await getAuthHeader("org-admin-imports-events");
-
-  const upstreamHeaders = new Headers();
-  // SSE expectations
-  upstreamHeaders.set("Accept", "text/event-stream");
-  upstreamHeaders.set("Cache-Control", "no-cache");
-  upstreamHeaders.set("Connection", "keep-alive");
-
-  if (authHeader) {
-    upstreamHeaders.set("Authorization", authHeader);
-  }
-
-  const clientIP = incomingHeaders
-    .get("x-forwarded-for")
-    ?.split(",")[0]
-    ?.trim();
-  if (clientIP) {
-    upstreamHeaders.set("X-Forwarded-For", clientIP);
-  }
-
-  const upstreamUrl = `${BE_BASE}/api/org-admin/imports/${encodeURIComponent(
+  // ---------------- REAL BE MODE ----------------
+  const auth = await getAuthHeader();
+  const beEventsUrl = `${BE_BASE}/api/organization/members/import-batches/${encodeURIComponent(
     id,
-  )}/events`;
+  )}/enrollments`;
 
   try {
-    const upstream = await fetch(upstreamUrl, {
-      method: "GET",
-      headers: upstreamHeaders,
+    const res = await fetch(beEventsUrl, {
+      headers: auth ? { Authorization: auth } : {},
     });
 
-    if (!upstream.ok || !upstream.body) {
-      const text = await upstream.text().catch(() => "");
-      const message =
-        text || "Upstream service is unavailable or stream failed.";
-
-      console.error(
-        "[org-admin imports events] SSE upstream error:",
-        upstream.status,
-        message,
-      );
-
-      return new Response(message, {
-        status: upstream.status || 500,
-        headers: { "Content-Type": "text/plain" },
+    if (!res.ok || !res.body) {
+      return createSseResponse((send, close) => {
+        send("complete", { batchId: id });
+        close();
       });
     }
 
-    const responseHeaders = new Headers();
-    responseHeaders.set("Content-Type", "text/event-stream");
-    responseHeaders.set("Cache-Control", "no-cache");
-    responseHeaders.set("Connection", "keep-alive");
-    // Avoid buffering for proxies like Nginx
-    responseHeaders.set("X-Accel-Buffering", "no");
-
-    // Pass through the upstream SSE stream directly
-    return new Response(upstream.body, {
+    // Proxy raw SSE từ BE
+    return new Response(res.body, {
       status: 200,
-      headers: responseHeaders,
+      headers: {
+        "Content-Type": "text/event-stream",
+        Connection: "keep-alive",
+        "Cache-Control": "no-cache",
+      },
     });
-  } catch (error) {
-    console.error(
-      "[org-admin imports events] Error fetching upstream SSE:",
-      error,
-    );
-    return new Response("Upstream service is unavailable or stream failed.", {
-      status: 500,
-      headers: { "Content-Type": "text/plain" },
+  } catch {
+    // Nếu có lỗi khi gọi BE -> báo complete cho FE để dừng chờ
+    return createSseResponse((send, close) => {
+      send("complete", { batchId: id, error: true });
+      close();
     });
   }
 }
 
-export const GET = (...args: Parameters<typeof handleGET>) =>
-  withErrorBoundary(() => handleGET(...args), {
+// Update Type ở export function để khớp với handleGET
+export const GET = (
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> },
+) =>
+  withErrorBoundary(() => handleGET(req, ctx), {
     context: "api/org-admin/imports/[id]/events/route.ts/GET",
   });

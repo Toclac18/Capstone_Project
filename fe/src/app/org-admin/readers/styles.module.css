@@ -1,226 +1,325 @@
-/* ===== Container & Title ===== */
+/* =========================================================
+   THEME & LAYOUT ROOT
+   ========================================================= */
+
 .readers-container {
-  @apply mx-auto max-w-6xl p-6 md:p-8;
+  /* Light mode */
+  --bg: #f9fafb;
+  --surface: #ffffff;
+  --surface-soft: #f3f4f6;
+  --border: #e5e7eb;
+  --text: #0f172a;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --danger: #ef4444;
+  --success: #16a34a;
+  --warning: #eab308;
+
+  padding: 24px 32px;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
 }
+
+/* DARK MODE */
+:global(.dark) .readers-container {
+  --bg: #020617;
+  --surface: #0f172a;
+  --surface-soft: #1e293b;
+  --border: #334155;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --danger: #f87171;
+  --success: #4ade80;
+  --warning: #facc15;
+
+  background: var(--bg);
+}
+
+/* =========================================================
+   PAGE TITLE
+   ========================================================= */
 
 .readers-title {
-  @apply mb-6 text-2xl font-extrabold tracking-tight text-dark;
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: var(--text);
 }
 
-:global(html.dark) .readers-title {
-  @apply text-white;
-}
+/* =========================================================
+   TOOLBAR (Search + Page size + Reload)
+   ========================================================= */
 
-/* ===== Toolbar ===== */
 .readers-toolbar {
-  @apply mb-4 flex flex-wrap items-center gap-3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 
+/* Search input */
 .readers-search {
-  @apply h-10 min-w-[220px] flex-1 rounded-xl border px-4 text-sm outline-none ring-0;
-  /* FIX: Thay thế focus:border-primary-500 bằng focus:border-blue-500 */
-  @apply border-stroke bg-white text-dark placeholder-gray-6 focus:border-blue-500;
+  flex: 1;
+  min-width: 250px;
+  padding: 8px 10px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
 }
 
-:global(html.dark) .readers-search {
-  /* FIX: Thay thế focus:border-primary-500 bằng focus:border-blue-500 */
-  @apply border-stroke-dark bg-dark-3 text-dark-8 placeholder-dark-6 focus:border-blue-500;
+.readers-search::placeholder {
+  color: var(--muted);
 }
 
+/* Page size select */
 .readers-pagesize {
-  @apply h-10 rounded-xl border border-stroke bg-white px-3 text-sm text-dark;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text);
+  cursor: pointer;
 }
 
-:global(html.dark) .readers-pagesize {
-  @apply border-stroke-dark bg-dark-3 text-dark-8;
+.readers-pagesize:hover:not(:disabled) {
+  border-color: var(--accent);
 }
 
+/* Reload button */
 .readers-reload-btn {
-  @apply h-10 rounded-xl border px-4 text-sm font-medium transition-colors duration-150;
-  @apply border-stroke bg-gray-1 text-dark hover:bg-gray-2;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-:global(html.dark) .readers-reload-btn {
-  @apply border-stroke-dark bg-dark-2 text-dark-6 hover:bg-dark-3;
+.readers-reload-btn::before {
+  content: "↻";
 }
 
-/* ===== Alerts (optional hooks) ===== */
-.alert-error {
-  @apply mb-3 rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-red-700;
+.readers-reload-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
-:global(html.dark) .alert-error {
-  @apply border-red bg-dark-2 text-red;
+.readers-reload-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
-.alert-success {
-  @apply mb-3 rounded-xl border border-green-300 bg-green-50 px-3 py-2 text-green-700;
-}
+/* =========================================================
+   TABLE WRAPPER
+   ========================================================= */
 
-:global(html.dark) .alert-success {
-  @apply border-green bg-dark-2 text-green-light-1;
-}
-
-/* ===== Table Card ===== */
 .table-container {
-  @apply overflow-x-auto rounded-2xl border border-stroke bg-white shadow-md;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  overflow: hidden;
 }
 
-:global(html.dark) .table-container {
-  @apply border-stroke-dark bg-dark-2 shadow-none;
-}
-
+/* TABLE */
 .table {
-  @apply min-w-full text-sm;
+  width: 100%;
   border-collapse: collapse;
+  font-size: 14px;
 }
 
+/* HEADER */
 .table thead {
-  @apply bg-gray-50;
-}
-
-:global(html.dark) .table thead {
-  @apply bg-dark-3;
-}
-
-.table th,
-.table td {
-  @apply px-3 py-3 align-middle;
+  background: var(--surface-soft);
 }
 
 .table th {
-  @apply text-left font-semibold text-dark-3;
-  white-space: nowrap;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+  text-align: left; /* mặc định trái */
 }
 
-:global(html.dark) .table th {
-  @apply text-dark-6;
-}
-
+/* BODY ROWS */
 .table-row {
-  @apply border-t border-stroke;
+  transition:
+    background-color 0.16s ease,
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .table-row:hover {
-  @apply bg-gray-50;
+  background: rgba(0, 0, 0, 0.02); /* light */
 }
 
-:global(html.dark) .table-row {
-  @apply border-stroke-dark;
+:global(.dark) .table-row:hover {
+  background: rgba(255, 255, 255, 0.04); /* dark */
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
 }
 
-:global(html.dark) .table-row:hover {
-  @apply bg-dark-3;
+/* CELLS */
+.table td {
+  padding: 12px 16px;
+  color: var(--text);
+  border-top: 1px solid var(--border);
+  vertical-align: middle;
+  text-align: left; /* mặc định trái */
 }
 
+/* ========= ALIGNMENT RULE – OPTION D ========= */
+/* Cột 1 (FULL NAME) & cột 2 (EMAIL) giữ trái
+   Từ cột 3 trở đi căn giữa – luôn đúng kể cả co giãn màn hình */
+
+.table th:nth-child(n + 3),
+.table td:nth-child(n + 3) {
+  text-align: center;
+}
+
+/* EMAIL column: cho dễ đọc, không wrap nếu đủ chỗ */
 .col-email {
-  @apply w-[30%];
+  width: 260px;
+  white-space: nowrap;
 }
 
-.col-coins {
-  @apply w-[110px];
-}
-
+/* ACTIONS column */
 .col-actions {
-  @apply w-[160px];
+  width: 160px;
 }
 
-.header-right {
-  @apply text-right;
+/* đảm bảo nút action nằm giữa cột */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
 }
 
-/* ===== Status Badges ===== */
+/* =========================================================
+   STATUS BADGES
+   ========================================================= */
+
 .status-badge {
-  @apply inline-flex h-6 items-center gap-1 rounded-full border px-2 text-xs font-semibold;
-  letter-spacing: 0.01em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
 .status-active {
-  @apply border-emerald-200 bg-emerald-50 text-emerald-700;
-}
-
-.status-suspended {
-  @apply border-amber-200 bg-amber-50 text-amber-700;
+  background: rgba(22, 163, 74, 0.12);
+  border: 1px solid rgba(22, 163, 74, 0.4);
+  color: var(--success);
 }
 
 .status-pending {
-  @apply border-gray-200 bg-gray-50 text-gray-700;
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  color: var(--warning);
 }
 
-:global(html.dark) .status-active {
-  @apply border-emerald-700 bg-emerald-900/30 text-emerald-300;
+.status-suspended {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: var(--danger);
 }
 
-:global(html.dark) .status-suspended {
-  @apply border-amber-700 bg-amber-900/30 text-amber-300;
-}
+/* =========================================================
+   PAGINATION
+   ========================================================= */
 
-:global(html.dark) .status-pending {
-  @apply border-dark-6 bg-dark-4 text-dark-8;
-}
-
-/* ===== Action Buttons ===== */
-.action-btn {
-  @apply inline-flex h-8 items-center justify-center rounded-full border px-3 text-xs font-semibold transition-all;
-  @apply border-red-300 bg-red-50 text-red-700 hover:bg-red-100 active:scale-[0.98];
-}
-
-.action-btn:disabled {
-  @apply cursor-not-allowed opacity-50;
-}
-
-:global(html.dark) .action-btn {
-  @apply border-red bg-dark-2 text-red hover:bg-dark-3;
-}
-
-/* ===== Pagination Footer ===== */
 .readers-pagination {
-  @apply mt-4 flex flex-wrap items-center justify-between gap-3;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .readers-range {
-  @apply text-sm text-gray-6;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
 }
 
-:global(html.dark) .readers-range {
-  @apply text-dark-6;
+.readers-range strong {
+  color: var(--text);
 }
 
-.readers-page-controls {
-  @apply flex items-center gap-2;
-}
-
+/* Pagination buttons */
 .page-btn {
-  @apply h-9 rounded-xl border border-stroke bg-white px-3 text-sm font-medium text-dark transition;
-  @apply hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
 }
 
-:global(html.dark) .page-btn {
-  @apply border-stroke-dark bg-dark-2 text-dark-6 hover:bg-dark-3;
+.page-btn:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Current page */
 .readers-page {
-  @apply rounded-xl border border-stroke bg-gray-1 px-3 py-2 text-sm text-dark;
+  padding: 6px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
 }
 
-:global(html.dark) .readers-page {
-  @apply border-stroke-dark bg-dark-3 text-dark-6;
-}
+/* =========================================================
+   SMALL SCREENS TWEAK (giữ alignment, giảm padding)
+   ========================================================= */
 
-/* ===== Meta ===== */
-.readers-meta {
-  @apply mt-3 text-center text-xs text-gray-6;
-}
+@media (max-width: 900px) {
+  .readers-container {
+    padding: 16px;
+  }
 
-:global(html.dark) .readers-meta {
-  @apply text-dark-6;
-}
+  .readers-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
 
-/* ===== Responsive ===== */
-@media (max-width: 640px) {
+  .table th,
+  .table td {
+    padding: 8px 10px;
+  }
 
-  .col-email,
-  .col-coins {
-    display: none;
+  .col-email {
+    width: auto;
+    white-space: normal;
   }
 }

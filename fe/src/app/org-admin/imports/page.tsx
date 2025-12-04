@@ -10,9 +10,11 @@ export default function Page() {
     <main className={styles.wrapper}>
       <ImportHistoryProvider>
         <PageHeader />
-        <Filters />
-        <HistoryTable />
-        <Pagination />
+        <section className={styles.content}>
+          <Filters />
+          <HistoryTable />
+          <Pagination />
+        </section>
       </ImportHistoryProvider>
     </main>
   );

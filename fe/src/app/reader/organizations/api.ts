@@ -25,7 +25,6 @@ export async function fetchOrganizationDetail(
 
 export async function leaveOrganization(
   id: string,
-  password: string,
 ): Promise<{ message: string }> {
-  return leaveOrganizationService(id, password);
+  return leaveOrganizationService(id);
 }

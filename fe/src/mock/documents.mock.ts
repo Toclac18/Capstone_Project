@@ -20,6 +20,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 1300,
     downvote_counts: 8,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23DCFCE7%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BBF7D0%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%2316A34A%27%20opacity%3D%270.9%27%3EPO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -40,6 +41,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 663,
     downvote_counts: 5,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFE4E6%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FECDD3%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23E11D48%27%20opacity%3D%270.9%27%3EAD%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -60,6 +62,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 2149,
     downvote_counts: 75,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFF7ED%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FFEDD5%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23EA580C%27%20opacity%3D%270.9%27%3EEO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -80,6 +83,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 2133,
     downvote_counts: 38,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23E0F2FE%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BAE6FD%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%230284C7%27%20opacity%3D%270.9%27%3EAD%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -100,6 +104,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 2292,
     downvote_counts: 94,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23F5F3FF%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23DDD6FE%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%237C3AED%27%20opacity%3D%270.9%27%3EAN%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -120,6 +125,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 4900,
     downvote_counts: 210,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23E0E7FF%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23C7D2FE%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%234F46E5%27%20opacity%3D%270.9%27%3EFO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -140,6 +146,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 2852,
     downvote_counts: 38,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23DCFCE7%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BBF7D0%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%2316A34A%27%20opacity%3D%270.9%27%3EEO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -160,6 +167,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 2057,
     downvote_counts: 47,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFE4E6%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FECDD3%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23E11D48%27%20opacity%3D%270.9%27%3ETC%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -180,6 +188,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 3992,
     downvote_counts: 156,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFF7ED%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FFEDD5%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23EA580C%27%20opacity%3D%270.9%27%3ESO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -200,6 +209,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 4880,
     downvote_counts: 8,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23E0F2FE%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BAE6FD%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%230284C7%27%20opacity%3D%270.9%27%3ESO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -220,6 +230,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 3905,
     downvote_counts: 143,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23F5F3FF%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23DDD6FE%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%237C3AED%27%20opacity%3D%270.9%27%3EPC%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -240,6 +251,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 4087,
     downvote_counts: 68,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23E0E7FF%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23C7D2FE%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%234F46E5%27%20opacity%3D%270.9%27%3ETI%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -260,6 +272,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 2321,
     downvote_counts: 37,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23DCFCE7%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BBF7D0%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%2316A34A%27%20opacity%3D%270.9%27%3EAO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -280,6 +293,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 1075,
     downvote_counts: 39,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFE4E6%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FECDD3%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23E11D48%27%20opacity%3D%270.9%27%3EFO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -300,6 +314,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 1911,
     downvote_counts: 1,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFF7ED%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FFEDD5%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23EA580C%27%20opacity%3D%270.9%27%3ECG%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -320,6 +335,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 3161,
     downvote_counts: 120,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23E0F2FE%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BAE6FD%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%230284C7%27%20opacity%3D%270.9%27%3ETE%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -340,6 +356,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 4476,
     downvote_counts: 106,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23F5F3FF%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23DDD6FE%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%237C3AED%27%20opacity%3D%270.9%27%3EPO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -360,6 +377,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 1684,
     downvote_counts: 15,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23E0E7FF%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23C7D2FE%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%234F46E5%27%20opacity%3D%270.9%27%3EAT%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -380,6 +398,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 554,
     downvote_counts: 25,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23DCFCE7%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BBF7D0%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%2316A34A%27%20opacity%3D%270.9%27%3ETF%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -400,6 +419,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 1438,
     downvote_counts: 33,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFE4E6%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FECDD3%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23E11D48%27%20opacity%3D%270.9%27%3EAO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -420,6 +440,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 1551,
     downvote_counts: 53,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFF7ED%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FFEDD5%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23EA580C%27%20opacity%3D%270.9%27%3EAF%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -440,6 +461,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 1349,
     downvote_counts: 31,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23E0F2FE%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BAE6FD%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%230284C7%27%20opacity%3D%270.9%27%3EPO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -460,6 +482,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 2574,
     downvote_counts: 21,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23F5F3FF%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23DDD6FE%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%237C3AED%27%20opacity%3D%270.9%27%3EAF%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -480,6 +503,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 3336,
     downvote_counts: 149,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23E0E7FF%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23C7D2FE%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%234F46E5%27%20opacity%3D%270.9%27%3EFO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -500,6 +524,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 3288,
     downvote_counts: 3,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23DCFCE7%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BBF7D0%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%2316A34A%27%20opacity%3D%270.9%27%3EPO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -520,6 +545,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 1860,
     downvote_counts: 84,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFE4E6%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FECDD3%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23E11D48%27%20opacity%3D%270.9%27%3EPO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -540,6 +566,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 4131,
     downvote_counts: 179,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFF7ED%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FFEDD5%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23EA580C%27%20opacity%3D%270.9%27%3EMO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -560,6 +587,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 1125,
     downvote_counts: 47,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23E0F2FE%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BAE6FD%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%230284C7%27%20opacity%3D%270.9%27%3EGB%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -580,6 +608,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 4690,
     downvote_counts: 19,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23F5F3FF%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23DDD6FE%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%237C3AED%27%20opacity%3D%270.9%27%3EAF%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -600,6 +629,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 4616,
     downvote_counts: 206,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23E0E7FF%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23C7D2FE%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%234F46E5%27%20opacity%3D%270.9%27%3ECC%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -620,6 +650,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 300,
     downvote_counts: 15,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23DCFCE7%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BBF7D0%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%2316A34A%27%20opacity%3D%270.9%27%3EPO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -640,6 +671,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 834,
     downvote_counts: 13,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFE4E6%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FECDD3%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23E11D48%27%20opacity%3D%270.9%27%3EPO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -660,6 +692,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 4872,
     downvote_counts: 42,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFF7ED%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FFEDD5%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23EA580C%27%20opacity%3D%270.9%27%3EDI%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -680,6 +713,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 4533,
     downvote_counts: 91,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23E0F2FE%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BAE6FD%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%230284C7%27%20opacity%3D%270.9%27%3EDI%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -700,6 +734,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 4694,
     downvote_counts: 85,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23F5F3FF%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23DDD6FE%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%237C3AED%27%20opacity%3D%270.9%27%3EDI%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -720,6 +755,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 2892,
     downvote_counts: 14,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23E0E7FF%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23C7D2FE%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%234F46E5%27%20opacity%3D%270.9%27%3EDI%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -740,6 +776,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 950,
     downvote_counts: 39,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23DCFCE7%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BBF7D0%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%2316A34A%27%20opacity%3D%270.9%27%3EMS%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -760,6 +797,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 3649,
     downvote_counts: 109,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFE4E6%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FECDD3%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23E11D48%27%20opacity%3D%270.9%27%3ECN%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -780,6 +818,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 1919,
     downvote_counts: 33,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFF7ED%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FFEDD5%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23EA580C%27%20opacity%3D%270.9%27%3EHO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -800,6 +839,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 3956,
     downvote_counts: 148,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23E0F2FE%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BAE6FD%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%230284C7%27%20opacity%3D%270.9%27%3ERO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -820,6 +860,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 3321,
     downvote_counts: 85,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23F5F3FF%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23DDD6FE%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%237C3AED%27%20opacity%3D%270.9%27%3EAC%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -840,6 +881,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 1112,
     downvote_counts: 1,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23E0E7FF%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23C7D2FE%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%234F46E5%27%20opacity%3D%270.9%27%3ESA%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -860,6 +902,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 515,
     downvote_counts: 9,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23DCFCE7%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BBF7D0%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%2316A34A%27%20opacity%3D%270.9%27%3ESC%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -880,6 +923,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 3546,
     downvote_counts: 133,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFE4E6%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FECDD3%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23E11D48%27%20opacity%3D%270.9%27%3EII%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -900,6 +944,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 2427,
     downvote_counts: 53,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFF7ED%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FFEDD5%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23EA580C%27%20opacity%3D%270.9%27%3EIS%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -920,6 +965,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 825,
     downvote_counts: 25,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23E0F2FE%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BAE6FD%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%230284C7%27%20opacity%3D%270.9%27%3ECP%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -940,6 +986,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 3082,
     downvote_counts: 16,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23F5F3FF%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23DDD6FE%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%237C3AED%27%20opacity%3D%270.9%27%3ECE%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -960,6 +1007,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 4690,
     downvote_counts: 80,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23E0E7FF%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23C7D2FE%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%234F46E5%27%20opacity%3D%270.9%27%3ECP%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -980,6 +1028,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 747,
     downvote_counts: 22,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23DCFCE7%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23BBF7D0%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%2316A34A%27%20opacity%3D%270.9%27%3ECA%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
   {
@@ -1000,6 +1049,7 @@ export const mockLibraryDocs: DocumentItem[] = [
     },
     upvote_counts: 4275,
     downvote_counts: 68,
+    viewCount: 0,
     thumbnail: `data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27400%27%20height%3D%27260%27%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23FFE4E6%27/%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%23FECDD3%27/%3E%0A%20%20%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2718%27%20fill%3D%27url%28%23g%29%27/%3E%0A%20%20%20%20%3Cg%20font-family%3D%27ui-sans-serif%2C%20-apple-system%2C%20Segoe%20UI%2C%20Roboto%27%20text-anchor%3D%27middle%27%3E%0A%20%20%20%20%20%20%3Ctext%20x%3D%27200%27%20y%3D%27145%27%20font-size%3D%2784%27%20font-weight%3D%27700%27%20fill%3D%27%23E11D48%27%20opacity%3D%270.9%27%3ETO%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%3C/svg%3E`,
   },
 ];

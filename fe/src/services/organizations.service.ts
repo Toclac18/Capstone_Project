@@ -27,6 +27,8 @@ export type OrganizationDetail = {
   logo: string | null;
   address: string;
   joinDate: string;
+  memberCount?: number;
+  documentCount?: number;
 };
 
 export async function getOrganizationById(id: string): Promise<OrganizationDetail> {
@@ -34,10 +36,10 @@ export async function getOrganizationById(id: string): Promise<OrganizationDetai
   return res.data;
 }
 
-export async function leaveOrganization(id: string, password: string): Promise<{ message: string }> {
+export async function leaveOrganization(id: string): Promise<{ message: string }> {
   const res = await apiClient.post<{ message: string }>(
     `/reader/organizations/${id}/leave`,
-    { password },
+    {},
   );
   return res.data;
 }

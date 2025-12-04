@@ -1,137 +1,94 @@
 // src/app/api/org-admin/readers/route.ts
-import { mockReaders } from "@/mock/readers.mock";
-import { headers, cookies } from "next/headers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { jsonResponse } from "@/server/response";
+import { getAuthHeader } from "@/server/auth";
+import { mockFetchReaders } from "@/mock/readers.mock";
+import { OrgEnrollStatus } from "@/services/org-admin-reader.service";
 
-type Reader = {
-  id: string;
-  fullName: string;
-  username: string;
-  email: string;
-  status: "ACTIVE" | "SUSPENDED" | "PENDING_VERIFICATION";
-  coinBalance: number;
-};
+const DEFAULT_PAGE = 1;
+const DEFAULT_PAGE_SIZE = 10;
 
-// helpers
-function toInt(v: string | null, def: number) {
-  const n = Number(v);
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : def;
-}
-function normalizeParams(url: URL) {
-  const page = toInt(url.searchParams.get("page"), 1);
-  const pageSize = toInt(url.searchParams.get("pageSize"), 10);
-  const q = (url.searchParams.get("q") || "").trim().toLowerCase();
-  const status =
-    (url.searchParams.get("status") as Reader["status"] | "ALL") || "ALL";
-  return { page, pageSize, q, status };
-}
-function filterSortPaginate(
-  data: Reader[],
-  { page, pageSize, q, status }: ReturnType<typeof normalizeParams>,
-) {
-  let filtered = data.filter((r) => {
-    const textMatch =
-      !q ||
-      [r.fullName, r.username, r.email, r.status]
-        .map((x) => String(x).toLowerCase())
-        .some((x) => x.includes(q));
-    const statusMatch = status === "ALL" ? true : r.status === status;
-    return textMatch && statusMatch;
-  });
-  filtered = filtered.sort((a, b) => {
-    const byName = a.fullName.localeCompare(b.fullName);
-    if (byName !== 0) return byName;
-    const ai = Number(a.id);
-    const bi = Number(b.id);
-    if (Number.isFinite(ai) && Number.isFinite(bi)) return ai - bi;
-    return String(a.id).localeCompare(String(b.id));
-  });
-  const total = filtered.length;
-  const start = (page - 1) * pageSize;
-  const end = start + pageSize;
-  const items = filtered.slice(start, end);
-  return { items, total, page, pageSize };
-}
+async function handleGET(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  const searchParams = url.searchParams;
 
-async function handleGET(req: Request) {
-  const url = new URL(req.url);
-  const { page, pageSize, q, status } = normalizeParams(url);
+  const page = Number(searchParams.get("page") ?? DEFAULT_PAGE);
+  const pageSize = Number(searchParams.get("pageSize") ?? DEFAULT_PAGE_SIZE);
+  const q = searchParams.get("q") ?? "";
+  const status = searchParams.get("status") ?? "ALL";
 
+  // ==========================
+  // 1. MOCK MODE
+  // ==========================
   if (USE_MOCK) {
-    const { items, total } = filterSortPaginate(mockReaders as Reader[], {
+    const payload = await mockFetchReaders({
       page,
       pageSize,
       q,
-      status,
+      status: status as OrgEnrollStatus | "ALL",
     });
-    return jsonResponse(
-      { items, total, page, pageSize },
-      {
-        status: 200,
-        headers: { "content-type": "application/json", "x-mode": "mock" },
+
+    return jsonResponse(payload, {
+      status: 200,
+      headers: {
+        "content-type": "application/json",
+        "x-mode": "mock",
       },
-    );
+    });
   }
 
-  // headers → build Authorization
-  const h = await headers();
-  const cookieStore = cookies();
-  const headerAuth = h.get("authorization") || "";
-  const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
-  const effectiveAuth = headerAuth || cookieAuth;
+  // ==========================
+  // 2. REAL BE MODE
+  // ==========================
 
-  // build upstream URL
-  const upstreamUrl = new URL(`${BE_BASE}/api/org-admin/readers`);
-  upstreamUrl.searchParams.set("page", String(page));
-  upstreamUrl.searchParams.set("pageSize", String(pageSize));
-  if (q) upstreamUrl.searchParams.set("q", q);
-  if (status && status !== "ALL")
+  const upstreamUrl = new URL(`${BE_BASE}/api/organization/members`);
+
+  upstreamUrl.searchParams.set("page", String(Math.max(page - 1, 0)));
+  upstreamUrl.searchParams.set("size", String(pageSize));
+
+  // Search & filter
+  if (q) {
+    upstreamUrl.searchParams.set("search", q);
+  }
+  if (status && status !== "ALL") {
     upstreamUrl.searchParams.set("status", status);
+  }
+
+  // Auth header
+  const authHeader = await getAuthHeader();
+  const fh = new Headers();
+  if (authHeader) {
+    fh.set("Authorization", authHeader);
+  }
 
   const upstream = await fetch(upstreamUrl.toString(), {
     method: "GET",
-    headers: {
-      ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
-      "Content-Type": "application/json",
-    },
+    headers: fh,
     cache: "no-store",
   });
 
-  // parse & normalize
-  const raw = await upstream.json().catch(() => ({}));
-  const payload = raw?.data ?? raw; // BE có thể bọc trong {data: ...}
-
-  const items = payload?.content ?? payload?.items ?? [];
-  const total =
-    payload?.totalElements ??
-    payload?.total ??
-    (Array.isArray(items) ? items.length : 0);
-  const currentPage =
-    (typeof payload?.number === "number"
-      ? payload.number + 1
-      : (payload?.page ?? page)) || page;
-  const size =
-    payload?.size ??
-    payload?.pageSize ??
-    (typeof pageSize === "number" ? pageSize : 10);
-
-  return new Response(
-    JSON.stringify({
-      items,
-      total,
-      page: currentPage,
-      pageSize: size,
-    }),
-    {
+  if (!upstream.ok) {
+    const text = await upstream.text();
+    return new Response(text || upstream.statusText, {
       status: upstream.status,
       headers: {
-        "content-type": "application/json",
-        "x-mode": "real",
+        "content-type": upstream.headers.get("content-type") ?? "text/plain",
+        "x-mode": "real-error",
       },
+    });
+  }
+
+  const payload = await upstream.json();
+
+  return jsonResponse(payload, {
+    status: 200,
+    headers: {
+      "content-type":
+        upstream.headers.get("content-type") ?? "application/json",
+      "x-mode": "real",
     },
-  );
+  });
 }
 
 export const GET = (...args: Parameters<typeof handleGET>) =>

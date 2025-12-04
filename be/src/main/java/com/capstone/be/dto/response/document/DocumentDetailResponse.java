@@ -35,6 +35,10 @@ public class DocumentDetailResponse {
   private Instant createdAt;
   private Instant updatedAt;
 
+  // --- Summarizations ---
+  // Field này sẽ chứa object { shortSummary, mediumSummary, detailedSummary }
+  private SummarizationInfo summarizations;
+
   // Uploader information
   private UploaderInfo uploader;
 
@@ -52,6 +56,18 @@ public class DocumentDetailResponse {
 
   // User-specific information
   private UserDocumentInfo userInfo;
+
+  // --- Inner Classes ---
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class SummarizationInfo {
+    private String shortSummary;
+    private String mediumSummary;
+    private String detailedSummary;
+  }
 
   @Data
   @Builder

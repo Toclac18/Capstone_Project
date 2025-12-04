@@ -1,4 +1,4 @@
-// src/app/contact-admin/ReadersProvider.tsx
+// src/app/org-admin/readers/provider.tsx
 "use client";
 
 import React, {
@@ -11,47 +11,39 @@ import React, {
 } from "react";
 import { toast, useToast } from "@/components/ui/toast";
 import {
-  changeReaderAccess,
-  ReaderResponse,
+  fetchReaders,
+  OrgEnrollment,
+  OrgEnrollStatus,
+  OrgEnrollmentListResponse,
+  changeEnrollmentStatus,
 } from "@/services/org-admin-reader.service";
 
-/**
- * NOTE:
- * - We KEEP orgAdmin-reader.ts as-is (no breaking changes).
- * - For list fetching (pagination/search), we call the Next.js route directly:
- *   GET /api/org-admin/readers?page=&pageSize=&q=&status=
- *   and expect { items, total, page, pageSize }.
- * - changeReaderAccess still goes through ./api (service layer) to keep contracts stable.
- */
-
-export type ReaderStatus = "ACTIVE" | "SUSPENDED" | "PENDING_VERIFICATION";
-type ReadersListResponse = {
-  items: ReaderResponse[];
-  total: number;
-  page: number;
-  pageSize: number;
-};
+export type ReaderStatusFilter = OrgEnrollStatus | "ALL";
 
 interface ReadersContextValue {
-  readers: ReaderResponse[];
+  readers: OrgEnrollment[];
   loading: boolean;
   error: string | null;
   info: string | null;
 
-  // pagination & search
   page: number;
   pageSize: number;
   total: number;
   q: string;
-  status: ReaderStatus | "ALL";
+  status: ReaderStatusFilter;
 
   reload: () => Promise<void>;
-  toggleAccess: (id: string, enable: boolean) => Promise<void>;
+
+  /**
+   * enable = true  => JOINED
+   * enable = false => REMOVED
+   */
+  toggleAccess: (enrollmentId: string, enable: boolean) => Promise<void>;
 
   setPage: (p: number) => void;
   setPageSize: (s: number) => void;
   setQ: (q: string) => void;
-  setStatus: (s: ReadersContextValue["status"]) => void;
+  setStatus: (s: ReaderStatusFilter) => void;
 
   setError: React.Dispatch<React.SetStateAction<string | null>>;
   setInfo: React.Dispatch<React.SetStateAction<string | null>>;
@@ -60,51 +52,35 @@ interface ReadersContextValue {
 const ReadersContext = createContext<ReadersContextValue | null>(null);
 
 export function ReadersProvider({ children }: { children: React.ReactNode }) {
-  const [readers, setReaders] = useState<ReaderResponse[]>([]);
+  const [readers, setReaders] = useState<OrgEnrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
-  // pagination & search state
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [total, setTotal] = useState<number>(0);
   const [q, setQ] = useState<string>("");
-  const [status, setStatus] = useState<ReaderStatus | "ALL">("ALL");
+  const [status, setStatus] = useState<ReaderStatusFilter>("ALL");
 
   const { showToast } = useToast();
 
-  /** Build URL for Next API route with query params */
-  const buildUrl = () => {
-    const url = new URL(
-      "/api/org-admin/readers",
-      typeof window !== "undefined"
-        ? window.location.origin
-        : "http://localhost",
-    );
-    url.searchParams.set("page", String(page));
-    url.searchParams.set("pageSize", String(pageSize));
-    if (q.trim()) url.searchParams.set("q", q.trim());
-    if (status && status !== "ALL") url.searchParams.set("status", status);
-    return url.toString();
-  };
-
-  /** Load list of readers via Next route (supports mock or real BE) */
   const reload = useCallback(async () => {
     setLoading(true);
     setError(null);
+
     try {
-      const url = buildUrl();
-      const res = await fetch(url, { method: "GET", cache: "no-store" });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `Failed to load readers (${res.status})`);
-      }
-      const data = (await res.json()) as ReadersListResponse;
-      setReaders(data.items || []);
-      setTotal(Number(data.total ?? 0));
-    } catch (e: any) {
-      const msg = e?.message || "Failed to load readers";
+      const payload: OrgEnrollmentListResponse = await fetchReaders({
+        page,
+        pageSize,
+        q,
+        status,
+      });
+
+      setReaders(payload.data || []);
+      setTotal(payload.pageInfo?.totalElements ?? 0);
+    } catch (err: any) {
+      const msg = err?.message ?? "Failed to load readers";
       setError(msg);
       showToast(toast.error("Load failed", msg));
     } finally {
@@ -112,45 +88,44 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
     }
   }, [page, pageSize, q, status, showToast]);
 
-  /** Toggle access with optimistic UI; uses service API for the action */
+  /**
+   * toggleAccess:
+   *  - enable = true  => JOINED
+   *  - enable = false => REMOVED
+   *
+   * Chỉ update FE state, chưa gọi BE.
+   * BE sau này có thể implement:
+   *   PATCH /org-admin/enrollments/{enrollmentId}/status
+   *   body: { status: "JOINED" | "REMOVED" }
+   */
   const toggleAccess = useCallback(
-    async (id: string, enable: boolean) => {
-      const snapshot = readers;
+    async (enrollmentId: string, enable: boolean) => {
+      // enable = true  => JOINED
+      // enable = false => REMOVED
+      const nextStatus: OrgEnrollStatus = enable ? "JOINED" : "REMOVED";
 
-      setError(null);
-      setInfo(null);
-      // optimistic update
-      setReaders((arr) =>
-        arr.map((r) =>
-          r.id === id ? { ...r, status: enable ? "ACTIVE" : "SUSPENDED" } : r,
+      // Lưu lại state cũ để rollback nếu lỗi
+      const prevReaders = readers;
+
+      // 1. Optimistic update
+      setReaders((prev) =>
+        prev.map((r) =>
+          r.enrollmentId === enrollmentId ? { ...r, status: nextStatus } : r,
         ),
       );
 
       try {
-        const updated = await changeReaderAccess({ userId: id, enable });
-        setReaders((arr) =>
-          arr.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)),
-        );
-
-        const msg = enable
-          ? "Access enabled successfully"
-          : "Access removed successfully";
-        setInfo(msg);
-        showToast(
-          enable
-            ? toast.success("Access Enabled", msg)
-            : toast.error("Access Removed", msg),
-        );
-
-        // Optional: ensure server ordering/policies are reflected
-        // await reload();
-      } catch (e: any) {
-        // rollback
-        setReaders(snapshot);
-        const msg = e?.message ?? "Failed to update access";
+        // 2. Gọi API thật qua service
+        await changeEnrollmentStatus({
+          enrollmentId,
+          status: nextStatus,
+        });
+      } catch (err: any) {
+        const msg = err?.message ?? "Failed to change reader access";
         setError(msg);
-        showToast(toast.error("Action failed", msg));
-        throw e;
+        showToast(toast.error("Update failed", msg));
+        // 3. Rollback state nếu lỗi
+        setReaders(prevReaders);
       }
     },
     [readers, showToast],
@@ -202,6 +177,8 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
 
 export function useReaders() {
   const ctx = useContext(ReadersContext);
-  if (!ctx) throw new Error("useReaders must be used inside ReadersProvider");
+  if (!ctx) {
+    throw new Error("useReaders must be used inside ReadersProvider");
+  }
   return ctx;
 }

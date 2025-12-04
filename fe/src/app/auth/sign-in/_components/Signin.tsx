@@ -5,10 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { Eye, EyeOff } from "lucide-react";
-import {
-  login,
-  type LoginPayload,
-} from "../api";
+import { login, type LoginPayload } from "../api";
 import { EmailIcon, GoogleIcon } from "@/assets/icons";
 import { useToast } from "@/components/ui/toast";
 import Logo from "@/assets/logos/logo-icon.svg";
@@ -18,14 +15,19 @@ import styles from "../styles.module.css";
 type FormValues = {
   email: string;
   password: string;
-  role: "READER" | "REVIEWER" | "ORGANIZATION_ADMIN" | "SYSTEM_ADMIN" | "BUSINESS_ADMIN";
+  role:
+    | "READER"
+    | "REVIEWER"
+    | "ORGANIZATION_ADMIN"
+    | "SYSTEM_ADMIN"
+    | "BUSINESS_ADMIN";
   remember: boolean;
 };
 
 export default function Signin() {
   const { showToast } = useToast();
   const router = useRouter();
-  
+
   const {
     register,
     handleSubmit,
@@ -62,26 +64,26 @@ export default function Signin() {
         localStorage.setItem("userName", response.fullName);
       }
 
-      showToast({ type: 'success', title: 'Login Successful' });
+      showToast({ type: "success", title: "Login Successful" });
 
       // Redirect based on role
       const roleRoutes: Record<typeof data.role, string> = {
-        READER: '/',
-        REVIEWER: '/reviewer',
-        ORGANIZATION_ADMIN: '/org-admin',
-        SYSTEM_ADMIN: '/admin',
-        BUSINESS_ADMIN: '/business-admin',
+        READER: "/",
+        REVIEWER: "/reviewer",
+        ORGANIZATION_ADMIN: "/org-admin/readers",
+        SYSTEM_ADMIN: "/admin",
+        BUSINESS_ADMIN: "/business-admin",
       };
 
       setTimeout(() => {
-        router.push(roleRoutes[data.role] || '/');
+        router.push(roleRoutes[data.role] || "/");
       }, 1500);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Invalid email or password';
+      const msg = e instanceof Error ? e.message : "Invalid email or password";
       setError(msg);
       showToast({
-        type: 'error',
-        title: 'Login Failed',
+        type: "error",
+        title: "Login Failed",
         message: msg,
       });
     } finally {
@@ -92,8 +94,20 @@ export default function Signin() {
   return (
     <>
       <div className={styles["logo-row"]}>
-        <Image src={Logo} alt="Logo" width={100} height={100} className="dark:hidden"/>
-        <Image src={LogoDark} alt="Logo" width={100} height={100} className="hidden dark:block"/>
+        <Image
+          src={Logo}
+          alt="Logo"
+          width={100}
+          height={100}
+          className="dark:hidden"
+        />
+        <Image
+          src={LogoDark}
+          alt="Logo"
+          width={100}
+          height={100}
+          className="hidden dark:block"
+        />
       </div>
 
       <button className={styles["oauth-btn"]}>
@@ -103,21 +117,20 @@ export default function Signin() {
 
       <div className={styles.divider}>
         <span className={styles["divider-line"]}></span>
-        <div className={styles["divider-text"]}>
-          Or sign in with email
-        </div>
+        <div className={styles["divider-text"]}>Or sign in with email</div>
         <span className={styles["divider-line"]}></span>
       </div>
 
-      {error && (
-        <div className={styles["alert-error"]}>{error}</div>
-      )}
+      {error && <div className={styles["alert-error"]}>{error}</div>}
 
       <div>
         <form onSubmit={handleSubmit(onSubmit)}>
           {/* Role Selector */}
           <div className="mb-4">
-            <label htmlFor="role" className="mb-3 block text-body-sm font-medium text-dark dark:text-white">
+            <label
+              htmlFor="role"
+              className="mb-3 block text-body-sm font-medium text-dark dark:text-white"
+            >
               Login as
             </label>
             <div className="relative w-full">
@@ -135,7 +148,13 @@ export default function Signin() {
               </select>
               <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">
                 <svg width={20} height={20} fill="none" viewBox="0 0 20 20">
-                  <path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path
+                    d="M6 8l4 4 4-4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </span>
             </div>
@@ -145,7 +164,10 @@ export default function Signin() {
           </div>
 
           <div className="mb-4">
-            <label htmlFor="email" className="mb-3 block text-body-sm font-medium text-dark dark:text-white">
+            <label
+              htmlFor="email"
+              className="mb-3 block text-body-sm font-medium text-dark dark:text-white"
+            >
               Email *
             </label>
             <div className="relative">
@@ -156,7 +178,7 @@ export default function Signin() {
                 className={`w-full rounded-lg border-[1.5px] bg-transparent px-5.5 py-[15px] pr-12.5 outline-none transition placeholder:text-dark-6 dark:bg-dark-2 dark:text-white ${
                   errors.email
                     ? "border-red focus:border-red dark:border-red"
-                    : "border-stroke dark:border-dark-3 focus:border-primary"
+                    : "border-stroke focus:border-primary dark:border-dark-3"
                 }`}
                 {...register("email", {
                   required: "Email is required",
@@ -175,7 +197,10 @@ export default function Signin() {
           </div>
 
           <div className="mb-5">
-            <label htmlFor="password" className="mb-3 block text-body-sm font-medium text-dark dark:text-white">
+            <label
+              htmlFor="password"
+              className="mb-3 block text-body-sm font-medium text-dark dark:text-white"
+            >
               Password *
             </label>
             <div className="relative">
@@ -186,7 +211,7 @@ export default function Signin() {
                 className={`w-full rounded-lg border-[1.5px] bg-transparent px-5.5 py-[15px] pr-12.5 outline-none transition placeholder:text-dark-6 dark:bg-dark-2 dark:text-white ${
                   errors.password
                     ? "border-red focus:border-red dark:border-red"
-                    : "border-stroke dark:border-dark-3 focus:border-primary"
+                    : "border-stroke focus:border-primary dark:border-dark-3"
                 }`}
                 {...register("password", {
                   required: "Password is required",
@@ -200,7 +225,7 @@ export default function Signin() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4.5 top-1/2 -translate-y-1/2 text-dark-6 hover:text-dark dark:text-dark-6 dark:hover:text-white focus:outline-none"
+                className="absolute right-4.5 top-1/2 -translate-y-1/2 text-dark-6 hover:text-dark focus:outline-none dark:text-dark-6 dark:hover:text-white"
                 tabIndex={-1}
               >
                 {showPassword ? (
@@ -222,8 +247,17 @@ export default function Signin() {
                 {...register("remember")}
                 className="peer sr-only"
               />
-              <div className="mr-3 flex size-5 items-center justify-center rounded-md border border-stroke dark:border-dark-3 peer-checked:border-primary peer-checked:bg-gray-2 peer-checked:[&>*]:block dark:peer-checked:bg-transparent">
-                <svg className="hidden text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div className="mr-3 flex size-5 items-center justify-center rounded-md border border-stroke peer-checked:border-primary peer-checked:bg-gray-2 dark:border-dark-3 dark:peer-checked:bg-transparent peer-checked:[&>*]:block">
+                <svg
+                  className="hidden text-primary"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
               </div>
@@ -245,9 +279,7 @@ export default function Signin() {
               className={styles["submit-btn"]}
             >
               {loading ? "Signing in..." : "Sign In"}
-              {loading && (
-                <span className={styles.spinner} />
-              )}
+              {loading && <span className={styles.spinner} />}
             </button>
           </div>
         </form>

@@ -2,6 +2,9 @@ package com.capstone.be.repository;
 
 import com.capstone.be.domain.entity.Document;
 import java.util.UUID;
+
+import com.capstone.be.domain.enums.DocStatus;
+import com.capstone.be.domain.enums.DocVisibility;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,4 +18,10 @@ public interface DocumentRepository extends JpaRepository<Document, UUID>,
   long countByOrganizationId(UUID organizationId);
 
   Page<Document> findByUploader_Id(UUID uploaderId, Pageable pageable);
+
+  Page<Document> findByStatusAndVisibility(
+          DocStatus status,
+          DocVisibility visibility,
+          Pageable pageable
+  );
 }

@@ -1,91 +1,117 @@
-// src/mock/readers.ts
-// Mock dataset & helpers for Admin · Readers.
-// Compatible with route: src/app/api/org-admin/readers/route.ts
-// Exports:
-//   - mockReaders: Reader[]
-//   - mockChangeReaderAccess(userId: string, enable: boolean)
-//   - mockFetchReaders(params?): optional helper usable elsewhere
+// src/mock/readers.mock.ts
 
-export type ReaderStatus = "ACTIVE" | "SUSPENDED" | "PENDING_VERIFICATION";
-
-export type Reader = {
-  id: string;
-  fullName: string;
-  username: string;
-  email: string;
-  status: ReaderStatus;
-  coinBalance: number;
-};
+import {
+  OrgEnrollStatus,
+  OrgEnrollment,
+  OrgEnrollmentListResponse,
+} from "@/services/org-admin-reader.service";
 
 export type MockReadersQuery = {
   page?: number; // 1-based
-  pageSize?: number; // e.g., 10, 20, 50
+  pageSize?: number; // ví dụ 10, 20, 50
   q?: string;
-  status?: ReaderStatus | "ALL";
+  status?: OrgEnrollStatus | "ALL";
 };
 
-export type MockReadersListResponse = {
-  items: Reader[];
-  total: number;
-  page: number;
-  pageSize: number;
-};
-
-// ---------- Seed (fixed small set for deterministic testing) ----------
-const seed: Reader[] = [
+const seed: OrgEnrollment[] = [
   {
-    id: "6b1f9d2a-21b0-4d01-8f7a-d3a3d9b9b111",
-    fullName: "Alice Nguyen",
-    username: "alice",
-    email: "alice@example.com",
-    status: "ACTIVE",
-    coinBalance: 120,
+    enrollmentId: "0df3e29e-ad76-4d7a-b40a-593a2e4d59bf",
+    memberId: "a68bffcc-3f20-30a9-af76-d40bed1b2eeb",
+    memberEmail: "reader3@gmail.com",
+    memberFullName: "Hoàng Văn Đức",
+    memberAvatarUrl: null,
+    organizationId: "fabc71eb-0e67-3ad5-be14-accc338bdbaa",
+    organizationName: "Đại học Bách Khoa Hà Nội",
+    organizationType: "University",
+    status: "PENDING_INVITE",
+    invitedAt: "2025-12-02T04:45:02.850971Z",
+    respondedAt: "2025-12-02T04:45:02.850971Z",
   },
   {
-    id: "f8fd1b1c-7a6c-4b11-9f0a-6f1310a0c222",
-    fullName: "Bob Tran",
-    username: "bob",
-    email: "bob@example.com",
-    status: "SUSPENDED",
-    coinBalance: 5,
+    enrollmentId: "join-1",
+    memberId: "member-join-1",
+    memberEmail: "alice@example.com",
+    memberFullName: "Alice Nguyen",
+    memberAvatarUrl: null,
+    organizationId: "org-vnu",
+    organizationName: "Đại học Quốc gia Hà Nội",
+    organizationType: "University",
+    status: "JOINED",
+    invitedAt: "2025-10-01T08:00:00.000Z",
+    respondedAt: "2025-10-02T09:30:00.000Z",
   },
   {
-    id: "7d9018dc-a86f-4a60-9001-70ac70d33aa3",
-    fullName: "Charlie Le",
-    username: "charlie",
-    email: "charlie@example.com",
-    status: "ACTIVE",
-    coinBalance: 80,
+    enrollmentId: "removed-1",
+    memberId: "member-removed-1",
+    memberEmail: "bob@example.com",
+    memberFullName: "Bob Tran",
+    memberAvatarUrl: null,
+    organizationId: "org-ams",
+    organizationName: "Trường THPT Chuyên Amsterdam",
+    organizationType: "HighSchool",
+    status: "REMOVED",
+    invitedAt: "2025-09-10T08:00:00.000Z",
+    respondedAt: null,
   },
 ];
 
-// ---------- Auto-generate more rows for realistic pagination ----------
-function generateExtra(n: number): Reader[] {
-  const rows: Reader[] = [];
-  for (let i = 1; i <= n; i++) {
-    const id = `${1000 + i}`; // numeric id strings for stable sort fallback
-    const status: ReaderStatus =
-      i % 7 === 0
-        ? "SUSPENDED"
-        : i % 9 === 0
-          ? "PENDING_VERIFICATION"
-          : "ACTIVE";
+function generateExtra(count: number): OrgEnrollment[] {
+  const rows: OrgEnrollment[] = [];
+  const orgs = [
+    {
+      id: "org-hust",
+      name: "Đại học Bách Khoa Hà Nội",
+      type: "University",
+    },
+    {
+      id: "org-vnu",
+      name: "Đại học Quốc gia Hà Nội",
+      type: "University",
+    },
+    {
+      id: "org-edu01",
+      name: "Trung tâm Đào tạo AI READEE",
+      type: "TrainingCenter",
+    },
+  ];
+
+  for (let i = 1; i <= count; i++) {
+    const org = orgs[i % orgs.length];
+
+    const status: OrgEnrollStatus =
+      i % 5 === 0 ? "PENDING_INVITE" : i % 3 === 0 ? "REMOVED" : "JOINED";
+
+    const baseDate = new Date("2025-09-01T08:00:00.000Z");
+    baseDate.setDate(baseDate.getDate() + i);
+
+    const invitedAt = baseDate.toISOString();
+    const respondedAt =
+      status === "JOINED"
+        ? new Date(baseDate.getTime() + 86400000).toISOString()
+        : null;
+
     rows.push({
-      id,
-      fullName: `Reader ${i}`,
-      username: `reader${i}`,
-      email: `reader${i}@example.com`,
+      enrollmentId: `mock-enrollment-${i}`,
+      memberId: `mock-member-${i}`,
+      memberEmail: `reader${i}@example.com`,
+      memberFullName: `Reader ${i}`,
+      memberAvatarUrl: null,
+      organizationId: org.id,
+      organizationName: org.name,
+      organizationType: org.type,
       status,
-      coinBalance: 1000 + i * 3,
+      invitedAt,
+      respondedAt,
     });
   }
+
   return rows;
 }
 
-// Public dataset export (seed + generated extras)
-export const mockReaders: Reader[] = [...seed, ...generateExtra(150)];
+export const mockReaders: OrgEnrollment[] = [...seed, ...generateExtra(80)];
 
-// ---------- Helpers ----------
+/* ---------- Helpers ---------- */
+
 function normalize(params: MockReadersQuery = {}) {
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.max(1, params.pageSize ?? 10);
@@ -94,51 +120,79 @@ function normalize(params: MockReadersQuery = {}) {
   return { page, pageSize, q, status };
 }
 
-function stableSort(a: Reader, b: Reader) {
-  const byName = a.fullName.localeCompare(b.fullName);
+function stableSort(a: OrgEnrollment, b: OrgEnrollment) {
+  const byName = a.memberFullName.localeCompare(b.memberFullName, "vi");
   if (byName !== 0) return byName;
-  // Fallback numeric id if possible; else lexicographic
-  const ai = Number(a.id);
-  const bi = Number(b.id);
-  if (Number.isFinite(ai) && Number.isFinite(bi)) return ai - bi;
-  return String(a.id).localeCompare(String(b.id));
+  return a.memberEmail.localeCompare(b.memberEmail, "vi");
 }
 
-// Optional server-like helper: filter + sort + paginate (can be used by a route)
+/**
+ * Mock "server": filter + sort + paginate
+ *
+ * TRẢ VỀ ĐÚNG FORMAT BE:
+ * {
+ *   success: true,
+ *   data,
+ *   pageInfo,
+ *   timestamp
+ * }
+ */
 export async function mockFetchReaders(
   params: MockReadersQuery = {},
-): Promise<MockReadersListResponse> {
+): Promise<OrgEnrollmentListResponse> {
   const { page, pageSize, q, status } = normalize(params);
 
   let data = mockReaders.filter((r) => {
-    const textMatch =
-      !q ||
-      [r.fullName, r.username, r.email, r.status]
-        .map((x) => String(x).toLowerCase())
-        .some((x) => x.includes(q));
+    const text = [r.memberFullName, r.memberEmail, r.organizationName, r.status]
+      .map((x) => String(x).toLowerCase())
+      .join(" ");
+
+    const textMatch = !q || text.includes(q);
     const statusMatch = status === "ALL" ? true : r.status === status;
     return textMatch && statusMatch;
   });
 
   data = data.sort(stableSort);
 
-  const total = data.length;
-  const start = (page - 1) * pageSize;
-  const end = start + pageSize;
-  const items = data.slice(start, end);
+  const totalElements = data.length;
+  const totalPages = Math.max(1, Math.ceil(totalElements / pageSize));
+  const pageZeroBased = Math.min(Math.max(page - 1, 0), totalPages - 1);
 
-  // simulate light latency (optional)
+  const start = pageZeroBased * pageSize;
+  const end = start + pageSize;
+  const pageItems = data.slice(start, end);
+
+  const hasNext = pageZeroBased < totalPages - 1;
+  const hasPrevious = pageZeroBased > 0;
+
   await new Promise((res) => setTimeout(res, 60));
 
-  return { items, total, page, pageSize };
+  return {
+    success: true,
+    data: pageItems,
+    pageInfo: {
+      page: pageZeroBased,
+      size: pageSize,
+      totalElements,
+      totalPages,
+      first: pageZeroBased === 0,
+      last: pageZeroBased === totalPages - 1,
+      hasNext,
+      hasPrevious,
+    },
+    timestamp: new Date().toISOString(),
+  };
 }
 
-// Change access state: enable=true => ACTIVE, enable=false => SUSPENDED
-export function mockChangeReaderAccess(userId: string, enable: boolean) {
-  const r = mockReaders.find((x) => x.id === userId);
+export function mockChangeReaderAccess(enrollmentId: string, enable: boolean) {
+  const r = mockReaders.find((x) => x.enrollmentId === enrollmentId);
   if (!r) {
-    return { success: false, message: `User ${userId} not found (mock)` };
+    return {
+      success: false,
+      message: `Enrollment ${enrollmentId} not found (mock)`,
+    };
   }
-  r.status = enable ? "ACTIVE" : "SUSPENDED";
+
+  r.status = enable ? "JOINED" : "REMOVED";
   return { success: true };
 }

@@ -12,6 +12,7 @@ import com.capstone.be.domain.entity.Specialization;
 import com.capstone.be.domain.entity.Tag;
 import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.DocStatus;
+import com.capstone.be.domain.enums.DocVisibility;
 import com.capstone.be.domain.enums.OrgEnrollStatus;
 import com.capstone.be.domain.enums.TagStatus;
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
@@ -19,6 +20,7 @@ import com.capstone.be.dto.request.document.DocumentSearchFilter;
 import com.capstone.be.dto.request.document.DocumentUploadHistoryFilter;
 import com.capstone.be.dto.request.document.UpdateDocumentRequest;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
+import com.capstone.be.dto.response.document.AdminDocumentListResponse;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
@@ -44,6 +46,7 @@ import com.capstone.be.repository.TagRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.repository.specification.DocumentLibrarySpecification;
 import com.capstone.be.repository.specification.DocumentSearchSpecification;
+import com.capstone.be.repository.specification.DocumentSpecification;
 import com.capstone.be.repository.specification.DocumentUploadHistorySpecification;
 import com.capstone.be.service.DocumentAccessService;
 import com.capstone.be.service.DocumentService;
@@ -62,7 +65,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -458,63 +463,34 @@ public class DocumentServiceImpl implements DocumentService {
   public DocumentDetailResponse getDocumentDetail(UUID userId, UUID documentId) {
     log.info("User {} requesting document detail for document {}", userId, documentId);
 
-    // Fetch document with all required relationships
     Document document = documentRepository.findById(documentId)
-        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+            .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
 
-    // Use mapper for base mapping
-    DocumentDetailResponse response = documentMapper.toDetailResponse(document);
-
-    // Calculate downvotes
-    Integer downvoteCount = document.getUpvoteCount() - document.getVoteScore();
-    response.setDownvoteCount(Math.max(0, downvoteCount));
-
-    // Fetch and map tags
-    List<DocumentTagLink> tagLinks = documentTagLinkRepository.findByDocument(document);
-    List<DocumentDetailResponse.TagInfo> tagInfos = tagLinks.stream()
-        .map(link -> {
-          Tag tag = link.getTag();
-          return DocumentDetailResponse.TagInfo.builder()
-              .id(tag.getId())
-              .code(tag.getCode())
-              .name(tag.getName())
-              .build();
-        })
-        .toList();
-    response.setTags(tagInfos);
-
-    // Build user-specific information if userId is provided
-    if (userId != null) {
-      User user = userRepository.findById(userId).orElse(null);
-
-      boolean hasAccess = documentAccessService.hasAccess(userId, documentId);
-      boolean isUploader = document.getUploader().getId().equals(userId);
-      boolean hasRedeemed = false;
-      if (document.getIsPremium()) {
-        hasRedeemed = documentRedemptionRepository.existsByReader_IdAndDocument_Id(userId,
-            documentId);
-      }
-
-      boolean isMemberOfOrganization = false;
-      if (document.getOrganization() != null && user != null) {
-        isMemberOfOrganization = orgEnrollmentRepository.findByOrganizationAndMember(
-                document.getOrganization(), user)
-            .map(enrollment -> enrollment.getStatus() == OrgEnrollStatus.JOINED)
-            .orElse(false);
-      }
-
-      DocumentDetailResponse.UserDocumentInfo userInfo = DocumentDetailResponse.UserDocumentInfo.builder()
-          .hasAccess(hasAccess)
-          .isUploader(isUploader)
-          .hasRedeemed(hasRedeemed)
-          .isMemberOfOrganization(isMemberOfOrganization)
-          .build();
-
-      response.setUserInfo(userInfo);
-    }
+    DocumentDetailResponse response = mapDocumentToDetailResponse(document, userId);
 
     log.info("Successfully retrieved document detail for document {}", documentId);
     return response;
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<DocumentDetailResponse> getHomepageDocuments(UUID userId, int page, int size) {
+    // 1. Tạo Pageable
+    Pageable pageable = PageRequest.of(
+            page,
+            size,
+            Sort.by(Sort.Direction.DESC, "voteScore", "createdAt")
+    );
+
+    // 2. Query DB: Lấy bài Public & Verified
+    Page<Document> documentPage = documentRepository.findByStatusAndVisibility(
+            DocStatus.VERIFIED,
+            DocVisibility.PUBLIC,
+            pageable
+    );
+
+    // 3. Map sang DTO (truyền userId vào để xử lý logic Guest/User)
+    return documentPage.map(doc -> mapDocumentToDetailResponse(doc, userId));
   }
 
   @Override
@@ -840,4 +816,161 @@ public class DocumentServiceImpl implements DocumentService {
 
     return responsePage;
   }
+
+  // ===== Admin-only methods implementation =====
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<AdminDocumentListResponse> getAllDocumentsForAdmin(
+      String title,
+      UUID uploaderId,
+      UUID organizationId,
+      UUID docTypeId,
+      UUID specializationId,
+      DocStatus status,
+      DocVisibility visibility,
+      Boolean isPremium,
+      Pageable pageable) {
+    log.info(
+        "Admin fetching documents - title: {}, uploaderId: {}, organizationId: {}, docTypeId: {}, "
+            + "specializationId: {}, status: {}, visibility: {}, isPremium: {}, page: {}, size: {}",
+        title, uploaderId, organizationId, docTypeId, specializationId, status, visibility,
+        isPremium, pageable.getPageNumber(), pageable.getPageSize());
+
+    Specification<Document> spec = DocumentSpecification.withFilters(
+        title, uploaderId, organizationId, docTypeId, specializationId, status, visibility,
+        isPremium);
+
+    Page<Document> documentPage = documentRepository.findAll(spec, pageable);
+
+    return documentPage.map(documentMapper::toAdminListResponse);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public DocumentDetailResponse getDocumentDetailForAdmin(UUID documentId) {
+    log.info("Admin requesting document detail for document {}", documentId);
+
+    Document document = documentRepository.findById(documentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+
+    DocumentDetailResponse response = documentMapper.toDetailResponse(document);
+
+    Integer downvoteCount = document.getUpvoteCount() - document.getVoteScore();
+    response.setDownvoteCount(Math.max(0, downvoteCount));
+
+    List<DocumentTagLink> tagLinks = documentTagLinkRepository.findByDocument(document);
+    List<DocumentDetailResponse.TagInfo> tagInfos = tagLinks.stream()
+        .map(link -> {
+          Tag tag = link.getTag();
+          return DocumentDetailResponse.TagInfo.builder()
+              .id(tag.getId())
+              .code(tag.getCode())
+              .name(tag.getName())
+              .build();
+        })
+        .toList();
+    response.setTags(tagInfos);
+
+    log.info("Successfully retrieved document detail for admin for document {}", documentId);
+    return response;
+  }
+
+  @Override
+  @Transactional
+  public void activateDocument(UUID documentId) {
+    log.info("Admin activating document {}", documentId);
+
+    Document document = documentRepository.findById(documentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+
+    document.setStatus(DocStatus.ACTIVE);
+    documentRepository.save(document);
+
+    log.info("Successfully activated document {}", documentId);
+  }
+
+  @Override
+  @Transactional
+  public void deactivateDocument(UUID documentId) {
+    log.info("Admin deactivating document {}", documentId);
+
+    Document document = documentRepository.findById(documentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+
+//    if (document.getStatus().eq)
+    document.setStatus(DocStatus.INACTIVE);
+    documentRepository.save(document);
+
+    log.info("Successfully deactivated document {}", documentId);
+  }
+  private DocumentDetailResponse mapDocumentToDetailResponse(Document document, UUID userId) {
+    DocumentDetailResponse response = documentMapper.toDetailResponse(document);
+
+    // 2. Calculate downvotes
+    Integer downvoteCount = document.getUpvoteCount() - document.getVoteScore();
+    response.setDownvoteCount(Math.max(0, downvoteCount));
+
+    // 3. Fetch tags
+    List<DocumentTagLink> tagLinks = documentTagLinkRepository.findByDocument(document);
+    List<DocumentDetailResponse.TagInfo> tagInfos = tagLinks.stream()
+            .map(link -> DocumentDetailResponse.TagInfo.builder()
+                    .id(link.getTag().getId())
+                    .code(link.getTag().getCode())
+                    .name(link.getTag().getName())
+                    .build())
+            .toList();
+    response.setTags(tagInfos);
+
+    DocumentDetailResponse.UserDocumentInfo userInfo;
+
+    if (userId != null) {
+      boolean hasAccess = documentAccessService.hasAccess(userId, document.getId());
+
+      boolean isUploader = document.getUploader() != null && document.getUploader().getId().equals(userId);
+
+      boolean hasRedeemed = false;
+      if (Boolean.TRUE.equals(document.getIsPremium())) {
+        hasRedeemed = documentRedemptionRepository
+                .existsByReader_IdAndDocument_Id(userId, document.getId());
+      }
+
+      boolean isMemberOfOrganization = false;
+      if (document.getOrganization() != null) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user != null) {
+          isMemberOfOrganization = orgEnrollmentRepository
+                  .findByOrganizationAndMember(document.getOrganization(), user)
+                  .map(enrollment -> enrollment.getStatus() == OrgEnrollStatus.JOINED)
+                  .orElse(false);
+        }
+      }
+
+      userInfo = DocumentDetailResponse.UserDocumentInfo.builder()
+              .hasAccess(hasAccess)
+              .isUploader(isUploader)
+              .hasRedeemed(hasRedeemed)
+              .isMemberOfOrganization(isMemberOfOrganization)
+              .build();
+
+    } else {
+      boolean hasAccess = false;
+      if (!Boolean.TRUE.equals(document.getIsPremium())) {
+        hasAccess = true;
+      }
+
+      userInfo = DocumentDetailResponse.UserDocumentInfo.builder()
+              .hasAccess(hasAccess)
+              .isUploader(false)
+              .hasRedeemed(false)
+              .isMemberOfOrganization(false)
+              .build();
+    }
+
+    // Set vào response
+    response.setUserInfo(userInfo);
+
+    return response;
+  }
+
 }

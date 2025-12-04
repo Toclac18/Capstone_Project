@@ -1,33 +1,16 @@
-import { headers } from "next/headers";
 import { mockOrganizationsDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/hooks/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
+import { getAuthHeader } from "@/server/auth";
 
 async function handlePOST(
-  req: Request,
+  _req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id } = await ctx.params;
-  const bodyText = await req.text();
-  let password = "";
-  try {
-    const parsed = bodyText ? JSON.parse(bodyText) : {};
-    password = parsed.password || "";
-  } catch {
-    // ignore; will handle as validation error below
-  }
 
   if (USE_MOCK) {
-    if (!password) {
-      return jsonResponse(
-        { error: "Password is required" },
-        {
-          status: 400,
-          headers: { "content-type": "application/json", "x-mode": "mock" },
-        },
-      );
-    }
     const ok = mockOrganizationsDB.leave(id);
     if (!ok) {
       return jsonResponse(
@@ -47,18 +30,17 @@ async function handlePOST(
     );
   }
 
-  const h = await headers();
-  const authHeader = h.get("authorization") || "";
-  const cookieHeader = h.get("cookie") || "";
+  // Get authentication from shared helper
+  const authHeader = await getAuthHeader();
   const fh = new Headers({ "Content-Type": "application/json" });
-  if (authHeader) fh.set("Authorization", authHeader);
-  if (cookieHeader) fh.set("Cookie", cookieHeader);
+  if (authHeader) {
+    fh.set("Authorization", authHeader);
+  }
 
-  const upstream = await fetch(`${BE_BASE}/api/organizations/${id}/leave`, {
+  const upstream = await fetch(`${BE_BASE}/api/reader/enrollments/organizations/${id}/leave`, {
     method: "POST",
     headers: fh,
     cache: "no-store",
-    body: JSON.stringify({ password }),
   });
 
   return proxyJsonResponse(upstream, { mode: "real" });

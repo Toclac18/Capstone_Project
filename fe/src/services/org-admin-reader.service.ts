@@ -1,38 +1,78 @@
-// fe/src/services/orgAdmin-reader.ts
+// src/services/org-admin-reader.service.ts
 import { apiClient } from "./http";
 
-export type ReaderResponse = {
-  message: string;
-  id: string;
-  fullName: string;
-  username: string;
-  email: string;
-  status: "ACTIVE" | "SUSPENDED" | "PENDING_VERIFICATION";
-  coinBalance: number;
-};
+export type OrgEnrollStatus = "PENDING_INVITE" | "JOINED" | "REMOVED";
 
-export type ReaderAccessPayload = {
-  userId: string;
-  enable: boolean;
-};
+export interface ChangeEnrollmentStatusPayload {
+  enrollmentId: string;
+  status: OrgEnrollStatus; // "JOINED" hoặc "REMOVED"
+}
 
-/** Lấy danh sách readers qua Next API (GET /api/org-admin/readers) */
-export async function fetchReaders(): Promise<{
-  items: ReaderResponse[];
-  total: number;
-}> {
-  const res = await apiClient.get("/org-admin/readers");
+export async function changeEnrollmentStatus(
+  payload: ChangeEnrollmentStatusPayload,
+): Promise<OrgEnrollment> {
+  const res = await apiClient.patch<OrgEnrollment>(
+    "org-admin/readers/status", // => /api/org-admin/readers/status
+    payload,
+  );
   return res.data;
 }
 
-/** Đổi quyền truy cập reader qua Next API (POST /api/org-admin/reader-change-access) */
-export async function changeReaderAccess(
-  payload: ReaderAccessPayload,
-): Promise<ReaderResponse> {
-  const body = { ...payload };
-  const res = await apiClient.post<ReaderResponse>(
-    "/org-admin/reader-change-access",
-    body,
+export interface OrgEnrollment {
+  enrollmentId: string;
+  memberId: string;
+  memberEmail: string;
+  memberFullName: string;
+  memberAvatarUrl: string | null;
+  organizationId: string;
+  organizationName: string;
+  organizationType: string;
+  status: OrgEnrollStatus;
+  invitedAt: string;
+  respondedAt: string | null;
+}
+
+export interface OrgEnrollmentPageInfo {
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+export interface OrgEnrollmentListResponse {
+  success: boolean;
+  data: OrgEnrollment[];
+  pageInfo: OrgEnrollmentPageInfo;
+  timestamp: string;
+}
+
+export interface FetchReadersParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  status?: OrgEnrollStatus | "ALL";
+}
+
+export async function fetchReaders(
+  params: FetchReadersParams = {},
+): Promise<OrgEnrollmentListResponse> {
+  const { page = 1, pageSize = 10, q = "", status = "ALL" } = params;
+
+  const res = await apiClient.get<OrgEnrollmentListResponse>(
+    "org-admin/readers",
+    {
+      params: {
+        page,
+        pageSize,
+        q,
+        status,
+      },
+    },
   );
+
   return res.data;
 }

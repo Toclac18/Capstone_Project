@@ -1,21 +1,15 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
 import styles from "../styles.module.css";
 import EmptyState from "./EmptyState";
-import DocCard, { type DocCardItem } from "./DocCard";
+import DocCard from "./DocCard";
 import { useHomepage } from "../provider";
 import { useModalPreview } from "@/components/ModalPreview";
 import type { DocumentItem as BaseDoc } from "@/types/documentResponse";
 
 type GroupInput = { name: string; items: BaseDoc[] };
-type GroupNormalized = { name: string; items: DocCardItem[] };
-
-function readInt(sp: URLSearchParams, key: string, fallback: number) {
-  const v = parseInt(sp.get(key) || "", 10);
-  return Number.isFinite(v) && v > 0 ? v : fallback;
-}
+type GroupNormalized = { name: string; items: BaseDoc[] };
 
 export default function SpecializationsBlock({
   groups,
@@ -29,8 +23,6 @@ export default function SpecializationsBlock({
   disablePager?: boolean;
 }) {
   const { q } = useHomepage();
-  const spObj = useSearchParams();
-  const router = useRouter();
   const { open } = useModalPreview();
 
   const normalizedGroups: GroupNormalized[] = useMemo(() => {
@@ -64,6 +56,9 @@ export default function SpecializationsBlock({
       .filter((g) => g.items.length > 0);
   }, [q, normalizedGroups]);
 
+  // ================================
+  // Trường hợp disablePager = true
+  // ================================
   if (disablePager) {
     if (!filtered.length) {
       return (
@@ -101,17 +96,11 @@ export default function SpecializationsBlock({
     );
   }
 
-  const initial = useMemo(() => {
-    const sp = new URLSearchParams(spObj.toString());
-    return {
-      size: readInt(sp, "specSize", Math.max(1, defaultGroupsPerPage || 1)),
-      page: readInt(sp, "specPage", 1),
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const [size, setSize] = useState(initial.size);
-  const [page, setPage] = useState(initial.page);
+  // ================================
+  // Trường hợp có pager client-side
+  // ================================
+  const [size, setSize] = useState(Math.max(1, defaultGroupsPerPage || 1));
+  const [page, setPage] = useState(1);
 
   const totalPages = Math.max(
     1,
@@ -121,32 +110,11 @@ export default function SpecializationsBlock({
   const start = (clampedPage - 1) * Math.max(1, size);
   const visibleGroups = filtered.slice(start, start + Math.max(1, size));
 
+  // Khi q hoặc groups đổi → về page 1
   useEffect(() => {
     if (clampedPage !== 1) setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, groups]);
-
-  useEffect(() => {
-    const current = new URLSearchParams(spObj.toString());
-    const next = new URLSearchParams(current.toString());
-    let changed = false;
-
-    if (current.get("specPage") !== String(clampedPage)) {
-      next.set("specPage", String(clampedPage));
-      changed = true;
-    }
-    if (current.get("specSize") !== String(size)) {
-      next.set("specSize", String(size));
-      changed = true;
-    }
-
-    if (changed) {
-      const qs = next.toString();
-      const url = qs ? `?${qs}` : location.pathname;
-      router.replace(url, { scroll: false });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clampedPage, size, spObj]);
 
   if (!filtered.length) {
     return (

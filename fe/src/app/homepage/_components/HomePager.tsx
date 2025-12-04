@@ -1,48 +1,66 @@
+// src/app/homepage/_components/HomePager.tsx
 "use client";
 
-import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import styles from "../styles.module.css";
-
-function readInt(sp: URLSearchParams, key: string, fallback: number) {
-  const v = parseInt(sp.get(key) || "", 10);
-  return Number.isFinite(v) && v > 0 ? v : fallback;
-}
 
 export default function HomePager({
   totalPages,
   defaultGroupsPerPage = 3,
+  onPageChange,
+  onPageSizeChange,
 }: {
   totalPages: number;
-  defaultGroupsPerPage?: number; // số nhóm specialization mỗi trang
+  defaultGroupsPerPage?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
 }) {
-  const router = useRouter();
-  const sp = useSearchParams();
+  const [page, setPage] = useState(1);
+  const [size, setSize] = useState(defaultGroupsPerPage);
 
-  const pageKey = "hpPage";
-  const sizeKey = "hpSpecSize";
+  // 1. Tạo ref để đọc giá trị page mới nhất trong useEffect
+  const pageRef = useRef(page);
 
-  const page = readInt(new URLSearchParams(sp.toString()), pageKey, 1);
-  const size = readInt(
-    new URLSearchParams(sp.toString()),
-    sizeKey,
-    defaultGroupsPerPage,
-  );
-
-  const set = (kv: Record<string, string | number>) => {
-    const next = new URLSearchParams(sp.toString());
-    Object.entries(kv).forEach(([k, v]) => {
-      if (!v || v === "" || v === 0) next.delete(k);
-      else next.set(k, String(v));
-    });
-    router.replace(`?${next.toString()}`, { scroll: false });
-  };
-
-  // Nếu đang ở trang > tổng trang (ví dụ sau khi search lọc bớt), tự kẹp lại
   useEffect(() => {
-    if (page > totalPages) set({ [pageKey]: Math.max(1, totalPages) });
+    pageRef.current = page;
+  }); // Không cần dependency, chạy sau mỗi lần render để luôn update ref
+
+  useEffect(() => {
+    const currentPage = pageRef.current;
+
+    if (totalPages > 0 && currentPage > totalPages) {
+      const newPage = Math.max(1, totalPages);
+
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      setPage(newPage);
+      onPageChange?.(newPage);
+    }
+    // Chỉ chạy khi totalPages thay đổi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalPages]);
+
+  const handlePrev = () => {
+    const newPage = Math.max(1, page - 1);
+    setPage(newPage);
+    onPageChange?.(newPage);
+  };
+
+  const handleNext = () => {
+    const newPage = Math.min(totalPages, page + 1);
+    setPage(newPage);
+    onPageChange?.(newPage);
+  };
+
+  const handlePageSize = (newSize: number) => {
+    const safe = Math.max(1, newSize);
+    setSize(safe);
+    onPageSizeChange?.(safe);
+
+    setPage(1);
+    onPageChange?.(1);
+  };
+
+  if (totalPages <= 0) return null;
 
   return (
     <div className={styles.footerPager}>
@@ -51,12 +69,7 @@ export default function HomePager({
         <select
           className={styles.pageSizeSelect}
           value={size}
-          onChange={(e) =>
-            set({
-              [sizeKey]: parseInt(e.target.value, 10) || defaultGroupsPerPage,
-              [pageKey]: 1,
-            })
-          }
+          onChange={(e) => handlePageSize(parseInt(e.target.value, 10))}
         >
           {[2, 3, 4, 6].map((n) => (
             <option key={n} value={n}>
@@ -69,22 +82,24 @@ export default function HomePager({
       <div className={styles.pager}>
         <button
           className={styles.pagerBtn}
-          onClick={() => set({ [pageKey]: Math.max(1, page - 1) })}
           disabled={page <= 1}
-          aria-label="Previous page"
           type="button"
+          onClick={handlePrev}
+          aria-label="Previous page"
         >
           ‹
         </button>
+
         <span className={styles.pagerText}>
-          {Math.min(page, totalPages)} / {Math.max(1, totalPages)}
+          {page} / {Math.max(1, totalPages)}
         </span>
+
         <button
           className={styles.pagerBtn}
-          onClick={() => set({ [pageKey]: Math.min(totalPages, page + 1) })}
           disabled={page >= totalPages}
-          aria-label="Next page"
           type="button"
+          onClick={handleNext}
+          aria-label="Next page"
         >
           ›
         </button>

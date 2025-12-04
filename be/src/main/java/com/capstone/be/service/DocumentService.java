@@ -1,10 +1,13 @@
 package com.capstone.be.service;
 
+import com.capstone.be.domain.enums.DocStatus;
+import com.capstone.be.domain.enums.DocVisibility;
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
 import com.capstone.be.dto.request.document.DocumentSearchFilter;
 import com.capstone.be.dto.request.document.DocumentUploadHistoryFilter;
 import com.capstone.be.dto.request.document.UpdateDocumentRequest;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
+import com.capstone.be.dto.response.document.AdminDocumentListResponse;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.dto.response.document.DocumentLibraryResponse;
 import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
@@ -121,4 +124,58 @@ public interface DocumentService {
   Page<DocumentSearchResponse> searchPublicDocuments(DocumentSearchFilter filter,
       Pageable pageable);
 
+  // ===== Admin-only methods =====
+
+  /**
+   * Get all documents for admin with filters
+   * Admin can view all documents regardless of status
+   *
+   * @param title            Document title filter (partial match, case-insensitive)
+   * @param uploaderId       Filter by uploader ID
+   * @param organizationId   Filter by organization ID
+   * @param docTypeId        Filter by document type ID
+   * @param specializationId Filter by specialization ID
+   * @param status           Filter by document status
+   * @param visibility       Filter by visibility
+   * @param isPremium        Filter by premium status
+   * @param pageable         Pagination parameters
+   * @return Page of documents
+   */
+  Page<AdminDocumentListResponse> getAllDocumentsForAdmin(
+      String title,
+      UUID uploaderId,
+      UUID organizationId,
+      UUID docTypeId,
+      UUID specializationId,
+      DocStatus status,
+      DocVisibility visibility,
+      Boolean isPremium,
+      Pageable pageable);
+
+  /**
+   * Get document detail by ID for admin
+   * Admin can view any document regardless of status or visibility
+   *
+   * @param documentId Document ID
+   * @return Document detail response
+   */
+  DocumentDetailResponse getDocumentDetailForAdmin(UUID documentId);
+
+  /**
+   * Activate a document (set status to ACTIVE)
+   * Only admin can activate documents
+   *
+   * @param documentId Document ID to activate
+   */
+  void activateDocument(UUID documentId);
+
+  /**
+   * Deactivate a document (set status to INACTIVE)
+   * Only admin can deactivate documents
+   *
+   * @param documentId Document ID to deactivate
+   */
+  void deactivateDocument(UUID documentId);
+
+  Page<DocumentDetailResponse> getHomepageDocuments(UUID userId, int page, int size);
 }

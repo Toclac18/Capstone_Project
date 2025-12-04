@@ -1,6 +1,7 @@
 package com.capstone.be.dto.response.organization;
 
 import java.util.List;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,6 +15,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class InviteMembersResponse {
+
+  private UUID batch;
 
   /**
    * Total emails processed

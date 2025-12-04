@@ -1,10 +1,13 @@
+// src/services/http.ts
 import axios from "axios";
 
 /**
  * HTTP client dùng chung:
  * - baseURL: "/api" (đi qua middleware + API Route)
  * - withCredentials: true (tự gửi cookie httpOnly: access_token)
- * - interceptor: chuẩn hoá message lỗi cho UI
+ * - interceptor:
+ *   + Request: nếu là FormData thì KHÔNG set Content-Type
+ *   + Response: chuẩn hoá message lỗi
  */
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL?.trim() || "/api"
@@ -15,10 +18,30 @@ const API_TIMEOUT = parseInt(
 );
 
 export const apiClient = axios.create({
-  baseURL: API_BASE_URL, // -> /api
+  baseURL: API_BASE_URL,
   timeout: API_TIMEOUT,
-  headers: { "Content-Type": "application/json" },
-  withCredentials: true, // gửi cookie access_token
+  withCredentials: true,
+});
+
+apiClient.interceptors.request.use((config) => {
+  const isFormData =
+    typeof FormData !== "undefined" && config.data instanceof FormData;
+
+  config.headers = config.headers ?? {};
+
+  if (isFormData) {
+    delete (config.headers as any)["Content-Type"];
+    delete (config.headers as any)["content-type"];
+  } else {
+    if (
+      !(config.headers as any)["Content-Type"] &&
+      !(config.headers as any)["content-type"]
+    ) {
+      (config.headers as any)["Content-Type"] = "application/json";
+    }
+  }
+
+  return config;
 });
 
 apiClient.interceptors.response.use(

@@ -205,6 +205,18 @@
   @apply border-primary bg-primary/20 text-primary hover:bg-primary/30;
 }
 
+/* Sortable Header */
+.sortable-header {
+  @apply transition-colors;
+}
+
+.sortable-header:hover {
+  @apply bg-gray-100;
+}
+:global(html.dark) .sortable-header:hover {
+  @apply bg-dark-3;
+}
+
 /* Modal Styles */
 .modal-overlay {
   @apply fixed inset-0 z-50 flex items-center justify-center;

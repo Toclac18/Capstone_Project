@@ -31,16 +31,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -59,7 +50,7 @@ public class DocumentController {
    * Upload a document POST /api/v1/documents/upload
    *
    * @param userPrincipal Authenticated user (uploader)
-   * @param info          Document information
+   * @param info          Document informatÏion
    * @param file          PDF file to upload
    * @return Document upload response
    */
@@ -325,6 +316,26 @@ public class DocumentController {
     log.info("User {} fetching vote for document {}", userId, documentId);
 
     VoteDocumentResponse response = documentVoteService.getUserVote(documentId, userId);
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * API Homepage: Dành cho cả Guest và User
+   */
+  @GetMapping("/homepage")
+  public ResponseEntity<Page<DocumentDetailResponse>> getHomepageDocuments(
+          @AuthenticationPrincipal UserPrincipal userPrincipal,
+          @RequestParam(name = "page", defaultValue = "0") int page,
+          @RequestParam(name = "size", defaultValue = "20") int size
+  ) {
+    // Nếu chưa đăng nhập -> userId = null
+    UUID userId = userPrincipal != null ? userPrincipal.getId() : null;
+
+    log.info("Homepage request: page={}, size={}, userId={}", page, size, userId);
+
+    Page<DocumentDetailResponse> response =
+            documentService.getHomepageDocuments(userId, page, size);
 
     return ResponseEntity.ok(response);
   }

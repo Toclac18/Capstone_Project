@@ -66,8 +66,7 @@ export function UserStatisticsTab({ state, statistics, error }: UserStatisticsTa
     summary, 
     userGrowth = [], 
     activeUsersGrowth = [], 
-    roleBreakdown = [], 
-    statusBreakdown = [] 
+    roleBreakdown = []
   } = statistics;
 
   const summaryCards = [

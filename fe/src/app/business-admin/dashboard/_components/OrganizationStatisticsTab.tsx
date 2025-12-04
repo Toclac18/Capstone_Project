@@ -3,7 +3,7 @@
 import type { LoadState } from "@/types/statistics";
 import dynamic from "next/dynamic";
 import type { ApexOptions } from "apexcharts";
-import { Building2, Users, FileText, Eye, TrendingUp } from "lucide-react";
+import { Building2, Users, FileText, Eye } from "lucide-react";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 

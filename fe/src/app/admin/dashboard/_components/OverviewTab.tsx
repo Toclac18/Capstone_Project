@@ -83,7 +83,7 @@ export function OverviewTab({ state, statistics, error }: OverviewTabProps) {
           <div>
             <h2 className="text-2xl font-bold text-dark dark:text-white">System Overview</h2>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              Quick summary of your system's key metrics
+              Quick summary of your system&apos;s key metrics
             </p>
           </div>
         </div>

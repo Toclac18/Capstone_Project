@@ -30,7 +30,7 @@ export default function Homepage() {
     return <HomepageSkeleton />;
   }
 
-  const isLoggedIn = isAuthenticated === true;
+  const isLoggedIn = isAuthenticated;
 
   return (
     <div className={styles.pageShell}>

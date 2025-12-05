@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { X, Edit2 } from "lucide-react";
-import type { Tag, TagStatus } from "../api";
+import type { Tag } from "../api";
 import { useToast } from "@/components/ui/toast";
 import styles from "../styles.module.css";
 
@@ -10,7 +10,7 @@ interface UpdateTagModalProps {
   isOpen: boolean;
   onClose: () => void;
   tag: Tag | null;
-  onUpdate: (id: string, name: string, status: TagStatus) => Promise<void>;
+  onUpdate: (id: string, name: string) => Promise<void>;
 }
 
 export function UpdateTagModal({
@@ -20,7 +20,6 @@ export function UpdateTagModal({
   onUpdate,
 }: UpdateTagModalProps) {
   const [name, setName] = useState("");
-  const [status, setStatus] = useState<TagStatus>("ACTIVE");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { showToast } = useToast();
@@ -28,8 +27,6 @@ export function UpdateTagModal({
   useEffect(() => {
     if (tag) {
       setName(tag.name);
-      // Ensure status is ACTIVE or INACTIVE (for tags that can be edited)
-      setStatus(tag.status === "ACTIVE" || tag.status === "INACTIVE" ? tag.status : "ACTIVE");
       setError(null);
     }
   }, [tag]);
@@ -47,7 +44,7 @@ export function UpdateTagModal({
 
       try {
         setIsLoading(true);
-        await onUpdate(tag.id, name.trim(), status);
+        await onUpdate(tag.id, name.trim());
         onClose();
         showToast({
           type: "success",
@@ -69,14 +66,13 @@ export function UpdateTagModal({
         setIsLoading(false);
       }
     },
-    [tag, name, status, onUpdate, onClose, showToast]
+    [tag, name, onUpdate, onClose, showToast]
   );
 
   const handleClose = useCallback(() => {
     if (isLoading) return;
     if (tag) {
       setName(tag.name);
-      setStatus(tag.status);
     }
     setError(null);
     onClose();
@@ -122,22 +118,6 @@ export function UpdateTagModal({
                 disabled={isLoading}
                 autoFocus
               />
-            </div>
-
-            <div className={styles["form-group"]}>
-              <label htmlFor="updateTagStatus" className={styles["form-label"]}>
-                Status <span className={styles["required"]}>*</span>
-              </label>
-              <select
-                id="updateTagStatus"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as TagStatus)}
-                className={styles["form-select"]}
-                disabled={isLoading}
-              >
-                <option value="ACTIVE">Active</option>
-                <option value="INACTIVE">Inactive</option>
-              </select>
             </div>
 
             {error && <p className={styles["form-error"]}>{error}</p>}

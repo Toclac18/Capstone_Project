@@ -21,6 +21,10 @@ export const metadata: Metadata = {
   },
   description:
     "Next.js admin dashboard toolkit with 200+ templates, UI components, and integrations for fast dashboard development.",
+  icons: {
+    icon: "/logo-tab.svg",
+    apple: "/logo-tab.svg",
+  },
 };
 
 export default async function RootLayout({ children }: PropsWithChildren) {

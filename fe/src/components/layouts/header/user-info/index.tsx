@@ -9,14 +9,12 @@ import {
 import { cn } from "@/utils/utils";
 import Link from "next/link";
 import { useState, useLayoutEffect } from "react";
-import { useRouter } from "next/navigation";
 import { logout } from "@/services/auth.service";
 import { LogOutIcon, SettingsIcon, UserIcon } from "./icons";
 import { useReader } from "@/hooks/useReader";
 
 export function UserInfo() {
   const [isOpen, setIsOpen] = useState(false);
-  const router = useRouter();
   const { email, loading, role } = useReader();
   const [name, setName] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -41,7 +39,8 @@ export function UserInfo() {
         localStorage.removeItem("userName");
       }
       setIsOpen(false);
-      router.push("/auth/sign-in");
+      // Force full page reload to landing page
+      window.location.href = "/";
     } catch (error) {
       console.error("Logout failed:", error);
       // Clear localStorage even if API fails
@@ -49,7 +48,8 @@ export function UserInfo() {
         localStorage.removeItem("userName");
       }
       setIsOpen(false);
-      router.push("/auth/sign-in");
+      // Force full page reload to landing page
+      window.location.href = "/";
     }
   }
 

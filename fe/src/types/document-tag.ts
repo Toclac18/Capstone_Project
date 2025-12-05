@@ -6,7 +6,7 @@ export interface DocumentTag extends BaseEntity {
   documents: Document[];
 }
 
-export type TagStatus = "ACTIVE" | "INACTIVE" | "PENDING" | "REJECTED";
+export type TagStatus = "ACTIVE" | "PENDING" | "REJECTED";
 
 export interface Tag {
   id: string;
@@ -39,6 +39,6 @@ export interface CreateTagRequest {
 
 export interface UpdateTagRequest {
   name?: string;
-  status?: TagStatus;
+  // Status cannot be updated via this endpoint
 }
 

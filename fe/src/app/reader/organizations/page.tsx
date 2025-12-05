@@ -12,7 +12,7 @@ import styles from "./styles.module.css";
 type LoadState = "loading" | "success" | "empty" | "error";
 
 const ITEMS_PER_PAGE = 4;
-const LOGO_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/avatars/";
+const LOGO_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/org-logos/";
 
 export default function Page() {
   const router = useRouter();

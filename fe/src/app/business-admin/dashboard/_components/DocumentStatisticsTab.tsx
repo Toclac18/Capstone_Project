@@ -30,8 +30,8 @@ export function DocumentStatisticsTab({
 
   if (state === "error" || !statistics) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-800 dark:bg-red-900/20">
-        <p className="text-red-800 dark:text-red-200">
+      <div className="rounded-[10px] bg-red-50 p-6 shadow-1 dark:bg-red-900/20">
+        <p className="text-red-800 dark:text-red-100">
           {error || "Failed to load statistics"}
         </p>
       </div>
@@ -158,7 +158,7 @@ export function DocumentStatisticsTab({
         {summaryCards.map((card, index) => (
           <div
             key={index}
-            className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark"
+            className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card"
           >
             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
               {card.title}
@@ -172,28 +172,28 @@ export function DocumentStatisticsTab({
 
       {/* Charts */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+        <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
           <Chart options={uploadsOptions} series={uploadsSeries} type="area" height={350} />
         </div>
-        <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+        <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
           <Chart options={statusOptions} series={statusSeries} type="donut" height={300} />
         </div>
       </div>
 
       {/* Organization Breakdown Table */}
       {statistics.organizationBreakdown.length > 0 && (
-        <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
+          <h3 className="mb-4 text-lg font-semibold text-dark dark:text-white">
             Top Organizations by Document Count
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-stroke dark:border-strokedark">
-                  <th className="p-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">
+                <tr className="border-b border-stroke dark:border-dark-3">
+                  <th className="p-3 text-left text-sm font-medium text-gray-600 dark:text-gray-300">
                     Organization
                   </th>
-                  <th className="p-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">
+                  <th className="p-3 text-right text-sm font-medium text-gray-600 dark:text-gray-300">
                     Document Count
                   </th>
                 </tr>
@@ -202,12 +202,12 @@ export function DocumentStatisticsTab({
                 {statistics.organizationBreakdown.map((org, index) => (
                   <tr
                     key={index}
-                    className="border-b border-stroke dark:border-strokedark last:border-0"
+                    className="border-b border-stroke last:border-0 dark:border-dark-3"
                   >
-                    <td className="p-3 text-sm text-gray-900 dark:text-white">
+                    <td className="p-3 text-sm text-dark dark:text-white">
                       {org.organizationName}
                     </td>
-                    <td className="p-3 text-right text-sm font-medium text-gray-900 dark:text-white">
+                    <td className="p-3 text-right text-sm font-medium text-dark dark:text-white">
                       {org.documentCount.toLocaleString()}
                     </td>
                   </tr>

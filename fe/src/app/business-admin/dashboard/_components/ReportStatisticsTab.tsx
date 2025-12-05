@@ -180,10 +180,7 @@ export function ReportStatisticsTab({
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {summaryCards.map((card, index) => (
-          <div
-            key={index}
-            className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark"
-          >
+          <div key={index} className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
               {card.title}
             </p>
@@ -196,7 +193,7 @@ export function ReportStatisticsTab({
 
       {/* Charts */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+        <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
           <Chart
             options={reportsCreatedOptions}
             series={reportsCreatedSeries}
@@ -204,19 +201,19 @@ export function ReportStatisticsTab({
             height={350}
           />
         </div>
-        <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+        <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
           <Chart options={statusOptions} series={statusSeries} type="donut" height={300} />
         </div>
       </div>
 
       {/* Reason Breakdown Chart */}
-      <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <Chart options={reasonOptions} series={reasonSeries} type="bar" height={350} />
       </div>
 
       {/* Resolution Time Breakdown */}
       {statistics.resolutionTimeBreakdown.length > 0 && (
-        <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+        <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
           <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
             Resolution Time Breakdown
           </h3>

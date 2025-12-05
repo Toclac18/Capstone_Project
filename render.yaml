@@ -7,6 +7,7 @@ services:
     name: capstone-fe
     runtime: node
     rootDir: fe
+    branch: deploy-test
     buildCommand: npm install && npm run build
     startCommand: npm run start
     envVars:
@@ -27,12 +28,65 @@ services:
     healthCheckPath: /
 
   # Backend - Spring Boot (already deployed)
-  # Uncomment if you want to manage both services via render.yaml
-  # - type: web
-  #   name: capstone-be
-  #   runtime: docker
-  #   rootDir: be
-  #   dockerfilePath: ./Dockerfile
-  #   envVars:
-  #     - key: SPRING_PROFILES_ACTIVE
-  #       value: prod
+  - type: web
+    name: readee-backend
+    runtime: docker
+    rootDir: be
+    region: singapore
+    plan: free
+    branch: deploy-test
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      # Database
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: 5432
+      - key: DB_NAME
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+      # JWT
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION_MS
+        value: 86400000
+      - key: JWT_EMAIL_VERIFICATION_EXPIRATION_MS
+        value: 600000
+      - key: JWT_ISSUER
+        value: capstone
+      # Mail
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        value: 587
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        value: no-reply@capstone.com
+      - key: MAIL_VERIFICATION_BASE_URL
+        sync: false
+      # AWS S3
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_KEY
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: AWS_S3_BUCKET
+        sync: false
+      # JPA
+      - key: JPA_DDL_AUTO
+        value: update
+      - key: JPA_SHOW_SQL
+        value: false
+    healthCheckPath: /api/actuator/health

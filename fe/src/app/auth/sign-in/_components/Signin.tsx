@@ -42,12 +42,10 @@ export default function Signin() {
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setLoading(true);
-    setError(null);
 
     const payload: LoginPayload = {
       email: data.email,
@@ -87,7 +85,6 @@ export default function Signin() {
       }, 100);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Invalid email or password";
-      setError(msg);
       showToast({
         type: "error",
         title: "Login Failed",

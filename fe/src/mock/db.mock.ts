@@ -477,7 +477,7 @@ const _businessAdminTags: BusinessAdminTag[] = [
   {
     id: "tag-7",
     name: "Database",
-    status: "INACTIVE",
+    status: "REJECTED",
     createdDate: "2025-01-21T16:00:00Z",
   },
   {
@@ -507,7 +507,7 @@ const _businessAdminTags: BusinessAdminTag[] = [
   {
     id: "tag-12",
     name: "Blockchain",
-    status: "INACTIVE",
+    status: "REJECTED",
     createdDate: "2025-01-26T21:00:00Z",
   },
   {
@@ -723,7 +723,7 @@ export const mockTagsDB = {
       {
         id: "tag-7",
         name: "Database",
-        status: "INACTIVE",
+        status: "REJECTED",
         createdDate: "2025-01-21T16:00:00Z",
       },
       {
@@ -753,7 +753,7 @@ export const mockTagsDB = {
       {
         id: "tag-12",
         name: "Blockchain",
-        status: "INACTIVE",
+        status: "REJECTED",
         createdDate: "2025-01-26T21:00:00Z",
       },
       {

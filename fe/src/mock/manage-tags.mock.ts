@@ -25,8 +25,8 @@ export function setupMockManageTags() {
           status:
             (urlObj.searchParams.get("status") as
               | "ACTIVE"
-              | "INACTIVE"
               | "PENDING"
+              | "REJECTED"
               | null) || undefined,
           dateFrom: urlObj.searchParams.get("dateFrom") || undefined,
           dateTo: urlObj.searchParams.get("dateTo") || undefined,

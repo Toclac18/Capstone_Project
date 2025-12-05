@@ -23,6 +23,7 @@ public interface OrgEnrollmentMapper {
   @Mapping(source = "member.avatarKey", target = "memberAvatarUrl")
   @Mapping(source = "organization.id", target = "organizationId")
   @Mapping(source = "organization.name", target = "organizationName")
+  @Mapping(source = "organization.logoKey", target = "organizationLogo")
 //  @Mapping(source = "organization.type", target = "organizationType")
   @Mapping(source = "createdAt", target = "invitedAt")
   @Mapping(source = "updatedAt", target = "respondedAt")

@@ -2,18 +2,14 @@ import { mockTagsDB } from "@/mock/db.mock";
 import { getAuthHeader } from "@/server/auth";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
+import type { TagStatus } from "@/types/document-tag";
 
 export async function GET(request: Request) {
   if (USE_MOCK) {
     const { searchParams } = new URL(request.url);
     const params = {
       search: searchParams.get("search") || undefined,
-      status:
-        (searchParams.get("status") as
-          | "ACTIVE"
-          | "INACTIVE"
-          | "PENDING"
-          | null) || undefined,
+      status: (searchParams.get("status") as TagStatus | null) || undefined,
       dateFrom: searchParams.get("dateFrom") || undefined,
       dateTo: searchParams.get("dateTo") || undefined,
       // Note: sortBy and sortOrder are handled in FE, not sent to BE

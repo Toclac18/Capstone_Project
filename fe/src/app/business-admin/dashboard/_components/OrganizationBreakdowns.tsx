@@ -172,7 +172,7 @@ export function OrganizationBreakdowns({ statistics }: OrganizationBreakdownsPro
 
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-      <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <Chart
           options={memberStatusOptions}
           series={memberStatusSeries}
@@ -180,7 +180,7 @@ export function OrganizationBreakdowns({ statistics }: OrganizationBreakdownsPro
           height={300}
         />
       </div>
-      <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <Chart
           options={documentStatusOptions}
           series={documentStatusSeries}
@@ -188,7 +188,7 @@ export function OrganizationBreakdowns({ statistics }: OrganizationBreakdownsPro
           height={300}
         />
       </div>
-      <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <Chart
           options={visibilityOptions}
           series={visibilitySeries}
@@ -196,7 +196,7 @@ export function OrganizationBreakdowns({ statistics }: OrganizationBreakdownsPro
           height={300}
         />
       </div>
-      <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <Chart options={premiumOptions} series={premiumSeries} type="donut" height={300} />
       </div>
     </div>

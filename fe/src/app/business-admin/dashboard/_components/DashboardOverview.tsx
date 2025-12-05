@@ -135,7 +135,7 @@ export function DashboardOverview({ state, dashboard, error }: DashboardOverview
           return (
             <div
               key={index}
-              className={`rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark ${card.bgColor}`}
+              className={`rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card ${card.bgColor}`}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -156,7 +156,7 @@ export function DashboardOverview({ state, dashboard, error }: DashboardOverview
       </div>
 
       {/* Quick Stats */}
-      <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <div className="mb-4 flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">

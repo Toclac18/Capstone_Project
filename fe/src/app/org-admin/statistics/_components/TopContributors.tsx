@@ -8,7 +8,7 @@ interface TopContributorsProps {
 
 export function TopContributors({ contributors }: TopContributorsProps) {
   return (
-    <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+    <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-dark dark:bg-gray-dark">
       <h3 className="mb-4 text-xl font-semibold text-black dark:text-white">
         Top Contributors
       </h3>

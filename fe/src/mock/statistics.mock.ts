@@ -315,13 +315,39 @@ export function mockGetGlobalDocumentStatistics(
     freeCount: totalDocuments - Math.floor(totalDocuments * 0.3),
   };
 
-  const organizationBreakdown: OrganizationBreakdown[] = [
-    { organizationId: "1", organizationName: "Organization A", documentCount: 245 },
-    { organizationId: "2", organizationName: "Organization B", documentCount: 189 },
-    { organizationId: "3", organizationName: "Organization C", documentCount: 156 },
-    { organizationId: "4", organizationName: "Organization D", documentCount: 134 },
-    { organizationId: "5", organizationName: "Organization E", documentCount: 98 },
+  // Distribute documents across organizations in a realistic way
+  const orgNames = [
+    "University of Technology",
+    "National Science Institute",
+    "Medical Research Center",
+    "Business School Alliance",
+    "Open Knowledge Hub",
+    "Engineering Academy",
+    "Social Science Lab",
+    "Education Network",
   ];
+
+  const organizationBreakdown: OrganizationBreakdown[] = [];
+  let remainingDocs = totalDocuments;
+
+  for (let i = 0; i < orgNames.length; i++) {
+    const isLast = i === orgNames.length - 1;
+    const baseShare = totalDocuments / orgNames.length;
+    const variance = baseShare * 0.3;
+    const randomShare = Math.max(
+      10,
+      Math.round(baseShare + (Math.random() * 2 - 1) * variance),
+    );
+
+    const docCount = isLast ? Math.max(0, remainingDocs) : Math.min(randomShare, remainingDocs);
+    remainingDocs -= docCount;
+
+    organizationBreakdown.push({
+      organizationId: String(i + 1),
+      organizationName: orgNames[i],
+      documentCount: docCount,
+    });
+  }
 
   const typeBreakdown: TypeBreakdown[] = [
     { typeId: "1", typeName: "Research Paper", count: 320 },

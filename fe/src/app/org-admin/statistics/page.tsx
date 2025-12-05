@@ -77,7 +77,7 @@ export default function OrganizationStatisticsPage() {
 
       {state === "success" && statistics && (
         <div className="mt-6 space-y-6">
-          <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+          <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-dark dark:bg-gray-dark">
             <h3 className="text-xl font-semibold text-black dark:text-white">
               {statistics.organization.name}
             </h3>

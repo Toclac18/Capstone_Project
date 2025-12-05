@@ -1,5 +1,5 @@
-// Auto-generated from uploaded mockLibraryDocs, enriched to satisfy DocumentItem fields.
-import type { DocumentItem } from "@/types/documentResponse";
+// src/mock/documents.mock.ts
+import type { DocumentItem } from "@/types/document-homepage";
 
 export const mockLibraryDocs: DocumentItem[] = [
   {

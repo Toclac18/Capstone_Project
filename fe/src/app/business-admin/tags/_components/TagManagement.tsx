@@ -45,6 +45,7 @@ export function TagManagement() {
     reset,
     control,
     getValues,
+    formState: { errors },
   } = useForm<FilterValues>({
     defaultValues: {
       search: "",
@@ -107,6 +108,17 @@ export function TagManagement() {
 
   // Apply filters when form is submitted
   const onSubmit: SubmitHandler<FilterValues> = (data: FilterValues) => {
+    // Validate date range
+    if (data.dateFrom && data.dateTo) {
+      const fromDate = new Date(data.dateFrom);
+      const toDate = new Date(data.dateTo);
+      if (fromDate > toDate) {
+        setError("Date From must be before Date To");
+        return;
+      }
+    }
+    
+    setError(null);
     const newFilters: TagQueryParams = {
       ...filters,
       search: data.search?.trim() || undefined,
@@ -162,10 +174,10 @@ export function TagManagement() {
     [filters, fetchTags]
   );
 
-  // Handle update tag
+  // Handle update tag (status cannot be updated)
   const handleUpdateTag = useCallback(
-    async (id: string, name: string, status: TagStatus) => {
-      await updateTag(id, { name, status });
+    async (id: string, name: string) => {
+      await updateTag(id, { name });
       await fetchTags(filters);
     },
     [filters, fetchTags]
@@ -382,8 +394,8 @@ export function TagManagement() {
             >
               <option value="">All Status</option>
               <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
               <option value="PENDING">Pending</option>
+              <option value="REJECTED">Rejected</option>
             </select>
           </div>
 
@@ -394,10 +406,26 @@ export function TagManagement() {
             <input
               id="dateFrom"
               type="date"
-              {...register("dateFrom")}
-              className={styles["input"]}
+              {...register("dateFrom", {
+                validate: (value) => {
+                  const dateToValue = getValues("dateTo");
+                  if (value && dateToValue) {
+                    const fromDate = new Date(value);
+                    const toDate = new Date(dateToValue);
+                    if (fromDate > toDate) {
+                      return "Date From must be before Date To";
+                    }
+                  }
+                  return true;
+                },
+              })}
+              max={dateToValue || undefined}
+              className={styles["input"] + (errors.dateFrom ? " border-red-500" : "")}
               disabled={loading}
             />
+            {errors.dateFrom && (
+              <p className="mt-1 text-sm text-red-500">{errors.dateFrom.message}</p>
+            )}
           </div>
 
           <div>
@@ -407,10 +435,26 @@ export function TagManagement() {
             <input
               id="dateTo"
               type="date"
-              {...register("dateTo")}
-              className={styles["input"]}
+              {...register("dateTo", {
+                validate: (value) => {
+                  const dateFromValue = getValues("dateFrom");
+                  if (value && dateFromValue) {
+                    const fromDate = new Date(dateFromValue);
+                    const toDate = new Date(value);
+                    if (fromDate > toDate) {
+                      return "Date To must be after Date From";
+                    }
+                  }
+                  return true;
+                },
+              })}
+              min={dateFromValue || undefined}
+              className={styles["input"] + (errors.dateTo ? " border-red-500" : "")}
               disabled={loading}
             />
+            {errors.dateTo && (
+              <p className="mt-1 text-sm text-red-500">{errors.dateTo.message}</p>
+            )}
           </div>
         </div>
 
@@ -440,7 +484,7 @@ export function TagManagement() {
               )}
               {statusValue && (
                 <span className={`${styles["filter-tag"]} bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200`}>
-                  Status: {statusValue === "ACTIVE" ? "Active" : statusValue === "INACTIVE" ? "Inactive" : "Pending"}
+                  Status: {statusValue === "ACTIVE" ? "Active" : statusValue === "PENDING" ? "Pending" : "Rejected"}
                   <button
                     type="button"
                     onClick={() => {
@@ -544,9 +588,9 @@ export function TagManagement() {
                           " " +
                           (tag.status === "ACTIVE"
                             ? styles["status-active"]
-                            : tag.status === "INACTIVE"
-                            ? styles["status-inactive"]
-                            : styles["status-pending"])
+                            : tag.status === "PENDING"
+                            ? styles["status-pending"]
+                            : styles["status-inactive"])
                         }
                       >
                         {tag.status}
@@ -561,21 +605,26 @@ export function TagManagement() {
                           <>
                             <button
                               onClick={() => handleOpenApproveModal(tag)}
-                              className={styles["action-icon-btn"] + " " + styles["action-icon-btn-approve"]}
+                              className={styles["action-icon-btn"] + " " + styles["action-icon-btn-approve"] + " gap-2 px-3"}
                               disabled={loading}
                               title="Approve Tag"
                             >
                               <CheckCircle className="w-4 h-4" />
+                              <span className="text-sm font-medium">Approve</span>
                             </button>
                             <button
                               onClick={() => handleOpenRejectModal(tag)}
-                              className={styles["action-icon-btn"] + " " + styles["action-icon-btn-reject"]}
+                              className={styles["action-icon-btn"] + " " + styles["action-icon-btn-reject"] + " gap-2 px-3"}
                               disabled={loading}
                               title="Reject Tag"
                             >
                               <X className="w-4 h-4" />
+                              <span className="text-sm font-medium">Reject</span>
                             </button>
                           </>
+                        ) : tag.status === "REJECTED" ? (
+                          <span className="text-sm text-gray-400 dark:text-gray-500 italic">
+                          </span>
                         ) : (
                           <button
                             onClick={() => handleOpenUpdateModal(tag)}

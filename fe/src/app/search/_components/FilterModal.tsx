@@ -1,18 +1,29 @@
+// src/app/search/_components/FilterModal.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { fetchMeta } from "@/services/search-document.service";
-import type { SearchFilters, SearchMeta } from "@/types/documentResponse";
+import { fetchSearchMeta } from "@/services/search-document.service";
+import type { SearchFilters, SearchMeta } from "@/types/document-search";
 import { useSearch } from "../provider";
 import styles from "../styles.module.css";
 
-type LocalFilters = SearchFilters & {
-  domains?: string[] | null;
+type LocalFilters = {
+  organizationId?: string | null;
+
+  // nhiều domain
+  domainIds?: string[] | null;
+
+  // 1 specialization, lọc theo domainIds
+  specializationId?: string | null;
+
+  docTypeId?: string | null;
+  tagIds?: string[] | null;
+
   isPremium?: boolean | null;
-  pointsFrom?: number | null;
-  pointsTo?: number | null;
-  publicYearFrom?: number | null;
-  publicYearTo?: number | null;
+  priceFrom?: number | null;
+  priceTo?: number | null;
+  yearFrom?: number | null;
+  yearTo?: number | null;
 };
 
 export default function FilterModal({
@@ -25,16 +36,20 @@ export default function FilterModal({
   const { setFilters } = useSearch();
   const [meta, setMeta] = useState<SearchMeta | null>(null);
   const [loading, setLoading] = useState(false);
-  const [local, setLocal] = useState<LocalFilters>({});
-  const [showAllDomains, setShowAllDomains] = useState(false);
 
+  const [local, setLocal] = useState<LocalFilters>({});
+
+  const [showAllDomains, setShowAllDomains] = useState(false);
+  const [showAllTags, setShowAllTags] = useState(false);
+
+  // Load meta khi mở modal
   useEffect(() => {
     if (!open) return;
     let mounted = true;
     (async () => {
       setLoading(true);
       try {
-        const m = await fetchMeta();
+        const m = await fetchSearchMeta();
         if (mounted) setMeta(m);
       } finally {
         setLoading(false);
@@ -45,96 +60,152 @@ export default function FilterModal({
     };
   }, [open]);
 
-  const selectedDomains = useMemo(
-    () => local.domains?.filter(Boolean) ?? [],
-    [local.domains],
+  // --- DATA MAPPING ---
+
+  const organizations = useMemo(() => meta?.organizations ?? [], [meta]);
+
+  const domains = useMemo(() => meta?.domains ?? [], [meta]);
+  const tags = useMemo(() => meta?.tags ?? [], [meta]);
+  const docTypes = useMemo(() => meta?.docTypes ?? [], [meta]);
+
+  const selectedDomainIds = useMemo(
+    () => local.domainIds ?? [],
+    [local.domainIds],
   );
 
+  const selectedTagIds = useMemo(() => local.tagIds ?? [], [local.tagIds]);
+
+  // specialization options phụ thuộc domainIds đã chọn
   const specializationOptions = useMemo(() => {
     if (!meta) return [];
-    if (selectedDomains.length > 0 && (meta as any).specializationsByDomain) {
-      const set = new Set<string>();
-      selectedDomains.forEach((d) => {
-        const arr = (meta as any).specializationsByDomain?.[d];
-        if (arr?.length) arr.forEach((s: string) => set.add(s));
-      });
-      return Array.from(set);
-    }
-    return meta.specializations ?? [];
-  }, [meta, selectedDomains]);
+    if (!selectedDomainIds.length) return meta.specializations;
+    return meta.specializations.filter((s) =>
+      selectedDomainIds.includes(s.domainId ?? ""),
+    );
+  }, [meta, selectedDomainIds]);
 
+  // reset specialization nếu không còn hợp lệ
   useEffect(() => {
-    if (
-      local.specialization &&
-      !specializationOptions.includes(local.specialization as string)
-    ) {
-      setLocal((s) => ({ ...s, specialization: null as any }));
+    if (!local.specializationId) return;
+    const ok = specializationOptions.some(
+      (s) => s.id === local.specializationId,
+    );
+    if (!ok) {
+      setLocal((prev) => ({ ...prev, specializationId: null }));
     }
-  }, [specializationOptions, local.specialization]);
+  }, [specializationOptions, local.specializationId]);
 
-  const pointsMin = useMemo(() => {
-    const m = (meta as any)?.pointsRange?.min;
-    return Number.isFinite(m) ? Number(m) : 1;
-  }, [meta]);
-  const pointsMax = useMemo(() => {
-    const m = (meta as any)?.pointsRange?.max;
-    return Number.isFinite(m) ? Number(m) : 250;
+  const priceMin = useMemo(() => {
+    const v = meta?.priceRange?.min;
+    return Number.isFinite(v) ? Number(v) : 0;
   }, [meta]);
 
-  // init mặc định cho slider khi bật premium
+  const priceMax = useMemo(() => {
+    const v = meta?.priceRange?.max;
+    return Number.isFinite(v) ? Number(v) : 0;
+  }, [meta]);
+
+  // Init slider khi bật premium
   useEffect(() => {
-    if (
-      local.isPremium &&
-      (local.pointsFrom == null || local.pointsTo == null)
-    ) {
+    if (local.isPremium && (local.priceFrom == null || local.priceTo == null)) {
       setLocal((s) => ({
         ...s,
-        pointsFrom: s.pointsFrom ?? pointsMin,
-        pointsTo: s.pointsTo ?? pointsMax,
+        priceFrom: s.priceFrom ?? priceMin,
+        priceTo: s.priceTo ?? priceMax,
       }));
     }
-  }, [local.isPremium, pointsMin, pointsMax]);
+  }, [local.isPremium, priceMin, priceMax]);
+
+  // --- VISIBLE LISTS (6 default + see more) ---
+
+  const visibleDomains = useMemo(
+    () => (showAllDomains ? domains : domains.slice(0, 6)),
+    [domains, showAllDomains],
+  );
+
+  const visibleTags = useMemo(
+    () => (showAllTags ? tags : tags.slice(0, 6)),
+    [tags, showAllTags],
+  );
+
+  // --- ENABLE APPLY BUTTON ---
 
   const canApply = useMemo(
     () =>
       !!(
-        local.organization ||
-        selectedDomains.length > 0 ||
-        local.specialization ||
-        local.publicYearFrom ||
-        local.publicYearTo ||
+        local.organizationId ||
+        (local.domainIds && local.domainIds.length > 0) ||
+        local.specializationId ||
+        local.docTypeId ||
+        selectedTagIds.length > 0 ||
+        local.yearFrom ||
+        local.yearTo ||
         local.isPremium ||
-        local.pointsFrom ||
-        local.pointsTo
+        local.priceFrom ||
+        local.priceTo
       ),
-    [
-      local.organization,
-      selectedDomains.length,
-      local.specialization,
-      local.publicYearFrom,
-      local.publicYearTo,
-      local.isPremium,
-      local.pointsFrom,
-      local.pointsTo,
-    ],
+    [local, selectedTagIds.length],
   );
+
+  // --- HANDLERS ---
+
+  const toggleDomain = (id: string) => {
+    setLocal((prev) => {
+      const curr = new Set(prev.domainIds ?? []);
+      if (curr.has(id)) curr.delete(id);
+      else curr.add(id);
+      return { ...prev, domainIds: Array.from(curr) };
+    });
+  };
+
+  const toggleTag = (tagId: string) => {
+    setLocal((prev) => {
+      const curr = new Set(prev.tagIds ?? []);
+      if (curr.has(tagId)) curr.delete(tagId);
+      else curr.add(tagId);
+      return { ...prev, tagIds: Array.from(curr) };
+    });
+  };
+
+  const yearOptions = meta?.years ?? [];
+
+  const onChangePriceFrom = (val: number) => {
+    setLocal((s) => {
+      const nextFrom = Math.min(Math.max(priceMin, val), s.priceTo ?? priceMax);
+      return { ...s, priceFrom: nextFrom };
+    });
+  };
+  const onChangePriceTo = (val: number) => {
+    setLocal((s) => {
+      const nextTo = Math.max(Math.min(priceMax, val), s.priceFrom ?? priceMin);
+      return { ...s, priceTo: nextTo };
+    });
+  };
 
   const apply = () => {
     const payload: SearchFilters = {
-      ...local,
-      organization: (local as any).organization ?? null,
-      ...(selectedDomains.length
-        ? { domains: selectedDomains }
-        : { domains: null }),
-      specialization: (local.specialization as any) ?? null,
-      publicYearFrom: local.publicYearFrom ?? null,
-      publicYearTo: local.publicYearTo ?? null,
-      isPremium: local.isPremium ?? null,
-      pointsFrom: local.isPremium ? (local.pointsFrom ?? null) : null,
-      pointsTo: local.isPremium ? (local.pointsTo ?? null) : null,
-      domain: null,
-      publicYear: null,
-    } as any;
+      organizationIds: local.organizationId
+        ? [local.organizationId]
+        : undefined,
+
+      domainIds:
+        local.domainIds && local.domainIds.length ? local.domainIds : undefined,
+
+      specializationIds: local.specializationId
+        ? [local.specializationId]
+        : undefined,
+
+      docTypeIds: local.docTypeId ? [local.docTypeId] : undefined,
+
+      tagIds: selectedTagIds.length ? selectedTagIds : undefined,
+
+      yearFrom: local.yearFrom ?? undefined,
+      yearTo: local.yearTo ?? undefined,
+
+      isPremium: local.isPremium ?? undefined,
+      priceFrom: local.isPremium ? (local.priceFrom ?? undefined) : undefined,
+      priceTo: local.isPremium ? (local.priceTo ?? undefined) : undefined,
+    };
 
     setFilters(payload);
     onClose();
@@ -147,40 +218,6 @@ export default function FilterModal({
   };
 
   if (!open) return null;
-
-  const domainList = meta?.domains ?? [];
-  const visibleDomains = showAllDomains ? domainList : domainList.slice(0, 6);
-
-  const toggleDomain = (d: string) => {
-    setLocal((prev) => {
-      const curr = new Set(prev.domains ?? []);
-      if (curr.has(d)) curr.delete(d);
-      else curr.add(d);
-      return { ...prev, domains: Array.from(curr) };
-    });
-  };
-
-  const yearOptions = meta?.years ?? [];
-
-  // Handlers cho dual-range
-  const onChangePointsFrom = (val: number) => {
-    setLocal((s) => {
-      const nextFrom = Math.min(
-        Math.max(pointsMin, val),
-        s.pointsTo ?? pointsMax,
-      );
-      return { ...s, pointsFrom: nextFrom };
-    });
-  };
-  const onChangePointsTo = (val: number) => {
-    setLocal((s) => {
-      const nextTo = Math.max(
-        Math.min(pointsMax, val),
-        s.pointsFrom ?? pointsMin,
-      );
-      return { ...s, pointsTo: nextTo };
-    });
-  };
 
   return (
     <div className={styles.modalBackdrop} onClick={onClose}>
@@ -210,88 +247,144 @@ export default function FilterModal({
               <span className={styles.fieldLabel}>Organization</span>
               <select
                 className={styles.select}
-                value={(local as any).organization ?? ""}
+                value={local.organizationId ?? ""}
                 onChange={(e) =>
                   setLocal((s) => ({
                     ...s,
-                    organization: e.target.value || null,
+                    organizationId: e.target.value || null,
                   }))
                 }
               >
                 <option value="">Any</option>
-                {meta.organizations.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
+                {organizations.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
                   </option>
                 ))}
               </select>
             </label>
 
-            {/* Domain (multi) */}
-            <div className={styles.field}>
-              <span className={styles.fieldLabel}>Domain</span>
-              <div className={styles.checkboxGrid}>
-                {visibleDomains.map((d) => {
-                  const checked = selectedDomains.includes(d);
-                  return (
-                    <label key={d} className={styles.checkbox}>
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleDomain(d)}
-                      />
-                      <span>{d}</span>
-                    </label>
-                  );
-                })}
+            {/* Domains: checkbox grid, multi-select */}
+            {domains.length > 0 && (
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>Domains</span>
+                <div className={styles.checkboxGrid}>
+                  {visibleDomains.map((d) => {
+                    const checked = selectedDomainIds.includes(d.id);
+                    return (
+                      <label key={d.id} className={styles.checkbox}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleDomain(d.id)}
+                        />
+                        <span>{d.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {domains.length > 6 && (
+                  <button
+                    type="button"
+                    className={styles.linkBtn}
+                    onClick={() => setShowAllDomains((v) => !v)}
+                  >
+                    {showAllDomains ? "See less" : "See more"}
+                  </button>
+                )}
               </div>
-              {domainList.length > 6 && (
-                <button
-                  type="button"
-                  className={styles.linkBtn}
-                  onClick={() => setShowAllDomains((v) => !v)}
-                >
-                  {showAllDomains ? "See less" : "See all"}
-                </button>
-              )}
-            </div>
+            )}
 
-            {/* Specialization */}
+            {/* Specialization: lọc theo domainIds đã chọn */}
             <label className={styles.field}>
               <span className={styles.fieldLabel}>Specialization</span>
               <select
                 className={styles.select}
-                value={(local.specialization as any) ?? ""}
+                value={local.specializationId ?? ""}
                 onChange={(e) =>
                   setLocal((s) => ({
                     ...s,
-                    specialization: e.target.value || null,
+                    specializationId: e.target.value || null,
                   }))
                 }
                 disabled={specializationOptions.length === 0}
               >
                 <option value="">Any</option>
                 {specializationOptions.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
+                  <option key={o.id} value={o.id}>
+                    {o.name}
                   </option>
                 ))}
               </select>
             </label>
 
-            {/* Public year From/To */}
-            <div className={styles.field}>
-              <span className={styles.fieldLabel}>Public year</span>
-              <div className={styles.rangeGroup}>
+            {/* Document type */}
+            {docTypes.length > 0 && (
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Document type</span>
                 <select
                   className={styles.select}
-                  value={local.publicYearFrom ?? ""}
+                  value={local.docTypeId ?? ""}
                   onChange={(e) =>
                     setLocal((s) => ({
                       ...s,
-                      publicYearFrom: e.target.value
-                        ? Number(e.target.value)
-                        : null,
+                      docTypeId: e.target.value || null,
+                    }))
+                  }
+                >
+                  <option value="">Any</option>
+                  {docTypes.map((dt) => (
+                    <option key={dt.id} value={dt.id}>
+                      {dt.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {/* Tags: checkbox grid + see more/less */}
+            {tags.length > 0 && (
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>Tags</span>
+                <div className={styles.checkboxGrid}>
+                  {visibleTags.map((tag) => {
+                    const id = tag.id ?? String(tag.code);
+                    const checked = selectedTagIds.includes(id);
+                    return (
+                      <label key={id} className={styles.checkbox}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleTag(id)}
+                        />
+                        <span>{tag.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {tags.length > 6 && (
+                  <button
+                    type="button"
+                    className={styles.linkBtn}
+                    onClick={() => setShowAllTags((v) => !v)}
+                  >
+                    {showAllTags ? "See less" : "See more"}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Year From/To */}
+            <div className={styles.field}>
+              <span className={styles.fieldLabel}>Year</span>
+              <div className={styles.rangeGroup}>
+                <select
+                  className={styles.select}
+                  value={local.yearFrom ?? ""}
+                  onChange={(e) =>
+                    setLocal((s) => ({
+                      ...s,
+                      yearFrom: e.target.value ? Number(e.target.value) : null,
                     }))
                   }
                 >
@@ -305,13 +398,11 @@ export default function FilterModal({
                 <span className={styles.rangeSep}>to</span>
                 <select
                   className={styles.select}
-                  value={local.publicYearTo ?? ""}
+                  value={local.yearTo ?? ""}
                   onChange={(e) =>
                     setLocal((s) => ({
                       ...s,
-                      publicYearTo: e.target.value
-                        ? Number(e.target.value)
-                        : null,
+                      yearTo: e.target.value ? Number(e.target.value) : null,
                     }))
                   }
                 >
@@ -325,7 +416,7 @@ export default function FilterModal({
               </div>
             </div>
 
-            {/* Premium & Points (range slider) */}
+            {/* Premium & Price slider */}
             <div className={styles.field}>
               <label className={styles.checkboxInline}>
                 <input
@@ -337,77 +428,73 @@ export default function FilterModal({
                       isPremium: e.target.checked ? true : null,
                       ...(e.target.checked
                         ? {
-                            pointsFrom: s.pointsFrom ?? pointsMin,
-                            pointsTo: s.pointsTo ?? pointsMax,
+                            priceFrom: s.priceFrom ?? priceMin,
+                            priceTo: s.priceTo ?? priceMax,
                           }
-                        : { pointsFrom: null, pointsTo: null }),
+                        : { priceFrom: null, priceTo: null }),
                     }))
                   }
                 />
-                <span className={styles.fieldLabelInline}> Premium only</span>
+                <span className={styles.fieldLabelInline}>Premium only</span>
               </label>
 
               {local.isPremium ? (
                 <div className={styles.pointsSliderBlock}>
                   <div className={styles.pointsHeader}>
-                    <span className={styles.pointsLabel}>Points</span>
+                    <span className={styles.pointsLabel}>Price</span>
                     <div className={styles.pointsEnds}>
-                      <span className={styles.pointsPill}>{pointsMin}</span>
-                      <span className={styles.pointsPill}>{pointsMax}</span>
+                      <span className={styles.pointsPill}>{priceMin}</span>
+                      <span className={styles.pointsPill}>{priceMax}</span>
                     </div>
                   </div>
 
                   <div className={styles.dualSlider}>
-                    {/* track highlight */}
                     <div
                       className={styles.dualSliderTrack}
                       style={
                         {
-                          "--min": String(pointsMin),
-                          "--max": String(pointsMax),
-                          "--from": String(local.pointsFrom ?? pointsMin),
-                          "--to": String(local.pointsTo ?? pointsMax),
-                        } as React.CSSProperties
+                          "--min": String(priceMin),
+                          "--max": String(priceMax),
+                          "--from": String(local.priceFrom ?? priceMin),
+                          "--to": String(local.priceTo ?? priceMax),
+                        } as any
                       }
                     />
-                    {/* from thumb */}
                     <input
-                      aria-label="Points from"
+                      aria-label="Price from"
                       type="range"
-                      min={pointsMin}
-                      max={pointsMax}
+                      min={priceMin}
+                      max={priceMax}
                       step={1}
-                      value={local.pointsFrom ?? pointsMin}
+                      value={local.priceFrom ?? priceMin}
                       onChange={(e) =>
-                        onChangePointsFrom(Number(e.target.value))
+                        onChangePriceFrom(Number(e.target.value))
                       }
                       className={styles.range}
                     />
-                    {/* to thumb */}
                     <input
-                      aria-label="Points to"
+                      aria-label="Price to"
                       type="range"
-                      min={pointsMin}
-                      max={pointsMax}
+                      min={priceMin}
+                      max={priceMax}
                       step={1}
-                      value={local.pointsTo ?? pointsMax}
-                      onChange={(e) => onChangePointsTo(Number(e.target.value))}
+                      value={local.priceTo ?? priceMax}
+                      onChange={(e) => onChangePriceTo(Number(e.target.value))}
                       className={styles.range}
                     />
                   </div>
-
                   <div className={styles.pointsCurrent}>
                     <span className={styles.pointsPill}>
-                      {local.pointsFrom ?? pointsMin}
+                      {local.priceFrom ?? priceMin}
                     </span>
                     <span className={styles.pointsPill}>
-                      {local.pointsTo ?? pointsMax}
+                      {local.priceTo ?? priceMax}
                     </span>
                   </div>
                 </div>
               ) : (
                 <p className={styles.inlineHelp}>
-                  Check on premium to enable points filter
+                  Check on premium to enable price filter
                 </p>
               )}
             </div>

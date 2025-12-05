@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 
-import type { DocumentItem } from "@/types/documentResponse";
+import type { DocumentItem } from "@/types/document-homepage";
 import {
   fetchHomepageSections,
   type HomepageSections,

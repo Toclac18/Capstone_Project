@@ -42,12 +42,10 @@ export default function Signin() {
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setLoading(true);
-    setError(null);
 
     const payload: LoginPayload = {
       email: data.email,
@@ -68,19 +66,25 @@ export default function Signin() {
 
       // Redirect based on role
       const roleRoutes: Record<typeof data.role, string> = {
-        READER: "/",
+        READER: "/homepage",
         REVIEWER: "/reviewer",
         ORGANIZATION_ADMIN: "/org-admin/readers",
         SYSTEM_ADMIN: "/admin",
         BUSINESS_ADMIN: "/business-admin",
       };
 
+      const targetRoute = roleRoutes[data.role] || "/";
+
+      // Refresh router to update server-side auth state
+      router.refresh();
+      
+      // Navigate to target route - this will trigger server-side re-render
+      // and AuthProvider will receive updated initialAuth
       setTimeout(() => {
-        router.push(roleRoutes[data.role] || "/");
-      }, 1500);
+        router.push(targetRoute);
+      }, 100);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Invalid email or password";
-      setError(msg);
       showToast({
         type: "error",
         title: "Login Failed",
@@ -120,8 +124,6 @@ export default function Signin() {
         <div className={styles["divider-text"]}>Or sign in with email</div>
         <span className={styles["divider-line"]}></span>
       </div>
-
-      {error && <div className={styles["alert-error"]}>{error}</div>}
 
       <div>
         <form onSubmit={handleSubmit(onSubmit)}>

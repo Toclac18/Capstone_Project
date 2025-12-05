@@ -11,9 +11,14 @@ export default function SearchBar() {
   const router = useRouter();
 
   const goSearchPage = () => {
-    router.push(
-      `/search${localQ.trim() ? `?q=${encodeURIComponent(localQ.trim())}` : ""}`,
-    );
+    const trimmed = localQ.trim();
+
+    if (trimmed) {
+      router.push(`/search#q=${encodeURIComponent(trimmed)}`);
+      return;
+    }
+
+    router.push("/search");
   };
 
   return (
@@ -23,10 +28,15 @@ export default function SearchBar() {
         placeholder="Search by input title / uploader / specialization"
         value={localQ}
         onChange={(e) => {
-          setLocalQ(e.target.value);
-          setQ(e.target.value);
+          const value = e.target.value;
+          setLocalQ(value);
+          setQ(value); // vẫn sync về homepage provider nếu cần
         }}
-        onKeyDown={(e) => e.key === "Enter" && setQ(localQ)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            goSearchPage(); // ⬅️ Enter = đi tới trang search
+          }
+        }}
         aria-label="Search"
       />
       <button

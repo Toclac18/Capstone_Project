@@ -19,5 +19,6 @@ public interface OrganizationMapper {
    */
   @Mapping(target = "memberCount", ignore = true)
   @Mapping(target = "documentCount", ignore = true)
+  @Mapping(source = "logoKey", target = "logo")
   PublicOrganizationResponse toPublicResponse(OrganizationProfile organization);
 }

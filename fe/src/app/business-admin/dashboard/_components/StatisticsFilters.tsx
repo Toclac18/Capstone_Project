@@ -25,8 +25,8 @@ export function StatisticsFilters({ onFilterChange }: StatisticsFiltersProps) {
   };
 
   return (
-    <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
-      <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Filters</h3>
+    <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
+      <h3 className="mb-4 text-lg font-semibold text-dark dark:text-white">Filters</h3>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div>
           <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -36,7 +36,7 @@ export function StatisticsFilters({ onFilterChange }: StatisticsFiltersProps) {
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="w-full rounded-lg border border-stroke bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-strokedark dark:bg-boxdark dark:text-white"
+            className="w-full rounded-lg border border-stroke bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-dark-3 dark:bg-gray-dark dark:text-white"
           />
         </div>
         <div>
@@ -47,7 +47,7 @@ export function StatisticsFilters({ onFilterChange }: StatisticsFiltersProps) {
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="w-full rounded-lg border border-stroke bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-strokedark dark:bg-boxdark dark:text-white"
+            className="w-full rounded-lg border border-stroke bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-dark-3 dark:bg-gray-dark dark:text-white"
           />
         </div>
         <div className="flex items-end gap-2 md:col-span-2 lg:col-span-1">
@@ -59,7 +59,7 @@ export function StatisticsFilters({ onFilterChange }: StatisticsFiltersProps) {
           </button>
           <button
             onClick={handleClear}
-            className="rounded-lg border border-stroke bg-white px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors dark:border-strokedark dark:bg-boxdark dark:text-white dark:hover:bg-gray-800"
+            className="rounded-lg border border-stroke bg-white px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors dark:border-dark-3 dark:bg-gray-dark dark:text-white dark:hover:bg-gray-800"
           >
             Clear
           </button>

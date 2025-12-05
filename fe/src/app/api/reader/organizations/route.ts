@@ -51,7 +51,7 @@ async function handleGET() {
         id: enrollment.organizationId || enrollment.id,
         name: enrollment.organizationName || "",
         type: enrollment.organizationType || "",
-        logo: enrollment.memberAvatarUrl || null,
+        logo: enrollment.organizationLogo || null,
         joinDate: enrollment.respondedAt || "",
       })),
       total: pageInfo.totalElements ?? enrollments.length,

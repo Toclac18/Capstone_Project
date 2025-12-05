@@ -1,16 +1,14 @@
+// src/app/search/_components/Pagination.tsx
 "use client";
 import { useMemo } from "react";
 import { useSearch } from "../provider";
 import styles from "../styles.module.css";
 
 export default function Pagination() {
-  // Lấy meta phân trang từ context (server-side)
   const { page, setPage, perPage, total, pageCount } = useSearch();
 
-  // Số trang tổng do BE trả về
   const totalPages = Math.max(1, pageCount || 1);
 
-  // Tạo dải trang hiển thị (window)
   const pages = useMemo(() => {
     const out: number[] = [];
     const maxShown = 7;
@@ -23,7 +21,6 @@ export default function Pagination() {
 
   return (
     <>
-      {/* Info: tổng bản ghi + trang hiện tại */}
       <div className={styles.paginationBar} role="status" aria-live="polite">
         <span className={styles.pageInfo}>
           Page <strong>{page}</strong> of <strong>{totalPages}</strong>
@@ -33,7 +30,6 @@ export default function Pagination() {
       </div>
 
       <nav className={styles.paginationNav} aria-label="Pagination">
-        {/* « First */}
         <button
           className={styles.pageBtn}
           onClick={() => setPage(1)}
@@ -43,7 +39,6 @@ export default function Pagination() {
           «
         </button>
 
-        {/* ‹ Prev */}
         <button
           className={styles.pageBtn}
           onClick={() => setPage(Math.max(1, page - 1))}
@@ -64,7 +59,6 @@ export default function Pagination() {
           </button>
         ))}
 
-        {/* Next › */}
         <button
           className={styles.pageBtn}
           onClick={() => setPage(Math.min(totalPages, page + 1))}
@@ -74,7 +68,6 @@ export default function Pagination() {
           ▶
         </button>
 
-        {/* Last » */}
         <button
           className={styles.pageBtn}
           onClick={() => setPage(totalPages)}

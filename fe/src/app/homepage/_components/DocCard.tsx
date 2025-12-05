@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState, MouseEvent, KeyboardEvent } from "react";
 import styles from "../styles.module.css";
-import type { DocumentItem } from "@/types/documentResponse";
+import type { DocumentItem } from "@/types/document-homepage";
 import SaveListModal from "@/components/SaveListModal/SaveListModal";
 
 type Props = DocumentItem & {

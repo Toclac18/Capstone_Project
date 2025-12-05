@@ -1099,3 +1099,91 @@
     margin-left: 80px;
   }
 }
+
+/* HEADER RIGHT: price + type badge */
+[data-search-scope] .cardHeaderRight {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Premium / Free badge */
+[data-search-scope] .priceBadge,
+[data-search-scope] .freeBadge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+/* Premium = màu nổi hơn */
+[data-search-scope] .priceBadge {
+  background: radial-gradient(
+    circle at 0 0,
+    rgba(251, 191, 36, 0.2),
+    rgba(56, 189, 248, 0.05)
+  );
+  border: 1px solid rgba(251, 191, 36, 0.85);
+  color: #fbbf24;
+}
+
+/* Free = tone nhẹ, trung tính */
+[data-search-scope] .freeBadge {
+  background: var(--search-chip-bg);
+  border: 1px solid var(--search-border-subtle);
+  color: var(--search-text-soft);
+}
+
+/* Meta top row (org + domain + specialization) */
+[data-search-scope] .cardMetaTopRow {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 12px;
+  color: var(--search-text-soft);
+}
+
+/* Tag chips */
+[data-search-scope] .tagRow {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+[data-search-scope] .tagChip {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--search-chip-bg);
+  border: 1px solid var(--search-border-subtle);
+  font-size: 11px;
+  color: var(--search-text-soft);
+}
+
+/* Footer row: uploader + date + views + upvotes */
+[data-search-scope] .cardFooterRow {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 11px;
+  color: var(--search-text-muted);
+}
+
+/* Reuse existing metaLabel/metaValue to giữ consistency */
+[data-search-scope] .metaLabel {
+  font-weight: 600;
+  color: var(--search-primary-strong);
+  font-size: 11px;
+  margin-right: 2px;
+}
+
+[data-search-scope] .metaValue {
+  font-size: 11px;
+}

@@ -66,8 +66,8 @@ export default function Signin() {
 
       // Redirect based on role
       const roleRoutes: Record<typeof data.role, string> = {
-        READER: "/",
-        REVIEWER: "/",
+        READER: "/homepage",
+        REVIEWER: "/reviewer",
         ORGANIZATION_ADMIN: "/org-admin/readers",
         SYSTEM_ADMIN: "/admin",
         BUSINESS_ADMIN: "/business-admin",

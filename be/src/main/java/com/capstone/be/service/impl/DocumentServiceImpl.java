@@ -1,16 +1,7 @@
 package com.capstone.be.service.impl;
 
 import com.capstone.be.config.constant.FileStorage;
-import com.capstone.be.domain.entity.DocType;
-import com.capstone.be.domain.entity.Document;
-import com.capstone.be.domain.entity.DocumentReadHistory;
-import com.capstone.be.domain.entity.DocumentRedemption;
-import com.capstone.be.domain.entity.DocumentTagLink;
-import com.capstone.be.domain.entity.OrganizationProfile;
-import com.capstone.be.domain.entity.ReaderProfile;
-import com.capstone.be.domain.entity.Specialization;
-import com.capstone.be.domain.entity.Tag;
-import com.capstone.be.domain.entity.User;
+import com.capstone.be.domain.entity.*;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.DocVisibility;
 import com.capstone.be.domain.enums.OrgEnrollStatus;
@@ -20,14 +11,7 @@ import com.capstone.be.dto.request.document.DocumentSearchFilter;
 import com.capstone.be.dto.request.document.DocumentUploadHistoryFilter;
 import com.capstone.be.dto.request.document.UpdateDocumentRequest;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
-import com.capstone.be.dto.response.document.AdminDocumentListResponse;
-import com.capstone.be.dto.response.document.DocumentDetailResponse;
-import com.capstone.be.dto.response.document.DocumentLibraryResponse;
-import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
-import com.capstone.be.dto.response.document.DocumentReadHistoryResponse;
-import com.capstone.be.dto.response.document.DocumentSearchResponse;
-import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
-import com.capstone.be.dto.response.document.DocumentUploadResponse;
+import com.capstone.be.dto.response.document.*;
 import com.capstone.be.exception.BusinessException;
 import com.capstone.be.exception.ForbiddenException;
 import com.capstone.be.exception.InvalidRequestException;
@@ -53,13 +37,8 @@ import com.capstone.be.service.DocumentService;
 import com.capstone.be.service.DocumentThumbnailService;
 import com.capstone.be.service.FileStorageService;
 import com.capstone.be.util.StringUtil;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -789,6 +768,18 @@ public class DocumentServiceImpl implements DocumentService {
           .avatarUrl(document.getUploader().getAvatarKey())
           .build();
 
+      //Build summarization infor
+      DocumentDetailResponse.SummarizationInfo summarizations = null;
+      if (document.getSummarizations() != null) {
+        var s = document.getSummarizations();
+
+        summarizations = DocumentDetailResponse.SummarizationInfo.builder()
+                .shortSummary(s.getShortSummary())
+                .mediumSummary(s.getMediumSummary())
+                .detailedSummary(s.getDetailedSummary())
+                .build();
+      }
+
       return DocumentSearchResponse.builder()
           .id(document.getId())
           .title(document.getTitle())
@@ -803,6 +794,7 @@ public class DocumentServiceImpl implements DocumentService {
           .docTypeName(document.getDocType().getName())
           .specializationName(document.getSpecialization().getName())
           .domainName(document.getSpecialization().getDomain().getName())
+              .summarizations(summarizations)
           .tagNames(tagNames)
           .organization(orgInfo)
           .uploader(uploaderInfo)
@@ -971,6 +963,107 @@ public class DocumentServiceImpl implements DocumentService {
     response.setUserInfo(userInfo);
 
     return response;
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public DocumentSearchMetaResponse getPublicSearchMeta() {
+    log.info("Building search meta for public documents");
+
+    // Organizations
+    List<OrganizationProfile> orgEntities =
+            documentRepository.findOrganizationsForPublicSearch();
+
+    List<DocumentSearchMetaResponse.OrganizationOption> orgOptions = orgEntities.stream()
+            .filter(Objects::nonNull)
+            .map(org -> DocumentSearchMetaResponse.OrganizationOption.builder()
+                    .id(org.getId())
+                    .name(org.getName())
+                    .logoUrl(org.getLogoKey())
+                    .docCount(null) // nếu muốn có docCount, cần query riêng
+                    .build())
+            .sorted(Comparator.comparing(DocumentSearchMetaResponse.OrganizationOption::getName,
+                    String.CASE_INSENSITIVE_ORDER))
+            .collect(Collectors.toList());
+
+    // Domains
+    List<Domain> domainEntities = documentRepository.findDomainsForPublicSearch();
+    List<DocumentSearchMetaResponse.DomainOption> domainOptions = domainEntities.stream()
+            .filter(Objects::nonNull)
+            .map(domain -> DocumentSearchMetaResponse.DomainOption.builder()
+                    .id(domain.getId())
+                    .code(domain.getCode())
+                    .name(domain.getName())
+                    .docCount(null)
+                    .build())
+            .sorted(Comparator.comparing(DocumentSearchMetaResponse.DomainOption::getName,
+                    String.CASE_INSENSITIVE_ORDER))
+            .collect(Collectors.toList());
+
+    // Specializations
+    List<Specialization> specEntities =
+            documentRepository.findSpecializationsForPublicSearch();
+    List<DocumentSearchMetaResponse.SpecializationOption> specOptions = specEntities.stream()
+            .filter(Objects::nonNull)
+            .map(spec -> DocumentSearchMetaResponse.SpecializationOption.builder()
+                    .id(spec.getId())
+                    .code(spec.getCode())
+                    .name(spec.getName())
+                    .domainId(spec.getDomain() != null ? spec.getDomain().getId() : null)
+                    .docCount(null)
+                    .build())
+            .sorted(Comparator.comparing(DocumentSearchMetaResponse.SpecializationOption::getName,
+                    String.CASE_INSENSITIVE_ORDER))
+            .collect(Collectors.toList());
+
+    // DocTypes
+    List<DocType> docTypeEntities = documentRepository.findDocTypesForPublicSearch();
+    List<DocumentSearchMetaResponse.DocTypeOption> docTypeOptions = docTypeEntities.stream()
+            .filter(Objects::nonNull)
+            .map(dt -> DocumentSearchMetaResponse.DocTypeOption.builder()
+                    .id(dt.getId())
+                    .code(dt.getCode())
+                    .name(dt.getName())
+                    .docCount(null)
+                    .build())
+            .sorted(Comparator.comparing(DocumentSearchMetaResponse.DocTypeOption::getName,
+                    String.CASE_INSENSITIVE_ORDER))
+            .collect(Collectors.toList());
+
+    // Tags
+    List<Tag> tagEntities = documentRepository.findTagsForPublicSearch();
+    List<DocumentSearchMetaResponse.TagOption> tagOptions = tagEntities.stream()
+            .filter(Objects::nonNull)
+            .map(tag -> DocumentSearchMetaResponse.TagOption.builder()
+                    .id(tag.getId())
+                    .name(tag.getName())
+                    .docCount(null)
+                    .build())
+            .sorted(Comparator.comparing(DocumentSearchMetaResponse.TagOption::getName,
+                    String.CASE_INSENSITIVE_ORDER))
+            .collect(Collectors.toList());
+
+    // Years
+    List<Integer> years = documentRepository.findYearsForPublicSearch();
+
+    // Price/points range
+    Integer minPrice = documentRepository.findMinPremiumPriceForPublicSearch();
+    Integer maxPrice = documentRepository.findMaxPremiumPriceForPublicSearch();
+
+    DocumentSearchMetaResponse.RangeDto priceRange = DocumentSearchMetaResponse.RangeDto.builder()
+            .min(minPrice)
+            .max(maxPrice)
+            .build();
+
+    return DocumentSearchMetaResponse.builder()
+            .organizations(orgOptions)
+            .domains(domainOptions)
+            .specializations(specOptions)
+            .docTypes(docTypeOptions)
+            .tags(tagOptions)
+            .years(years)
+            .priceRange(priceRange)
+            .build();
   }
 
 }

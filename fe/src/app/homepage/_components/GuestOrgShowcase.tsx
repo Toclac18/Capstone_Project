@@ -5,7 +5,7 @@ import DocCard from "./DocCard";
 import { useHomepage } from "../provider";
 import { useModalPreview } from "@/components/ModalPreview";
 import { useMemo } from "react";
-import type { DocumentItem } from "@/types/documentResponse";
+import type { DocumentItem } from "@/types/document-homepage";
 
 export default function GuestOrgShowcase() {
   const { topUpvoted, specGroups } = useHomepage();

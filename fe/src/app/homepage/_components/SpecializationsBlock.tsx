@@ -6,7 +6,7 @@ import EmptyState from "./EmptyState";
 import DocCard from "./DocCard";
 import { useHomepage } from "../provider";
 import { useModalPreview } from "@/components/ModalPreview";
-import type { DocumentItem as BaseDoc } from "@/types/documentResponse";
+import type { DocumentItem as BaseDoc } from "@/types/document-homepage";
 
 type GroupInput = { name: string; items: BaseDoc[] };
 type GroupNormalized = { name: string; items: BaseDoc[] };

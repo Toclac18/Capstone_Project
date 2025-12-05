@@ -11,6 +11,10 @@ java {
     toolchain { languageVersion = JavaLanguageVersion.of(21) }
 }
 
+bootJar {
+    archiveFileName = "app.jar"
+}
+
 repositories {
     maven { url 'https://maven.aliyun.com/repository/central' }
     mavenCentral()

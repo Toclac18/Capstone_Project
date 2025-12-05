@@ -128,8 +128,6 @@ export default function Signin() {
         <span className={styles["divider-line"]}></span>
       </div>
 
-      {error && <div className={styles["alert-error"]}>{error}</div>}
-
       <div>
         <form onSubmit={handleSubmit(onSubmit)}>
           {/* Role Selector */}

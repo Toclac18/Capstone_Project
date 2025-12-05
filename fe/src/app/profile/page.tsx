@@ -445,7 +445,7 @@ export default function Page() {
                   className={styles["btn-edit-profile"]}
                 >
                   <Edit className={styles["btn-icon"]} />
-                  Edit Profile
+                  Change Profile
                 </button>
               )}
               <button

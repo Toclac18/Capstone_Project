@@ -24,6 +24,7 @@ import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.repository.specification.OrgEnrollmentSpecification;
 import com.capstone.be.service.EmailService;
+import com.capstone.be.security.jwt.JwtUtil;
 import com.capstone.be.service.FileStorageService;
 import com.capstone.be.service.NotificationService;
 import com.capstone.be.service.OrgEnrollmentService;
@@ -61,7 +62,7 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
   private final EmailService emailService;
   private final FileStorageService fileStorageService;
   private final NotificationService notificationService;
-
+  private final JwtUtil jwtUtil;
 
   private final MemberImportBatchMapper memberImportBatchMapper;
 
@@ -310,11 +311,19 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
 
   private void sendInvitationEmail(OrgEnrollment enrollment, OrganizationProfile organization) {
     try {
-      emailService.sendOrganizationInvitation(
+      // Generate JWT token for invitation
+      String invitationToken = jwtUtil.generateOrgInvitationToken(
+          enrollment.getId(),
+          enrollment.getMemberEmail(),
+          organization.getId()
+      );
+
+      // Send email with JWT token
+      emailService.sendOrganizationInvitationWithToken(
           enrollment.getMemberEmail(),
           enrollment.getMember().getFullName(),
           organization.getName(),
-          enrollment.getId()
+          invitationToken
       );
     } catch (Exception e) {
       log.error("Failed to send invitation email to: {}", enrollment.getMemberEmail(), e);
@@ -410,6 +419,100 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
 
     log.info("Reader {} successfully joined organization {}", readerId,
         enrollment.getOrganization().getName());
+  }
+
+  @Override
+  @Transactional
+  public void acceptInvitationByToken(String token, UUID userId) {
+    log.info("User {} accepting invitation by token", userId);
+
+    // Validate JWT token
+    if (!jwtUtil.validateToken(token)) {
+      throw new InvalidRequestException("Invalid or expired invitation token");
+    }
+
+    // Verify token type
+    String tokenType = jwtUtil.getTokenType(token);
+    if (!"org_invitation".equals(tokenType)) {
+      throw new InvalidRequestException("Invalid token type");
+    }
+
+    // Extract information from token
+    UUID enrollmentId = jwtUtil.getEnrollmentIdFromToken(token);
+    String tokenEmail = jwtUtil.getEmailFromToken(token);
+    UUID tokenOrganizationId = jwtUtil.getOrganizationIdFromToken(token);
+
+    // Get user
+    User user = getUserById(userId);
+
+    // Validate user email matches token email
+    if (!user.getEmail().equalsIgnoreCase(tokenEmail)) {
+      throw new BusinessException(
+          "Token email does not match user email",
+          HttpStatus.FORBIDDEN,
+          "EMAIL_MISMATCH"
+      );
+    }
+
+    // Validate user is READER
+    validateUserIsReader(user);
+
+    // Get enrollment
+    OrgEnrollment enrollment = getEnrollmentById(enrollmentId);
+
+    // Validate enrollment belongs to correct organization
+    if (!enrollment.getOrganization().getId().equals(tokenOrganizationId)) {
+      throw new BusinessException(
+          "Token organization does not match enrollment organization",
+          HttpStatus.FORBIDDEN,
+          "ORGANIZATION_MISMATCH"
+      );
+    }
+
+    // Validate enrollment email matches token email
+    if (!enrollment.getMemberEmail().equalsIgnoreCase(tokenEmail)) {
+      throw new BusinessException(
+          "Token email does not match enrollment email",
+          HttpStatus.FORBIDDEN,
+          "ENROLLMENT_EMAIL_MISMATCH"
+      );
+    }
+
+    // Validate enrollment status
+    if (enrollment.getStatus() != OrgEnrollStatus.PENDING_INVITE) {
+      throw new InvalidRequestException("Enrollment is not in pending status");
+    }
+
+    // Check if invitation has expired
+    if (enrollment.getExpiry() != null && Instant.now().isAfter(enrollment.getExpiry())) {
+      throw new BusinessException(
+          "Invitation has expired",
+          HttpStatus.BAD_REQUEST,
+          "INVITATION_EXPIRED"
+      );
+    }
+
+    // Link enrollment to user if member is null
+    if (enrollment.getMember() == null) {
+      enrollment.setMember(user);
+    }
+
+    // Accept invitation
+    enrollment.acceptInvitation();
+    orgEnrollmentRepository.save(enrollment);
+
+    // Send notification to organization admin
+    notificationService.createNotification(
+        enrollment.getOrganization().getAdmin().getId(),
+        NotificationType.INFO,
+        "New member joined",
+        String.format("%s has joined your organization %s",
+            user.getFullName(),
+            enrollment.getOrganization().getName())
+    );
+
+    log.info("User {} successfully joined organization {} via token",
+        userId, enrollment.getOrganization().getName());
   }
 
   @Override

@@ -76,6 +76,14 @@ public interface OrgEnrollmentService {
   void acceptInvitation(UUID readerId, UUID enrollmentId);
 
   /**
+   * Accept organization invitation using JWT token from email link
+   *
+   * @param token  JWT invitation token
+   * @param userId User ID (from authentication)
+   */
+  void acceptInvitationByToken(String token, UUID userId);
+
+  /**
    * Reader rejects organization invitation
    *
    * @param readerId     Reader user ID

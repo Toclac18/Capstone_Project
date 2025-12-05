@@ -132,6 +132,27 @@ public class OrgMemberController {
   }
 
   /**
+   * Accept organization invitation using JWT token from email link
+   * POST /api/v1/organization/members/accept-invitation
+   *
+   * @param userPrincipal Authenticated user (READER)
+   * @param token         JWT invitation token from email
+   * @return 200 OK
+   */
+  @PostMapping("/accept-invitation")
+  @PreAuthorize("hasRole('READER')")
+  public ResponseEntity<Void> acceptInvitationByToken(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @RequestParam(name = "token") String token) {
+    UUID userId = userPrincipal.getId();
+    log.info("User {} accepting invitation by token", userId);
+
+    orgEnrollmentService.acceptInvitationByToken(token, userId);
+
+    return ResponseEntity.ok().build();
+  }
+
+  /**
    * Get enrollment detail
    * GET /api/v1/organization/members/{enrollmentId}
    *

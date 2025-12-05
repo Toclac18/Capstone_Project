@@ -53,6 +53,8 @@ public class SecurityConfig {
             // Public endpoints
             .requestMatchers(
                     "/documents/homepage/**",
+                "/documents/search/**",
+                "documents/search-meta/**",
                 "/auth/**",
 
                 "/v3/api-docs/**",

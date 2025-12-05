@@ -1,3 +1,4 @@
+// src/app/search/_components/SearchToolbar.tsx
 "use client";
 import { useEffect, useState } from "react";
 import { useSearch } from "../provider";
@@ -33,7 +34,7 @@ export default function SearchToolbar({
       else params.delete("q");
       window.location.hash = params.toString();
     }
-    setFilters({ ...filters, q: debouncedQ || null });
+    setFilters({ ...filters, q: debouncedQ || undefined });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQ]);
 
@@ -42,7 +43,7 @@ export default function SearchToolbar({
       <input
         className={styles.searchInput}
         type="text"
-        placeholder="Search title / organization / specialization / uploader / description"
+        placeholder="Search title / organization / specialization / uploader / description / summary"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         aria-label="Search library documents"

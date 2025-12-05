@@ -1,4 +1,4 @@
-import { DocumentItem } from "@/types/documentResponse";
+import { DocumentItem } from "@/types/document-homepage";
 
 const num = (v: any, fb = 0) =>
   typeof v === "number" && Number.isFinite(v) ? v : fb;

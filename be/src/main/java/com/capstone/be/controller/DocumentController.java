@@ -7,14 +7,7 @@ import com.capstone.be.dto.request.document.DocumentUploadHistoryFilter;
 import com.capstone.be.dto.request.document.UpdateDocumentRequest;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
 import com.capstone.be.dto.request.document.VoteDocumentRequest;
-import com.capstone.be.dto.response.document.DocumentDetailResponse;
-import com.capstone.be.dto.response.document.DocumentLibraryResponse;
-import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
-import com.capstone.be.dto.response.document.DocumentReadHistoryResponse;
-import com.capstone.be.dto.response.document.DocumentSearchResponse;
-import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
-import com.capstone.be.dto.response.document.DocumentUploadResponse;
-import com.capstone.be.dto.response.document.VoteDocumentResponse;
+import com.capstone.be.dto.response.document.*;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.DocumentService;
 import com.capstone.be.service.DocumentVoteService;
@@ -260,19 +253,30 @@ public class DocumentController {
    */
   @PostMapping(value = "/search")
   public ResponseEntity<PagedResponse<DocumentSearchResponse>> searchPublicDocuments(
-      @Valid @RequestBody DocumentSearchFilter filter) {
-    Pageable pageable = PageRequest.of(
-        filter.getPage(),
-        filter.getSize(),
-        PagingUtil.parseSort(filter.getSorts())
-    );
-    log.info("Public search request with filter: {} (page: {}, size: {})",
-        filter, pageable.getPageNumber(), pageable.getPageSize());
+          @Valid @RequestBody DocumentSearchFilter filter) {
 
-    Page<DocumentSearchResponse> searchResults = documentService.searchPublicDocuments(filter,
-        pageable);
+    Pageable pageable = PageRequest.of(
+            filter.getPage(),
+            filter.getSize(),
+            PagingUtil.parseSort(filter.getSorts())
+    );
+
+    Page<DocumentSearchResponse> searchResults =
+            documentService.searchPublicDocuments(filter, pageable);
 
     return ResponseEntity.ok(PagedResponse.of(searchResults));
+  }
+
+  /**
+   * Search metadata cho public documents.
+   * Dùng cho Filter Modal ở FE.
+   * Không yêu cầu authentication.
+   */
+  @GetMapping("/search-meta")
+  public ResponseEntity<DocumentSearchMetaResponse> getPublicSearchMeta() {
+    log.info("Received request for public document search meta");
+    DocumentSearchMetaResponse meta = documentService.getPublicSearchMeta();
+    return ResponseEntity.ok(meta);
   }
 
   /**

@@ -13,7 +13,6 @@ export default function SearchPage() {
   return (
     <div data-search-scope>
       {" "}
-      {/* ✅ scope CSS cho riêng trang search */}
       <SearchProvider>
         <main className={styles.container}>
           <header className={styles.header}>

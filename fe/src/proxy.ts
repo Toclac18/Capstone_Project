@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
 
-const PUBLIC_PAGE_PATHS = ["/", "/contact-admin", "/homepage"];
+const PUBLIC_PAGE_PATHS = ["/", "/contact-admin", "/homepage", "/search"];
 const PUBLIC_PAGE_PREFIXES = ["/auth/"];
 
 const ALWAYS_PUBLIC_PREFIXES = [

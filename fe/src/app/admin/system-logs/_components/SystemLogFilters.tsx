@@ -1,7 +1,7 @@
 // src/app/admin/system-logs/_components/SystemLogFilters.tsx
 "use client";
 
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import type { SystemLogQueryParams } from "@/types/system-log";
 import styles from "../styles.module.css";
 
@@ -52,7 +52,7 @@ export function SystemLogFilters({
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
     formState: { errors },
   } = useForm<FilterValues>({
     defaultValues: {
@@ -111,7 +111,43 @@ export function SystemLogFilters({
     onFiltersChange(clearedFilters);
   };
 
-  const watchedFilters = watch();
+  // Use `useWatch` to subscribe to specific form field values; this avoids
+  // consuming the full `watch()` API which some lint rules flag as incompatible.
+  const [
+    watchedSearch,
+    watchedAction,
+    watchedUserRole,
+    watchedIpAddress,
+    watchedDateFrom,
+    watchedDateTo,
+  ] = useWatch({
+    control,
+    name: [
+      "search",
+      "action",
+      "userRole",
+      "ipAddress",
+      "dateFrom",
+      "dateTo",
+    ] as const,
+  }) as unknown as [
+    string | undefined,
+    string | undefined,
+    string | undefined,
+    string | undefined,
+    string | undefined,
+    string | undefined,
+  ];
+
+  const watchedFilters = {
+    search: watchedSearch,
+    action: watchedAction,
+    userRole: watchedUserRole,
+    ipAddress: watchedIpAddress,
+    dateFrom: watchedDateFrom,
+    dateTo: watchedDateTo,
+  };
+
   const hasActiveFilters =
     watchedFilters.search ||
     watchedFilters.action ||
@@ -126,7 +162,7 @@ export function SystemLogFilters({
       className={styles["filters-container"]}
     >
       {/* Search Bar */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-4">
+      <div className="mb-4 flex flex-col gap-4 lg:flex-row">
         <div className="w-full lg:w-auto lg:min-w-[500px] lg:max-w-[800px]">
           <div className={styles["search-container"]}>
             <svg
@@ -174,7 +210,7 @@ export function SystemLogFilters({
       </div>
 
       {/* Filters Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {/* Action Filter */}
         <div className={styles["field-group"]}>
           <label htmlFor="action" className={styles["label"]}>
@@ -259,13 +295,15 @@ export function SystemLogFilters({
 
       {/* Active Filters Summary */}
       {hasActiveFilters && (
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
           <div className="flex flex-wrap gap-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">
               Active filters:
             </span>
             {watchedFilters.search && (
-              <span className={`${styles["filter-tag"]} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}>
+              <span
+                className={`${styles["filter-tag"]} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}
+              >
                 Search: {watchedFilters.search}
                 <button
                   type="button"
@@ -277,8 +315,14 @@ export function SystemLogFilters({
               </span>
             )}
             {watchedFilters.action && (
-              <span className={`${styles["filter-tag"]} bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200`}>
-                Action: {ACTION_OPTIONS.find((o) => o.value === watchedFilters.action)?.label}
+              <span
+                className={`${styles["filter-tag"]} bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200`}
+              >
+                Action:{" "}
+                {
+                  ACTION_OPTIONS.find((o) => o.value === watchedFilters.action)
+                    ?.label
+                }
                 <button
                   type="button"
                   onClick={() => removeFilter("action")}
@@ -289,8 +333,14 @@ export function SystemLogFilters({
               </span>
             )}
             {watchedFilters.userRole && (
-              <span className={`${styles["filter-tag"]} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`}>
-                Role: {ROLE_OPTIONS.find((o) => o.value === watchedFilters.userRole)?.label}
+              <span
+                className={`${styles["filter-tag"]} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`}
+              >
+                Role:{" "}
+                {
+                  ROLE_OPTIONS.find((o) => o.value === watchedFilters.userRole)
+                    ?.label
+                }
                 <button
                   type="button"
                   onClick={() => removeFilter("userRole")}
@@ -301,7 +351,9 @@ export function SystemLogFilters({
               </span>
             )}
             {watchedFilters.ipAddress && (
-              <span className={`${styles["filter-tag"]} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200`}>
+              <span
+                className={`${styles["filter-tag"]} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200`}
+              >
                 IP: {watchedFilters.ipAddress}
                 <button
                   type="button"
@@ -313,12 +365,25 @@ export function SystemLogFilters({
               </span>
             )}
             {(watchedFilters.dateFrom || watchedFilters.dateTo) && (
-              <span className={`${styles["filter-tag"]} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`}>
-                Date: {watchedFilters.dateFrom ? new Date(watchedFilters.dateFrom).toLocaleDateString() : "Start"} - {watchedFilters.dateTo ? new Date(watchedFilters.dateTo).toLocaleDateString() : "End"}
+              <span
+                className={`${styles["filter-tag"]} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`}
+              >
+                Date:{" "}
+                {watchedFilters.dateFrom
+                  ? new Date(watchedFilters.dateFrom).toLocaleDateString()
+                  : "Start"}{" "}
+                -{" "}
+                {watchedFilters.dateTo
+                  ? new Date(watchedFilters.dateTo).toLocaleDateString()
+                  : "End"}
                 <button
                   type="button"
                   onClick={() => {
-                    const updatedFilters = { ...watchedFilters, dateFrom: "", dateTo: "" };
+                    const updatedFilters = {
+                      ...watchedFilters,
+                      dateFrom: "",
+                      dateTo: "",
+                    };
                     reset(updatedFilters);
                     const filters: SystemLogQueryParams = {
                       ...updatedFilters,
@@ -344,4 +409,3 @@ export function SystemLogFilters({
     </form>
   );
 }
-

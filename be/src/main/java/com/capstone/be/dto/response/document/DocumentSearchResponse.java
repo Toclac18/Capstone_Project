@@ -36,6 +36,7 @@ public class DocumentSearchResponse {
   private String specializationName;
   private String domainName;
   private List<String> tagNames;
+  private DocumentDetailResponse.SummarizationInfo summarizations;
 
   // Organization info (if belongs to an organization)
   private OrganizationInfo organization;

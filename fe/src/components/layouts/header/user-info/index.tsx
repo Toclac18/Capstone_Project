@@ -41,7 +41,8 @@ export function UserInfo() {
         localStorage.removeItem("userName");
       }
       setIsOpen(false);
-      router.push("/auth/sign-in");
+      // Force full page reload to landing page
+      window.location.href = "/";
     } catch (error) {
       console.error("Logout failed:", error);
       // Clear localStorage even if API fails
@@ -49,7 +50,8 @@ export function UserInfo() {
         localStorage.removeItem("userName");
       }
       setIsOpen(false);
-      router.push("/auth/sign-in");
+      // Force full page reload to landing page
+      window.location.href = "/";
     }
   }
 

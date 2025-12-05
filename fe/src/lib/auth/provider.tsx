@@ -5,6 +5,7 @@ import {
   useContext,
   useMemo,
   useState,
+  useEffect,
   type ReactNode,
 } from "react";
 import type { AuthInfo } from "@/types/server-auth";
@@ -22,7 +23,12 @@ export function AuthProvider({
   initialAuth: AuthInfo;
   children: ReactNode;
 }) {
-  const [auth] = useState<AuthInfo>(initialAuth);
+  const [auth, setAuth] = useState<AuthInfo>(initialAuth);
+
+  // Update auth state when initialAuth changes (e.g., after router.refresh())
+  useEffect(() => {
+    setAuth(initialAuth);
+  }, [initialAuth]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

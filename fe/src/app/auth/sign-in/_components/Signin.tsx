@@ -69,15 +69,22 @@ export default function Signin() {
       // Redirect based on role
       const roleRoutes: Record<typeof data.role, string> = {
         READER: "/",
-        REVIEWER: "/reviewer",
+        REVIEWER: "/",
         ORGANIZATION_ADMIN: "/org-admin/readers",
         SYSTEM_ADMIN: "/admin",
         BUSINESS_ADMIN: "/business-admin",
       };
 
+      const targetRoute = roleRoutes[data.role] || "/";
+
+      // Refresh router to update server-side auth state
+      router.refresh();
+      
+      // Navigate to target route - this will trigger server-side re-render
+      // and AuthProvider will receive updated initialAuth
       setTimeout(() => {
-        router.push(roleRoutes[data.role] || "/");
-      }, 1500);
+        router.push(targetRoute);
+      }, 100);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Invalid email or password";
       setError(msg);

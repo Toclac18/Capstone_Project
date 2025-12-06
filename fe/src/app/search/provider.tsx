@@ -77,10 +77,10 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
     reload();
   }, [reload]);
 
-  // Khi filter đổi, reset page về 1
+  // Khi filter đổi hoặc perPage đổi, reset page về 1
   useEffect(() => {
     setPage(1);
-  }, [filters]);
+  }, [filters, perPage]);
 
   const value = useMemo(
     () => ({

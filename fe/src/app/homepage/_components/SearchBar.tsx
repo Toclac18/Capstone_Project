@@ -34,7 +34,7 @@ export default function SearchBar() {
         }}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
-            goSearchPage(); // ⬅️ Enter = đi tới trang search
+            goSearchPage();
           }
         }}
         aria-label="Search"

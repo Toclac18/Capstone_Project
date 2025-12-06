@@ -1,9 +1,12 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.dto.common.PagedResponse;
+import com.capstone.be.dto.request.review.RespondReviewRequestRequest;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.ReviewRequestService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -81,5 +84,63 @@ public class ReviewRequestController {
         reviewerId, pageable);
 
     return ResponseEntity.ok(PagedResponse.of(result, "All review requests retrieved successfully"));
+  }
+
+  /**
+   * Respond to a review request (accept or reject)
+   * PUT /api/v1/review-requests/{reviewRequestId}/respond
+   *
+   * @param userPrincipal   Authenticated Reviewer
+   * @param reviewRequestId Review request ID
+   * @param request         Response (accept/reject) with optional rejection reason
+   * @return Updated review request response
+   */
+  @PutMapping("/{reviewRequestId}/respond")
+  @PreAuthorize("hasRole('REVIEWER')")
+  public ResponseEntity<ApiResponse<ReviewRequestResponse>> respondToReviewRequest(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "reviewRequestId") UUID reviewRequestId,
+      @Valid @RequestBody RespondReviewRequestRequest request) {
+
+    UUID reviewerId = userPrincipal.getId();
+    log.info("Reviewer {} responding to review request {}: accept={}",
+        reviewerId, reviewRequestId, request.getAccept());
+
+    ReviewRequestResponse response = reviewRequestService.respondToReviewRequest(
+        reviewerId, reviewRequestId, request);
+
+    String message = request.getAccept()
+        ? "Review request accepted successfully"
+        : "Review request rejected successfully";
+
+    return ResponseEntity.ok(ApiResponse.success(response, message));
+  }
+
+  /**
+   * View to-do review documents (ACCEPTED status only)
+   * GET /api/v1/review-requests/todo
+   *
+   * @param userPrincipal Authenticated Reviewer
+   * @param page          Page number (default 0)
+   * @param size          Page size (default 10)
+   * @return Paginated list of documents to review
+   */
+  @GetMapping("/todo")
+  @PreAuthorize("hasRole('REVIEWER')")
+  public ResponseEntity<PagedResponse<ReviewRequestResponse>> getToDoDocuments(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @RequestParam(name = "page", defaultValue = "0") int page,
+      @RequestParam(name = "size", defaultValue = "10") int size) {
+
+    UUID reviewerId = userPrincipal.getId();
+    log.info("Reviewer {} requesting to-do documents (page: {}, size: {})",
+        reviewerId, page, size);
+
+    Pageable pageable = PageRequest.of(page, size);
+
+    Page<ReviewRequestResponse> result = reviewRequestService.getReviewerToDoDocuments(
+        reviewerId, pageable);
+
+    return ResponseEntity.ok(PagedResponse.of(result, "To-do documents retrieved successfully"));
   }
 }

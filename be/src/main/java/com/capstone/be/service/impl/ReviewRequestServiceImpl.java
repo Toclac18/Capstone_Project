@@ -7,6 +7,7 @@ import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.ReviewRequestStatus;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
+import com.capstone.be.dto.request.review.RespondReviewRequestRequest;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
 import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
@@ -138,6 +139,111 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
     }
 
     Page<ReviewRequest> requests = reviewRequestRepository.findByReviewer_Id(reviewerId, pageable);
+
+    return requests.map(reviewRequestMapper::toResponse);
+  }
+
+  @Override
+  @Transactional
+  public ReviewRequestResponse respondToReviewRequest(UUID reviewerId, UUID reviewRequestId, RespondReviewRequestRequest request) {
+    log.info("Reviewer {} responding to review request {}: accept={}", reviewerId, reviewRequestId, request.getAccept());
+
+    // Validate Reviewer
+    User reviewer = userRepository.findById(reviewerId)
+        .orElseThrow(() -> new ResourceNotFoundException("Reviewer not found with ID: " + reviewerId));
+
+    if (reviewer.getRole() != UserRole.REVIEWER) {
+      throw new InvalidRequestException("User is not a reviewer");
+    }
+
+    // Get ReviewRequest
+    ReviewRequest reviewRequest = reviewRequestRepository.findById(reviewRequestId)
+        .orElseThrow(() -> new ResourceNotFoundException("Review request not found with ID: " + reviewRequestId));
+
+    // Verify this request belongs to the reviewer
+    if (!reviewRequest.getReviewer().getId().equals(reviewerId)) {
+      throw new InvalidRequestException("This review request does not belong to you");
+    }
+
+    // Check if request is still pending
+    if (reviewRequest.getStatus() != ReviewRequestStatus.PENDING) {
+      throw new InvalidRequestException("This review request has already been responded to. Current status: " + reviewRequest.getStatus());
+    }
+
+    // Check if response deadline has passed
+    Instant now = Instant.now();
+    if (now.isAfter(reviewRequest.getResponseDeadline())) {
+      // Auto-expire the request
+      reviewRequest.setStatus(ReviewRequestStatus.EXPIRED);
+      reviewRequestRepository.save(reviewRequest);
+      throw new InvalidRequestException("The response deadline has passed. This request has been marked as expired.");
+    }
+
+    // Update status based on response
+    Instant respondedAt = Instant.now();
+    reviewRequest.setRespondedAt(respondedAt);
+
+    if (request.getAccept()) {
+      reviewRequest.setStatus(ReviewRequestStatus.ACCEPTED);
+      // Calculate review deadline (3 days from acceptance)
+      Instant reviewDeadline = calculateDeadline(respondedAt, REVIEW_DEADLINE_DAYS);
+      reviewRequest.setReviewDeadline(reviewDeadline);
+      log.info("Reviewer {} accepted review request {}. Review deadline: {}", reviewerId, reviewRequestId, reviewDeadline);
+    } else {
+      reviewRequest.setStatus(ReviewRequestStatus.REJECTED);
+      reviewRequest.setRejectionReason(request.getRejectionReason());
+      log.info("Reviewer {} rejected review request {}", reviewerId, reviewRequestId);
+    }
+
+    reviewRequest = reviewRequestRepository.save(reviewRequest);
+
+    return reviewRequestMapper.toResponse(reviewRequest);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<ReviewRequestResponse> getReviewerToDoDocuments(UUID reviewerId, Pageable pageable) {
+    log.info("Getting to-do review documents for reviewer {}", reviewerId);
+
+    // Validate Reviewer
+    User reviewer = userRepository.findById(reviewerId)
+        .orElseThrow(() -> new ResourceNotFoundException("Reviewer not found with ID: " + reviewerId));
+
+    if (reviewer.getRole() != UserRole.REVIEWER) {
+      throw new InvalidRequestException("User is not a reviewer");
+    }
+
+    // Get all ACCEPTED review requests
+    Page<ReviewRequest> requests = reviewRequestRepository.findByReviewer_IdAndStatus(
+        reviewerId,
+        ReviewRequestStatus.ACCEPTED,
+        pageable
+    );
+
+    return requests.map(reviewRequestMapper::toResponse);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<ReviewRequestResponse> getDocumentReviewRequests(UUID documentId, Pageable pageable) {
+    log.info("Getting review requests for document {}", documentId);
+
+    // Validate document exists
+    if (!documentRepository.existsById(documentId)) {
+      throw new ResourceNotFoundException("Document not found with ID: " + documentId);
+    }
+
+    Page<ReviewRequest> requests = reviewRequestRepository.findByDocument_Id(documentId, pageable);
+
+    return requests.map(reviewRequestMapper::toResponse);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<ReviewRequestResponse> getAllReviewRequests(Pageable pageable) {
+    log.info("Getting all review requests (page: {}, size: {})", pageable.getPageNumber(), pageable.getPageSize());
+
+    Page<ReviewRequest> requests = reviewRequestRepository.findAll(pageable);
 
     return requests.map(reviewRequestMapper::toResponse);
   }

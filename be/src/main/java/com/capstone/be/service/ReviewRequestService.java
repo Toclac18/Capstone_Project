@@ -1,6 +1,7 @@
 package com.capstone.be.service;
 
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
+import com.capstone.be.dto.request.review.RespondReviewRequestRequest;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,4 +41,41 @@ public interface ReviewRequestService {
    * @return Page of review request responses
    */
   Page<ReviewRequestResponse> getReviewerAllRequests(UUID reviewerId, Pageable pageable);
+
+  /**
+   * Respond to a review request (accept or reject)
+   *
+   * @param reviewerId       Reviewer ID
+   * @param reviewRequestId  Review request ID
+   * @param request          Response (accept/reject) with optional rejection reason
+   * @return Updated review request response
+   */
+  ReviewRequestResponse respondToReviewRequest(UUID reviewerId, UUID reviewRequestId, RespondReviewRequestRequest request);
+
+  /**
+   * View all documents assigned for review (ACCEPTED status only)
+   * This is for "To Do" list of documents the reviewer needs to review
+   *
+   * @param reviewerId Reviewer ID
+   * @param pageable   Pagination parameters
+   * @return Page of review request responses with ACCEPTED status
+   */
+  Page<ReviewRequestResponse> getReviewerToDoDocuments(UUID reviewerId, Pageable pageable);
+
+  /**
+   * Business Admin - View all review requests for a specific document
+   *
+   * @param documentId Document ID
+   * @param pageable   Pagination parameters
+   * @return Page of review request responses for the document
+   */
+  Page<ReviewRequestResponse> getDocumentReviewRequests(UUID documentId, Pageable pageable);
+
+  /**
+   * Business Admin - View all review requests in the system
+   *
+   * @param pageable Pagination parameters
+   * @return Page of all review request responses
+   */
+  Page<ReviewRequestResponse> getAllReviewRequests(Pageable pageable);
 }

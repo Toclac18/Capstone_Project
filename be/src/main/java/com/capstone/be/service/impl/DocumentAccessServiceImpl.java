@@ -5,10 +5,12 @@ import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.DocVisibility;
 import com.capstone.be.domain.enums.OrgEnrollStatus;
+import com.capstone.be.domain.enums.ReviewRequestStatus;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.repository.DocumentRedemptionRepository;
 import com.capstone.be.repository.DocumentRepository;
 import com.capstone.be.repository.OrgEnrollmentRepository;
+import com.capstone.be.repository.ReviewRequestRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.service.DocumentAccessService;
 import java.util.UUID;
@@ -26,6 +28,7 @@ public class DocumentAccessServiceImpl implements DocumentAccessService {
   private final UserRepository userRepository;
   private final OrgEnrollmentRepository orgEnrollmentRepository;
   private final DocumentRedemptionRepository documentRedemptionRepository;
+  private final ReviewRequestRepository reviewRequestRepository;
 
   @Override
   @Transactional(readOnly = true)
@@ -68,6 +71,16 @@ public class DocumentAccessServiceImpl implements DocumentAccessService {
     boolean hasRedeemed = documentRedemptionRepository.existsByReader_IdAndDocument_Id(userId, documentId);
     if (hasRedeemed) {
       log.debug("Access granted: User {} has redeemed document {}", userId, documentId);
+      return true;
+    }
+
+    // Check 5: User is assigned as reviewer with ACCEPTED status
+    boolean isReviewer = reviewRequestRepository
+        .findByDocument_IdAndReviewer_Id(documentId, userId)
+        .map(reviewRequest -> reviewRequest.getStatus() == ReviewRequestStatus.ACCEPTED)
+        .orElse(false);
+    if (isReviewer) {
+      log.debug("Access granted: User {} is an assigned reviewer for document {}", userId, documentId);
       return true;
     }
 

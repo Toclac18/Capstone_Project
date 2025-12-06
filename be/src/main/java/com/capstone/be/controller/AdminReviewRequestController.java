@@ -1,6 +1,7 @@
 package com.capstone.be.controller;
 
 import com.capstone.be.dto.common.ApiResponse;
+import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
 import com.capstone.be.security.model.UserPrincipal;
@@ -8,6 +9,9 @@ import com.capstone.be.service.ReviewRequestService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,7 +25,6 @@ import java.util.UUID;
  */
 @Slf4j
 @RestController
-@RequestMapping("/admin/documents/{documentId}/review-requests")
 @RequiredArgsConstructor
 public class AdminReviewRequestController {
 
@@ -36,7 +39,7 @@ public class AdminReviewRequestController {
    * @param request       Assignment request with reviewer ID and note
    * @return Review request response
    */
-  @PostMapping
+  @PostMapping("/admin/documents/{documentId}/review-requests")
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
   public ResponseEntity<ApiResponse<ReviewRequestResponse>> assignReviewer(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
@@ -53,5 +56,55 @@ public class AdminReviewRequestController {
     return ResponseEntity
         .status(HttpStatus.CREATED)
         .body(ApiResponse.success(response, "Reviewer assigned successfully"));
+  }
+
+  /**
+   * View all review requests for a specific document
+   * GET /api/v1/admin/documents/{documentId}/review-requests
+   *
+   * @param documentId Document ID
+   * @param page       Page number (default 0)
+   * @param size       Page size (default 10)
+   * @return Paginated list of review requests for the document
+   */
+  @GetMapping("/admin/documents/{documentId}/review-requests")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  public ResponseEntity<PagedResponse<ReviewRequestResponse>> getDocumentReviewRequests(
+      @PathVariable(name = "documentId") UUID documentId,
+      @RequestParam(name = "page", defaultValue = "0") int page,
+      @RequestParam(name = "size", defaultValue = "10") int size) {
+
+    log.info("Business Admin requesting review requests for document {} (page: {}, size: {})",
+        documentId, page, size);
+
+    Pageable pageable = PageRequest.of(page, size);
+
+    Page<ReviewRequestResponse> result = reviewRequestService.getDocumentReviewRequests(
+        documentId, pageable);
+
+    return ResponseEntity.ok(PagedResponse.of(result, "Document review requests retrieved successfully"));
+  }
+
+  /**
+   * View all review requests in the system
+   * GET /api/v1/admin/review-requests
+   *
+   * @param page Page number (default 0)
+   * @param size Page size (default 10)
+   * @return Paginated list of all review requests
+   */
+  @GetMapping("/admin/review-requests")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  public ResponseEntity<PagedResponse<ReviewRequestResponse>> getAllReviewRequests(
+      @RequestParam(name = "page", defaultValue = "0") int page,
+      @RequestParam(name = "size", defaultValue = "10") int size) {
+
+    log.info("Business Admin requesting all review requests (page: {}, size: {})", page, size);
+
+    Pageable pageable = PageRequest.of(page, size);
+
+    Page<ReviewRequestResponse> result = reviewRequestService.getAllReviewRequests(pageable);
+
+    return ResponseEntity.ok(PagedResponse.of(result, "All review requests retrieved successfully"));
   }
 }

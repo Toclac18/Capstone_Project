@@ -14,6 +14,7 @@ import {
   type RelatedLite,
   type Comment,
 } from "@/services/docs.service";
+import { useToast } from "@/components/ui/toast";
 
 type DocsContextValue = {
   loading: boolean;
@@ -98,6 +99,8 @@ export function DocsViewProvider({
 
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentLoading, setCommentLoading] = useState(false);
+
+  const { showToast } = useToast();
 
   // -----------------------------
   // LOAD DOC DETAIL + COMMENTS
@@ -311,7 +314,14 @@ export function DocsViewProvider({
       setRedeemed(true);
       setIsRedeemModalOpen(false);
     } catch (e: any) {
-      setError(e?.message || "Redeem failed");
+      const errorMessage = e?.message || "Redeem failed";
+      setError(errorMessage);
+      showToast({
+        type: "error",
+        title: "Redeem Failed",
+        message: errorMessage,
+        duration: 5000,
+      });
     } finally {
       setRedeemLoading(false);
     }

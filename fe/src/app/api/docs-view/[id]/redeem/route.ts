@@ -25,12 +25,32 @@ async function handlePOST(
 
   const fh = await buildForwardHeaders();
 
-  const upstream = await fetch(`${BE_BASE}/api/docs-view/${id}/redeem`, {
+  const upstream = await fetch(`${BE_BASE}/api/documents/${id}/redeem`, {
     method: "POST",
     headers: fh,
     cache: "no-store",
   });
 
+  // Backend returns 204 No Content on success
+  if (upstream.status === 204) {
+    return jsonResponse(
+      {
+        success: true,
+        redeemed: true,
+      },
+      {
+        status: 200,
+        mode: "real",
+      },
+    );
+  }
+
+  // If error, proxy the error response
+  if (!upstream.ok) {
+    return proxyJsonResponse(upstream, { mode: "real" });
+  }
+
+  // For other success statuses, return the response as-is
   return proxyJsonResponse(upstream, { mode: "real" });
 }
 

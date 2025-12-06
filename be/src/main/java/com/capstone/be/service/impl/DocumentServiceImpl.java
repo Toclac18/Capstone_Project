@@ -923,8 +923,12 @@ public class DocumentServiceImpl implements DocumentService {
 
       boolean hasRedeemed = false;
       if (Boolean.TRUE.equals(document.getIsPremium())) {
-        hasRedeemed = documentRedemptionRepository
-                .existsByReader_IdAndDocument_Id(userId, document.getId());
+        // Find ReaderProfile from User ID first, then check redemption
+        ReaderProfile readerProfile = readerProfileRepository.findByUserId(userId).orElse(null);
+        if (readerProfile != null) {
+          hasRedeemed = documentRedemptionRepository
+                  .existsByReader_IdAndDocument_Id(readerProfile.getId(), document.getId());
+        }
       }
 
       boolean isMemberOfOrganization = false;

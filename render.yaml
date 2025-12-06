@@ -1,43 +1,182 @@
-# Render Blueprint for Capstone Project
-# https://render.com/docs/blueprint-spec
+# Render Blueprint Configuration
+# This file defines all services for the Capstone Project deployment
 
 services:
-  # Frontend - Next.js
-  - type: web
-    name: readee
-    runtime: node
-    rootDir: fe
-    branch: deploy-test
-    buildCommand: npm install && npm run build
-    startCommand: npm run start
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: COOKIE_NAME
-        value: access_token
-      - key: USE_MOCK
-        value: false
-      - key: NEXT_PUBLIC_API_URL
-        value: /api
-      - key: NEXT_PUBLIC_API_TIMEOUT
-        value: 10000
-      # These need to be set manually in Render Dashboard:
-      # - JWT_SECRET (sync with BE)
-      # - NEXT_PUBLIC_FE_DOMAIN
-      # - NEXT_PUBLIC_API_BASE_URL
-    healthCheckPath: /
+  # ========================================
+  # PostgreSQL Database
+  # ========================================
+  - type: pserv
+    name: readee-db
+    env: docker
+    plan: free
+    region: singapore
+    ipAllowList: []
+    databases:
+      - name: readee_db
+        user: readee_user
 
-  # Backend - Spring Boot (already deployed)
+  # ========================================
+  # Backend - Spring Boot API
+  # ========================================
   - type: web
-    name: readee-be
-    runtime: docker
-    rootDir: be
+    name: readee-backend
+    env: java
     region: singapore
     plan: free
-    branch: deploy-test
-    dockerfilePath: ./Dockerfile
-    autoDeploy: true
-    ports:
-      - port: 8080
-        protocol: HTTP
+    buildCommand: cd be && ./gradlew clean build -x test
+    startCommand: java -jar be/build/libs/app.jar
+    envVars:
+      # Database Configuration
+      - key: DB_HOST
+        fromDatabase:
+          name: readee-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: readee-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: readee-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: readee-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: readee-db
+          property: password
+      - key: DB_SSLMODE
+        value: require
+
+      # JPA Configuration
+      - key: JPA_DDL_AUTO
+        value: update
+      - key: JPA_SHOW_SQL
+        value: false
+
+      # JWT Configuration
+      - key: JWT_SECRET
+        generateValue: true
+        sync: false
+      - key: JWT_EXPIRATION_MS
+        value: 86400000
+      - key: JWT_EMAIL_VERIFICATION_EXPIRATION_MS
+        value: 600000
+      - key: JWT_ISSUER
+        value: readee
+
+      # Mail Configuration (SMTP)
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        value: 587
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_SMTP_AUTH
+        value: true
+      - key: MAIL_SMTP_STARTTLS_ENABLE
+        value: true
+      - key: MAIL_FROM
+        value: no-reply@readee.com
+      - key: MAIL_VERIFICATION_BASE_URL
+        sync: false
+
+      # AWS S3 Configuration
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_KEY
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: AWS_S3_BUCKET
+        sync: false
+
+      # Audit Log Configuration
+      - key: AUDIT_LOG_RETENTION_ENABLED
+        value: true
+      - key: AUDIT_LOG_RETENTION_DAYS
+        value: 180
+      - key: AUDIT_LOG_RETENTION_CRON
+        value: "0 0 2 * * ?"
     healthCheckPath: /api/actuator/health
+
+  # ========================================
+  # Frontend - Next.js Application
+  # ========================================
+  - type: web
+    name: readee-frontend
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: cd fe && npm install && npm run build
+    startCommand: cd fe && npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22.19.0
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: readee-backend
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: NEXT_PUBLIC_OCR_SERVICE_URL
+        fromService:
+          type: web
+          name: readee-ocr-service
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: NEXT_PUBLIC_AI_SERVICE_URL
+        fromService:
+          type: web
+          name: readee-ai-service
+          envVarKey: RENDER_EXTERNAL_URL
+
+  # ========================================
+  # AI Service - OCR Service
+  # ========================================
+  - type: web
+    name: readee-ocr-service
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: cd ai/OCR_Service && pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: cd ai/OCR_Service/src && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        value: 10000
+
+  # ========================================
+  # AI Service - Readee AI System
+  # ========================================
+  - type: web
+    name: readee-ai-service
+    env: python
+    region: singapore
+    plan: standard # Recommended for ML models with higher memory requirements
+    buildCommand: |
+      cd ai/Readee_AI_System &&
+      pip install --upgrade pip &&
+      pip install -r requirements.txt
+    startCommand: cd ai/Readee_AI_System/src && uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        value: 10000
+      - key: HF_HOME
+        value: /opt/render/.cache/huggingface
+      - key: TRANSFORMERS_CACHE
+        value: /opt/render/.cache/huggingface
+      # Add other AI service specific env vars
+      - key: MODEL_CACHE_DIR
+        value: /opt/render/.cache/models
+    disk:
+      name: ai-models-cache
+      mountPath: /opt/render/.cache
+      sizeGB: 10

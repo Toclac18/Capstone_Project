@@ -1,5 +1,5 @@
 # Render Blueprint Configuration
-# This file defines all services for the Capstone Project deployment
+# Auto-deploy from branch: deploy-test
 
 services:
   # ========================================
@@ -23,7 +23,8 @@ services:
     env: java
     region: singapore
     plan: free
-    buildCommand: cd be && ./gradlew clean build -x test
+    branch: deploy-test
+    buildCommand: cd be && chmod +x gradlew && ./gradlew clean build -x test
     startCommand: java -jar be/build/libs/app.jar
     envVars:
       # Database Configuration
@@ -59,7 +60,6 @@ services:
       # JWT Configuration
       - key: JWT_SECRET
         generateValue: true
-        sync: false
       - key: JWT_EXPIRATION_MS
         value: 86400000
       - key: JWT_EMAIL_VERIFICATION_EXPIRATION_MS
@@ -100,8 +100,7 @@ services:
         value: true
       - key: AUDIT_LOG_RETENTION_DAYS
         value: 180
-      - key: AUDIT_LOG_RETENTION_CRON
-        value: "0 0 2 * * ?"
+    autoDeploy: true
     healthCheckPath: /api/actuator/health
 
   # ========================================
@@ -112,6 +111,7 @@ services:
     env: node
     region: singapore
     plan: free
+    branch: deploy-test
     buildCommand: cd fe && npm install && npm run build
     startCommand: cd fe && npm start
     envVars:
@@ -124,59 +124,4 @@ services:
           type: web
           name: readee-backend
           envVarKey: RENDER_EXTERNAL_URL
-      - key: NEXT_PUBLIC_OCR_SERVICE_URL
-        fromService:
-          type: web
-          name: readee-ocr-service
-          envVarKey: RENDER_EXTERNAL_URL
-      - key: NEXT_PUBLIC_AI_SERVICE_URL
-        fromService:
-          type: web
-          name: readee-ai-service
-          envVarKey: RENDER_EXTERNAL_URL
-
-  # ========================================
-  # AI Service - OCR Service
-  # ========================================
-  - type: web
-    name: readee-ocr-service
-    env: python
-    region: singapore
-    plan: free
-    buildCommand: cd ai/OCR_Service && pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: cd ai/OCR_Service/src && uvicorn main:app --host 0.0.0.0 --port $PORT
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
-      - key: PORT
-        value: 10000
-
-  # ========================================
-  # AI Service - Readee AI System
-  # ========================================
-  - type: web
-    name: readee-ai-service
-    env: python
-    region: singapore
-    plan: standard # Recommended for ML models with higher memory requirements
-    buildCommand: |
-      cd ai/Readee_AI_System &&
-      pip install --upgrade pip &&
-      pip install -r requirements.txt
-    startCommand: cd ai/Readee_AI_System/src && uvicorn app:app --host 0.0.0.0 --port $PORT
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
-      - key: PORT
-        value: 10000
-      - key: HF_HOME
-        value: /opt/render/.cache/huggingface
-      - key: TRANSFORMERS_CACHE
-        value: /opt/render/.cache/huggingface
-      # Add other AI service specific env vars
-      - key: MODEL_CACHE_DIR
-        value: /opt/render/.cache/models
-    disk:
-      name: ai-models-cache
-      mountPath: /opt/render/.cache
-      sizeGB: 10
+    autoDeploy: true

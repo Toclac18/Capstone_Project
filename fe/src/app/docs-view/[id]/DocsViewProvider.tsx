@@ -5,8 +5,8 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
   fetchDocDetail,
   redeemDoc,
-  upvoteDoc,
-  downvoteDoc,
+  getUserVote,
+  voteDocument,
   addComment,
   updateComment as updateCommentApi,
   deleteComment as deleteCommentApi,
@@ -36,6 +36,7 @@ type DocsContextValue = {
   goPrevHit: () => void;
 
   // vote
+  userVote: number; // -1 (downvote), 0 (neutral), 1 (upvote)
   voteLoading: boolean;
   handleUpvote: () => Promise<void>;
   handleDownvote: () => Promise<void>;
@@ -92,6 +93,7 @@ export function DocsViewProvider({
   const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
   const [redeemLoading, setRedeemLoading] = useState(false);
 
+  const [userVote, setUserVote] = useState<number>(0); // -1, 0, or 1 (default: 0 = no vote)
   const [voteLoading, setVoteLoading] = useState(false);
 
   const [comments, setComments] = useState<Comment[]>([]);
@@ -132,6 +134,18 @@ export function DocsViewProvider({
 
         // ✅ GET COMMENTS TỪ BE
         setComments(data.comments || []);
+
+        // ✅ GET USER VOTE
+        try {
+          const voteData = await getUserVote(id);
+          if (!mounted) return;
+          // userVote có thể là -1, 0, hoặc 1
+          setUserVote(voteData.userVote ?? 0);
+        } catch (e: any) {
+          // Nếu user chưa đăng nhập hoặc chưa vote, userVote sẽ là 0
+          if (!mounted) return;
+          setUserVote(0);
+        }
       } catch (e: any) {
         if (!mounted) return;
         setError(e?.message || "Failed to load document");
@@ -215,14 +229,19 @@ export function DocsViewProvider({
     if (!detail) return;
     try {
       setVoteLoading(true);
-      const res = await upvoteDoc(detail.id);
+      // Nếu đã upvote rồi thì remove vote (voteValue = 0), ngược lại thì upvote (voteValue = 1)
+      const newVoteValue = userVote === 1 ? 0 : 1;
+      const res = await voteDocument(detail.id, newVoteValue);
+      
+      // Cập nhật userVote và counts
+      setUserVote(res.userVote);
       setDetail((d) =>
         d
           ? {
               ...d,
-              upvote_counts: res.upvote_counts,
-              downvote_counts: res.downvote_counts,
-              vote_scores: res.vote_scores,
+              upvote_counts: res.upvoteCount,
+              downvote_counts: res.downvoteCount,
+              vote_scores: res.voteScore,
             }
           : d,
       );
@@ -237,14 +256,19 @@ export function DocsViewProvider({
     if (!detail) return;
     try {
       setVoteLoading(true);
-      const res = await downvoteDoc(detail.id);
+      // Nếu đã downvote rồi thì remove vote (voteValue = 0), ngược lại thì downvote (voteValue = -1)
+      const newVoteValue = userVote === -1 ? 0 : -1;
+      const res = await voteDocument(detail.id, newVoteValue);
+      
+      // Cập nhật userVote và counts
+      setUserVote(res.userVote);
       setDetail((d) =>
         d
           ? {
               ...d,
-              upvote_counts: res.upvote_counts,
-              downvote_counts: res.downvote_counts,
-              vote_scores: res.vote_scores,
+              upvote_counts: res.upvoteCount,
+              downvote_counts: res.downvoteCount,
+              vote_scores: res.voteScore,
             }
           : d,
       );
@@ -366,6 +390,7 @@ export function DocsViewProvider({
     goNextHit,
     goPrevHit,
 
+    userVote,
     voteLoading,
     handleUpvote,
     handleDownvote,

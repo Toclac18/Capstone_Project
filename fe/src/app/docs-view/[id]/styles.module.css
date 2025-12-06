@@ -649,14 +649,56 @@
   padding: 0.2rem 0.55rem;
   border: 1px solid transparent;
   background: transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
 }
+
+.statButton .statIcon {
+  color: var(--text-subtle);
+  transition: color 0.2s ease;
+}
+
 .statButton:hover:not(:disabled) {
   background: var(--accent-50);
   border-color: var(--accent-50);
+  color: var(--accent-600);
 }
+
+.statButton:hover:not(:disabled) .statIcon {
+  color: var(--accent-600);
+}
+
 .statButton:disabled {
   opacity: 0.6;
   cursor: wait;
+}
+
+/* Active state - khi user đã vote */
+.statButton.statButtonActive {
+  background: var(--accent-50) !important;
+  border: 1.5px solid var(--accent) !important;
+  color: var(--accent-600) !important;
+  font-weight: 600 !important;
+}
+
+.statButton.statButtonActive .statIcon {
+  color: var(--accent-600) !important;
+  stroke-width: 3 !important;
+  fill: var(--accent-600) !important;
+}
+
+.statButton.statButtonActive:hover:not(:disabled) {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.statButton.statButtonActive:hover:not(:disabled) .statIcon {
+  color: #fff !important;
+  fill: #fff !important;
 }
 
 /* -------- Comments -------- */

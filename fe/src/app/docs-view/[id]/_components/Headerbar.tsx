@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { Eye, ThumbsUp, ThumbsDown } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/utils/utils";
 
 import { useDocsView } from "../DocsViewProvider";
 import styles from "../styles.module.css";
@@ -26,6 +27,7 @@ export default function HeaderBar() {
     openRedeemModal,
     closeRedeemModal,
     redeem,
+    userVote,
     voteLoading,
     handleUpvote,
     handleDownvote,
@@ -61,18 +63,28 @@ export default function HeaderBar() {
           </div>
           <button
             type="button"
-            className={styles.statButton}
+            className={cn(
+              styles.statButton,
+              userVote === 1 && styles.statButtonActive,
+            )}
             disabled={voteLoading}
             onClick={handleUpvote}
+            title={userVote === 1 ? "Remove upvote" : "Upvote"}
+            data-vote={userVote}
           >
             <ThumbsUp size={18} className={styles.statIcon} />
             <span>{detail.upvote_counts}</span>
           </button>
           <button
             type="button"
-            className={styles.statButton}
+            className={cn(
+              styles.statButton,
+              userVote === -1 && styles.statButtonActive,
+            )}
             disabled={voteLoading}
             onClick={handleDownvote}
+            title={userVote === -1 ? "Remove downvote" : "Downvote"}
+            data-vote={userVote}
           >
             <ThumbsDown size={18} className={styles.statIcon} />
             <span>{detail.downvote_counts}</span>
@@ -145,7 +157,7 @@ export default function HeaderBar() {
             >
               Redeem
             </button>
-          ) : canDownload ? (
+          ) : canDownload && detail.fileUrl ? (
             <Link href={detail.fileUrl} className={styles.btnPrimary} download>
               Download
             </Link>

@@ -298,32 +298,37 @@ export async function redeemDoc(id: string) {
 
 /**
  * -----------------------------
- * VOTE (UPVOTE / DOWNVOTE)
+ * VOTE
  * -----------------------------
- * Next route /api/docs-view/[id]/upvote, /downvote proxy sang BE.
- * Trả về số vote mới, FE tự cập nhật state.
+ * GET: Lấy vote hiện tại của user cho document
+ * POST: Vote document (voteValue: -1 downvote, 0 neutral, 1 upvote)
  */
-export async function upvoteDoc(id: string) {
-  const res = await apiClient.post(
-    `/docs-view/${encodeURIComponent(id)}/upvote`,
+export async function getUserVote(documentId: string) {
+  const res = await apiClient.get(
+    `/docs-view/${encodeURIComponent(documentId)}/vote`,
   );
 
   return res.data as {
-    upvote_counts: number;
-    downvote_counts: number;
-    vote_scores: number;
+    documentId: string;
+    userVote: number; // -1, 0, or 1
+    upvoteCount: number;
+    downvoteCount: number;
+    voteScore: number;
   };
 }
 
-export async function downvoteDoc(id: string) {
+export async function voteDocument(documentId: string, voteValue: number) {
   const res = await apiClient.post(
-    `/docs-view/${encodeURIComponent(id)}/downvote`,
+    `/docs-view/${encodeURIComponent(documentId)}/vote`,
+    { voteValue },
   );
 
   return res.data as {
-    upvote_counts: number;
-    downvote_counts: number;
-    vote_scores: number;
+    documentId: string;
+    userVote: number; // -1, 0, or 1
+    upvoteCount: number;
+    downvoteCount: number;
+    voteScore: number;
   };
 }
 

@@ -2,6 +2,8 @@ package com.capstone.be.service;
 
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
 import com.capstone.be.dto.request.review.RespondReviewRequestRequest;
+import com.capstone.be.dto.request.review.SubmitReviewRequest;
+import com.capstone.be.dto.response.review.DocumentReviewResponse;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -78,4 +80,24 @@ public interface ReviewRequestService {
    * @return Page of all review request responses
    */
   Page<ReviewRequestResponse> getAllReviewRequests(Pageable pageable);
+
+  /**
+   * Submit a review for a document (reviewer submits report and decision)
+   * Updates document status to ACTIVE or REJECTED based on decision
+   *
+   * @param reviewerId       Reviewer ID
+   * @param reviewRequestId  Review request ID
+   * @param request          Review submission with report and decision
+   * @return Document review response
+   */
+  DocumentReviewResponse submitReview(UUID reviewerId, UUID reviewRequestId, SubmitReviewRequest request);
+
+  /**
+   * View review history for a reviewer (all reviews submitted by the reviewer)
+   *
+   * @param reviewerId Reviewer ID
+   * @param pageable   Pagination parameters
+   * @return Page of document review responses
+   */
+  Page<DocumentReviewResponse> getReviewerHistory(UUID reviewerId, Pageable pageable);
 }

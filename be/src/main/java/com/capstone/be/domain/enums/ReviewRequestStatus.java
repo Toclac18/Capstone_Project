@@ -9,7 +9,8 @@ public enum ReviewRequestStatus {
   PENDING("Pending"),           // Chờ reviewer phản hồi
   ACCEPTED("Accepted"),         // Reviewer đồng ý
   REJECTED("Rejected"),         // Reviewer từ chối
-  EXPIRED("Expired");           // Quá hạn 1 ngày không phản hồi
+  EXPIRED("Expired"),           // Quá hạn 1 ngày không phản hồi
+  COMPLETED("Completed");       // Review đã được submit
 
   private final String displayName;
 }

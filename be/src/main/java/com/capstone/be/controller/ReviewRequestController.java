@@ -3,6 +3,8 @@ package com.capstone.be.controller;
 import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.review.RespondReviewRequestRequest;
+import com.capstone.be.dto.request.review.SubmitReviewRequest;
+import com.capstone.be.dto.response.review.DocumentReviewResponse;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.ReviewRequestService;
@@ -12,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -142,5 +145,61 @@ public class ReviewRequestController {
         reviewerId, pageable);
 
     return ResponseEntity.ok(PagedResponse.of(result, "To-do documents retrieved successfully"));
+  }
+
+  /**
+   * Submit a review for a document (report + decision)
+   * PUT /api/v1/review-requests/{reviewRequestId}/submit
+   *
+   * @param userPrincipal   Authenticated Reviewer
+   * @param reviewRequestId Review request ID
+   * @param request         Review submission with report and decision
+   * @return Document review response
+   */
+  @PutMapping("/{reviewRequestId}/submit")
+  @PreAuthorize("hasRole('REVIEWER')")
+  public ResponseEntity<ApiResponse<DocumentReviewResponse>> submitReview(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "reviewRequestId") UUID reviewRequestId,
+      @Valid @RequestBody SubmitReviewRequest request) {
+
+    UUID reviewerId = userPrincipal.getId();
+    log.info("Reviewer {} submitting review for review request {}: decision={}",
+        reviewerId, reviewRequestId, request.getDecision());
+
+    DocumentReviewResponse response = reviewRequestService.submitReview(
+        reviewerId, reviewRequestId, request);
+
+    return ResponseEntity
+        .status(HttpStatus.CREATED)
+        .body(ApiResponse.success(response, "Review submitted successfully"));
+  }
+
+  /**
+   * View review history for the authenticated reviewer
+   * GET /api/v1/review-requests/history
+   *
+   * @param userPrincipal Authenticated Reviewer
+   * @param page          Page number (default 0)
+   * @param size          Page size (default 10)
+   * @return Paginated list of submitted reviews
+   */
+  @GetMapping("/history")
+  @PreAuthorize("hasRole('REVIEWER')")
+  public ResponseEntity<PagedResponse<DocumentReviewResponse>> getReviewHistory(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @RequestParam(name = "page", defaultValue = "0") int page,
+      @RequestParam(name = "size", defaultValue = "10") int size) {
+
+    UUID reviewerId = userPrincipal.getId();
+    log.info("Reviewer {} requesting review history (page: {}, size: {})",
+        reviewerId, page, size);
+
+    Pageable pageable = PageRequest.of(page, size);
+
+    Page<DocumentReviewResponse> result = reviewRequestService.getReviewerHistory(
+        reviewerId, pageable);
+
+    return ResponseEntity.ok(PagedResponse.of(result, "Review history retrieved successfully"));
   }
 }

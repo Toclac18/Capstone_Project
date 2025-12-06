@@ -2,11 +2,167 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useDocsView } from "../DocsViewProvider";
+import { useReader } from "@/hooks/useReader";
 import styles from "../styles.module.css";
 import { formatDistanceToNow } from "date-fns";
 import { enUS } from "date-fns/locale";
-import DeleteConfirmation from "@/components/ui/delete-confirmation";
+import { Pencil, Trash2, X, AlertTriangle } from "lucide-react";
+
+// Custom Delete button wrapper để hiển thị icon + text
+function DeleteButton({
+  onDelete,
+  itemId,
+  itemName,
+  title,
+  description,
+  className,
+}: {
+  onDelete: (id: string | number) => Promise<void>;
+  itemId: string | number;
+  itemName?: string;
+  title?: string;
+  description?: string;
+  className?: string;
+}) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleDeleteClick = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    if (isLoading) return;
+    setIsModalOpen(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      setIsLoading(true);
+      await onDelete(itemId);
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Delete failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={handleDeleteClick}
+        disabled={isLoading}
+        className={className}
+        title="Delete comment"
+      >
+        <Trash2 size={14} />
+        <span>Delete</span>
+      </button>
+
+      {isModalOpen &&
+        typeof window !== "undefined" &&
+        createPortal(
+          <div className={styles.deleteModalOverlay} onClick={handleCloseModal}>
+            <div className={styles.deleteModal} onClick={(e) => e.stopPropagation()}>
+              <div>
+                {/* Header */}
+                <div className={styles.deleteModalHeader}>
+                  <div className={styles.deleteModalHeaderContent}>
+                    <div className={styles.deleteModalIconWrapper}>
+                      <AlertTriangle className={styles.deleteModalIcon} size={20} />
+                    </div>
+                    <div>
+                      <h3 className={styles.deleteModalTitle}>
+                        {title || "Delete comment"}
+                      </h3>
+                      {itemName && (
+                        <p className={styles.deleteModalItemName}>{itemName}</p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCloseModal}
+                    className={styles.deleteModalCloseBtn}
+                    disabled={isLoading}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div className={styles.deleteModalContent}>
+                  <p className={styles.deleteModalDescription}>
+                    {description || "Are you sure you want to delete this comment?"}
+                  </p>
+
+                  <div className={styles.deleteModalWarningBox}>
+                    <div className={styles.deleteModalWarningContent}>
+                      <AlertTriangle className={styles.deleteModalWarningIcon} size={20} />
+                      <div>
+                        <p className={styles.deleteModalWarningTitle}>
+                          This action cannot be undone
+                        </p>
+                        <p className={styles.deleteModalWarningText}>
+                          The comment will be permanently deleted from the system.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className={styles.deleteModalFooter}>
+                  <button
+                    type="button"
+                    className={styles.deleteModalCancel}
+                    onClick={handleCloseModal}
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.deleteModalConfirm}
+                    onClick={handleConfirmDelete}
+                    disabled={isLoading}
+                  >
+                    {isLoading && (
+                      <svg
+                        className={styles.deleteModalSpinner}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                    )}
+                    {isLoading ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
 
 export default function CommentsSection() {
   const {
@@ -16,6 +172,7 @@ export default function CommentsSection() {
     editComment,
     deleteComment,
   } = useDocsView();
+  const { readerId } = useReader();
 
   const [value, setValue] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -87,6 +244,8 @@ export default function CommentsSection() {
       <ul className={styles.commentList}>
         {comments.map((c) => {
           const isEditing = editingId === c.id;
+          // Chỉ hiển thị edit/delete cho comment của user hiện tại
+          const isOwner = readerId && c.userId && readerId === c.userId;
 
           return (
             <li key={c.id} className={styles.commentItem}>
@@ -104,34 +263,35 @@ export default function CommentsSection() {
                     })}
                   </span>
 
-                  {/* ACTIONS: Edit + Delete (có confirm) */}
-                  <div className={styles.commentActions}>
-                    {!isEditing && (
-                      <>
-                        <button
-                          type="button"
-                          className={styles.commentActionBtn}
-                          onClick={() => handleStartEdit(c.id, c.content || "")}
-                          disabled={commentLoading}
-                        >
-                          Edit
-                        </button>
+                  {/* ACTIONS: Edit + Delete (chỉ hiển thị cho owner) */}
+                  {isOwner && (
+                    <div className={styles.commentActions}>
+                      {!isEditing && (
+                        <>
+                          <button
+                            type="button"
+                            className={styles.commentActionBtn}
+                            onClick={() => handleStartEdit(c.id, c.content || "")}
+                            disabled={commentLoading}
+                            title="Edit comment"
+                          >
+                            <Pencil size={14} />
+                            <span>Edit</span>
+                          </button>
 
-                        {/* Delete với confirm modal */}
-                        <DeleteConfirmation
-                          onDelete={handleDelete}
-                          itemId={c.id}
-                          itemName={c.content}
-                          title="Delete comment"
-                          description="Are you sure you want to delete this comment?"
-                          size="sm"
-                          variant="text"
-                          // nếu muốn chỉnh lại style inline text, có thể gắn thêm class module:
-                          className={styles.commentActionBtnDanger}
-                        />
-                      </>
-                    )}
-                  </div>
+                          {/* Delete với confirm modal */}
+                          <DeleteButton
+                            onDelete={handleDelete}
+                            itemId={c.id}
+                            itemName={c.content?.substring(0, 50) + (c.content && c.content.length > 50 ? "..." : "")}
+                            title="Delete comment"
+                            description="Are you sure you want to delete this comment?"
+                            className={styles.commentActionBtnDanger}
+                          />
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {isEditing ? (

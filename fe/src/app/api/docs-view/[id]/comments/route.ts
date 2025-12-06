@@ -59,7 +59,7 @@ async function handleGET(
   }
 
   // -----------------------------
-  // REAL MODE: proxy sang BE /api/comments/document/:docId
+  // REAL MODE: proxy sang BE /comments/document/:docId
   // -----------------------------
   const fh = await buildForwardHeaders();
 
@@ -126,94 +126,57 @@ async function handlePOST(
   }
 
   // -----------------------------
-  // REAL MODE: proxy POST sang BE /api/comments/document/:docId
+  // REAL MODE: proxy POST sang BE /api/comments với documentId trong body
+  // Backend trả CommentResponse trực tiếp (không wrap)
   // -----------------------------
   const fh = await buildForwardHeaders();
-  const raw = await req.text(); // forward nguyên body
+  
+  // Parse body để thêm documentId
+  let body: { content?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return badRequest("Invalid JSON");
+  }
 
-  const upstream = await fetch(`${BE_BASE}/api/comments/document/${id}`, {
+  // Thêm documentId vào body
+  const requestBody = {
+    ...body,
+    documentId: id,
+  };
+
+  const upstream = await fetch(`${BE_BASE}/api/comments`, {
     method: "POST",
-    headers: fh,
-    body: raw,
+    headers: {
+      ...fh,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(requestBody),
     cache: "no-store",
   });
 
-  return proxyJsonResponse(upstream, { mode: "real" });
-}
-
-// PUT /api/comments/:id  -> BE /comments/:commentId
-async function handlePUT(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> },
-) {
-  const { id } = await ctx.params;
-  if (!id) return badRequest("Missing id");
-
-  if (USE_MOCK) {
-    // Mock đơn giản: giả lập update thành công
+  // Backend trả CommentResponse trực tiếp, nhưng frontend expect { success, data, timestamp }
+  // Nên cần wrap lại
+  if (upstream.ok) {
+    const commentResponse = await upstream.json();
     return jsonResponse(
-      { success: true },
       {
-        status: 200,
+        success: true,
+        data: commentResponse,
+        timestamp: new Date().toISOString(),
+      },
+      {
+        status: upstream.status,
         headers: {
           "content-type": "application/json",
-          "x-mode": "mock",
         },
       },
     );
   }
 
-  const fh = await buildForwardHeaders();
-  const raw = await req.text(); // forward nguyên body
-
-  const upstream = await fetch(
-    `${BE_BASE}/comments/${encodeURIComponent(id)}`,
-    {
-      method: "PUT",
-      headers: fh,
-      body: raw,
-      cache: "no-store",
-    },
-  );
-
   return proxyJsonResponse(upstream, { mode: "real" });
 }
 
-// DELETE /api/comments/:id -> BE /comments/:commentId
-async function handleDELETE(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> },
-) {
-  const { id } = await ctx.params;
-  if (!id) return badRequest("Missing id");
-
-  if (USE_MOCK) {
-    // Mock đơn giản: giả lập delete thành công
-    return jsonResponse(
-      { success: true },
-      {
-        status: 200,
-        headers: {
-          "content-type": "application/json",
-          "x-mode": "mock",
-        },
-      },
-    );
-  }
-
-  const fh = await buildForwardHeaders();
-
-  const upstream = await fetch(
-    `${BE_BASE}/comments/${encodeURIComponent(id)}`,
-    {
-      method: "DELETE",
-      headers: fh,
-      cache: "no-store",
-    },
-  );
-
-  return proxyJsonResponse(upstream, { mode: "real" });
-}
 export const GET = (...args: Parameters<typeof handleGET>) =>
   withErrorBoundary(() => handleGET(...args), {
     context: "api/docs-view/[id]/comments/route.ts/GET",
@@ -222,14 +185,4 @@ export const GET = (...args: Parameters<typeof handleGET>) =>
 export const POST = (...args: Parameters<typeof handlePOST>) =>
   withErrorBoundary(() => handlePOST(...args), {
     context: "api/docs-view/[id]/comments/route.ts/POST",
-  });
-
-export const PUT = (...args: Parameters<typeof handlePUT>) =>
-  withErrorBoundary(() => handlePUT(...args), {
-    context: "api/comments/[id]/route.ts/PUT",
-  });
-
-export const DELETE = (...args: Parameters<typeof handleDELETE>) =>
-  withErrorBoundary(() => handleDELETE(...args), {
-    context: "api/comments/[id]/route.ts/DELETE",
   });

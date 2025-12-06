@@ -5,6 +5,7 @@ export type Comment = {
   id: string;
   docId: string;
   author: string;
+  userId?: string; // ID của user tạo comment
   avatarUrl?: string;
   content: string;
   createdAt: string;
@@ -126,6 +127,7 @@ type BackendDocumentDetailResponse = {
 type BackendCommentUser = {
   id: string;
   fullName: string;
+  avatarUrl?: string | null;
 };
 
 type BackendComment = {
@@ -248,6 +250,7 @@ export async function fetchDocDetail(id: string) {
     id: c.id,
     docId: c.documentId,
     author: c.user?.fullName ?? "Unknown",
+    userId: c.user?.id,
     avatarUrl: undefined,
     content: c.content,
     createdAt: c.createdAt,
@@ -337,6 +340,7 @@ export async function addComment(docId: string, content: string) {
     { content },
   );
 
+  // Frontend route wrap CommentResponse thành { success, data, timestamp }
   const payload = res.data as BackendPostCommentResponse;
 
   if (!payload.success) {
@@ -349,7 +353,8 @@ export async function addComment(docId: string, content: string) {
     id: c.id,
     docId: c.documentId,
     author: c.user?.fullName ?? "Unknown",
-    avatarUrl: undefined,
+    userId: c.user?.id,
+    avatarUrl: c.user?.avatarUrl ?? undefined,
     content: c.content,
     createdAt: c.createdAt,
   };
@@ -384,10 +389,9 @@ export async function updateComment(commentId: string, content: string) {
     },
   );
 
-  // BE expected: { success: true }
-  return res.data as {
-    success: boolean;
-  };
+  // Backend trả CommentResponse trực tiếp
+  // Frontend không cần dùng response này, chỉ cần biết thành công
+  return res.data as BackendComment;
 }
 
 // DELETE COMMENT
@@ -396,8 +400,11 @@ export async function deleteComment(commentId: string) {
     `/comments/${encodeURIComponent(commentId)}`,
   );
 
-  // BE expected: { success: true }
+  // Backend trả ApiResponse<Void> với { success, message, data, timestamp }
   return res.data as {
     success: boolean;
+    message?: string;
+    data: null;
+    timestamp: string;
   };
 }

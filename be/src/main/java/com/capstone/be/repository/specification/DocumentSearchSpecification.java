@@ -32,7 +32,7 @@ public class DocumentSearchSpecification {
 
       // CORE REQUIREMENTS: Only PUBLIC and VERIFIED documents
       predicates.add(cb.equal(root.get("visibility"), DocVisibility.PUBLIC));
-      predicates.add(cb.equal(root.get("status"), DocStatus.VERIFIED));
+      predicates.add(cb.equal(root.get("status"), DocStatus.ACTIVE));
 
       if (filter == null) {
         return cb.and(predicates.toArray(new Predicate[0]));

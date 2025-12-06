@@ -27,6 +27,7 @@ public class DocumentDetailResponse {
   private Boolean isPremium;
   private Integer price;
   private String thumbnailUrl;
+  private String presignedUrl;  // Presigned URL for document access (if user has access)
   private Integer pageCount;
   private Integer viewCount;
   private Integer upvoteCount;
@@ -144,5 +145,6 @@ public class DocumentDetailResponse {
     private Boolean isUploader;
     private Boolean hasRedeemed;
     private Boolean isMemberOfOrganization;
+    private Boolean isReviewer;  // True if user is assigned as reviewer for this document
   }
 }

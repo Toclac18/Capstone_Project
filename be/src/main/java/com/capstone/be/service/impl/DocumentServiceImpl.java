@@ -360,7 +360,7 @@ public class DocumentServiceImpl implements DocumentService {
         .isPremium(request.getIsPremium())
         .price(price)
         .fileKey(fileUrl)
-        .status(DocStatus.VERIFYING)
+        .status(DocStatus.AI_VERIFYING)
         .specialization(specialization)
         .viewCount(0)
         .upvoteCount(0)
@@ -463,7 +463,7 @@ public class DocumentServiceImpl implements DocumentService {
 
     // 2. Query DB: Lấy bài Public & Verified
     Page<Document> documentPage = documentRepository.findByStatusAndVisibility(
-            DocStatus.VERIFIED,
+            DocStatus.ACTIVE,
             DocVisibility.PUBLIC,
             pageable
     );

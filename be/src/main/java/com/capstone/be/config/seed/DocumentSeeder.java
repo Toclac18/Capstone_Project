@@ -102,7 +102,7 @@ public class DocumentSeeder {
             .thumbnailKey("thumbnail-" + (seed + 1) + ".png")
             .fileKey("file-" + (seed + 1) + ".pdf")
             .pageCount(20 + (seed * 10))
-            .status(DocStatus.VERIFIED)
+            .status(DocStatus.ACTIVE)
             .specialization(spec)
             .summarizations(summarization)
             .build();

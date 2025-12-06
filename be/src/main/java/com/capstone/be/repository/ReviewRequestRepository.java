@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -53,4 +55,21 @@ public interface ReviewRequestRepository extends JpaRepository<ReviewRequest, UU
         AND rr.status = com.capstone.be.domain.enums.ReviewRequestStatus.PENDING
       """)
   Page<ReviewRequest> findPendingRequestsByDocument(@Param("documentId") UUID documentId, Pageable pageable);
+
+  // Tìm tất cả PENDING review requests có response deadline đã qua
+  @Query("""
+      SELECT rr FROM ReviewRequest rr
+      WHERE rr.status = com.capstone.be.domain.enums.ReviewRequestStatus.PENDING
+        AND rr.responseDeadline < :now
+      """)
+  List<ReviewRequest> findExpiredPendingRequests(@Param("now") Instant now);
+
+  // Tìm tất cả ACCEPTED review requests có review deadline đã qua
+  @Query("""
+      SELECT rr FROM ReviewRequest rr
+      WHERE rr.status = com.capstone.be.domain.enums.ReviewRequestStatus.ACCEPTED
+        AND rr.reviewDeadline IS NOT NULL
+        AND rr.reviewDeadline < :now
+      """)
+  List<ReviewRequest> findExpiredAcceptedRequests(@Param("now") Instant now);
 }

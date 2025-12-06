@@ -4,6 +4,7 @@ import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
+import com.capstone.be.scheduler.ReviewRequestExpirationJob;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.ReviewRequestService;
 import jakarta.validation.Valid;
@@ -29,6 +30,7 @@ import java.util.UUID;
 public class AdminReviewRequestController {
 
   private final ReviewRequestService reviewRequestService;
+  private final ReviewRequestExpirationJob expirationJob;
 
   /**
    * Assign a reviewer to review a document
@@ -106,5 +108,30 @@ public class AdminReviewRequestController {
     Page<ReviewRequestResponse> result = reviewRequestService.getAllReviewRequests(pageable);
 
     return ResponseEntity.ok(PagedResponse.of(result, "All review requests retrieved successfully"));
+  }
+
+  /**
+   * Manually trigger review request expiration job
+   * POST /api/v1/admin/review-requests/expire
+   *
+   * This endpoint allows Business Admin to manually trigger the expiration job
+   * for testing or emergency purposes instead of waiting for scheduled midnight run
+   *
+   * @return Success message
+   */
+  @PostMapping("/admin/review-requests/expire")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  public ResponseEntity<ApiResponse<Void>> manuallyExpireReviewRequests() {
+    log.info("Business Admin manually triggering review request expiration job");
+
+    try {
+      expirationJob.runManualExpiration();
+      return ResponseEntity.ok(ApiResponse.success(null, "Review request expiration job completed successfully"));
+    } catch (Exception e) {
+      log.error("Error during manual expiration job: {}", e.getMessage(), e);
+      return ResponseEntity
+          .status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(ApiResponse.error("Failed to run expiration job: " + e.getMessage()));
+    }
   }
 }

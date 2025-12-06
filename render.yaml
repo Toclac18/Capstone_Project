@@ -4,7 +4,7 @@
 services:
   # Frontend - Next.js
   - type: web
-    name: capstone-fe
+    name: readee
     runtime: node
     rootDir: fe
     branch: deploy-test
@@ -29,7 +29,7 @@ services:
 
   # Backend - Spring Boot (already deployed)
   - type: web
-    name: readee-backend
+    name: readee-be
     runtime: docker
     rootDir: be
     region: singapore
@@ -55,7 +55,8 @@ services:
         value: require
       # JWT
       - key: JWT_SECRET
-        generateValue: true
+        sync: false
+        #generateValue: true
       - key: JWT_EXPIRATION_MS
         value: 86400000
       - key: JWT_EMAIL_VERIFICATION_EXPIRATION_MS

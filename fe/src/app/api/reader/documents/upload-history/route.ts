@@ -1,14 +1,15 @@
 import { mockDocumentsDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 import { getAuthHeader } from "@/server/auth";
 
 // Helper functions
 const isValidUUID = (str: string): boolean => {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    str,
+  );
 };
-
 
 async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -57,7 +58,11 @@ async function handleGET(request: Request) {
   queryParams.append("size", String(limit));
 
   const url = `${BE_BASE}/api/documents/my-uploads?${queryParams.toString()}`;
-  const upstream = await fetch(url, { method: "GET", headers, cache: "no-store" });
+  const upstream = await fetch(url, {
+    method: "GET",
+    headers,
+    cache: "no-store",
+  });
 
   if (!upstream.ok) {
     return proxyJsonResponse(upstream, { mode: "real" });
@@ -65,9 +70,11 @@ async function handleGET(request: Request) {
 
   try {
     const backendResponse = await upstream.json();
-    const documents = Array.isArray(backendResponse.data) ? backendResponse.data : [];
+    const documents = Array.isArray(backendResponse.data)
+      ? backendResponse.data
+      : [];
     const pageInfo = backendResponse.pageInfo || {};
-    
+
     const transformed = {
       documents: documents.map((doc: any) => ({
         id: doc.id,
@@ -83,9 +90,14 @@ async function handleGET(request: Request) {
       total: pageInfo.totalElements ?? documents.length,
       page: (pageInfo.page ?? 0) + 1,
       limit: pageInfo.size ?? limit,
-      totalPages: pageInfo.totalPages ?? Math.ceil((pageInfo.totalElements ?? documents.length) / (pageInfo.size ?? limit)),
+      totalPages:
+        pageInfo.totalPages ??
+        Math.ceil(
+          (pageInfo.totalElements ?? documents.length) /
+            (pageInfo.size ?? limit),
+        ),
     };
-    
+
     return jsonResponse(transformed, {
       status: 200,
       headers: { "content-type": "application/json", "x-mode": "real" },

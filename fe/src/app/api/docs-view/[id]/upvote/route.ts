@@ -2,7 +2,7 @@
 import { mockUpvoteDoc } from "@/mock/docs-detail.mock";
 import { buildForwardHeaders } from "../../_utils";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { badRequest, proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handlePOST(

@@ -1,6 +1,6 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { jsonResponse } from "@/server/response";
 
 async function handleGET(request: Request) {
@@ -96,20 +96,26 @@ async function handleGET(request: Request) {
     try {
       errorData = JSON.parse(errorText);
     } catch {
-      errorData = { error: errorText || "Failed to fetch dashboard statistics" };
+      errorData = {
+        error: errorText || "Failed to fetch dashboard statistics",
+      };
     }
     console.error("System Admin dashboard API error:", {
       status: response.status,
       statusText: response.statusText,
       error: errorData,
     });
-    throw new Error(errorData.error || errorData.message || "Failed to fetch dashboard statistics");
+    throw new Error(
+      errorData.error ||
+        errorData.message ||
+        "Failed to fetch dashboard statistics",
+    );
   }
 
   const responseData = await response.json();
   // Handle response that might have data wrapped in 'data' field
   const data = responseData?.data || responseData;
-  
+
   return jsonResponse(data, {
     status: 200,
     headers: {
@@ -124,4 +130,3 @@ export async function GET(request: Request) {
     context: "api/system-admin/statistics/dashboard/route.ts/GET",
   });
 }
-

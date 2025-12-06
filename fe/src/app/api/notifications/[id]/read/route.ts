@@ -2,7 +2,7 @@
 import { mockNotificationDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handlePATCH(
@@ -13,13 +13,10 @@ async function handlePATCH(
 
   if (USE_MOCK) {
     mockNotificationDB.markAsRead(id);
-    return jsonResponse(
-      null,
-      {
-        status: 204,
-        mode: "mock",
-      },
-    );
+    return jsonResponse(null, {
+      status: 204,
+      mode: "mock",
+    });
   }
 
   const authHeader = await getAuthHeader("notifications");

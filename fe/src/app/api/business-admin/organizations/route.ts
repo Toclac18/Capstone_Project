@@ -1,6 +1,6 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 import { getOrganizations } from "@/mock/business-admin-organizations";
 
@@ -51,13 +51,13 @@ async function handleGET(request: Request) {
     // Backend uses UserStatus enum: PENDING_EMAIL_VERIFY, PENDING_APPROVE, ACTIVE, INACTIVE, REJECTED, DELETED
     // Map frontend status to backend enum if needed
     const statusMap: Record<string, string> = {
-      "PENDING_VERIFICATION": "PENDING_EMAIL_VERIFY",
-      "ACTIVE": "ACTIVE",
-      "INACTIVE": "INACTIVE",
-      "DEACTIVE": "INACTIVE",
-      "DELETED": "DELETED",
-      "REJECTED": "REJECTED",
-      "PENDING_APPROVE": "PENDING_APPROVE",
+      PENDING_VERIFICATION: "PENDING_EMAIL_VERIFY",
+      ACTIVE: "ACTIVE",
+      INACTIVE: "INACTIVE",
+      DEACTIVE: "INACTIVE",
+      DELETED: "DELETED",
+      REJECTED: "REJECTED",
+      PENDING_APPROVE: "PENDING_APPROVE",
     };
     const backendStatus = statusMap[status.toUpperCase()] || status;
     queryParams.append("status", backendStatus);
@@ -75,7 +75,10 @@ async function handleGET(request: Request) {
     // Clone response to read error text without consuming the original body
     const errorClone = upstream.clone();
     const errorText = await errorClone.text();
-    console.error(`[organizations] Backend error (${upstream.status}):`, errorText);
+    console.error(
+      `[organizations] Backend error (${upstream.status}):`,
+      errorText,
+    );
     return proxyJsonResponse(upstream, { mode: "real" });
   }
 
@@ -97,7 +100,8 @@ async function handleGET(request: Request) {
     hotline: org.orgHotline || org.hotline || "",
     logo: org.orgLogo || org.logo,
     address: org.orgAddress || org.address || "",
-    registrationNumber: org.orgRegistrationNumber || org.registrationNumber || "",
+    registrationNumber:
+      org.orgRegistrationNumber || org.registrationNumber || "",
     status: org.status || "ACTIVE",
     adminName: org.fullName || org.adminName,
     adminEmail: org.email || org.adminEmail || "",
@@ -115,12 +119,13 @@ async function handleGET(request: Request) {
       limit: parseInt(limit),
     },
     {
-    status: upstream.status,
-    headers: {
-      "content-type": "application/json",
-      "x-mode": "real",
+      status: upstream.status,
+      headers: {
+        "content-type": "application/json",
+        "x-mode": "real",
+      },
     },
-  });
+  );
 }
 
 export async function GET(request: Request) {
@@ -128,4 +133,3 @@ export async function GET(request: Request) {
     context: "api/business-admin/organizations/route.ts/GET",
   });
 }
-

@@ -4,15 +4,12 @@ import { mockNotificationDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, proxyJsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handlePATCH(): Promise<Response> {
   if (USE_MOCK) {
     const count = mockNotificationDB.markAllAsRead();
-    return jsonResponse(
-      { count },
-      { status: 200, mode: "mock" },
-    );
+    return jsonResponse({ count }, { status: 200, mode: "mock" });
   }
 
   const authHeader = await getAuthHeader("notifications");
@@ -33,4 +30,3 @@ export const PATCH = (...args: Parameters<typeof handlePATCH>) =>
   withErrorBoundary(() => handlePATCH(...args), {
     context: "api/notifications/read-all/route.ts/PATCH",
   });
-

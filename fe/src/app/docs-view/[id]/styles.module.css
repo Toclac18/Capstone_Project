@@ -846,3 +846,223 @@
 .btnRedeem {
   @apply mt-2 rounded-full bg-gradient-to-b from-amber-400 to-amber-500 px-6 py-2 text-sm font-semibold text-neutral-900 shadow-lg hover:brightness-110 active:scale-95;
 }
+
+/* =============================
+   COMMENTS SECTION – REFINED
+   ============================= */
+
+/* Khối comments tổng */
+.commentsSection {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Header "Comments 20" */
+.commentsHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.commentsTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.commentsCount {
+  font-size: 0.75rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--text-subtle);
+}
+
+/* Form add mới */
+.commentForm {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  padding: 0.6rem 0.7rem 0.45rem;
+  margin-bottom: 0.8rem;
+}
+
+.commentInput {
+  width: 100%;
+  border: none;
+  resize: vertical;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+  outline: none;
+  line-height: 1.45;
+}
+
+.commentInput::placeholder {
+  color: var(--text-subtle);
+  opacity: 0.8;
+}
+
+.commentFormFooter {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 0.4rem;
+  gap: 0.5rem;
+}
+
+/* Nút primary: Post / Save */
+.commentSubmit {
+  border-radius: 999px;
+  border: none;
+  padding: 0.34rem 1rem;
+  font-size: 0.86rem;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 6px rgba(15, 23, 42, 0.12);
+}
+
+.commentSubmit:hover:not(:disabled) {
+  background: var(--accent-600);
+}
+
+.commentSubmit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Nút Cancel (trong mode edit) */
+.commentCancelBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 0.86rem;
+  color: var(--text-subtle);
+  cursor: pointer;
+}
+
+.commentCancelBtn:hover {
+  text-decoration: underline;
+}
+
+/* Danh sách comment */
+.commentList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.commentItem {
+  display: flex;
+  gap: 0.55rem;
+}
+
+.commentAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--accent-50);
+  color: var(--accent-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* Thân comment */
+.commentBody {
+  flex: 1;
+}
+
+/* Dòng meta: tên + thời gian + action */
+.commentMeta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-bottom: 0.15rem;
+}
+
+.commentAuthor {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.commentTime {
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+}
+
+/* Nhóm nút Edit / Delete
+   đẩy sang bên phải hàng meta */
+.commentActions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* EDIT / DELETE buttons */
+
+.commentActionBtn,
+.commentActionBtnDanger {
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+/* Edit – xanh */
+.commentActionBtn {
+  color: #2563eb; /* blue-600 */
+}
+
+.commentActionBtn:hover {
+  background-color: rgba(37, 99, 235, 0.1);
+}
+
+/* Delete – đỏ */
+.commentActionBtnDanger {
+  color: #dc2626; /* red-600 */
+}
+
+.commentActionBtnDanger:hover {
+  background-color: rgba(220, 38, 38, 0.1);
+}
+
+/* Text comment */
+.commentContent {
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* Empty state */
+.commentEmpty {
+  font-size: 0.85rem;
+  color: var(--text-subtle);
+}
+
+/* Form edit inline (trong mỗi comment) */
+.commentEditForm {
+  margin-top: 0.2rem;
+}
+
+.commentEditForm .commentInput {
+  border-radius: 10px;
+  padding: 0.35rem 0.6rem;
+  background: var(--muted);
+  border: 1px solid var(--border);
+}

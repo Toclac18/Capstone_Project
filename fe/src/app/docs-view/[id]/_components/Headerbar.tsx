@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Eye, ThumbsUp, ThumbsDown, Flag } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/utils/utils";
 
@@ -12,6 +12,7 @@ import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
 import SaveListModal from "@/components/SaveListModal/SaveListModal";
 
 export default function HeaderBar() {
+  const router = useRouter();
   const {
     detail,
     zoomIn,
@@ -50,6 +51,12 @@ export default function HeaderBar() {
 
   const handleCloseSaveModal = () => {
     setIsSaveModalOpen(false);
+  };
+
+  // 4. Hàm xử lý chuyển hướng Report
+  const handleReport = () => {
+    // detail.id chính là ID của document hiện tại
+    router.push(`/document-report/${detail.id}`);
   };
 
   return (
@@ -135,9 +142,21 @@ export default function HeaderBar() {
           </div>
         </div>
 
-        {/* RIGHT: Save + Redeem / Download */}
+        {/* RIGHT: Report + Save + Redeem / Download */}
         <div className={styles.headerRight}>
-          {/* Save – disable khi premium chưa redeem */}
+          {/* 5. Nút Report */}
+          <button
+            type="button"
+            className={styles.btnGhost}
+            onClick={handleReport}
+            title="Report this document"
+          >
+            {/* Bỏ className="mr-1" vì đã có gap trong CSS */}
+            <Flag size={16} />
+            <span>Report</span>
+          </button>
+
+          {/* Save */}
           <button
             type="button"
             className={`${styles.btnGhost} ${

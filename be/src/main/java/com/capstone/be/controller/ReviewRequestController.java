@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -148,27 +149,29 @@ public class ReviewRequestController {
   }
 
   /**
-   * Submit a review for a document (report + decision)
+   * Submit a review for a document (comment + decision + report file)
    * PUT /api/v1/review-requests/{reviewRequestId}/submit
    *
    * @param userPrincipal   Authenticated Reviewer
    * @param reviewRequestId Review request ID
-   * @param request         Review submission with report and decision
+   * @param request         Review submission with comment and decision
+   * @param reportFile      Review report file (docx)
    * @return Document review response
    */
-  @PutMapping("/{reviewRequestId}/submit")
+  @PutMapping(value = "/{reviewRequestId}/submit", consumes = "multipart/form-data")
   @PreAuthorize("hasRole('REVIEWER')")
   public ResponseEntity<ApiResponse<DocumentReviewResponse>> submitReview(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @PathVariable(name = "reviewRequestId") UUID reviewRequestId,
-      @Valid @RequestBody SubmitReviewRequest request) {
+      @Valid @RequestPart(name = "request") SubmitReviewRequest request,
+      @RequestPart(name = "reportFile") MultipartFile reportFile) {
 
     UUID reviewerId = userPrincipal.getId();
-    log.info("Reviewer {} submitting review for review request {}: decision={}",
-        reviewerId, reviewRequestId, request.getDecision());
+    log.info("Reviewer {} submitting review for review request {}: decision={}, file={}",
+        reviewerId, reviewRequestId, request.getDecision(), reportFile.getOriginalFilename());
 
     DocumentReviewResponse response = reviewRequestService.submitReview(
-        reviewerId, reviewRequestId, request);
+        reviewerId, reviewRequestId, request, reportFile);
 
     return ResponseEntity
         .status(HttpStatus.CREATED)

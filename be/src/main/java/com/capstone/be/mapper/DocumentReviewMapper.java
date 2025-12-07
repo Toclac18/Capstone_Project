@@ -21,5 +21,6 @@ public interface DocumentReviewMapper {
   @Mapping(source = "reviewer.id", target = "reviewer.id")
   @Mapping(source = "reviewer.fullName", target = "reviewer.username")
   @Mapping(source = "reviewer.email", target = "reviewer.email")
+  @Mapping(source = "reportFilePath", target = "reportFileUrl")
   DocumentReviewResponse toResponse(DocumentReview documentReview);
 }

@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 
 /**
  * Request DTO for submitting a review for a document
+ * Note: This is used with @RequestPart in multipart/form-data request
+ * The actual review report file (docx) is sent separately as @RequestPart MultipartFile
  */
 @Data
 @Builder
@@ -19,10 +21,10 @@ import lombok.NoArgsConstructor;
 public class SubmitReviewRequest {
 
   /**
-   * Review report content written by the reviewer
+   * Review comment written by the reviewer
    */
-  @NotBlank(message = "Review report is required")
-  @Size(min = 50, max = 10000, message = "Review report must be between 50 and 10000 characters")
+  @NotBlank(message = "Review comment is required")
+  @Size(min = 10, max = 5000, message = "Review comment must be between 10 and 5000 characters")
   private String report;
 
   /**

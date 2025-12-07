@@ -28,11 +28,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Slf4j
@@ -46,6 +46,7 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
   private final DocumentReviewRepository documentReviewRepository;
   private final ReviewRequestMapper reviewRequestMapper;
   private final DocumentReviewMapper documentReviewMapper;
+  private final com.capstone.be.service.FileStorageService fileStorageService;
 
   private static final int RESPONSE_DEADLINE_DAYS = 1;
   private static final int REVIEW_DEADLINE_DAYS = 3;
@@ -258,8 +259,9 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
   @Override
   @Transactional
-  public DocumentReviewResponse submitReview(UUID reviewerId, UUID reviewRequestId, SubmitReviewRequest request) {
-    log.info("Reviewer {} submitting review for review request {}: decision={}", reviewerId, reviewRequestId, request.getDecision());
+  public DocumentReviewResponse submitReview(UUID reviewerId, UUID reviewRequestId, SubmitReviewRequest request, MultipartFile reportFile) {
+    log.info("Reviewer {} submitting review for review request {}: decision={}, file={}",
+        reviewerId, reviewRequestId, request.getDecision(), reportFile != null ? reportFile.getOriginalFilename() : "null");
 
     // Validate Reviewer
     User reviewer = userRepository.findById(reviewerId)
@@ -288,6 +290,17 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
       throw new InvalidRequestException("Review has already been submitted for this review request");
     }
 
+    // Validate report file
+    if (reportFile == null || reportFile.isEmpty()) {
+      throw new InvalidRequestException("Review report file is required");
+    }
+
+    // Validate file type (accept .doc, .docx)
+    String originalFilename = reportFile.getOriginalFilename();
+    if (originalFilename == null || (!originalFilename.endsWith(".doc") && !originalFilename.endsWith(".docx"))) {
+      throw new InvalidRequestException("Review report file must be a Word document (.doc or .docx)");
+    }
+
     // Check if review deadline has passed
     Instant now = Instant.now();
     if (reviewRequest.getReviewDeadline() != null && now.isAfter(reviewRequest.getReviewDeadline())) {
@@ -298,12 +311,22 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
     // Get document
     Document document = reviewRequest.getDocument();
 
+    // Upload review report file to S3
+    String customFilename = String.format("review_%s_%s", reviewRequestId, originalFilename);
+    String reportFilePath = fileStorageService.uploadFile(
+        reportFile,
+        com.capstone.be.config.constant.FileStorage.REVIEW_REPORT_FOLDER,
+        customFilename
+    );
+    log.info("Uploaded review report file to S3: {}", reportFilePath);
+
     // Create DocumentReview
     DocumentReview documentReview = DocumentReview.builder()
         .reviewRequest(reviewRequest)
         .document(document)
         .reviewer(reviewer)
-        .report(request.getReport())
+        .comment(request.getReport())
+        .reportFilePath(reportFilePath)
         .decision(request.getDecision())
         .submittedAt(now)
         .build();

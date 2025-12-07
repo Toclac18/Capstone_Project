@@ -23,6 +23,7 @@ public class DocumentReviewResponse {
   private DocumentInfo document;
   private ReviewerInfo reviewer;
   private String report;
+  private String reportFileUrl;
   private ReviewDecision decision;
   private Instant submittedAt;
   private Instant createdAt;

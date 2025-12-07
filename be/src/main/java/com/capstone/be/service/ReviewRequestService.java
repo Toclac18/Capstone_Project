@@ -82,15 +82,16 @@ public interface ReviewRequestService {
   Page<ReviewRequestResponse> getAllReviewRequests(Pageable pageable);
 
   /**
-   * Submit a review for a document (reviewer submits report and decision)
+   * Submit a review for a document (reviewer submits comment, decision, and report file)
    * Updates document status to ACTIVE or REJECTED based on decision
    *
    * @param reviewerId       Reviewer ID
    * @param reviewRequestId  Review request ID
-   * @param request          Review submission with report and decision
+   * @param request          Review submission with comment and decision
+   * @param reportFile       Review report file (docx)
    * @return Document review response
    */
-  DocumentReviewResponse submitReview(UUID reviewerId, UUID reviewRequestId, SubmitReviewRequest request);
+  DocumentReviewResponse submitReview(UUID reviewerId, UUID reviewRequestId, SubmitReviewRequest request, org.springframework.web.multipart.MultipartFile reportFile);
 
   /**
    * View review history for a reviewer (all reviews submitted by the reviewer)

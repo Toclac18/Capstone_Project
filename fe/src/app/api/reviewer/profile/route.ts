@@ -3,7 +3,7 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +59,10 @@ async function handlePUT(req: Request) {
   const body = await req.json().catch(() => null);
 
   if (!body) {
-    return jsonResponse({ error: "Invalid JSON" }, { status: 400, mode: "real" });
+    return jsonResponse(
+      { error: "Invalid JSON" },
+      { status: 400, mode: "real" },
+    );
   }
 
   if (USE_MOCK) {
@@ -118,4 +121,3 @@ export const PUT = (...args: Parameters<typeof handlePUT>) =>
   withErrorBoundary(() => handlePUT(...args), {
     context: "api/reviewer/profile/route.ts/PUT",
   });
-

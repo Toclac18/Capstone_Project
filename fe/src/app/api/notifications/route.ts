@@ -4,7 +4,7 @@ import { mockNotificationDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, proxyJsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handleGET(req: Request): Promise<Response> {
   const { searchParams } = new URL(req.url);
@@ -18,10 +18,13 @@ async function handleGET(req: Request): Promise<Response> {
     const filteredNotifications = unreadOnly
       ? allNotifications.filter((n) => !n.isRead)
       : allNotifications;
-    
+
     const startIndex = parseInt(page) * parseInt(size);
     const endIndex = startIndex + parseInt(size);
-    const paginatedNotifications = filteredNotifications.slice(startIndex, endIndex);
+    const paginatedNotifications = filteredNotifications.slice(
+      startIndex,
+      endIndex,
+    );
 
     return jsonResponse(
       {
@@ -50,11 +53,14 @@ async function handleGET(req: Request): Promise<Response> {
     sort,
   });
 
-  const upstream = await fetch(`${BE_BASE}/api/notifications?${queryParams.toString()}`, {
-    method: "GET",
-    headers: fh,
-    cache: "no-store",
-  });
+  const upstream = await fetch(
+    `${BE_BASE}/api/notifications?${queryParams.toString()}`,
+    {
+      method: "GET",
+      headers: fh,
+      cache: "no-store",
+    },
+  );
 
   if (!upstream.ok) {
     return proxyJsonResponse(upstream, { mode: "real" });
@@ -62,7 +68,7 @@ async function handleGET(req: Request): Promise<Response> {
 
   // Parse backend response format: { success, data, pageInfo, timestamp }
   const backendResponse = await upstream.json();
-  
+
   // Map to frontend format
   const frontendResponse = {
     content: Array.isArray(backendResponse?.data) ? backendResponse.data : [],
@@ -74,14 +80,20 @@ async function handleGET(req: Request): Promise<Response> {
     last: backendResponse?.pageInfo?.last ?? true,
   };
 
-  return jsonResponse(frontendResponse, { status: upstream.status, mode: "real" });
+  return jsonResponse(frontendResponse, {
+    status: upstream.status,
+    mode: "real",
+  });
 }
 
 async function handlePOST(req: Request): Promise<Response> {
   if (USE_MOCK) {
     const body = await req.json().catch(() => null);
     if (!body) {
-      return jsonResponse({ error: "Invalid JSON" }, { status: 400, mode: "mock" });
+      return jsonResponse(
+        { error: "Invalid JSON" },
+        { status: 400, mode: "mock" },
+      );
     }
 
     const { userId, type, title, summary } = body;
@@ -89,7 +101,7 @@ async function handlePOST(req: Request): Promise<Response> {
     if (!userId || !type || !title || !summary) {
       return jsonResponse(
         { error: "Missing required fields: userId, type, title, summary" },
-        { status: 400, mode: "mock" }
+        { status: 400, mode: "mock" },
       );
     }
 
@@ -107,7 +119,10 @@ async function handlePOST(req: Request): Promise<Response> {
   const body = await req.json().catch(() => null);
 
   if (!body) {
-    return jsonResponse({ error: "Invalid JSON" }, { status: 400, mode: "real" });
+    return jsonResponse(
+      { error: "Invalid JSON" },
+      { status: 400, mode: "real" },
+    );
   }
 
   const fh = new Headers({ "Content-Type": "application/json" });
@@ -125,7 +140,7 @@ async function handlePOST(req: Request): Promise<Response> {
   }
 
   const backendResponse = await upstream.json();
-  
+
   // Backend may wrap response in ApiResponse format: { success, data, timestamp }
   // or return NotificationResponse directly
   const notification = backendResponse?.data || backendResponse;

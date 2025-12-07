@@ -4,12 +4,13 @@
 import { useState } from "react";
 import { Eye, ThumbsUp, ThumbsDown, Flag } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { cn } from "@/utils/utils";
 
 import { useDocsView } from "../DocsViewProvider";
 import styles from "../styles.module.css";
 import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
 import SaveListModal from "@/components/SaveListModal/SaveListModal";
+import { useRouter } from "next/navigation";
 
 export default function HeaderBar() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function HeaderBar() {
     openRedeemModal,
     closeRedeemModal,
     redeem,
+    userVote,
     voteLoading,
     handleUpvote,
     handleDownvote,
@@ -69,18 +71,28 @@ export default function HeaderBar() {
           </div>
           <button
             type="button"
-            className={styles.statButton}
+            className={cn(
+              styles.statButton,
+              userVote === 1 && styles.statButtonActive,
+            )}
             disabled={voteLoading}
             onClick={handleUpvote}
+            title={userVote === 1 ? "Remove upvote" : "Upvote"}
+            data-vote={userVote}
           >
             <ThumbsUp size={18} className={styles.statIcon} />
             <span>{detail.upvote_counts}</span>
           </button>
           <button
             type="button"
-            className={styles.statButton}
+            className={cn(
+              styles.statButton,
+              userVote === -1 && styles.statButtonActive,
+            )}
             disabled={voteLoading}
             onClick={handleDownvote}
+            title={userVote === -1 ? "Remove downvote" : "Downvote"}
+            data-vote={userVote}
           >
             <ThumbsDown size={18} className={styles.statIcon} />
             <span>{detail.downvote_counts}</span>
@@ -165,7 +177,7 @@ export default function HeaderBar() {
             >
               Redeem
             </button>
-          ) : canDownload ? (
+          ) : canDownload && detail.fileUrl ? (
             <Link href={detail.fileUrl} className={styles.btnPrimary} download>
               Download
             </Link>

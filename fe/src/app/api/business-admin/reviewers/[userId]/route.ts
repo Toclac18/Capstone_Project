@@ -1,6 +1,6 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handleGET(
@@ -23,7 +23,7 @@ async function handleGET(
           "content-type": "application/json",
           "x-mode": "mock",
         },
-      }
+      },
     );
   }
 
@@ -89,4 +89,3 @@ export async function GET(
     context: "api/business-admin/reviewers/[userId]/route.ts/GET",
   });
 }
-

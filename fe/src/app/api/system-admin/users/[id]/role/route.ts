@@ -6,7 +6,7 @@ import type { ChangeRoleRequest } from "@/types/role-management";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handlePATCH(
   req: NextRequest,
@@ -86,4 +86,3 @@ export const PATCH = (...args: Parameters<typeof handlePATCH>) =>
   withErrorBoundary(() => handlePATCH(...args), {
     context: "api/system-admin/users/[id]/role/route.ts/PATCH",
   });
-

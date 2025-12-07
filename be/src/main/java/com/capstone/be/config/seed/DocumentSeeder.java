@@ -6,14 +6,7 @@ import com.capstone.be.domain.entity.*;
 import com.capstone.be.domain.entity.DocumentSummarization;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.DocVisibility;
-import com.capstone.be.repository.DocTypeRepository;
-import com.capstone.be.repository.DocumentReadHistoryRepository; // Import Repo mới
-import com.capstone.be.repository.DocumentRepository;
-import com.capstone.be.repository.DocumentTagLinkRepository;
-import com.capstone.be.repository.OrganizationProfileRepository;
-import com.capstone.be.repository.SpecializationRepository;
-import com.capstone.be.repository.TagRepository;
-import com.capstone.be.repository.UserRepository;
+import com.capstone.be.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -23,7 +16,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Seeder for Document AND Read History (dev profile only)
@@ -38,6 +32,7 @@ public class DocumentSeeder {
   private final UserRepository userRepository;
   private final DocTypeRepository docTypeRepository;
   private final SpecializationRepository specializationRepository;
+  private final CommentRepository commentRepository;
   private final OrganizationProfileRepository organizationProfileRepository;
   private final TagRepository tagRepository;
   private final DocumentTagLinkRepository documentTagLinkRepository;
@@ -67,7 +62,13 @@ public class DocumentSeeder {
     // 2. Sau khi tạo xong Document thì tạo luôn History
     seedReadHistory();
 
+
+
+    //3. Tạo luôn comment cho docs theo id hiện có
+    genCommentForDocument();
+
     eventPublisher.publishEvent(new DocumentSeededEvent());
+
   }
 
   private void createDocument(int seed) {
@@ -106,7 +107,7 @@ public class DocumentSeeder {
             .docType(docType)
             .isPremium(true)
             .price(100 + (seed * 50))
-            .thumbnailKey("thumbnail-" + (seed + 1) + ".png")
+            .thumbnailKey("/thumbnail-3.jpg")
             .fileKey("file-" + (seed + 1) + ".pdf")
             .pageCount(20 + (seed * 10))
             .status(DocStatus.ACTIVE)
@@ -158,6 +159,79 @@ public class DocumentSeeder {
 
       documentReadHistoryRepository.save(history);
       log.info("\uD83D\uDCD6 Created history: User read " + doc.getTitle());
+    }
+  }
+
+  private void genCommentForDocument() {
+    // 1. Danh sách email theo yêu cầu
+    List<String> targetEmails = List.of(
+            "reader1@gmail.com",
+            "reader2@gmail.com",
+            "reader3@gmail.com",
+            "reader4@gmail.com",
+            "reader5@gmail.com",
+            "reader.pending@gmail.com"
+    );
+
+    // 2. Tìm User entity từ Email
+    // Chúng ta lọc qua danh sách email và tìm trong DB.
+    // Nếu email nào không có trong DB thì sẽ bị bỏ qua (filter nonNull).
+    List<User> users = targetEmails.stream()
+            .map(email -> userRepository.findByEmail(email).orElse(null)) // findByEmail được dùng ở createDocument
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+
+    if (users.isEmpty()) {
+      log.warn("⚠️ Không tìm thấy User nào thuộc danh sách email yêu cầu. Bỏ qua việc tạo comment.");
+      return;
+    }
+
+    log.info("Found {} users for commenting.", users.size());
+
+    // 3. Cấu hình số lượng comment cho từng Document ID
+    Map<String, Integer> docsConfig = new LinkedHashMap<>();
+    docsConfig.put("1d2eb26d-a92d-3183-ae10-2448113ec466", 20);
+    docsConfig.put("cabcf898-23b3-37a8-a036-b70c2e50c0c6", 5);
+    docsConfig.put("0b4756cb-b920-38f6-b05e-6ddcd50b289b", 0);
+
+    List<Comment> commentsToSave = new ArrayList<>();
+
+    // Biến con trỏ để xoay vòng user
+    int[] userCursor = {0};
+
+    // 4. Duyệt qua config và tạo comment
+    docsConfig.forEach((docIdStr, count) -> {
+      if (count > 0) {
+        UUID docId = UUID.fromString(docIdStr);
+
+        // Kiểm tra Document có tồn tại không trước khi tạo comment
+        documentRepository.findById(docId).ifPresentOrElse(
+                document -> {
+                  for (int i = 1; i <= count; i++) {
+                    // Lấy user theo vòng tròn: user 1 -> user 2 -> ... -> user N -> user 1
+                    User currentUser = users.get(userCursor[0] % users.size());
+                    userCursor[0]++;
+
+                    Comment comment = Comment.builder()
+                            .document(document)
+                            .user(currentUser) // Gán user
+                            .content("Đây là bình luận mẫu số " + i + ". Người dùng " + currentUser.getEmail() + " thấy tài liệu này rất hữu ích.")
+                            .isDeleted(false)
+                            // ID, CreatedAt, UpdatedAt được BaseEntity tự động xử lý
+                            .build();
+
+                    commentsToSave.add(comment);
+                  }
+                },
+                () -> log.warn("⚠️ Document ID {} không tồn tại, bỏ qua tạo comment.", docIdStr)
+        );
+      }
+    });
+
+    // 5. Lưu vào Database
+    if (!commentsToSave.isEmpty()) {
+      commentRepository.saveAll(commentsToSave);
+      log.info("✅ Đã tạo thành công {} comments phân bổ cho {} users.", commentsToSave.size(), users.size());
     }
   }
 }

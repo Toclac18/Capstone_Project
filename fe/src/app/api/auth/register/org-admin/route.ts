@@ -1,6 +1,6 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { jsonResponse, parseError, badRequest } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handlePOST(req: Request) {
   const contentType = req.headers.get("content-type") || "";
@@ -51,7 +51,7 @@ async function handlePOST(req: Request) {
     address,
     registrationNumber,
   } = data;
-  
+
   if (!adminEmail || !password || !adminFullName) {
     return badRequest("Missing required admin fields");
   }
@@ -94,7 +94,7 @@ async function handlePOST(req: Request) {
     const text = await upstream.text();
     return jsonResponse(
       { error: parseError(text, "Registration failed") },
-      { status: upstream.status }
+      { status: upstream.status },
     );
   }
 
@@ -106,16 +106,16 @@ async function handlePOST(req: Request) {
   } catch {
     return jsonResponse(
       { error: "Failed to parse backend response" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
   // Backend may return { data: AuthResponse } or AuthResponse directly
   const authResponse = responseData?.data || responseData;
-  
-  return jsonResponse(authResponse, { 
+
+  return jsonResponse(authResponse, {
     status: upstream.status,
-    mode: "real" 
+    mode: "real",
   });
 }
 

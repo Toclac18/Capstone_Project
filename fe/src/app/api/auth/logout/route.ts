@@ -2,7 +2,7 @@
 import { cookies } from "next/headers";
 import { COOKIE_NAME } from "@/server/config";
 import { jsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handlePOST() {
   const cookieStore = await cookies();

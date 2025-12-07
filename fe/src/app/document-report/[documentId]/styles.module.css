@@ -1,58 +1,152 @@
-/* Report Document Page Styles - Dark/Light Mode Support (Standard Tailwind Classes) */
+/* ====== Layout wrapper ====== */
 
-/* Page Wrapper */
+.pageWrapper {
+  @apply flex min-h-[calc(100vh-80px)] items-start justify-center bg-gray-50 px-4 py-6 sm:px-6 lg:px-8;
+}
+:global(html.dark) .pageWrapper {
+  @apply bg-gray-900;
+}
+
+/* Card chính */
 .pageContainer {
-  @apply rounded-[10px] border border-gray-200 bg-white p-4 shadow-sm sm:p-8;
+  @apply w-full max-w-4xl rounded-2xl border border-gray-200 bg-white px-4 py-5 shadow-lg sm:px-7 sm:py-7;
 }
-/* Thay bg-gray-dark bằng bg-gray-900, border-dark-3 bằng border-gray-700 */
 :global(html.dark) .pageContainer {
-  @apply border-gray-700 bg-gray-900;
+  @apply border-gray-700 bg-gray-950;
 }
 
-/* Header */
+/* ====== Header ====== */
+
 .pageHeader {
-  @apply mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between;
+  @apply flex flex-col gap-4 border-b border-gray-200 pb-4 md:flex-row md:items-start md:justify-between;
+}
+:global(html.dark) .pageHeader {
+  @apply border-gray-800;
+}
+
+.headerMain {
+  @apply flex flex-1 items-start gap-3;
+}
+
+/* Icon tròn bên trái title */
+.headerIcon {
+  @apply flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-base font-bold text-red-600;
+}
+:global(html.dark) .headerIcon {
+  @apply bg-red-900/40 text-red-300;
+}
+
+.titleRow {
+  @apply mb-1 flex flex-wrap items-center gap-2;
 }
 
 .pageTitle {
-  @apply text-xl font-bold text-gray-900;
+  @apply text-xl font-semibold text-gray-900 sm:text-2xl;
 }
 :global(html.dark) .pageTitle {
   @apply text-white;
 }
 
+/* Pill step */
+.stepPill {
+  @apply rounded-full bg-blue-50 px-3 py-1 text-xs font-medium uppercase tracking-wide text-blue-600;
+}
+:global(html.dark) .stepPill {
+  @apply bg-blue-900/30 text-blue-300;
+}
+
 .pageSubtitle {
-  @apply text-sm text-gray-500;
+  @apply max-w-xl text-sm text-gray-500;
 }
 :global(html.dark) .pageSubtitle {
   @apply text-gray-400;
 }
 
-/* Doc badge */
-.documentBadge {
-  @apply inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600;
+/* Meta box bên phải */
+.metaBox {
+  @apply w-full max-w-xs rounded-xl bg-gray-50 px-3.5 py-3 text-xs shadow-inner;
 }
-:global(html.dark) .documentBadge {
-  @apply bg-gray-700 text-gray-300;
+:global(html.dark) .metaBox {
+  @apply bg-gray-900;
 }
 
-.documentBadgeLabel {
-  @apply text-[10px] uppercase tracking-wide text-gray-500;
+.metaLabel {
+  @apply mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-600;
 }
-:global(html.dark) .documentBadgeLabel {
+:global(html.dark) .metaLabel {
   @apply text-gray-400;
 }
 
-.documentBadgeValue {
-  @apply font-mono text-[11px];
+.metaDocId {
+  @apply mb-2 rounded-lg bg-white px-3 py-2 shadow-sm;
+}
+:global(html.dark) .metaDocId {
+  @apply bg-gray-950 shadow-none;
 }
 
-/* Form card */
+.metaDocIdLabel {
+  @apply text-[11px] font-medium text-gray-500;
+}
+:global(html.dark) .metaDocIdLabel {
+  @apply text-gray-400;
+}
+
+.metaDocIdValue {
+  @apply block font-mono text-[11px] text-gray-800;
+}
+:global(html.dark) .metaDocIdValue {
+  @apply text-gray-300;
+}
+
+.tipList {
+  @apply list-disc pl-4 text-[11px] text-gray-500;
+}
+:global(html.dark) .tipList {
+  @apply text-gray-400;
+}
+
+.tipList li {
+  @apply mb-0.5;
+}
+
+/* ====== Section ====== */
+
+.section {
+  @apply pt-4;
+}
+
+.sectionHeader {
+  @apply mb-3 flex flex-col gap-1;
+}
+
+.sectionTitle {
+  @apply text-sm font-semibold uppercase tracking-wide text-gray-700;
+}
+:global(html.dark) .sectionTitle {
+  @apply text-gray-200;
+}
+
+.sectionSubtitle {
+  @apply text-sm text-gray-500;
+}
+:global(html.dark) .sectionSubtitle {
+  @apply text-gray-400;
+}
+
+.divider {
+  @apply mt-4 border-t border-gray-200;
+}
+:global(html.dark) .divider {
+  @apply border-gray-800;
+}
+
+/* ====== Form card ====== */
+
 .formCard {
-  @apply mt-2 space-y-5 rounded-[10px] border border-gray-200 bg-white p-4 shadow-sm sm:p-6;
+  @apply mt-3 space-y-5 rounded-[14px] border border-gray-200 bg-gray-50 p-4 shadow-sm sm:p-5;
 }
 :global(html.dark) .formCard {
-  @apply border-gray-700 bg-gray-900;
+  @apply border-gray-800 bg-gray-900;
 }
 
 /* Field group */
@@ -82,15 +176,33 @@
   @apply text-gray-400;
 }
 
+/* Document badge trong form */
+.documentBadge {
+  @apply inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600;
+}
+:global(html.dark) .documentBadge {
+  @apply bg-gray-800 text-gray-300;
+}
+
+.documentBadgeLabel {
+  @apply text-[10px] uppercase tracking-wide text-gray-500;
+}
+:global(html.dark) .documentBadgeLabel {
+  @apply text-gray-400;
+}
+
+.documentBadgeValue {
+  @apply font-mono text-[11px];
+}
+
 /* Select & textarea */
-/* Thay focus:ring-primary bằng focus:ring-blue-600 (hoặc màu chủ đạo bạn muốn) */
 .select,
 .textarea {
-  @apply w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-900 outline-none transition-all duration-150 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30;
+  @apply w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition-all duration-150 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30;
 }
 :global(html.dark) .select,
 :global(html.dark) .textarea {
-  @apply border-gray-600 text-white;
+  @apply border-gray-700 bg-gray-950 text-white;
 }
 
 .select {
@@ -122,34 +234,26 @@
   @apply mt-1 rounded-md border-l-4 border-red-600 bg-red-50 px-3 py-2 text-xs text-red-800;
 }
 :global(html.dark) .errorText {
-  @apply border-red-600 bg-gray-800 text-red-400;
-}
-
-.successText {
-  @apply mt-1 rounded-md border-l-4 border-green-600 bg-green-50 px-3 py-2 text-xs text-green-800;
-}
-:global(html.dark) .successText {
-  @apply border-green-600 bg-gray-800 text-green-400;
+  @apply border-red-600 bg-gray-900 text-red-400;
 }
 
 /* Actions */
 .actionsRow {
-  @apply mt-4 flex items-center justify-end gap-2;
+  @apply mt-4 flex flex-wrap items-center justify-end gap-2;
 }
 
 .cancelButton {
   @apply rounded-lg border border-gray-200 bg-transparent px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100;
 }
 :global(html.dark) .cancelButton {
-  @apply border-gray-600 text-gray-300 hover:bg-gray-700;
+  @apply border-gray-700 text-gray-300 hover:bg-gray-800;
 }
 
-/* Thay bg-primary bằng bg-blue-600 */
 .submitButton {
   @apply rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60;
 }
 
-/* Loading overlay for submit button */
+/* Loading spinner trong nút */
 .spinner {
   @apply inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent;
 }
@@ -159,5 +263,5 @@
   @apply rounded-lg border-l-4 border-red-600 bg-red-50 p-4 text-sm text-red-800;
 }
 :global(html.dark) .pageError {
-  @apply border-red-600 bg-gray-800 text-red-400;
+  @apply border-red-600 bg-gray-900 text-red-400;
 }

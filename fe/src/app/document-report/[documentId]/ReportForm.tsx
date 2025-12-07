@@ -45,11 +45,12 @@ export function ReportForm({
   return (
     <form onSubmit={handleSubmit} className={styles.formCard}>
       {/* Document badge */}
-      <div className={styles.fieldGroup}>
+      {/* <div className={styles.fieldGroup}>
         <span className={styles.documentBadge}>
           <span className={styles.documentBadgeLabel}>DOCUMENT</span>
+          <span className={styles.documentBadgeValue}>{documentId}</span>
         </span>
-      </div>
+      </div> */}
 
       {/* Reason */}
       <div className={styles.fieldGroup}>
@@ -74,7 +75,7 @@ export function ReportForm({
           ))}
         </select>
         <p className={styles.helperText}>
-          Please choose the most accurate reason for reporting this document.
+          Pick the option that best describes the problem.
         </p>
       </div>
 
@@ -88,7 +89,7 @@ export function ReportForm({
         <textarea
           id="description"
           className={styles.textarea}
-          placeholder="Describe what is wrong with this document. Provide as much detail as possible to help the reviewer."
+          placeholder="Describe what is wrong with this document. Links, page numbers, or short quotes are helpful."
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           disabled={loading}

@@ -12,6 +12,7 @@ import com.capstone.be.domain.enums.ReviewRequestStatus;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
 import com.capstone.be.dto.request.review.RespondReviewRequestRequest;
+import com.capstone.be.dto.request.review.ReviewHistoryFilterRequest;
 import com.capstone.be.dto.request.review.SubmitReviewRequest;
 import com.capstone.be.dto.response.review.DocumentReviewResponse;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
@@ -24,6 +25,7 @@ import com.capstone.be.repository.DocumentReviewRepository;
 import com.capstone.be.repository.DocumentTagLinkRepository;
 import com.capstone.be.repository.ReviewRequestRepository;
 import com.capstone.be.repository.UserRepository;
+import com.capstone.be.repository.spec.DocumentReviewSpecification;
 import com.capstone.be.service.FileStorageService;
 import com.capstone.be.service.ReviewRequestService;
 import lombok.RequiredArgsConstructor;
@@ -368,8 +370,8 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
   @Override
   @Transactional(readOnly = true)
-  public Page<DocumentReviewResponse> getReviewerHistory(UUID reviewerId, Pageable pageable) {
-    log.info("Getting review history for reviewer {}", reviewerId);
+  public Page<DocumentReviewResponse> getReviewerHistory(UUID reviewerId, ReviewHistoryFilterRequest filter, Pageable pageable) {
+    log.info("Getting review history for reviewer {} with filters: {}", reviewerId, filter);
 
     // Validate Reviewer
     User reviewer = userRepository.findById(reviewerId)
@@ -379,7 +381,11 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
       throw new InvalidRequestException("User is not a reviewer");
     }
 
-    Page<DocumentReview> reviews = documentReviewRepository.findByReviewer_Id(reviewerId, pageable);
+    // Use Specification to filter
+    Page<DocumentReview> reviews = documentReviewRepository.findAll(
+        DocumentReviewSpecification.filterReviewHistory(reviewerId, filter),
+        pageable
+    );
 
     return reviews.map(review -> {
       // Load tags for each document

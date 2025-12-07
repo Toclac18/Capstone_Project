@@ -1,8 +1,10 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.domain.enums.ReviewDecision;
 import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.review.RespondReviewRequestRequest;
+import com.capstone.be.dto.request.review.ReviewHistoryFilterRequest;
 import com.capstone.be.dto.request.review.SubmitReviewRequest;
 import com.capstone.be.dto.response.review.DocumentReviewResponse;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
@@ -21,6 +23,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -179,10 +182,15 @@ public class ReviewRequestController {
   }
 
   /**
-   * View review history for the authenticated reviewer
+   * View review history for the authenticated reviewer with optional filters
    * GET /api/v1/review-requests/history
    *
    * @param userPrincipal Authenticated Reviewer
+   * @param decision      Filter by review decision (optional)
+   * @param dateFrom      Filter by submitted date from (optional)
+   * @param dateTo        Filter by submitted date to (optional)
+   * @param docTypeId     Filter by document type ID (optional)
+   * @param domainId      Filter by domain ID (optional)
    * @param page          Page number (default 0)
    * @param size          Page size (default 10)
    * @return Paginated list of submitted reviews
@@ -191,17 +199,31 @@ public class ReviewRequestController {
   @PreAuthorize("hasRole('REVIEWER')")
   public ResponseEntity<PagedResponse<DocumentReviewResponse>> getReviewHistory(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @RequestParam(name = "decision", required = false) ReviewDecision decision,
+      @RequestParam(name = "dateFrom", required = false) Instant dateFrom,
+      @RequestParam(name = "dateTo", required = false) Instant dateTo,
+      @RequestParam(name = "docTypeId", required = false) UUID docTypeId,
+      @RequestParam(name = "domainId", required = false) UUID domainId,
       @RequestParam(name = "page", defaultValue = "0") int page,
       @RequestParam(name = "size", defaultValue = "10") int size) {
 
     UUID reviewerId = userPrincipal.getId();
-    log.info("Reviewer {} requesting review history (page: {}, size: {})",
-        reviewerId, page, size);
+    log.info("Reviewer {} requesting review history with filters - decision: {}, dateFrom: {}, dateTo: {}, docTypeId: {}, domainId: {}",
+        reviewerId, decision, dateFrom, dateTo, docTypeId, domainId);
+
+    // Build filter request
+    ReviewHistoryFilterRequest filter = ReviewHistoryFilterRequest.builder()
+        .decision(decision)
+        .dateFrom(dateFrom)
+        .dateTo(dateTo)
+        .docTypeId(docTypeId)
+        .domainId(domainId)
+        .build();
 
     Pageable pageable = PageRequest.of(page, size);
 
     Page<DocumentReviewResponse> result = reviewRequestService.getReviewerHistory(
-        reviewerId, pageable);
+        reviewerId, filter, pageable);
 
     return ResponseEntity.ok(PagedResponse.of(result, "Review history retrieved successfully"));
   }

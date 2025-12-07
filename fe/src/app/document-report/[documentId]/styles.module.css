@@ -1,0 +1,163 @@
+/* Report Document Page Styles - Dark/Light Mode Support (Standard Tailwind Classes) */
+
+/* Page Wrapper */
+.pageContainer {
+  @apply rounded-[10px] border border-gray-200 bg-white p-4 shadow-sm sm:p-8;
+}
+/* Thay bg-gray-dark bằng bg-gray-900, border-dark-3 bằng border-gray-700 */
+:global(html.dark) .pageContainer {
+  @apply border-gray-700 bg-gray-900;
+}
+
+/* Header */
+.pageHeader {
+  @apply mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between;
+}
+
+.pageTitle {
+  @apply text-xl font-bold text-gray-900;
+}
+:global(html.dark) .pageTitle {
+  @apply text-white;
+}
+
+.pageSubtitle {
+  @apply text-sm text-gray-500;
+}
+:global(html.dark) .pageSubtitle {
+  @apply text-gray-400;
+}
+
+/* Doc badge */
+.documentBadge {
+  @apply inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600;
+}
+:global(html.dark) .documentBadge {
+  @apply bg-gray-700 text-gray-300;
+}
+
+.documentBadgeLabel {
+  @apply text-[10px] uppercase tracking-wide text-gray-500;
+}
+:global(html.dark) .documentBadgeLabel {
+  @apply text-gray-400;
+}
+
+.documentBadgeValue {
+  @apply font-mono text-[11px];
+}
+
+/* Form card */
+.formCard {
+  @apply mt-2 space-y-5 rounded-[10px] border border-gray-200 bg-white p-4 shadow-sm sm:p-6;
+}
+:global(html.dark) .formCard {
+  @apply border-gray-700 bg-gray-900;
+}
+
+/* Field group */
+.fieldGroup {
+  @apply flex flex-col gap-1.5;
+}
+
+.labelRow {
+  @apply flex items-center justify-between gap-2;
+}
+
+.label {
+  @apply text-sm font-medium text-gray-900;
+}
+:global(html.dark) .label {
+  @apply text-white;
+}
+
+.labelRequired {
+  @apply text-xs font-semibold uppercase tracking-wide text-red-600;
+}
+
+.helperText {
+  @apply text-xs text-gray-500;
+}
+:global(html.dark) .helperText {
+  @apply text-gray-400;
+}
+
+/* Select & textarea */
+/* Thay focus:ring-primary bằng focus:ring-blue-600 (hoặc màu chủ đạo bạn muốn) */
+.select,
+.textarea {
+  @apply w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-900 outline-none transition-all duration-150 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30;
+}
+:global(html.dark) .select,
+:global(html.dark) .textarea {
+  @apply border-gray-600 text-white;
+}
+
+.select {
+  @apply cursor-pointer;
+}
+
+.textarea {
+  @apply min-h-[120px] resize-y;
+}
+
+/* Char counter */
+.counterRow {
+  @apply mt-1 flex items-center justify-between text-xs;
+}
+
+.counterText {
+  @apply text-xs text-gray-500;
+}
+:global(html.dark) .counterText {
+  @apply text-gray-400;
+}
+
+.counterExceeded {
+  @apply font-medium text-red-600;
+}
+
+/* Status messages */
+.errorText {
+  @apply mt-1 rounded-md border-l-4 border-red-600 bg-red-50 px-3 py-2 text-xs text-red-800;
+}
+:global(html.dark) .errorText {
+  @apply border-red-600 bg-gray-800 text-red-400;
+}
+
+.successText {
+  @apply mt-1 rounded-md border-l-4 border-green-600 bg-green-50 px-3 py-2 text-xs text-green-800;
+}
+:global(html.dark) .successText {
+  @apply border-green-600 bg-gray-800 text-green-400;
+}
+
+/* Actions */
+.actionsRow {
+  @apply mt-4 flex items-center justify-end gap-2;
+}
+
+.cancelButton {
+  @apply rounded-lg border border-gray-200 bg-transparent px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100;
+}
+:global(html.dark) .cancelButton {
+  @apply border-gray-600 text-gray-300 hover:bg-gray-700;
+}
+
+/* Thay bg-primary bằng bg-blue-600 */
+.submitButton {
+  @apply rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+/* Loading overlay for submit button */
+.spinner {
+  @apply inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent;
+}
+
+/* Page-level error */
+.pageError {
+  @apply rounded-lg border-l-4 border-red-600 bg-red-50 p-4 text-sm text-red-800;
+}
+:global(html.dark) .pageError {
+  @apply border-red-600 bg-gray-800 text-red-400;
+}

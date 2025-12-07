@@ -1,7 +1,7 @@
 import { mockDocumentsDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { jsonResponse, proxyJsonResponse, parseError } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";
 
 async function handleGET(request: Request) {
@@ -31,7 +31,7 @@ async function handleGET(request: Request) {
   if (domainIds.length === 0) {
     return jsonResponse(
       { error: "domainIds parameter is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -43,24 +43,27 @@ async function handleGET(request: Request) {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-      }
+      },
     );
 
     if (!upstream.ok) {
       const text = await upstream.text();
       return jsonResponse(
         { error: parseError(text, "Failed to fetch specializations") },
-        { status: upstream.status }
+        { status: upstream.status },
       );
     }
 
     // Parse response - backend may return { success: true, data: [...], timestamp: ... } or direct array
     const responseData = await upstream.json();
-    const specializations = Array.isArray(responseData) 
-      ? responseData 
-      : (responseData?.data || []);
+    const specializations = Array.isArray(responseData)
+      ? responseData
+      : responseData?.data || [];
 
-    return jsonResponse(specializations, { status: upstream.status, mode: "real" });
+    return jsonResponse(specializations, {
+      status: upstream.status,
+      mode: "real",
+    });
   }
 
   // If multiple domainIds, fetch all and merge results
@@ -73,7 +76,7 @@ async function handleGET(request: Request) {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           cache: "no-store",
-        }
+        },
       );
 
       if (upstream.ok) {
@@ -81,11 +84,14 @@ async function handleGET(request: Request) {
         const response = await proxyJsonResponse(upstream, { mode: "real" });
         const data = await response.json();
         // Backend returns List<SpecializationInfo> or wrapped in ApiResponse
-        const specializations = Array.isArray(data) ? data : (data?.data || []);
+        const specializations = Array.isArray(data) ? data : data?.data || [];
         allSpecializations.push(...specializations);
       }
     } catch (error) {
-      console.error(`Failed to fetch specializations for domain ${domainId}:`, error);
+      console.error(
+        `Failed to fetch specializations for domain ${domainId}:`,
+        error,
+      );
     }
   }
 

@@ -1,7 +1,7 @@
 import { mockGetOrganizationStatistics } from "@/mock/statistics.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handleGET(request: Request) {
@@ -68,4 +68,3 @@ export async function GET(request: Request) {
     context: "api/org-admin/statistics/route.ts/GET",
   });
 }
-

@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { headers } from "next/headers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 export const runtime = "nodejs";
 
@@ -12,7 +12,7 @@ async function handleGET(_req: NextRequest): Promise<Response> {
     const stream = new ReadableStream({
       start(controller) {
         controller.enqueue(encoder.encode(": connected\n\n"));
-        
+
         const interval = setInterval(() => {
           try {
             controller.enqueue(encoder.encode(": heartbeat\n\n"));
@@ -33,7 +33,7 @@ async function handleGET(_req: NextRequest): Promise<Response> {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
+        Connection: "keep-alive",
         "X-Accel-Buffering": "no",
       },
     });
@@ -111,7 +111,7 @@ async function handleGET(_req: NextRequest): Promise<Response> {
         try {
           while (true) {
             const { done, value } = await reader.read();
-            
+
             if (done) {
               controller.close();
               break;
@@ -120,16 +120,21 @@ async function handleGET(_req: NextRequest): Promise<Response> {
             controller.enqueue(value);
           }
         } catch (error: any) {
-          if (error?.cause?.code === 'UND_ERR_SOCKET' || 
-              error?.message?.includes('terminated') ||
-              error?.message?.includes('other side closed')) {
+          if (
+            error?.cause?.code === "UND_ERR_SOCKET" ||
+            error?.message?.includes("terminated") ||
+            error?.message?.includes("other side closed")
+          ) {
             try {
               controller.close();
             } catch (e) {
               // Ignore errors when closing
             }
           } else {
-            console.error("[notifications events] Error reading upstream stream:", error);
+            console.error(
+              "[notifications events] Error reading upstream stream:",
+              error,
+            );
             try {
               controller.error(error);
             } catch (e) {
@@ -144,7 +149,7 @@ async function handleGET(_req: NextRequest): Promise<Response> {
           }
         }
       },
-      
+
       cancel() {
         upstream.body?.cancel().catch(() => {});
       },
@@ -155,10 +160,7 @@ async function handleGET(_req: NextRequest): Promise<Response> {
       headers: responseHeaders,
     });
   } catch (error) {
-    console.error(
-      "[notifications events] Error fetching upstream SSE:",
-      error,
-    );
+    console.error("[notifications events] Error fetching upstream SSE:", error);
     return new Response("Upstream service is unavailable or stream failed.", {
       status: 500,
       headers: { "Content-Type": "text/plain" },
@@ -170,4 +172,3 @@ export const GET = (...args: Parameters<typeof handleGET>) =>
   withErrorBoundary(() => handleGET(...args), {
     context: "api/notifications/events/route.ts/GET",
   });
-

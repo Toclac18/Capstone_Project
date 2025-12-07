@@ -1,7 +1,7 @@
 // src/app/api/document-report/route.ts
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { badRequest, jsonResponse, proxyJsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { mockCreateDocumentReport } from "@/mock/document-report.mock";
 import { ReportReason } from "@/types/document-report";
 import { getAuthHeader } from "@/server/auth";

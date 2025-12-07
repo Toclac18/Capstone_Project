@@ -1,6 +1,6 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { jsonResponse, parseError, badRequest } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handlePOST(req: Request) {
   const contentType = req.headers.get("content-type") || "";
@@ -52,7 +52,7 @@ async function handlePOST(req: Request) {
     domainIds,
     specializationIds,
   } = data;
-  
+
   if (!email || !password || !fullName || !dateOfBirth) {
     return badRequest("Missing required basic fields");
   }
@@ -68,7 +68,11 @@ async function handlePOST(req: Request) {
   }
 
   // Validate constraints
-  if (!Array.isArray(domainIds) || domainIds.length < 1 || domainIds.length > 3) {
+  if (
+    !Array.isArray(domainIds) ||
+    domainIds.length < 1 ||
+    domainIds.length > 3
+  ) {
     return badRequest("Must select 1 to 3 domains");
   }
 
@@ -85,7 +89,7 @@ async function handlePOST(req: Request) {
   if (!files || files.length === 0) {
     return badRequest("At least one credential file is required");
   }
-  
+
   if (files.length > 10) {
     return badRequest("Maximum 10 credential files allowed");
   }
@@ -122,7 +126,7 @@ async function handlePOST(req: Request) {
     const text = await upstream.text();
     return jsonResponse(
       { error: parseError(text, "Registration failed") },
-      { status: upstream.status }
+      { status: upstream.status },
     );
   }
 
@@ -134,16 +138,16 @@ async function handlePOST(req: Request) {
   } catch {
     return jsonResponse(
       { error: "Failed to parse backend response" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
   // Backend may return { data: AuthResponse } or AuthResponse directly
   const authResponse = responseData?.data || responseData;
-  
-  return jsonResponse(authResponse, { 
+
+  return jsonResponse(authResponse, {
     status: upstream.status,
-    mode: "real" 
+    mode: "real",
   });
 }
 

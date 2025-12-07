@@ -130,7 +130,11 @@ export default function ModalPreview() {
             <button type="button" className={styles.btnGhost} onClick={close}>
               Close
             </button>
-            <Link href={`/docs-view/${doc.id}`} className={styles.btnPrimary}>
+            <Link
+              href={`/docs-view/${doc.id}`}
+              className={styles.btnPrimary}
+              onClick={close}
+            >
               View details
             </Link>
           </div>

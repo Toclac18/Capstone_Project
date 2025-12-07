@@ -4,7 +4,7 @@ import type { SystemLog, SystemLogQueryParams } from "@/types/system-log";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 function filterLogs(
   logs: SystemLog[],

@@ -1,6 +1,6 @@
 import { mockOrganizationsDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 import { getAuthHeader } from "@/server/auth";
 
@@ -37,11 +37,14 @@ async function handlePOST(
     fh.set("Authorization", authHeader);
   }
 
-  const upstream = await fetch(`${BE_BASE}/api/reader/enrollments/organizations/${id}/leave`, {
-    method: "POST",
-    headers: fh,
-    cache: "no-store",
-  });
+  const upstream = await fetch(
+    `${BE_BASE}/api/reader/enrollments/organizations/${id}/leave`,
+    {
+      method: "POST",
+      headers: fh,
+      cache: "no-store",
+    },
+  );
 
   return proxyJsonResponse(upstream, { mode: "real" });
 }

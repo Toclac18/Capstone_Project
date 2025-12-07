@@ -1,7 +1,7 @@
 // src/app/api/org-admin/reader-change-access/route.ts
 import { mockChangeReaderAccess } from "@/mock/readers.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { badRequest, proxyJsonResponse, jsonResponse } from "@/server/response";
 import { getAuthHeader } from "@/server/auth";
 

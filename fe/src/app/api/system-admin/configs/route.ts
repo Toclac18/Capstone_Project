@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { BE_BASE } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handleGET(_req: NextRequest): Promise<Response> {
   try {
@@ -18,10 +18,12 @@ async function handleGET(_req: NextRequest): Promise<Response> {
     });
 
     if (!upstream.ok) {
-      const errorText = await upstream.text().catch(() => "Failed to fetch configs");
+      const errorText = await upstream
+        .text()
+        .catch(() => "Failed to fetch configs");
       return jsonResponse(
         { error: errorText },
-        { status: upstream.status, mode: "real" }
+        { status: upstream.status, mode: "real" },
       );
     }
 
@@ -33,7 +35,7 @@ async function handleGET(_req: NextRequest): Promise<Response> {
   } catch (e: any) {
     return jsonResponse(
       { message: "Configs fetch failed", error: String(e) },
-      { status: 502 }
+      { status: 502 },
     );
   }
 }
@@ -42,4 +44,3 @@ export const GET = (...args: Parameters<typeof handleGET>) =>
   withErrorBoundary(() => handleGET(...args), {
     context: "api/system-admin/configs/route.ts/GET",
   });
-

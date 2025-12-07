@@ -1,6 +1,6 @@
 // src/app/api/org-admin/imports/[id]/events/route.ts
 import { NextRequest } from "next/server";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 

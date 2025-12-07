@@ -2,14 +2,17 @@
 import { apiClient } from "./http";
 import type { SaveList } from "@/types/saveList";
 
-export async function fetchSaveLists(readerId: string): Promise<SaveList[]> {
+export async function fetchSaveLists(id: string): Promise<SaveList[]> {
   const res = await apiClient.get("/save-lists", {
-    params: { readerId },
+    params: { id },
   });
 
-  const data = res.data;
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data.saveLists)) return data.saveLists;
+  const responseBody = res.data;
+
+  if (responseBody && Array.isArray(responseBody.data)) {
+    return responseBody.data;
+  }
+
   return [];
 }
 

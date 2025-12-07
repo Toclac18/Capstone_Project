@@ -26,6 +26,16 @@ public class DocumentReviewSpecification {
    */
   public static Specification<DocumentReview> filterReviewHistory(UUID reviewerId, ReviewHistoryFilterRequest filter) {
     return (root, query, criteriaBuilder) -> {
+      // Eager load related entities to avoid lazy loading issues
+      if (query != null && Long.class != query.getResultType()) {
+        root.fetch("document", jakarta.persistence.criteria.JoinType.LEFT)
+            .fetch("docType", jakarta.persistence.criteria.JoinType.LEFT);
+        root.fetch("document", jakarta.persistence.criteria.JoinType.LEFT)
+            .fetch("specialization", jakarta.persistence.criteria.JoinType.LEFT)
+            .fetch("domain", jakarta.persistence.criteria.JoinType.LEFT);
+        root.fetch("reviewer", jakarta.persistence.criteria.JoinType.LEFT);
+      }
+
       List<Predicate> predicates = new ArrayList<>();
 
       // Filter by reviewer ID (required)

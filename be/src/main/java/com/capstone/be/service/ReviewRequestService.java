@@ -2,6 +2,7 @@ package com.capstone.be.service;
 
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
 import com.capstone.be.dto.request.review.RespondReviewRequestRequest;
+import com.capstone.be.dto.request.review.ReviewHistoryFilterRequest;
 import com.capstone.be.dto.request.review.SubmitReviewRequest;
 import com.capstone.be.dto.response.review.DocumentReviewResponse;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
@@ -95,10 +96,12 @@ public interface ReviewRequestService {
 
   /**
    * View review history for a reviewer (all reviews submitted by the reviewer)
+   * with optional filters
    *
    * @param reviewerId Reviewer ID
+   * @param filter     Filter criteria (optional)
    * @param pageable   Pagination parameters
    * @return Page of document review responses
    */
-  Page<DocumentReviewResponse> getReviewerHistory(UUID reviewerId, Pageable pageable);
+  Page<DocumentReviewResponse> getReviewerHistory(UUID reviewerId, ReviewHistoryFilterRequest filter, Pageable pageable);
 }

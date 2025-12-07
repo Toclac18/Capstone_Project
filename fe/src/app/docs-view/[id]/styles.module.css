@@ -87,52 +87,96 @@
 .headerBar {
   background: var(--card);
   border: 1px solid var(--border);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
   border-radius: 14px;
   padding: 0.75rem;
+
+  /* Layout */
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+
+  /* --- CỐ ĐỊNH HEADER (Sticky) --- */
+  position: sticky;
+  top: 1rem; /* Cách mép trên 16px */
+  z-index: 50; /* Đè lên nội dung khác */
+  backdrop-filter: blur(8px); /* Hiệu ứng mờ nền nếu background trong suốt */
 }
 
+/* Phần bên trái: Thống kê view/vote */
 .headerLeft {
   display: flex;
+  align-items: center; /* Căn giữa dọc */
   gap: 1rem;
   color: var(--text-subtle);
   font-size: 0.9rem;
 }
+
+/* Chỉnh stat2 và statButton để icon và số thẳng hàng */
+.stat2,
+.statButton {
+  display: flex; /* Flex để căn icon và số */
+  align-items: center; /* Căn giữa dọc */
+  gap: 0.4rem; /* Khoảng cách icon và số */
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+  cursor: default;
+}
+
+.statButton {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.statButton:hover {
+  opacity: 0.7;
+}
+.statButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Phần giữa: Zoom + Search */
 .headerCenter {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
+
+/* Phần phải: Buttons */
 .headerRight {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.stat {
-  display: inline-flex;
-  gap: 0.35rem;
-  align-items: center;
-}
-
+/* Nút icon (+ / -) */
 .iconBtn {
-  padding: 0.25rem 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem; /* Fix size cho vuông đẹp */
+  height: 2rem;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--card);
+  cursor: pointer;
+  color: var(--text);
+  transition: all 0.2s;
 }
 .iconBtn:hover {
   background: var(--muted-2);
 }
 .iconBtn:active {
-  transform: scale(0.98);
+  transform: scale(0.95);
 }
 
-/* find-in-doc */
+/* Khung tìm kiếm */
 .findWrap {
   display: flex;
   align-items: center;
@@ -140,10 +184,11 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0.25rem 0.5rem;
+  height: 2rem; /* Đồng bộ chiều cao với nút */
   background: var(--muted);
 }
 .findInput {
-  width: 16rem;
+  width: 14rem; /* Giảm nhẹ để đỡ bị tràn trên màn nhỏ */
   border: none;
   outline: none;
   background: transparent;
@@ -159,64 +204,82 @@
   align-items: center;
   gap: 0.5rem;
   color: var(--text-subtle);
-  font-size: 0.8rem;
-  line-height: 1;
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 .findNav {
-  padding: 0.2rem 0.5rem;
-  border-radius: 8px;
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--card);
+  font-size: 0.75rem;
+  cursor: pointer;
 }
 .findNav:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
 }
-.findInput:focus-visible,
-.iconBtn:focus-visible,
-.findNav:focus-visible,
-.btnGhost:focus-visible,
-.btnPrimary:focus-visible,
-.btnDisabled:focus-visible {
-  outline: var(--focus);
+
+/* --- BUTTON STYLES (Report, Save, Download) --- */
+
+/* Base style cho text buttons */
+.btnGhost,
+.btnPrimary,
+.btnDisabled,
+.btnRedeem {
+  display: inline-flex; /* QUAN TRỌNG: Để icon và chữ nằm ngang */
+  align-items: center; /* Căn giữa dọc */
+  justify-content: center;
+  gap: 0.5rem; /* Khoảng cách giữa icon và chữ */
+  height: 2.25rem; /* Chiều cao cố định đồng bộ */
+  padding: 0 1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
 }
 
-.highlightMatch {
-  background: #fde68a;
-  color: inherit;
-  padding: 0 0.05em;
-  border-radius: 2px;
-}
-
-/* header buttons */
+/* Style Ghost (Report, Save) */
 .btnGhost {
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.4rem 0.8rem;
   background: var(--card);
+  color: var(--text);
 }
 .btnGhost:hover {
   background: var(--muted-2);
+  border-color: var(--border-hover, #ccc);
 }
+
+/* Style Primary (Download) */
 .btnPrimary {
-  border-radius: 10px;
-  padding: 0.45rem 0.9rem;
-  background: var(--accent);
+  border: 1px solid transparent;
+  background: var(--accent); /* Màu xanh chủ đạo */
   color: white;
-  font-weight: 600;
 }
 .btnPrimary:hover {
   background: var(--accent-600);
+  opacity: 0.9;
 }
+
+/* Style Redeem */
+.btnRedeem {
+  border: 1px solid transparent;
+  background: #f59e0b; /* Màu cam/vàng cho redeem */
+  color: white;
+}
+.btnRedeem:hover {
+  opacity: 0.9;
+}
+
+/* Style Disabled */
 .btnDisabled {
-  border-radius: 10px;
-  padding: 0.45rem 0.9rem;
-  background: #cbd5e1;
-  color: #fff;
+  border: 1px solid transparent;
+  background: var(--muted);
+  color: var(--text-subtle);
   cursor: not-allowed;
-}
-:global(html.dark) .btnDisabled {
-  background: #334155;
+  opacity: 0.6;
 }
 
 /* ---------- Left sidebar (PDF-like thumbnails) ---------- */

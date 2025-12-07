@@ -9,9 +9,10 @@ spring:
   profiles:
     active: dev
   datasource:
-    url: ${DB_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/testlocaldb}}
-    username: ${DB_USERNAME:${SPRING_DATASOURCE_USERNAME:postgres}}
-    password: ${DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
+    #url: ${DB_URL}${DB_SSLMODE_QUERY}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}${DB_SSLMODE_QUERY}
+    username:  ${DB_USERNAME}
+    password:  ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -22,6 +23,7 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
         jdbc.time_zone: UTC
     open-in-view: false
@@ -73,6 +75,16 @@ app:
 logging:
   level:
     org.hibernate: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /api/actuator
+  endpoint:
+    health:
+      show-details: when-authorized
 
 springdoc:
   swagger-ui:

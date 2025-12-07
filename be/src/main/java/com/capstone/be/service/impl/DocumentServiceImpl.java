@@ -5,6 +5,7 @@ import com.capstone.be.domain.entity.*;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.DocVisibility;
 import com.capstone.be.domain.enums.OrgEnrollStatus;
+import com.capstone.be.domain.enums.ReviewRequestStatus;
 import com.capstone.be.domain.enums.TagStatus;
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
 import com.capstone.be.dto.request.document.DocumentSearchFilter;
@@ -25,6 +26,7 @@ import com.capstone.be.repository.DocumentTagLinkRepository;
 import com.capstone.be.repository.OrgEnrollmentRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.ReaderProfileRepository;
+import com.capstone.be.repository.ReviewRequestRepository;
 import com.capstone.be.repository.SpecializationRepository;
 import com.capstone.be.repository.TagRepository;
 import com.capstone.be.repository.UserRepository;
@@ -71,6 +73,7 @@ public class DocumentServiceImpl implements DocumentService {
   private final DocumentTagLinkRepository documentTagLinkRepository;
   private final DocumentRedemptionRepository documentRedemptionRepository;
   private final DocumentReadHistoryRepository documentReadHistoryRepository;
+  private final ReviewRequestRepository reviewRequestRepository;
   private final FileStorageService fileStorageService;
   private final DocumentThumbnailService documentThumbnailService;
   private final DocumentMapper documentMapper;
@@ -360,7 +363,7 @@ public class DocumentServiceImpl implements DocumentService {
         .isPremium(request.getIsPremium())
         .price(price)
         .fileKey(fileUrl)
-        .status(DocStatus.VERIFYING)
+        .status(DocStatus.AI_VERIFYING)
         .specialization(specialization)
         .viewCount(0)
         .upvoteCount(0)
@@ -463,7 +466,7 @@ public class DocumentServiceImpl implements DocumentService {
 
     // 2. Query DB: Lấy bài Public & Verified
     Page<Document> documentPage = documentRepository.findByStatusAndVisibility(
-            DocStatus.VERIFIED,
+            DocStatus.ACTIVE,
             DocVisibility.PUBLIC,
             pageable
     );
@@ -917,6 +920,7 @@ public class DocumentServiceImpl implements DocumentService {
     DocumentDetailResponse.UserDocumentInfo userInfo;
 
     if (userId != null) {
+      // Check access (includes all access types: public, uploader, org member, redeemed, reviewer)
       boolean hasAccess = documentAccessService.hasAccess(userId, document.getId());
 
       boolean isUploader = document.getUploader() != null && document.getUploader().getId().equals(userId);
@@ -942,11 +946,29 @@ public class DocumentServiceImpl implements DocumentService {
         }
       }
 
+      // Check if user is assigned reviewer with ACCEPTED status
+      boolean isReviewer = reviewRequestRepository
+              .findByDocument_IdAndReviewer_Id(document.getId(), userId)
+              .map(reviewRequest -> reviewRequest.getStatus() == ReviewRequestStatus.ACCEPTED)
+              .orElse(false);
+
+      // Add presigned URL if user has access
+      String presignedUrl = null;
+      if (hasAccess && document.getFileKey() != null) {
+        presignedUrl = fileStorageService.generatePresignedUrl(
+                FileStorage.DOCUMENT_FOLDER,
+                document.getFileKey(),
+                presignedUrlExpirationMinutes
+        );
+      }
+      response.setPresignedUrl(presignedUrl);
+
       userInfo = DocumentDetailResponse.UserDocumentInfo.builder()
               .hasAccess(hasAccess)
               .isUploader(isUploader)
               .hasRedeemed(hasRedeemed)
               .isMemberOfOrganization(isMemberOfOrganization)
+              .isReviewer(isReviewer)
               .build();
 
     } else {
@@ -955,11 +977,23 @@ public class DocumentServiceImpl implements DocumentService {
         hasAccess = true;
       }
 
+      // Add presigned URL if guest has access (non-premium documents)
+      String presignedUrl = null;
+      if (hasAccess && document.getFileKey() != null) {
+        presignedUrl = fileStorageService.generatePresignedUrl(
+                FileStorage.DOCUMENT_FOLDER,
+                document.getFileKey(),
+                presignedUrlExpirationMinutes
+        );
+      }
+      response.setPresignedUrl(presignedUrl);
+
       userInfo = DocumentDetailResponse.UserDocumentInfo.builder()
               .hasAccess(hasAccess)
               .isUploader(false)
               .hasRedeemed(false)
               .isMemberOfOrganization(false)
+              .isReviewer(false)
               .build();
     }
 

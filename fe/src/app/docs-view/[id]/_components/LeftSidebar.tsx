@@ -15,10 +15,6 @@ export default function LeftSidebar() {
 
   const totalPages = numPages || 1;
 
-  // ✅ Debug: xem URL thực tế là gì
-  console.log("LeftSidebar fileUrl = ", detail.fileUrl);
-
-  // ✅ Nếu chưa có URL thì chưa render Document, tránh lỗi "Failed to fetch"
   if (!detail.fileUrl) {
     return (
       <aside className={styles.leftSidebar}>
@@ -48,8 +44,7 @@ export default function LeftSidebar() {
 
       <div className={styles.pageThumbList}>
         <Document
-          // dùng object cho rõ ràng
-          file={{ url: detail.fileUrl }}
+          file={detail.fileUrl}
           loading={<div className={styles.loading}>Loading pages…</div>}
           error={<div className={styles.loading}>Failed to load pages</div>}
           onLoadError={(err) => {

@@ -1,6 +1,10 @@
 // src/services/docsService.ts
 import { apiClient } from "./http";
 
+/* -------------------------------------------------------------------------- */
+/*                             PUBLIC FE TYPE EXPORTS                         */
+/* -------------------------------------------------------------------------- */
+
 export type Comment = {
   id: string;
   docId: string;
@@ -47,12 +51,12 @@ export type RelatedLite = {
   isPremium: boolean;
 };
 
-/**
- * -----------------------------
- * Kiểu BE: /api/documents/:id
- * (proxy qua Next route: GET /api/docs-view/[id])
- * -----------------------------
- */
+/* -------------------------------------------------------------------------- */
+/*                             BACKEND RAW TYPES                              */
+/* -------------------------------------------------------------------------- */
+/* 1. Document detail (/api/documents/:id)                                    */
+/* -------------------------------------------------------------------------- */
+
 type BackendDocumentDetail = {
   id: string;
   title: string;
@@ -118,22 +122,18 @@ type BackendDocumentDetailResponse = {
   timestamp: string;
 };
 
-/**
- * -----------------------------
- * Kiểu BE: /api/comments/document/:docId
- * (proxy qua Next route: GET /api/docs-view/[id]/comments)
- * -----------------------------
- */
-type BackendCommentUser = {
-  id: string;
-  fullName: string;
-  avatarUrl?: string | null;
-};
+/* -------------------------------------------------------------------------- */
+/* 2. Comments list (/api/comments/document/:docId)                           */
+/* -------------------------------------------------------------------------- */
 
 type BackendComment = {
   id: string;
   documentId: string;
-  user: BackendCommentUser;
+  user: {
+    id: string;
+    fullName: string;
+    avatarUrl?: string;
+  };
   content: string;
   createdAt: string;
   updatedAt: string;
@@ -157,24 +157,20 @@ type BackendCommentsResponse = {
   timestamp: string;
 };
 
-/**
- * -----------------------------
- * Kiểu BE: POST comment
- * (proxy qua Next route: POST /api/docs-view/[id]/comments)
- * -----------------------------
- */
+/* -------------------------------------------------------------------------- */
+/* 3. POST comment (/api/comments/document/:docId)                            */
+/* -------------------------------------------------------------------------- */
+
 type BackendPostCommentResponse = {
   success: boolean;
-  data: BackendComment;
+  data: BackendComment | { comment: BackendComment } | { data: BackendComment };
   timestamp: string;
 };
 
-/**
- * -----------------------------
- * Kiểu BE: /api/documents/:id/presigned-url
- * (proxy qua Next route: GET /api/documents/[id]/presigned-url)
- * -----------------------------
- */
+/* -------------------------------------------------------------------------- */
+/* 4. Presigned URL (/api/documents/:id/presigned-url)                        */
+/* -------------------------------------------------------------------------- */
+
 type BackendPresignedUrlResponse = {
   success: boolean;
   data: {
@@ -184,17 +180,58 @@ type BackendPresignedUrlResponse = {
   timestamp: string;
 };
 
+/* -------------------------------------------------------------------------- */
+/*                         MAPPING HELPERS (BE -> FE)                         */
+/* -------------------------------------------------------------------------- */
+
+function mapBackendComment(c: BackendComment): Comment {
+  return {
+    id: c.id,
+    docId: c.documentId,
+    author: c.user?.fullName ?? "Unknown",
+    userId: c.user?.id,
+    avatarUrl: c.user?.avatarUrl ?? undefined,
+    content: c.content,
+    createdAt: c.createdAt,
+  };
+}
+
+function extractBackendCommentFromPostPayload(
+  payload: BackendPostCommentResponse,
+): BackendComment {
+  const raw = payload.data as any;
+
+  if (raw && raw.id) {
+    // case 1: data là comment trực tiếp
+    return raw as BackendComment;
+  }
+
+  if (raw && raw.comment && raw.comment.id) {
+    // case 2: data: { comment: {...} }
+    return raw.comment as BackendComment;
+  }
+
+  if (raw && raw.data && raw.data.id) {
+    // case 3: data: { data: {...} }
+    return raw.data as BackendComment;
+  }
+
+  // fallback: cứ trả raw, để map phía sau detect lỗi
+  return raw as BackendComment;
+}
+
+/* -------------------------------------------------------------------------- */
+/*           DOCUMENT DETAIL + COMMENTS + PRESIGNED URL (COMPOSITE)           */
+/* -------------------------------------------------------------------------- */
 /**
- * -----------------------------
  * FETCH DOC DETAIL + COMMENTS + PRESIGNED URL
- * -----------------------------
  *
  * - Gọi:
- *   + GET /api/docs-view/:id          -> BE /api/documents/:id
- *   + GET /api/docs-view/:id/comments -> BE /api/comments/document/:docId
- *   + GET /api/documents/:id/presigned-url -> BE presigned URL
+ *   + GET /docs-view/:id                -> BE /api/documents/:id
+ *   + GET /docs-view/:id/comments       -> BE /api/comments/document/:docId
+ *   + GET /docs-view/:id/presigned-url  -> BE presigned URL
  *
- * - Trả về shape cũ mà FE đang dùng:
+ * - Trả về:
  *   { detail, related, stats, comments, pageInfo }
  */
 export async function fetchDocDetail(id: string) {
@@ -245,16 +282,8 @@ export async function fetchDocDetail(id: string) {
     fileUrl: presigned.presignedUrl,
   };
 
-  // Map BE comments -> Comment FE
-  const comments: Comment[] = rawComments.map((c) => ({
-    id: c.id,
-    docId: c.documentId,
-    author: c.user?.fullName ?? "Unknown",
-    userId: c.user?.id,
-    avatarUrl: undefined,
-    content: c.content,
-    createdAt: c.createdAt,
-  }));
+  // Map BE comments -> FE Comment
+  const comments: Comment[] = rawComments.map(mapBackendComment);
 
   // Stats cũ mà FE đang dùng
   const stats = {
@@ -276,13 +305,10 @@ export async function fetchDocDetail(id: string) {
   };
 }
 
-/**
- * -----------------------------
- * REDEEM DOC
- * -----------------------------
- * Next route /api/docs-view/[id]/redeem vẫn proxy sang BE như trước.
- * Service chỉ cần map về shape FE đang dùng.
- */
+/* -------------------------------------------------------------------------- */
+/*                                REDEEM DOC                                  */
+/* -------------------------------------------------------------------------- */
+
 export async function redeemDoc(id: string) {
   const res = await apiClient.post(
     `/docs-view/${encodeURIComponent(id)}/redeem`,
@@ -296,13 +322,14 @@ export async function redeemDoc(id: string) {
   };
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                   VOTE                                      */
+/* -------------------------------------------------------------------------- */
 /**
- * -----------------------------
- * VOTE
- * -----------------------------
  * GET: Lấy vote hiện tại của user cho document
  * POST: Vote document (voteValue: -1 downvote, 0 neutral, 1 upvote)
  */
+
 export async function getUserVote(documentId: string) {
   const res = await apiClient.get(
     `/docs-view/${encodeURIComponent(documentId)}/vote`,
@@ -332,74 +359,65 @@ export async function voteDocument(documentId: string, voteValue: number) {
   };
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                  COMMENTS                                  */
+/* -------------------------------------------------------------------------- */
 /**
- * -----------------------------
  * ADD COMMENT
- * -----------------------------
- * Proxy POST /api/docs-view/:id/comments -> BE /api/comments/document/:docId
- * Service map từ BE comment -> FE Comment.
+ * Proxy POST /docs-view/:id/comments -> BE /api/comments/document/:docId
+ * Service map từ BackendComment -> FE Comment.
  */
-export async function addComment(docId: string, content: string) {
+export async function addComment(
+  docId: string,
+  content: string,
+): Promise<Comment> {
   const res = await apiClient.post(
     `/docs-view/${encodeURIComponent(docId)}/comments`,
     { content },
   );
 
-  // Frontend route wrap CommentResponse thành { success, data, timestamp }
   const payload = res.data as BackendPostCommentResponse;
 
-  if (!payload.success) {
+  if (!payload.success || !payload.data) {
     throw new Error("Failed to add comment");
   }
 
-  const c = payload.data;
+  const backendComment = extractBackendCommentFromPostPayload(payload);
 
-  const comment: Comment = {
-    id: c.id,
-    docId: c.documentId,
-    author: c.user?.fullName ?? "Unknown",
-    userId: c.user?.id,
-    avatarUrl: c.user?.avatarUrl ?? undefined,
-    content: c.content,
-    createdAt: c.createdAt,
-  };
+  const mapped = mapBackendComment(backendComment);
 
-  return { comment };
+  // Nếu sau tất cả mà vẫn không có id → log ra để debug BE/ngắt sớm
+  if (!mapped.id && process.env.NODE_ENV !== "production") {
+    console.warn("addComment: mapped comment missing id", {
+      res: res.data,
+      payload,
+      backendComment,
+      mapped,
+    });
+  }
+
+  return mapped;
 }
 
 /**
- * -----------------------------
- * OPTIONAL: PRESIGNED URL SERVICE RIÊNG
- * -----------------------------
- * Nếu ở chỗ khác bạn cần lấy URL mà không gọi fetchDocDetail.
+ * UPDATE COMMENT
+ * Proxy PUT /comments/:id -> BE update comment
+ * FE hiện tại chỉ cần biết là thành công, nên trả raw để tuỳ chỗ khác dùng.
  */
-export async function fetchDocPresignedUrl(id: string) {
-  const encodedId = encodeURIComponent(id);
-  const res = await apiClient.get(`/docs-view/${encodedId}/presigned-url`);
-  const payload = res.data as BackendPresignedUrlResponse;
-
-  if (!payload.success) {
-    throw new Error("Failed to get presigned url");
-  }
-
-  return payload.data;
-}
-
-// UPDATE COMMENT
 export async function updateComment(commentId: string, content: string) {
   const res = await apiClient.put(
     `/comments/${encodeURIComponent(commentId)}`,
-    {
-      content,
-    },
+    { content },
   );
 
   // Backend trả CommentResponse trực tiếp
-  // Frontend không cần dùng response này, chỉ cần biết thành công
   return res.data as BackendComment;
 }
 
-// DELETE COMMENT
+/**
+ * DELETE COMMENT
+ * Proxy DELETE /comments/:id -> BE delete comment
+ */
 export async function deleteComment(commentId: string) {
   const res = await apiClient.delete(
     `/comments/${encodeURIComponent(commentId)}`,
@@ -412,4 +430,20 @@ export async function deleteComment(commentId: string) {
     data: null;
     timestamp: string;
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/*                      PRESIGNED URL SERVICE DÙNG RIÊNG                      */
+/* -------------------------------------------------------------------------- */
+
+export async function fetchDocPresignedUrl(id: string) {
+  const encodedId = encodeURIComponent(id);
+  const res = await apiClient.get(`/docs-view/${encodedId}/presigned-url`);
+  const payload = res.data as BackendPresignedUrlResponse;
+
+  if (!payload.success) {
+    throw new Error("Failed to get presigned url");
+  }
+
+  return payload.data;
 }

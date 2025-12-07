@@ -6,9 +6,8 @@ import { createPortal } from "react-dom";
 import { useDocsView } from "../DocsViewProvider";
 import { useReader } from "@/hooks/useReader";
 import styles from "../styles.module.css";
-import { formatDistanceToNow } from "date-fns";
-import { enUS } from "date-fns/locale";
 import { Pencil, Trash2, X, AlertTriangle } from "lucide-react";
+import { safeFormatDistance } from "@/utils/date";
 
 // Custom Delete button wrapper để hiển thị icon + text
 function DeleteButton({
@@ -67,13 +66,19 @@ function DeleteButton({
         typeof window !== "undefined" &&
         createPortal(
           <div className={styles.deleteModalOverlay} onClick={handleCloseModal}>
-            <div className={styles.deleteModal} onClick={(e) => e.stopPropagation()}>
+            <div
+              className={styles.deleteModal}
+              onClick={(e) => e.stopPropagation()}
+            >
               <div>
                 {/* Header */}
                 <div className={styles.deleteModalHeader}>
                   <div className={styles.deleteModalHeaderContent}>
                     <div className={styles.deleteModalIconWrapper}>
-                      <AlertTriangle className={styles.deleteModalIcon} size={20} />
+                      <AlertTriangle
+                        className={styles.deleteModalIcon}
+                        size={20}
+                      />
                     </div>
                     <div>
                       <h3 className={styles.deleteModalTitle}>
@@ -97,18 +102,23 @@ function DeleteButton({
                 {/* Content */}
                 <div className={styles.deleteModalContent}>
                   <p className={styles.deleteModalDescription}>
-                    {description || "Are you sure you want to delete this comment?"}
+                    {description ||
+                      "Are you sure you want to delete this comment?"}
                   </p>
 
                   <div className={styles.deleteModalWarningBox}>
                     <div className={styles.deleteModalWarningContent}>
-                      <AlertTriangle className={styles.deleteModalWarningIcon} size={20} />
+                      <AlertTriangle
+                        className={styles.deleteModalWarningIcon}
+                        size={20}
+                      />
                       <div>
                         <p className={styles.deleteModalWarningTitle}>
                           This action cannot be undone
                         </p>
                         <p className={styles.deleteModalWarningText}>
-                          The comment will be permanently deleted from the system.
+                          The comment will be permanently deleted from the
+                          system.
                         </p>
                       </div>
                     </div>
@@ -242,9 +252,15 @@ export default function CommentsSection() {
 
       {/* List comments */}
       <ul className={styles.commentList}>
-        {comments.map((c) => {
+        {comments.map((c, index) => {
+          if (!c || !c.id) {
+            if (process.env.NODE_ENV !== "production") {
+              console.warn("Invalid comment in comments list", { c, index });
+            }
+            return null;
+          }
+
           const isEditing = editingId === c.id;
-          // Chỉ hiển thị edit/delete cho comment của user hiện tại
           const isOwner = readerId && c.userId && readerId === c.userId;
 
           return (
@@ -257,10 +273,7 @@ export default function CommentsSection() {
                 <div className={styles.commentMeta}>
                   <span className={styles.commentAuthor}>{c.author}</span>
                   <span className={styles.commentTime}>
-                    {formatDistanceToNow(new Date(c.createdAt), {
-                      addSuffix: true,
-                      locale: enUS,
-                    })}
+                    {safeFormatDistance(c.createdAt)}
                   </span>
 
                   {/* ACTIONS: Edit + Delete (chỉ hiển thị cho owner) */}
@@ -271,7 +284,9 @@ export default function CommentsSection() {
                           <button
                             type="button"
                             className={styles.commentActionBtn}
-                            onClick={() => handleStartEdit(c.id, c.content || "")}
+                            onClick={() =>
+                              handleStartEdit(c.id, c.content || "")
+                            }
                             disabled={commentLoading}
                             title="Edit comment"
                           >
@@ -283,7 +298,10 @@ export default function CommentsSection() {
                           <DeleteButton
                             onDelete={handleDelete}
                             itemId={c.id}
-                            itemName={c.content?.substring(0, 50) + (c.content && c.content.length > 50 ? "..." : "")}
+                            itemName={
+                              c.content?.substring(0, 50) +
+                              (c.content && c.content.length > 50 ? "..." : "")
+                            }
                             title="Delete comment"
                             description="Are you sure you want to delete this comment?"
                             className={styles.commentActionBtnDanger}

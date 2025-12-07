@@ -135,10 +135,8 @@ export function DocsViewProvider({
         setIsRedeemModalOpen(false);
         setRedeemLoading(false);
 
-        // ✅ GET COMMENTS TỪ BE
         setComments(data.comments || []);
 
-        // ✅ GET USER VOTE
         try {
           const voteData = await getUserVote(id);
           if (!mounted) return;
@@ -235,7 +233,7 @@ export function DocsViewProvider({
       // Nếu đã upvote rồi thì remove vote (voteValue = 0), ngược lại thì upvote (voteValue = 1)
       const newVoteValue = userVote === 1 ? 0 : 1;
       const res = await voteDocument(detail.id, newVoteValue);
-      
+
       // Cập nhật userVote và counts
       setUserVote(res.userVote);
       setDetail((d) =>
@@ -262,7 +260,7 @@ export function DocsViewProvider({
       // Nếu đã downvote rồi thì remove vote (voteValue = 0), ngược lại thì downvote (voteValue = -1)
       const newVoteValue = userVote === -1 ? 0 : -1;
       const res = await voteDocument(detail.id, newVoteValue);
-      
+
       // Cập nhật userVote và counts
       setUserVote(res.userVote);
       setDetail((d) =>
@@ -337,9 +335,25 @@ export function DocsViewProvider({
 
     try {
       setCommentLoading(true);
-      const res = await addComment(detail.id, trimmed);
-      // BE trả { comment }, mình thêm lên đầu list
-      setComments((prev) => [res.comment, ...prev]);
+
+      const newComment = await addComment(detail.id, trimmed);
+
+      setComments((prev) => {
+        // Nếu BE (hoặc service) trả comment lỗi, bỏ qua để không gây warning key
+        if (!newComment || !newComment.id) {
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("addNewComment: newComment missing id", newComment);
+          }
+          return prev;
+        }
+
+        // Nếu comment này đã tồn tại (trùng id) thì không thêm nữa
+        if (prev.some((c) => c.id === newComment.id)) {
+          return prev;
+        }
+
+        return [newComment, ...prev];
+      });
     } catch (e: any) {
       setError(e?.message || "Add comment failed");
     } finally {

@@ -72,6 +72,11 @@ app:
     document:
       presignedExpInMinutes: 20
 
+  ai:
+    moderationService:
+      url: ${AI_MODERATION_SERVICE_URL:http://localhost:8000}
+      apiKey: ${AI_MODERATION_API_KEY}
+
 logging:
   level:
     org.hibernate: INFO

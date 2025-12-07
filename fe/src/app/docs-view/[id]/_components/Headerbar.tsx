@@ -10,6 +10,7 @@ import { useDocsView } from "../DocsViewProvider";
 import styles from "../styles.module.css";
 import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
 import SaveListModal from "@/components/SaveListModal/SaveListModal";
+import { useRouter } from "next/navigation";
 
 export default function HeaderBar() {
   const router = useRouter();

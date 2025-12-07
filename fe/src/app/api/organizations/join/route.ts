@@ -1,5 +1,5 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 async function handleGET(req: Request) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");

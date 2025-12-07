@@ -1,6 +1,6 @@
 import { mockDocumentsDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 import { getAuthHeader } from "@/server/auth";
 
@@ -35,9 +35,9 @@ async function handleGET() {
 
   // Parse response - backend returns ResponseEntity<List<Tag>> (direct array)
   const responseData = await upstream.json();
-  const tags = Array.isArray(responseData) 
-    ? responseData 
-    : (responseData?.data || []);
+  const tags = Array.isArray(responseData)
+    ? responseData
+    : responseData?.data || [];
 
   return jsonResponse(tags, {
     status: upstream.status,

@@ -2,7 +2,7 @@
 import { headers } from "next/headers";
 import { mockDB, type ContactAdminPayload } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { badRequest, proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handlePOST(req: Request) {

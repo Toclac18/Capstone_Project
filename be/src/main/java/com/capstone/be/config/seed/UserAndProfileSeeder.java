@@ -59,7 +59,7 @@ public class UserAndProfileSeeder {
   public void run() {
     if (userRepository.count() > 0) {
       log.warn("Users already exist → skip seeding.");
-      eventPublisher.publishEvent(UserSeededEvent.class);
+      eventPublisher.publishEvent(new UserSeededEvent());
       return;
     }
 

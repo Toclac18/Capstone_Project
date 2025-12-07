@@ -23,6 +23,7 @@ public class DocumentReviewResponse {
   private DocumentInfo document;
   private ReviewerInfo reviewer;
   private String report;
+  private String reportFileUrl;
   private ReviewDecision decision;
   private Instant submittedAt;
   private Instant createdAt;
@@ -39,6 +40,62 @@ public class DocumentReviewResponse {
     private UUID id;
     private String title;
     private String thumbnailUrl;
+    private DocTypeInfo docType;
+    private DomainInfo domain;
+    private SpecializationInfo specialization;
+    private java.util.List<TagInfo> tags;
+  }
+
+  /**
+   * Nested DTO for document type
+   */
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class DocTypeInfo {
+    private UUID id;
+    private int code;
+    private String name;
+  }
+
+  /**
+   * Nested DTO for domain
+   */
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class DomainInfo {
+    private UUID id;
+    private int code;
+    private String name;
+  }
+
+  /**
+   * Nested DTO for specialization
+   */
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class SpecializationInfo {
+    private UUID id;
+    private int code;
+    private String name;
+  }
+
+  /**
+   * Nested DTO for tag
+   */
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class TagInfo {
+    private UUID id;
+    private Long code;
+    private String name;
   }
 
   /**

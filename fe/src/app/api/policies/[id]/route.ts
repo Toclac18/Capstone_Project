@@ -1,17 +1,14 @@
 // app/api/policies/[id]/route.ts
 import { NextRequest } from "next/server";
-import {
-  getPolicyById,
-  getPolicyView,
-} from "@/mock/policies";
+import { getPolicyById, getPolicyView } from "@/mock/policies";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handleGET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<Response> {
   const { id } = await params;
   const url = new URL(req.url);
@@ -22,20 +19,26 @@ async function handleGET(
     if (view) {
       const result = getPolicyView(id, userId || undefined);
       if (!result) {
-        return jsonResponse({ error: "Policy not found" }, {
-          status: 404,
-          mode: "mock",
-        });
+        return jsonResponse(
+          { error: "Policy not found" },
+          {
+            status: 404,
+            mode: "mock",
+          },
+        );
       }
       return jsonResponse({ data: result }, { status: 200, mode: "mock" });
     }
 
     const policy = getPolicyById(id);
     if (!policy) {
-      return jsonResponse({ error: "Policy not found" }, {
-        status: 404,
-        mode: "mock",
-      });
+      return jsonResponse(
+        { error: "Policy not found" },
+        {
+          status: 404,
+          mode: "mock",
+        },
+      );
     }
     return jsonResponse({ data: policy }, { status: 200, mode: "mock" });
   }
@@ -64,7 +67,7 @@ async function handleGET(
   } catch (e: any) {
     return jsonResponse(
       { message: "Policy fetch failed", error: String(e) },
-      { status: 502 }
+      { status: 502 },
     );
   }
 }
@@ -73,4 +76,3 @@ export const GET = (...args: Parameters<typeof handleGET>) =>
   withErrorBoundary(() => handleGET(...args), {
     context: "api/policies/[id]/route.ts/GET",
   });
-

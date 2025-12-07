@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const FE_DOMAIN = process.env.NEXT_PUBLIC_FE_DOMAIN || "http://localhost:3000";
 const BE_DOMAIN =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+const S3_DOMAINS =
+  "https://s3.amazonaws.com https://*.s3.amazonaws.com https://*.s3.ap-southeast-1.amazonaws.com";
 
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
@@ -29,7 +31,7 @@ const securityHeaders = [
       `style-src 'self' 'unsafe-inline';`,
       `img-src 'self' data: blob: https://s3.amazonaws.com https://*.s3.amazonaws.com https://*.s3.ap-southeast-1.amazonaws.com;`,
       `font-src 'self' data:;`,
-      `connect-src 'self' ${BE_DOMAIN} ${FE_DOMAIN} ws: wss:;`,
+      `connect-src 'self' ${BE_DOMAIN} ${FE_DOMAIN} ws: wss: ${S3_DOMAINS};`,
       `frame-ancestors 'none';`,
       `form-action 'self';`,
       `base-uri 'self';`,

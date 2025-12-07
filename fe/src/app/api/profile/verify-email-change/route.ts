@@ -3,7 +3,7 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, badRequest } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,10 @@ async function handlePOST(req: Request) {
 
   if (USE_MOCK) {
     return jsonResponse(
-      { message: "Email changed successfully. Please login again with your new email" },
+      {
+        message:
+          "Email changed successfully. Please login again with your new email",
+      },
       { status: 200, mode: "mock" },
     );
   }
@@ -40,7 +43,11 @@ async function handlePOST(req: Request) {
     data = json.data || json;
   } catch {
     // Backend returns plain text message
-    data = { message: text || "Email changed successfully. Please login again with your new email" };
+    data = {
+      message:
+        text ||
+        "Email changed successfully. Please login again with your new email",
+    };
   }
 
   return jsonResponse(data, { status: upstream.status, mode: "real" });
@@ -50,4 +57,3 @@ export const POST = (...args: Parameters<typeof handlePOST>) =>
   withErrorBoundary(() => handlePOST(...args), {
     context: "api/profile/verify-email-change/route.ts/POST",
   });
-

@@ -87,52 +87,96 @@
 .headerBar {
   background: var(--card);
   border: 1px solid var(--border);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
   border-radius: 14px;
   padding: 0.75rem;
+
+  /* Layout */
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+
+  /* --- CỐ ĐỊNH HEADER (Sticky) --- */
+  position: sticky;
+  top: 1rem; /* Cách mép trên 16px */
+  z-index: 50; /* Đè lên nội dung khác */
+  backdrop-filter: blur(8px); /* Hiệu ứng mờ nền nếu background trong suốt */
 }
 
+/* Phần bên trái: Thống kê view/vote */
 .headerLeft {
   display: flex;
+  align-items: center; /* Căn giữa dọc */
   gap: 1rem;
   color: var(--text-subtle);
   font-size: 0.9rem;
 }
+
+/* Chỉnh stat2 và statButton để icon và số thẳng hàng */
+.stat2,
+.statButton {
+  display: flex; /* Flex để căn icon và số */
+  align-items: center; /* Căn giữa dọc */
+  gap: 0.4rem; /* Khoảng cách icon và số */
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+  cursor: default;
+}
+
+.statButton {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.statButton:hover {
+  opacity: 0.7;
+}
+.statButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Phần giữa: Zoom + Search */
 .headerCenter {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
+
+/* Phần phải: Buttons */
 .headerRight {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.stat {
-  display: inline-flex;
-  gap: 0.35rem;
-  align-items: center;
-}
-
+/* Nút icon (+ / -) */
 .iconBtn {
-  padding: 0.25rem 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem; /* Fix size cho vuông đẹp */
+  height: 2rem;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--card);
+  cursor: pointer;
+  color: var(--text);
+  transition: all 0.2s;
 }
 .iconBtn:hover {
   background: var(--muted-2);
 }
 .iconBtn:active {
-  transform: scale(0.98);
+  transform: scale(0.95);
 }
 
-/* find-in-doc */
+/* Khung tìm kiếm */
 .findWrap {
   display: flex;
   align-items: center;
@@ -140,10 +184,11 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0.25rem 0.5rem;
+  height: 2rem; /* Đồng bộ chiều cao với nút */
   background: var(--muted);
 }
 .findInput {
-  width: 16rem;
+  width: 14rem; /* Giảm nhẹ để đỡ bị tràn trên màn nhỏ */
   border: none;
   outline: none;
   background: transparent;
@@ -159,64 +204,82 @@
   align-items: center;
   gap: 0.5rem;
   color: var(--text-subtle);
-  font-size: 0.8rem;
-  line-height: 1;
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 .findNav {
-  padding: 0.2rem 0.5rem;
-  border-radius: 8px;
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--card);
+  font-size: 0.75rem;
+  cursor: pointer;
 }
 .findNav:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
 }
-.findInput:focus-visible,
-.iconBtn:focus-visible,
-.findNav:focus-visible,
-.btnGhost:focus-visible,
-.btnPrimary:focus-visible,
-.btnDisabled:focus-visible {
-  outline: var(--focus);
+
+/* --- BUTTON STYLES (Report, Save, Download) --- */
+
+/* Base style cho text buttons */
+.btnGhost,
+.btnPrimary,
+.btnDisabled,
+.btnRedeem {
+  display: inline-flex; /* QUAN TRỌNG: Để icon và chữ nằm ngang */
+  align-items: center; /* Căn giữa dọc */
+  justify-content: center;
+  gap: 0.5rem; /* Khoảng cách giữa icon và chữ */
+  height: 2.25rem; /* Chiều cao cố định đồng bộ */
+  padding: 0 1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
 }
 
-.highlightMatch {
-  background: #fde68a;
-  color: inherit;
-  padding: 0 0.05em;
-  border-radius: 2px;
-}
-
-/* header buttons */
+/* Style Ghost (Report, Save) */
 .btnGhost {
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.4rem 0.8rem;
   background: var(--card);
+  color: var(--text);
 }
 .btnGhost:hover {
   background: var(--muted-2);
+  border-color: var(--border-hover, #ccc);
 }
+
+/* Style Primary (Download) */
 .btnPrimary {
-  border-radius: 10px;
-  padding: 0.45rem 0.9rem;
-  background: var(--accent);
+  border: 1px solid transparent;
+  background: var(--accent); /* Màu xanh chủ đạo */
   color: white;
-  font-weight: 600;
 }
 .btnPrimary:hover {
   background: var(--accent-600);
+  opacity: 0.9;
 }
+
+/* Style Redeem */
+.btnRedeem {
+  border: 1px solid transparent;
+  background: #f59e0b; /* Màu cam/vàng cho redeem */
+  color: white;
+}
+.btnRedeem:hover {
+  opacity: 0.9;
+}
+
+/* Style Disabled */
 .btnDisabled {
-  border-radius: 10px;
-  padding: 0.45rem 0.9rem;
-  background: #cbd5e1;
-  color: #fff;
+  border: 1px solid transparent;
+  background: var(--muted);
+  color: var(--text-subtle);
   cursor: not-allowed;
-}
-:global(html.dark) .btnDisabled {
-  background: #334155;
+  opacity: 0.6;
 }
 
 /* ---------- Left sidebar (PDF-like thumbnails) ---------- */
@@ -649,149 +712,59 @@
   padding: 0.2rem 0.55rem;
   border: 1px solid transparent;
   background: transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
 }
+
+.statButton .statIcon {
+  color: var(--text-subtle);
+  transition: color 0.2s ease;
+}
+
 .statButton:hover:not(:disabled) {
   background: var(--accent-50);
   border-color: var(--accent-50);
+  color: var(--accent-600);
 }
+
+.statButton:hover:not(:disabled) .statIcon {
+  color: var(--accent-600);
+}
+
 .statButton:disabled {
   opacity: 0.6;
   cursor: wait;
 }
 
+/* Active state - khi user đã vote */
+.statButton.statButtonActive {
+  background: var(--accent-50) !important;
+  border: 1.5px solid var(--accent) !important;
+  color: var(--accent-600) !important;
+  font-weight: 600 !important;
+}
+
+.statButton.statButtonActive .statIcon {
+  color: var(--accent-600) !important;
+  stroke-width: 3 !important;
+  fill: var(--accent-600) !important;
+}
+
+.statButton.statButtonActive:hover:not(:disabled) {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.statButton.statButtonActive:hover:not(:disabled) .statIcon {
+  color: #fff !important;
+  fill: #fff !important;
+}
+
 /* -------- Comments -------- */
-
-.commentsSection {
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
-}
-
-.commentsHeader {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 0.5rem;
-}
-
-.commentsTitle {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.commentsCount {
-  font-size: 0.75rem;
-  padding: 0.1rem 0.45rem;
-  border-radius: 999px;
-  background: var(--muted);
-  color: var(--text-subtle);
-}
-
-.commentForm {
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--muted);
-  padding: 0.5rem 0.6rem 0.4rem;
-  margin-bottom: 0.7rem;
-}
-
-.commentInput {
-  width: 100%;
-  border: none;
-  resize: vertical;
-  background: transparent;
-  color: var(--text);
-  font-size: 0.9rem;
-  outline: none;
-}
-
-.commentInput::placeholder {
-  color: var(--text-subtle);
-  opacity: 0.8;
-}
-
-.commentFormFooter {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 0.25rem;
-}
-
-.commentSubmit {
-  border-radius: 999px;
-  border: none;
-  padding: 0.3rem 0.9rem;
-  font-size: 0.86rem;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.commentSubmit:hover:not(:disabled) {
-  background: var(--accent-600);
-}
-
-.commentSubmit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.commentList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.commentItem {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.commentAvatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  background: var(--accent-50);
-  color: var(--accent-600);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.commentBody {
-  flex: 1;
-}
-
-.commentMeta {
-  display: flex;
-  gap: 0.4rem;
-  align-items: baseline;
-  margin-bottom: 0.15rem;
-}
-
-.commentAuthor {
-  font-size: 0.86rem;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.commentTime {
-  font-size: 0.75rem;
-  color: var(--text-subtle);
-}
-
-.commentContent {
-  font-size: 0.88rem;
-  color: var(--text);
-}
-
-.commentEmpty {
-  font-size: 0.85rem;
-  color: var(--text-subtle);
-}
 
 /* ==== PDF iframe viewer (no react-pdf) ==== */
 
@@ -844,5 +817,617 @@
 }
 
 .btnRedeem {
-  @apply mt-2 rounded-full bg-gradient-to-b from-amber-400 to-amber-500 px-6 py-2 text-sm font-semibold text-neutral-900 shadow-lg hover:brightness-110 active:scale-95;
+  @apply rounded-full bg-gradient-to-b from-amber-400 to-amber-500 px-6 py-2 text-sm font-semibold text-neutral-900 shadow-lg hover:brightness-110 active:scale-95;
+}
+
+/* =============================
+   COMMENTS SECTION – MODERN & CLEAN
+   ============================= */
+
+/* Khối comments tổng */
+.commentsSection {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 2px solid var(--border);
+  background: linear-gradient(to bottom, transparent 0%, var(--muted) 2%, transparent 100%);
+  padding-bottom: 1rem;
+}
+
+/* Header "Comments 20" */
+.commentsHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.commentsTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.commentsCount {
+  font-size: 0.8rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--accent-50);
+  color: var(--accent-600);
+  font-weight: 600;
+}
+
+/* Form add mới */
+.commentForm {
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.25s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.commentForm:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-50), 0 4px 12px rgba(37, 99, 235, 0.1);
+  transform: translateY(-1px);
+}
+
+.commentInput {
+  width: 100%;
+  border: none;
+  resize: vertical;
+  min-height: 80px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+  line-height: 1.6;
+  font-family: inherit;
+}
+
+.commentInput::placeholder {
+  color: var(--text-subtle);
+  opacity: 0.7;
+}
+
+.commentFormFooter {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 0.75rem;
+  gap: 0.75rem;
+}
+
+/* Nút primary: Post / Save */
+.commentSubmit {
+  border-radius: 10px;
+  border: none;
+  padding: 0.55rem 1.4rem;
+  font-size: 0.875rem;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-600) 100%);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.commentSubmit::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.commentSubmit:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.commentSubmit:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--accent-600) 0%, var(--accent) 100%);
+  box-shadow: 0 5px 15px rgba(37, 99, 235, 0.35);
+  transform: translateY(-2px);
+}
+
+.commentSubmit:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+
+.commentSubmit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Nút Cancel (trong mode edit) */
+.commentCancelBtn {
+  border: none;
+  background: none;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-subtle);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.commentCancelBtn:hover {
+  background: var(--muted);
+  color: var(--text);
+}
+
+/* Danh sách comment */
+.commentList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.commentItem {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.commentItem::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, var(--accent), var(--accent-600));
+  border-radius: 14px 0 0 14px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.commentItem:hover {
+  border-color: var(--accent-50);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+  transform: translateY(-1px);
+}
+
+.commentItem:hover::before {
+  opacity: 1;
+}
+
+.commentAvatar {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-600) 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s ease;
+}
+
+.commentItem:hover .commentAvatar {
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+  transform: scale(1.05);
+}
+
+/* Thân comment */
+.commentBody {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Dòng meta: tên + thời gian + action */
+.commentMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.commentAuthor {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.commentTime {
+  font-size: 0.8rem;
+  color: var(--text-subtle);
+}
+
+/* Nhóm nút Edit / Delete */
+.commentActions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* EDIT / DELETE buttons với icons */
+.commentActionBtn,
+.commentActionBtnDanger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.commentActionBtn svg,
+.commentActionBtnDanger svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.5;
+}
+
+/* Edit – xanh với icon */
+.commentActionBtn {
+  color: var(--accent);
+  background: var(--accent-50);
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+.commentActionBtn:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.commentActionBtn:active {
+  transform: translateY(0);
+}
+
+.commentActionBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Delete – đỏ với icon */
+.commentActionBtnDanger {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.commentActionBtnDanger:hover {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.commentActionBtnDanger:active {
+  transform: translateY(0);
+}
+
+.commentActionBtnDanger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Delete Modal - Styled like delete-confirmation.tsx */
+.deleteModalOverlay {
+  position: fixed;
+  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+.deleteModal {
+  position: relative;
+  z-index: 10000;
+  width: 100%;
+  max-width: 28rem;
+  margin: 0 1rem;
+}
+
+.deleteModal > div {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+:global(html.dark) .deleteModal > div {
+  background: var(--card);
+  border-color: var(--border);
+}
+
+/* Header */
+.deleteModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.deleteModalHeaderContent {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.deleteModalIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 9999px;
+}
+
+:global(html.dark) .deleteModalIconWrapper {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.deleteModalIcon {
+  color: var(--danger);
+  stroke-width: 2.5;
+}
+
+.deleteModalTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.deleteModalItemName {
+  font-size: 0.875rem;
+  color: var(--text-subtle);
+  margin-top: 0.125rem;
+  line-height: 1.2;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deleteModalCloseBtn {
+  color: var(--text-subtle);
+  background: transparent;
+  border: none;
+  padding: 0.25rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.deleteModalCloseBtn:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--muted);
+}
+
+.deleteModalCloseBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Content */
+.deleteModalContent {
+  padding: 1.5rem;
+}
+
+.deleteModalDescription {
+  font-size: 0.9375rem;
+  color: var(--text-subtle);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+/* Warning Box */
+.deleteModalWarningBox {
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+:global(html.dark) .deleteModalWarningBox {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.deleteModalWarningContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.deleteModalWarningIcon {
+  color: var(--danger);
+  margin-top: 0.125rem;
+  flex-shrink: 0;
+  stroke-width: 2.5;
+}
+
+.deleteModalWarningTitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(185, 28, 28, 1);
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+}
+
+:global(html.dark) .deleteModalWarningTitle {
+  color: rgba(248, 113, 113, 1);
+}
+
+.deleteModalWarningText {
+  font-size: 0.875rem;
+  color: rgba(220, 38, 38, 1);
+  line-height: 1.4;
+}
+
+:global(html.dark) .deleteModalWarningText {
+  color: rgba(248, 113, 113, 0.8);
+}
+
+/* Footer */
+.deleteModalFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-top: 1px solid var(--border);
+  background: var(--muted);
+}
+
+:global(html.dark) .deleteModalFooter {
+  background: rgba(31, 41, 55, 0.5);
+}
+
+.deleteModalCancel {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.deleteModalCancel:hover:not(:disabled) {
+  background: var(--muted-2);
+}
+
+:global(html.dark) .deleteModalCancel {
+  background: rgba(55, 65, 81, 1);
+  border-color: rgba(75, 85, 99, 1);
+}
+
+:global(html.dark) .deleteModalCancel:hover:not(:disabled) {
+  background: rgba(75, 85, 99, 1);
+}
+
+.deleteModalCancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.deleteModalConfirm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #fff;
+  background: var(--danger);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.deleteModalConfirm:hover:not(:disabled) {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.deleteModalConfirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.deleteModalSpinner {
+  width: 1rem;
+  height: 1rem;
+  animate: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Text comment */
+.commentContent {
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.6;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+/* Empty state */
+.commentEmpty {
+  font-size: 0.9rem;
+  color: var(--text-subtle);
+  text-align: center;
+  padding: 2rem 1rem;
+  font-style: italic;
+}
+
+/* Form edit inline (trong mỗi comment) */
+.commentEditForm {
+  margin-top: 0.5rem;
+}
+
+.commentEditForm .commentInput {
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  background: var(--muted);
+  border: 1.5px solid var(--border);
+  min-height: 60px;
+  font-size: 0.9rem;
+}
+
+.commentEditForm .commentInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-50);
 }

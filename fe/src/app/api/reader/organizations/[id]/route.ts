@@ -1,7 +1,7 @@
 import { mockOrganizationsDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handleGET(_: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -45,10 +45,10 @@ async function handleGET(_: Request, ctx: { params: Promise<{ id: string }> }) {
   const text = await upstream.text();
   try {
     const backendResponse = JSON.parse(text);
-    
+
     // Extract data from wrapper
     const orgData = backendResponse.data || backendResponse;
-    
+
     // Transform to FE format - PublicOrganizationResponse to OrganizationDetail
     // type is a string like "UNIVERSITY", not an object
     const transformed = {
@@ -63,7 +63,7 @@ async function handleGET(_: Request, ctx: { params: Promise<{ id: string }> }) {
       memberCount: orgData.memberCount ?? 0,
       documentCount: orgData.documentCount ?? 0,
     };
-    
+
     return jsonResponse(transformed, {
       status: 200,
       headers: {

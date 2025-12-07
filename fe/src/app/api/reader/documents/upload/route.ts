@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handlePOST(request: Request) {

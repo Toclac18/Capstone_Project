@@ -2,7 +2,9 @@ package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.Document;
 import com.capstone.be.domain.entity.DocumentReview;
+import com.capstone.be.domain.entity.DocumentTagLink;
 import com.capstone.be.domain.entity.ReviewRequest;
+import com.capstone.be.domain.entity.Tag;
 import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.ReviewDecision;
@@ -19,8 +21,10 @@ import com.capstone.be.mapper.DocumentReviewMapper;
 import com.capstone.be.mapper.ReviewRequestMapper;
 import com.capstone.be.repository.DocumentRepository;
 import com.capstone.be.repository.DocumentReviewRepository;
+import com.capstone.be.repository.DocumentTagLinkRepository;
 import com.capstone.be.repository.ReviewRequestRepository;
 import com.capstone.be.repository.UserRepository;
+import com.capstone.be.service.FileStorageService;
 import com.capstone.be.service.ReviewRequestService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +37,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -46,7 +52,8 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
   private final DocumentReviewRepository documentReviewRepository;
   private final ReviewRequestMapper reviewRequestMapper;
   private final DocumentReviewMapper documentReviewMapper;
-  private final com.capstone.be.service.FileStorageService fileStorageService;
+  private final FileStorageService fileStorageService;
+  private final DocumentTagLinkRepository documentTagLinkRepository;
 
   private static final int RESPONSE_DEADLINE_DAYS = 1;
   private static final int REVIEW_DEADLINE_DAYS = 3;
@@ -350,7 +357,13 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     log.info("Successfully submitted review for document {}", document.getId());
 
-    return documentReviewMapper.toResponse(documentReview);
+    // Load tags for the document
+    List<Tag> tags = documentTagLinkRepository.findByDocument_Id(document.getId())
+        .stream()
+        .map(DocumentTagLink::getTag)
+        .collect(Collectors.toList());
+
+    return documentReviewMapper.toResponse(documentReview, tags);
   }
 
   @Override
@@ -368,7 +381,14 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     Page<DocumentReview> reviews = documentReviewRepository.findByReviewer_Id(reviewerId, pageable);
 
-    return reviews.map(documentReviewMapper::toResponse);
+    return reviews.map(review -> {
+      // Load tags for each document
+      List<Tag> tags = documentTagLinkRepository.findByDocument_Id(review.getDocument().getId())
+          .stream()
+          .map(DocumentTagLink::getTag)
+          .collect(Collectors.toList());
+      return documentReviewMapper.toResponse(review, tags);
+    });
   }
 
   /**

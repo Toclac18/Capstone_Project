@@ -1,5 +1,6 @@
 package com.capstone.be.config.seed;
 
+import com.capstone.be.config.seed.event.DocumentSeededEvent;
 import com.capstone.be.config.seed.event.TagSeededEvent;
 import com.capstone.be.domain.entity.*;
 import com.capstone.be.domain.entity.DocumentSummarization;
@@ -15,6 +16,7 @@ import com.capstone.be.repository.TagRepository;
 import com.capstone.be.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -43,6 +45,8 @@ public class DocumentSeeder {
   // Inject thêm Repository này
   private final DocumentReadHistoryRepository documentReadHistoryRepository;
 
+  private final ApplicationEventPublisher eventPublisher;
+
 
   @Transactional
   @EventListener(TagSeededEvent.class)
@@ -51,6 +55,7 @@ public class DocumentSeeder {
 
     if (documentRepository.count() > 0) {
       log.warn("Document already exist → skip seeding.");
+      eventPublisher.publishEvent(new DocumentSeededEvent());
       return;
     }
 
@@ -61,6 +66,8 @@ public class DocumentSeeder {
 
     // 2. Sau khi tạo xong Document thì tạo luôn History
     seedReadHistory();
+
+    eventPublisher.publishEvent(new DocumentSeededEvent());
   }
 
   private void createDocument(int seed) {

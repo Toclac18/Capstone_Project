@@ -29,7 +29,7 @@ public interface DocumentReviewMapper {
    * @return DocumentReviewResponse DTO
    */
   @Mapping(source = "documentReview.reviewRequest.id", target = "reviewRequestId")
-  @Mapping(source = "documentReview", target = "document")
+  @Mapping(target = "document", expression = "java(toDocumentInfo(documentReview.getDocument(), tags))")
   @Mapping(source = "documentReview.reviewer.id", target = "reviewer.id")
   @Mapping(source = "documentReview.reviewer.fullName", target = "reviewer.username")
   @Mapping(source = "documentReview.reviewer.email", target = "reviewer.email")

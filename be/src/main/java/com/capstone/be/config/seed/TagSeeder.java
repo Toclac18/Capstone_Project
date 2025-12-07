@@ -35,6 +35,7 @@ public class TagSeeder {
 
     if (tagRepository.count() > 0) {
       log.warn("Tags already exist → skip seeding.");
+      eventPublisher.publishEvent(new TagSeededEvent());
       return;
     }
 

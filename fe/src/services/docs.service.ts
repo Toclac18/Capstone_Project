@@ -234,31 +234,54 @@ function extractBackendCommentFromPostPayload(
  * - Trả về:
  *   { detail, related, stats, comments, pageInfo }
  */
+
+export async function fetchCommentsPage(
+  documentId: string,
+  page: number = 0,
+  size: number = 20,
+): Promise<{ comments: Comment[]; pageInfo: BackendCommentsPageInfo }> {
+  const encodedId = encodeURIComponent(documentId);
+
+  const res = await apiClient.get(`/docs-view/${encodedId}/comments`, {
+    params: { page, size },
+  });
+
+  const payload = res.data as BackendCommentsResponse;
+
+  if (!payload.success) {
+    throw new Error("Failed to fetch document comments");
+  }
+
+  const rawComments = payload.data ?? [];
+  const comments: Comment[] = rawComments.map(mapBackendComment);
+
+  return {
+    comments,
+    pageInfo: payload.pageInfo,
+  };
+}
+
 export async function fetchDocDetail(id: string) {
   const encodedId = encodeURIComponent(id);
 
-  const [detailRes, commentsRes, urlRes] = await Promise.all([
+  const [detailRes, urlRes, commentsResult] = await Promise.all([
     apiClient.get(`/docs-view/${encodedId}`),
-    apiClient.get(`/docs-view/${encodedId}/comments`),
     apiClient.get(`/docs-view/${encodedId}/presigned-url`),
+    // lấy page 0, size 20 cho lần load đầu
+    fetchCommentsPage(id, 0, 20),
   ]);
 
   const detailPayload = detailRes.data as BackendDocumentDetailResponse;
-  const commentsPayload = commentsRes.data as BackendCommentsResponse;
   const urlPayload = urlRes.data as BackendPresignedUrlResponse;
 
   if (!detailPayload.success) {
     throw new Error("Failed to fetch document detail");
-  }
-  if (!commentsPayload.success) {
-    throw new Error("Failed to fetch document comments");
   }
   if (!urlPayload.success) {
     throw new Error("Failed to fetch presigned url");
   }
 
   const doc = detailPayload.data;
-  const rawComments = commentsPayload.data;
   const presigned = urlPayload.data;
 
   // Map BE -> DocDetail FE
@@ -272,7 +295,6 @@ export async function fetchDocDetail(id: string) {
     isRedeemed: doc.userInfo?.hasRedeemed ?? false,
     points: doc.price ?? null,
     viewCount: doc.viewCount ?? 0,
-    // downloadCount: doc.downloadCount ?? 0,
     upvote_counts: doc.upvoteCount ?? 0,
     downvote_counts: doc.downvoteCount ?? 0,
     vote_scores: doc.voteScore ?? 0,
@@ -282,13 +304,9 @@ export async function fetchDocDetail(id: string) {
     fileUrl: presigned.presignedUrl,
   };
 
-  // Map BE comments -> FE Comment
-  const comments: Comment[] = rawComments.map(mapBackendComment);
-
   // Stats cũ mà FE đang dùng
   const stats = {
     views: detail.viewCount,
-    // downloads: detail.downloadCount,
     upvotes: detail.upvote_counts,
     downvotes: detail.downvote_counts,
   };
@@ -300,8 +318,8 @@ export async function fetchDocDetail(id: string) {
     detail,
     related,
     stats,
-    comments,
-    pageInfo: commentsPayload.pageInfo,
+    comments: commentsResult.comments,
+    pageInfo: commentsResult.pageInfo,
   };
 }
 

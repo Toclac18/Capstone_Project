@@ -4,6 +4,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
   fetchDocDetail,
+  fetchCommentsPage,
   redeemDoc,
   getUserVote,
   voteDocument,
@@ -57,6 +58,13 @@ type DocsContextValue = {
   editComment: (commentId: string, content: string) => Promise<void>;
   deleteComment: (commentId: string) => Promise<void>;
 
+  // comment pagination
+  commentPage: number; // 1-based
+  commentPageSize: number;
+  commentTotalPages: number;
+  commentTotalElements: number;
+  loadCommentsPage: (page: number) => Promise<void>;
+
   // text search
   onPageText: (pageNumber: number, text: string) => void;
 };
@@ -100,10 +108,16 @@ export function DocsViewProvider({
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentLoading, setCommentLoading] = useState(false);
 
+  // comment pagination state
+  const [commentPage, setCommentPage] = useState(1); // 1-based
+  const [commentPageSize, setCommentPageSize] = useState(20);
+  const [commentTotalPages, setCommentTotalPages] = useState(1);
+  const [commentTotalElements, setCommentTotalElements] = useState(0);
+
   const { showToast } = useToast();
 
   // -----------------------------
-  // LOAD DOC DETAIL + COMMENTS
+  // LOAD DOC DETAIL + FIRST COMMENTS PAGE
   // -----------------------------
   useEffect(() => {
     let mounted = true;
@@ -135,8 +149,24 @@ export function DocsViewProvider({
         setIsRedeemModalOpen(false);
         setRedeemLoading(false);
 
+        // comments + pageInfo
         setComments(data.comments || []);
+        if (data.pageInfo) {
+          setCommentPage((data.pageInfo.page ?? 0) + 1); // BE 0-based -> FE 1-based
+          setCommentPageSize(data.pageInfo.size ?? 20);
+          setCommentTotalPages(data.pageInfo.totalPages ?? 1);
+          setCommentTotalElements(
+            data.pageInfo.totalElements ??
+              (data.comments ? data.comments.length : 0),
+          );
+        } else {
+          setCommentPage(1);
+          setCommentPageSize(20);
+          setCommentTotalPages(1);
+          setCommentTotalElements(data.comments ? data.comments.length : 0);
+        }
 
+        // user vote
         try {
           const voteData = await getUserVote(id);
           if (!mounted) return;
@@ -159,6 +189,46 @@ export function DocsViewProvider({
       mounted = false;
     };
   }, [id]);
+
+  // -----------------------------
+  // COMMENT PAGINATION (NEXT/PREV, CLICK PAGE)
+  // -----------------------------
+  const loadCommentsPage = async (pageToLoad: number) => {
+    if (pageToLoad < 1) return;
+    try {
+      setCommentLoading(true);
+      setError(null);
+
+      const { comments: newComments, pageInfo } = await fetchCommentsPage(
+        id,
+        pageToLoad - 1, // FE 1-based -> BE 0-based
+        commentPageSize,
+      );
+
+      console.log("[loadCommentsPage] pageToLoad:", pageToLoad, { pageInfo });
+
+      setComments(newComments || []);
+
+      if (pageInfo) {
+        setCommentPage(pageToLoad);
+
+        setCommentPageSize(pageInfo.size ?? commentPageSize);
+        setCommentTotalPages(pageInfo.totalPages ?? 1);
+        setCommentTotalElements(
+          pageInfo.totalElements ?? (newComments ? newComments.length : 0),
+        );
+      } else {
+        setCommentPage(pageToLoad);
+        setCommentTotalPages(1);
+        setCommentTotalElements(newComments ? newComments.length : 0);
+      }
+    } catch (e: any) {
+      console.error("[loadCommentsPage] error:", e);
+      setError(e?.message || "Load comments failed");
+    } finally {
+      setCommentLoading(false);
+    }
+  };
 
   // -----------------------------
   // ZOOM
@@ -326,7 +396,7 @@ export function DocsViewProvider({
   };
 
   // -----------------------------
-  // COMMENTS: GET (đã ở useEffect), ADD, EDIT, DELETE
+  // COMMENTS: ADD, EDIT, DELETE
   // -----------------------------
   const addNewComment = async (content: string) => {
     if (!detail) return;
@@ -353,6 +423,15 @@ export function DocsViewProvider({
         }
 
         return [newComment, ...prev];
+      });
+
+      // cập nhật tổng số comment + totalPages (ước lượng)
+      setCommentTotalElements((prev) => {
+        const next = prev + 1;
+        setCommentTotalPages((prevPages) =>
+          Math.max(prevPages, Math.ceil(next / commentPageSize)),
+        );
+        return next;
       });
     } catch (e: any) {
       setError(e?.message || "Add comment failed");
@@ -387,6 +466,15 @@ export function DocsViewProvider({
 
       // Optimistic remove
       setComments((prev) => prev.filter((c) => c.id !== commentId));
+
+      // cập nhật tổng số comment + totalPages (ước lượng)
+      setCommentTotalElements((prev) => {
+        const next = Math.max(0, prev - 1);
+        setCommentTotalPages(() =>
+          Math.max(1, Math.ceil(next / commentPageSize)),
+        );
+        return next;
+      });
     } catch (e: any) {
       setError(e?.message || "Delete comment failed");
     } finally {
@@ -431,6 +519,12 @@ export function DocsViewProvider({
     addNewComment,
     editComment,
     deleteComment,
+
+    commentPage,
+    commentPageSize,
+    commentTotalPages,
+    commentTotalElements,
+    loadCommentsPage,
 
     onPageText,
   };

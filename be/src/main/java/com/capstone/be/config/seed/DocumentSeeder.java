@@ -180,7 +180,7 @@ public class DocumentSeeder {
 
     // 3. Cấu hình số lượng comment cho từng Document ID
     Map<String, Integer> docsConfig = new LinkedHashMap<>();
-    docsConfig.put("1d2eb26d-a92d-3183-ae10-2448113ec466", 20);
+    docsConfig.put("1d2eb26d-a92d-3183-ae10-2448113ec466", 40);
     docsConfig.put("cabcf898-23b3-37a8-a036-b70c2e50c0c6", 5);
     docsConfig.put("0b4756cb-b920-38f6-b05e-6ddcd50b289b", 0);
 

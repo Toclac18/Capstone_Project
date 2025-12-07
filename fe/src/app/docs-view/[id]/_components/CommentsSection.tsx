@@ -8,6 +8,7 @@ import { useReader } from "@/hooks/useReader";
 import styles from "../styles.module.css";
 import { Pencil, Trash2, X, AlertTriangle } from "lucide-react";
 import { safeFormatDistance } from "@/utils/date";
+import { Pagination } from "@/components/ui/pagination"; // path component pagination.tsx
 
 // Custom Delete button wrapper để hiển thị icon + text
 function DeleteButton({
@@ -181,6 +182,12 @@ export default function CommentsSection() {
     addNewComment,
     editComment,
     deleteComment,
+    // comment pagination từ context
+    commentPage,
+    commentPageSize,
+    commentTotalPages,
+    commentTotalElements,
+    loadCommentsPage,
   } = useDocsView();
   const { readerId } = useReader();
 
@@ -227,7 +234,8 @@ export default function CommentsSection() {
     <section className={styles.commentsSection}>
       <div className={styles.commentsHeader}>
         <h2 className={styles.commentsTitle}>Comments</h2>
-        <span className={styles.commentsCount}>{comments.length}</span>
+        {/* hiển thị tổng số comment từ pageInfo */}
+        <span className={styles.commentsCount}>{commentTotalElements}</span>
       </div>
 
       {/* Form add mới */}
@@ -355,6 +363,18 @@ export default function CommentsSection() {
           </li>
         )}
       </ul>
+
+      {/* Pagination cho comment */}
+      <div style={{ marginTop: "1rem" }}>
+        <Pagination
+          currentPage={commentPage}
+          totalPages={commentTotalPages}
+          totalItems={commentTotalElements}
+          itemsPerPage={commentPageSize}
+          onPageChange={loadCommentsPage}
+          loading={commentLoading}
+        />
+      </div>
     </section>
   );
 }

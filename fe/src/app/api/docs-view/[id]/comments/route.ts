@@ -6,14 +6,28 @@ import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { badRequest, proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handleGET(
-  _req: Request,
+  req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id } = await ctx.params;
   if (!id) return badRequest("Missing id");
 
+  // Lấy query từ URL gốc (page, size, ...)
+  const url = new URL(req.url);
+  const searchParams = url.searchParams;
+
+  // Nếu không truyền từ FE thì set default giống BE
+  const page = searchParams.get("page") ?? "0";
+  const size = searchParams.get("size") ?? "20";
+
+  // Đảm bảo luôn có page/size trong searchParams
+  searchParams.set("page", page);
+  searchParams.set("size", size);
+
+  const queryString = searchParams.toString();
+
   // -----------------------------
-  // MOCK MODE: convert comments FE -> shape BE
+  // MOCK MODE
   // -----------------------------
   if (USE_MOCK) {
     const data = mockGetDocDetail(id);
@@ -21,7 +35,7 @@ async function handleGET(
 
     const now = new Date().toISOString();
 
-    const beComments = (data.comments || []).map((c: any) => ({
+    const allComments = (data.comments || []).map((c: any) => ({
       id: c.id,
       documentId: c.docId,
       user: {
@@ -33,18 +47,27 @@ async function handleGET(
       updatedAt: c.createdAt,
     }));
 
+    const pageNum = Number(page) || 0;
+    const pageSize = Number(size) || 20;
+    const start = pageNum * pageSize;
+    const end = start + pageSize;
+    const pagedComments = allComments.slice(start, end);
+
+    const totalElements = allComments.length;
+    const totalPages = Math.max(1, Math.ceil(totalElements / pageSize));
+
     const payload = {
       success: true,
-      data: beComments,
+      data: pagedComments,
       pageInfo: {
-        page: 0,
-        size: beComments.length,
-        totalElements: beComments.length,
-        totalPages: 1,
-        first: true,
-        last: true,
-        hasNext: false,
-        hasPrevious: false,
+        page: pageNum,
+        size: pageSize,
+        totalElements,
+        totalPages,
+        first: pageNum === 0,
+        last: pageNum >= totalPages - 1,
+        hasNext: pageNum < totalPages - 1,
+        hasPrevious: pageNum > 0,
       },
       timestamp: now,
     };
@@ -59,11 +82,15 @@ async function handleGET(
   }
 
   // -----------------------------
-  // REAL MODE: proxy sang BE /comments/document/:docId
+  // REAL MODE: proxy sang BE /comments/document/:docId?page=...&size=...
   // -----------------------------
   const fh = await buildForwardHeaders();
 
-  const upstream = await fetch(`${BE_BASE}/api/comments/document/${id}`, {
+  const upstreamUrl = `${BE_BASE}/api/comments/document/${id}${
+    queryString ? `?${queryString}` : ""
+  }`;
+
+  const upstream = await fetch(upstreamUrl, {
     method: "GET",
     headers: fh,
     cache: "no-store",
@@ -130,7 +157,7 @@ async function handlePOST(
   // Backend trả CommentResponse trực tiếp (không wrap)
   // -----------------------------
   const fh = await buildForwardHeaders();
-  
+
   // Parse body để thêm documentId
   let body: { content?: string };
   try {

@@ -41,10 +41,16 @@ public class DocumentReview extends BaseEntity {
   private User reviewer;
 
   /**
-   * Review report content written by the reviewer
+   * Review comment written by the reviewer
    */
   @Column(columnDefinition = "TEXT", nullable = false)
-  private String report;
+  private String comment;
+
+  /**
+   * File path/key of the review report document (docx) stored in S3
+   */
+  @Column(nullable = false, length = 500)
+  private String reportFilePath;
 
   /**
    * Decision made by the reviewer (APPROVED or REJECTED)

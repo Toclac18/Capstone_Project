@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Eye, Download } from "lucide-react";
+import { ArrowLeft, Eye, FileText, X } from "lucide-react";
 import type { DocumentDetail } from "../../api";
 import { getDocument, deleteDocument } from "../../api";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
@@ -19,6 +19,7 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
   const [document, setDocument] = useState<DocumentDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
 
   const fetchDocument = useCallback(async () => {
     setLoading(true);
@@ -48,14 +49,14 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
 
     try {
       await deleteDocument(document.id);
-      showToast(toast.success("Document Deleted", "Document deleted successfully"));
+      showToast(toast.success("Document Deactivated", "Document has been deactivated successfully"));
       setTimeout(() => {
         router.push("/business-admin/document");
       }, 1500);
     } catch (e: unknown) {
       const errorMessage =
-        e instanceof Error ? e.message : "Failed to delete document";
-      showToast(toast.error("Delete Failed", errorMessage));
+        e instanceof Error ? e.message : "Failed to deactivate document";
+      showToast(toast.error("Deactivation Failed", errorMessage));
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -63,13 +64,8 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
   };
 
   const handleViewDocument = () => {
-    // TODO: Implement view document functionality
-    showToast(toast.info("Coming Soon", "View document feature will be available soon"));
-  };
-
-  const handleDownload = () => {
-    // TODO: Implement download functionality
-    showToast(toast.info("Coming Soon", "Download feature will be available soon"));
+    // Navigate to reader view document page
+    router.push(`/docs-view/${documentId}`);
   };
 
   if (loading && !document) {
@@ -170,10 +166,20 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
               </div>
 
               <div className={styles["field-item"]}>
-                <label className={styles["label"]}>File Name</label>
-                <p className={styles["field-value"]}>
-                  {document.file_name || "N/A"}
-                </p>
+                <label className={styles["label"]}>Status</label>
+                <div className={styles["status-container"]}>
+                  <span
+                    className={`${styles["status-badge"]} ${
+                      document.status === "ACTIVE"
+                        ? styles["status-active"]
+                        : document.status === "REJECTED" || document.status === "DELETED"
+                        ? styles["status-inactive"]
+                        : styles["status-pending"]
+                    }`}
+                  >
+                    {document.status || "N/A"}
+                  </span>
+                </div>
               </div>
 
               <div className={styles["field-item"]}>
@@ -184,16 +190,16 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
               </div>
 
               <div className={styles["field-item"]}>
-                <label className={styles["label"]}>Public</label>
+                <label className={styles["label"]}>Visibility</label>
                 <div className={styles["status-container"]}>
                   <span
                     className={`${styles["status-badge"]} ${
-                      document.isPublic
+                      document.visibility === "PUBLIC"
                         ? styles["status-active"]
                         : styles["status-inactive"]
                     }`}
                   >
-                    {document.isPublic ? "Public" : "Private"}
+                    {document.visibility === "PUBLIC" ? "Public" : "Private"}
                   </span>
                 </div>
               </div>
@@ -311,13 +317,37 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
               <div className={styles["field-item"]}>
                 <label className={styles["label"]}>Type Name</label>
                 <p className={styles["field-value"]}>
-                  {document.type?.name || "N/A"}
+                  {document.docType?.name || document.type?.name || "N/A"}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Specializations */}
+          {/* Specialization */}
+          {document.specialization && (
+            <div className={styles["card"]}>
+              <h2 className={styles["section-header"]}>
+                Specialization
+              </h2>
+              <div className={styles["field-grid"]}>
+                <div className={styles["field-item"]}>
+                  <label className={styles["label"]}>Name</label>
+                  <p className={styles["field-value"]}>
+                    {document.specialization.name || "N/A"}
+                  </p>
+                </div>
+                {document.specialization.domain && (
+                  <div className={styles["field-item"]}>
+                    <label className={styles["label"]}>Domain</label>
+                    <p className={styles["field-value"]}>
+                      {document.specialization.domain.name || "N/A"}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {/* Specializations (backward compatibility - if array exists) */}
           {document.specializations && document.specializations.length > 0 && (
             <div className={styles["card"]}>
               <h2 className={styles["section-header"]}>
@@ -410,30 +440,29 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
             </div>
           </div>
 
-          {/* Reviewer Information (only for premium documents) */}
-          {document.isPremium && document.reviewer && (
+          {/* Review Requests (only for premium documents) */}
+          {document.isPremium && document.adminInfo?.reviewRequests && document.adminInfo.reviewRequests.length > 0 && (
             <div className={styles["card"]}>
               <h2 className={styles["section-header"]}>
-                Reviewer Information
+                Review Requests
               </h2>
               <div className={styles["sidebar-section"]}>
-                <div className={styles["field-item"]}>
-                  <label className={styles["label"]}>Full Name</label>
-                  <p className={styles["field-value"]}>
-                    {document.reviewer.fullName || "N/A"}
-                  </p>
-                </div>
-                <div className={styles["field-item"]}>
-                  <label className={styles["label"]}>Username</label>
-                  <p className={styles["field-value"]}>
-                    {document.reviewer.username || "N/A"}
-                  </p>
-                </div>
-                <div className={styles["field-item"]}>
-                  <label className={styles["label"]}>Email</label>
-                  <p className={styles["field-value"]}>
-                    {document.reviewer.email || "N/A"}
-                  </p>
+                <div className="space-y-2">
+                  {document.adminInfo.reviewRequests.slice(0, 3).map((req: any) => (
+                    <div key={req.id} className="p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                      <p className="text-sm font-semibold">
+                        {req.reviewer?.fullName || "Unknown Reviewer"}
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        Status: {req.status || "N/A"}
+                      </p>
+                    </div>
+                  ))}
+                  {document.adminInfo.reviewRequests.length > 3 && (
+                    <p className="text-xs text-gray-500">
+                      +{document.adminInfo.reviewRequests.length - 3} more
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -454,20 +483,22 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
                   <Eye className="w-4 h-4" />
                   <span>View Document</span>
                 </button>
-                <button
-                  onClick={handleDownload}
-                  className={`${styles["action-button"]} ${styles["action-button-secondary"]}`}
-                  disabled={loading}
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Download</span>
-                </button>
+                {document.summarizations && (
+                  <button
+                    onClick={() => setShowSummaryModal(true)}
+                    className={`${styles["action-button"]} ${styles["action-button-secondary"]}`}
+                    disabled={loading}
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>View Summary</span>
+                  </button>
+                )}
                 <DeleteConfirmation
                   onDelete={handleDelete}
                   itemId={document.id}
                   itemName={document.title || "Document"}
-                  title="Delete Document"
-                  description={`Are you sure you want to delete "${document.title || "this document"}"?`}
+                  title="Deactivate Document"
+                  description={`Are you sure you want to deactivate "${document.title || "this document"}"? This will make it inactive but not permanently delete it.`}
                   size="lg"
                   variant="outline"
                   className="w-full"
@@ -477,6 +508,72 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
           </div>
         </div>
       </div>
+
+      {/* Summary Modal */}
+      {showSummaryModal && document.summarizations && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Document Summary
+              </h2>
+              <button
+                onClick={() => setShowSummaryModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              {document.summarizations.shortSummary && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    Short Summary
+                  </h3>
+                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                    {document.summarizations.shortSummary}
+                  </p>
+                </div>
+              )}
+              {document.summarizations.mediumSummary && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    Medium Summary
+                  </h3>
+                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                    {document.summarizations.mediumSummary}
+                  </p>
+                </div>
+              )}
+              {document.summarizations.detailedSummary && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    Detailed Summary
+                  </h3>
+                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                    {document.summarizations.detailedSummary}
+                  </p>
+                </div>
+              )}
+              {!document.summarizations.shortSummary && 
+               !document.summarizations.mediumSummary && 
+               !document.summarizations.detailedSummary && (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                  No summary available for this document.
+                </p>
+              )}
+            </div>
+            <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end">
+              <button
+                onClick={() => setShowSummaryModal(false)}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -20,12 +20,25 @@ const SORT_ORDER_OPTIONS = [
   { value: "desc", label: "Descending" },
 ] as const;
 
+const STATUS_OPTIONS = [
+  { value: "", label: "All Status" },
+  { value: "AI_VERIFYING", label: "AI Verifying" },
+  { value: "AI_VERIFIED", label: "AI Verified" },
+  { value: "AI_REJECTED", label: "AI Rejected" },
+  { value: "REVIEWING", label: "Reviewing" },
+  { value: "ACTIVE", label: "Active" },
+  { value: "REJECTED", label: "Rejected" },
+  { value: "INACTIVE", label: "Inactive" },
+  { value: "DELETED", label: "Deleted" },
+] as const;
+
 type FilterValues = {
   search: string;
   organizationId: string;
   typeId: string;
   isPublic: string;
   isPremium: string;
+  status: string;
   sortBy: string;
   sortOrder: "asc" | "desc";
   dateFrom: string;
@@ -60,6 +73,7 @@ export function DocumentFilters({
       typeId: "",
       isPublic: "",
       isPremium: "",
+      status: "",
       sortBy: "createdAt",
       sortOrder: "desc",
       dateFrom: "",
@@ -72,11 +86,19 @@ export function DocumentFilters({
     const fetchOrganizations = async () => {
       setLoadingOrgs(true);
       try {
-        const res = await apiClient.get<{ data: { organizations: Organization[] } }>("/organizations/all");
-        if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-          setOrganizations((res.data as any).data.organizations || []);
+        // Use business-admin organizations endpoint (goes through Next.js API route)
+        // This endpoint already maps AdminOrganizationResponse to Organization format
+        const res = await apiClient.get<{
+          organizations: Organization[];
+          total: number;
+          page: number;
+          limit: number;
+        }>("/business-admin/organizations?page=1&limit=1000");
+        
+        if (res.data && res.data.organizations) {
+          setOrganizations(res.data.organizations);
         } else {
-          setOrganizations((res.data as any).organizations || []);
+          setOrganizations([]);
         }
       } catch (error) {
         console.error("Failed to fetch organizations:", error);
@@ -113,6 +135,9 @@ export function DocumentFilters({
       typeId: data.typeId || undefined,
       isPublic: data.isPublic === "" ? undefined : data.isPublic === "true",
       isPremium: data.isPremium === "" ? undefined : data.isPremium === "true",
+      status: data.status || undefined,
+      dateFrom: data.dateFrom || undefined,
+      dateTo: data.dateTo || undefined,
       page: 1,
     };
     onFiltersChange(filters);
@@ -127,6 +152,7 @@ export function DocumentFilters({
       typeId: undefined,
       isPublic: undefined,
       isPremium: undefined,
+      status: undefined,
       sortBy: "createdAt",
       sortOrder: "desc",
       dateFrom: undefined,
@@ -143,6 +169,7 @@ export function DocumentFilters({
     watchedFilters.typeId ||
     watchedFilters.isPublic !== "" ||
     watchedFilters.isPremium !== "" ||
+    watchedFilters.status !== "" ||
     watchedFilters.dateFrom ||
     watchedFilters.dateTo;
 
@@ -152,8 +179,8 @@ export function DocumentFilters({
       className={styles["filters-container"]}
     >
       {/* Search Bar */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-4">
-        <div className="w-full lg:w-auto lg:min-w-[500px] lg:max-w-[800px]">
+      <div className="flex flex-col lg:flex-row gap-4 mb-6">
+        <div className="flex-1 lg:min-w-[400px]">
           <div className={styles["search-container"]}>
             <svg
               className={styles["search-icon"]}
@@ -179,11 +206,11 @@ export function DocumentFilters({
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 lg:flex-shrink-0">
           <button
             type="submit"
             disabled={loading}
-            className={`${styles["btn"]} ${styles["btn-primary"]}`}
+            className={`${styles["btn"]} ${styles["btn-primary"]} whitespace-nowrap`}
           >
             {loading ? "Searching..." : "Search"}
           </button>
@@ -192,140 +219,179 @@ export function DocumentFilters({
             type="button"
             onClick={handleClearFilters}
             disabled={loading}
-            className={`${styles["btn"]} ${styles["btn-secondary"]}`}
+            className={`${styles["btn"]} ${styles["btn-secondary"]} whitespace-nowrap`}
           >
             Clear All
           </button>
         </div>
       </div>
 
-      {/* Quick Filters */}
-      <div className="flex flex-wrap gap-4 mb-4">
-        <div className="min-w-[200px] max-w-[300px]">
-          <label className={styles["label"]}>Organization</label>
-          <div className="relative" ref={orgDropdownRef}>
-            <input
-              type="text"
-              placeholder="Search organization..."
-              value={orgSearch}
-              onChange={(e) => {
-                setOrgSearch(e.target.value);
-                setIsOrgDropdownOpen(true);
-              }}
-              onFocus={() => setIsOrgDropdownOpen(true)}
-              className={styles["search-input"]}
-              disabled={loading || loadingOrgs}
-            />
-            {isOrgDropdownOpen && orgSearch && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {filteredOrganizations.length === 0 ? (
-                  <div className="p-2 text-sm text-gray-500">No organizations found</div>
-                ) : (
-                  filteredOrganizations.map((org) => (
-                    <button
-                      key={org.id}
-                      type="button"
-                      onClick={() => {
-                        setValue("organizationId", org.id);
-                        setOrgSearch(org.name);
-                        setIsOrgDropdownOpen(false);
-                      }}
-                      className="w-full text-left p-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
-                    >
-                      {org.name}
-                    </button>
-                  ))
-                )}
-              </div>
-            )}
+      {/* Filter Groups */}
+      <div className="space-y-4">
+        {/* Basic Filters Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="min-w-[200px]">
+            <label className={styles["label"]}>Organization</label>
+            <div className="relative" ref={orgDropdownRef}>
+              <input
+                type="text"
+                placeholder="Search organization..."
+                value={orgSearch}
+                onChange={(e) => {
+                  setOrgSearch(e.target.value);
+                  setIsOrgDropdownOpen(true);
+                }}
+                onFocus={() => setIsOrgDropdownOpen(true)}
+                className={`${styles["search-input"]} pl-10`}
+                disabled={loading || loadingOrgs}
+                style={{ paddingLeft: '2.5rem' }}
+              />
+              <svg
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              {isOrgDropdownOpen && orgSearch && (
+                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {filteredOrganizations.length === 0 ? (
+                    <div className="p-2 text-sm text-gray-500 dark:text-gray-400">No organizations found</div>
+                  ) : (
+                    filteredOrganizations.map((org) => (
+                      <button
+                        key={org.id}
+                        type="button"
+                        onClick={() => {
+                          setValue("organizationId", org.id);
+                          setOrgSearch(org.name);
+                          setIsOrgDropdownOpen(false);
+                        }}
+                        className="w-full text-left p-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                      >
+                        {org.name}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+            <input type="hidden" {...register("organizationId")} />
           </div>
-          <input type="hidden" {...register("organizationId")} />
+
+          <div>
+            <label className={styles["label"]}>Status</label>
+            <select
+              id="status"
+              className={`${styles["select"]} ${errors.status ? styles.error : ""}`}
+              disabled={loading}
+              {...register("status")}
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className={styles["label"]}>Visibility</label>
+            <select
+              id="isPublic"
+              className={`${styles["select"]} ${errors.isPublic ? styles.error : ""}`}
+              disabled={loading}
+              {...register("isPublic")}
+            >
+              <option value="">All</option>
+              <option value="true">Public</option>
+              <option value="false">Private</option>
+            </select>
+          </div>
+
+          <div>
+            <label className={styles["label"]}>Premium</label>
+            <select
+              id="isPremium"
+              className={`${styles["select"]} ${errors.isPremium ? styles.error : ""}`}
+              disabled={loading}
+              {...register("isPremium")}
+            >
+              <option value="">All</option>
+              <option value="true">Premium</option>
+              <option value="false">Free</option>
+            </select>
+          </div>
         </div>
 
-        <div className="min-w-[150px]">
-          <label htmlFor="dateFrom" className={styles["label"]}>
-            From Date
-          </label>
-          <input
-            id="dateFrom"
-            type="date"
-            className={`${styles["input"]} ${errors.dateFrom ? styles.error : ""}`}
-            disabled={loading}
-            {...register("dateFrom")}
-          />
+        {/* Date Range Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="dateFrom" className={styles["label"]}>
+              From Date
+            </label>
+            <input
+              id="dateFrom"
+              type="date"
+              className={`${styles["input"]} ${errors.dateFrom ? styles.error : ""}`}
+              disabled={loading}
+              {...register("dateFrom")}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="dateTo" className={styles["label"]}>
+              To Date
+            </label>
+            <input
+              id="dateTo"
+              type="date"
+              className={`${styles["input"]} ${errors.dateTo ? styles.error : ""}`}
+              disabled={loading}
+              {...register("dateTo")}
+            />
+          </div>
         </div>
 
-        <div className="min-w-[150px]">
-          <label htmlFor="dateTo" className={styles["label"]}>
-            To Date
-          </label>
-          <input
-            id="dateTo"
-            type="date"
-            className={`${styles["input"]} ${errors.dateTo ? styles.error : ""}`}
-            disabled={loading}
-            {...register("dateTo")}
-          />
-        </div>
+        {/* Sort Options Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={styles["label"]}>Sort By</label>
+            <select
+              id="sortBy"
+              className={`${styles["select"]} ${errors.sortBy ? styles.error : ""}`}
+              disabled={loading}
+              {...register("sortBy")}
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div className="min-w-[150px]">
-          <label className={styles["label"]}>Public</label>
-          <select
-            id="isPublic"
-            className={`${styles["select"]} ${errors.isPublic ? styles.error : ""}`}
-            disabled={loading}
-            {...register("isPublic")}
-          >
-            <option value="">All</option>
-            <option value="true">Public</option>
-            <option value="false">Private</option>
-          </select>
-        </div>
-
-        <div className="min-w-[150px]">
-          <label className={styles["label"]}>Premium</label>
-          <select
-            id="isPremium"
-            className={`${styles["select"]} ${errors.isPremium ? styles.error : ""}`}
-            disabled={loading}
-            {...register("isPremium")}
-          >
-            <option value="">All</option>
-            <option value="true">Premium</option>
-            <option value="false">Free</option>
-          </select>
-        </div>
-
-        <div className="min-w-[150px]">
-          <label className={styles["label"]}>Sort By</label>
-          <select
-            id="sortBy"
-            className={`${styles["select"]} ${errors.sortBy ? styles.error : ""}`}
-            disabled={loading}
-            {...register("sortBy")}
-          >
-            {SORT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="min-w-[150px]">
-          <label className={styles["label"]}>Order</label>
-          <select
-            id="sortOrder"
-            className={`${styles["select"]} ${errors.sortOrder ? styles.error : ""}`}
-            disabled={loading}
-            {...register("sortOrder")}
-          >
-            {SORT_ORDER_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <div>
+            <label className={styles["label"]}>Sort Order</label>
+            <select
+              id="sortOrder"
+              className={`${styles["select"]} ${errors.sortOrder ? styles.error : ""}`}
+              disabled={loading}
+              {...register("sortOrder")}
+            >
+              {SORT_ORDER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -396,6 +462,22 @@ export function DocumentFilters({
                     onSubmit(updatedFilters);
                   }}
                   className="ml-1 text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-200"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {watchedFilters.status !== "" && (
+              <span className={`${styles["filter-tag"]} bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200`}>
+                Status: {STATUS_OPTIONS.find(s => s.value === watchedFilters.status)?.label || watchedFilters.status}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updatedFilters = { ...watchedFilters, status: "" };
+                    reset(updatedFilters);
+                    onSubmit(updatedFilters);
+                  }}
+                  className="ml-1 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200"
                 >
                   ×
                 </button>

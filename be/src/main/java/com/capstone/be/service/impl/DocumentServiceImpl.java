@@ -40,6 +40,7 @@ import com.capstone.be.service.DocumentThumbnailService;
 import com.capstone.be.service.FileStorageService;
 import com.capstone.be.util.StringUtil;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -74,6 +75,9 @@ public class DocumentServiceImpl implements DocumentService {
   private final DocumentRedemptionRepository documentRedemptionRepository;
   private final DocumentReadHistoryRepository documentReadHistoryRepository;
   private final ReviewRequestRepository reviewRequestRepository;
+  private final com.capstone.be.repository.CommentRepository commentRepository;
+  private final com.capstone.be.repository.SavedListDocumentRepository savedListDocumentRepository;
+  private final com.capstone.be.repository.DocumentReportRepository documentReportRepository;
   private final FileStorageService fileStorageService;
   private final DocumentThumbnailService documentThumbnailService;
   private final DocumentMapper documentMapper;
@@ -825,20 +829,75 @@ public class DocumentServiceImpl implements DocumentService {
       DocStatus status,
       DocVisibility visibility,
       Boolean isPremium,
+      java.time.Instant dateFrom,
+      java.time.Instant dateTo,
       Pageable pageable) {
     log.info(
         "Admin fetching documents - title: {}, uploaderId: {}, organizationId: {}, docTypeId: {}, "
-            + "specializationId: {}, status: {}, visibility: {}, isPremium: {}, page: {}, size: {}",
+            + "specializationId: {}, status: {}, visibility: {}, isPremium: {}, dateFrom: {}, dateTo: {}, page: {}, size: {}",
         title, uploaderId, organizationId, docTypeId, specializationId, status, visibility,
-        isPremium, pageable.getPageNumber(), pageable.getPageSize());
+        isPremium, dateFrom, dateTo, pageable.getPageNumber(), pageable.getPageSize());
 
     Specification<Document> spec = DocumentSpecification.withFilters(
         title, uploaderId, organizationId, docTypeId, specializationId, status, visibility,
-        isPremium);
+        isPremium, dateFrom, dateTo);
 
     Page<Document> documentPage = documentRepository.findAll(spec, pageable);
+    
+    log.info("Found {} documents (total: {})", documentPage.getNumberOfElements(), documentPage.getTotalElements());
 
-    return documentPage.map(documentMapper::toAdminListResponse);
+    return documentPage.map(document -> {
+      try {
+        AdminDocumentListResponse response = documentMapper.toAdminListResponse(document);
+        
+        if (response == null) {
+          log.warn("Mapper returned null for document {}", document.getId());
+          return null;
+        }
+        
+        // Add linked information
+        UUID documentId = document.getId();
+      
+      // Comment count
+      long commentCount = commentRepository.countByDocumentIdAndNotDeleted(documentId);
+      response.setCommentCount(commentCount);
+      
+      // Save count (saved list documents)
+      long saveCount = savedListDocumentRepository.countByDocument_Id(documentId);
+      response.setSaveCount(saveCount);
+      
+      // Report count
+      long reportCount = documentReportRepository.countByDocument_Id(documentId);
+      response.setReportCount(reportCount);
+      
+      // Purchase count (only for premium documents)
+      if (Boolean.TRUE.equals(document.getIsPremium())) {
+        long purchaseCount = documentRedemptionRepository.countByDocument_Id(documentId);
+        response.setPurchaseCount(purchaseCount);
+      }
+      
+      // Review status (only for premium documents)
+      if (Boolean.TRUE.equals(document.getIsPremium())) {
+        AdminDocumentListResponse.ReviewStatusInfo reviewStatus = AdminDocumentListResponse.ReviewStatusInfo.builder()
+            .pendingCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.PENDING))
+            .acceptedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.ACCEPTED))
+            .completedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.COMPLETED))
+            .rejectedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.REJECTED))
+            .expiredCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.EXPIRED))
+            .hasActiveReview(
+                reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.PENDING) > 0 ||
+                reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.ACCEPTED) > 0
+            )
+            .build();
+        response.setReviewStatus(reviewStatus);
+      }
+      
+      return response;
+    } catch (Exception e) {
+      log.error("Error mapping document {} to AdminDocumentListResponse: {}", document.getId(), e.getMessage(), e);
+      throw e; // Re-throw to see the actual error
+    }
+    });
   }
 
   @Override
@@ -866,6 +925,81 @@ public class DocumentServiceImpl implements DocumentService {
         })
         .toList();
     response.setTags(tagInfos);
+    
+    // Populate admin-specific information
+    DocumentDetailResponse.AdminInfo adminInfo = DocumentDetailResponse.AdminInfo.builder()
+        .commentCount(commentRepository.countByDocumentIdAndNotDeleted(documentId))
+        .saveCount(savedListDocumentRepository.countByDocument_Id(documentId))
+        .reportCount(documentReportRepository.countByDocument_Id(documentId))
+        .build();
+    
+    // Purchase count (only for premium documents)
+    if (Boolean.TRUE.equals(document.getIsPremium())) {
+      adminInfo.setPurchaseCount(documentRedemptionRepository.countByDocument_Id(documentId));
+      
+      // Review request summary
+      DocumentDetailResponse.ReviewRequestSummary reviewSummary = DocumentDetailResponse.ReviewRequestSummary.builder()
+          .pendingCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.PENDING))
+          .acceptedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.ACCEPTED))
+          .completedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.COMPLETED))
+          .rejectedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.REJECTED))
+          .expiredCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.EXPIRED))
+          .hasActiveReview(
+              reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.PENDING) > 0 ||
+              reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.ACCEPTED) > 0
+          )
+          .build();
+      adminInfo.setReviewRequestSummary(reviewSummary);
+      
+      // Review requests list (limit to 10 most recent)
+      Page<ReviewRequest> reviewRequestsPage = reviewRequestRepository.findByDocument_Id(
+          documentId, PageRequest.of(0, 10));
+      List<DocumentDetailResponse.ReviewRequestInfo> reviewRequestInfos = reviewRequestsPage.getContent().stream()
+          .map(rr -> DocumentDetailResponse.ReviewRequestInfo.builder()
+              .id(rr.getId())
+              .reviewer(DocumentDetailResponse.ReviewerInfo.builder()
+                  .id(rr.getReviewer().getId())
+                  .email(rr.getReviewer().getEmail())
+                  .fullName(rr.getReviewer().getFullName())
+                  .build())
+              .assignedBy(DocumentDetailResponse.AssignedByInfo.builder()
+                  .id(rr.getAssignedBy().getId())
+                  .email(rr.getAssignedBy().getEmail())
+                  .fullName(rr.getAssignedBy().getFullName())
+                  .build())
+              .status(rr.getStatus())
+              .responseDeadline(rr.getResponseDeadline())
+              .reviewDeadline(rr.getReviewDeadline())
+              .respondedAt(rr.getRespondedAt())
+              .rejectionReason(rr.getRejectionReason())
+              .note(rr.getNote())
+              .createdAt(rr.getCreatedAt())
+              .build())
+          .toList();
+      adminInfo.setReviewRequests(reviewRequestInfos);
+    }
+    
+    // Recent reports (limit to 10 most recent)
+    Page<DocumentReport> reportsPage = documentReportRepository.findByDocumentId(
+        documentId, PageRequest.of(0, 10));
+    List<DocumentDetailResponse.ReportInfo> reportInfos = reportsPage.getContent().stream()
+        .map(report -> DocumentDetailResponse.ReportInfo.builder()
+            .id(report.getId())
+            .reporter(DocumentDetailResponse.ReporterInfo.builder()
+                .id(report.getReporter().getId())
+                .email(report.getReporter().getEmail())
+                .fullName(report.getReporter().getFullName())
+                .build())
+            .reason(report.getReason())
+            .description(report.getDescription())
+            .status(report.getStatus())
+            .adminNotes(report.getAdminNotes())
+            .createdAt(report.getCreatedAt())
+            .build())
+        .toList();
+    adminInfo.setReports(reportInfos);
+    
+    response.setAdminInfo(adminInfo);
 
     log.info("Successfully retrieved document detail for admin for document {}", documentId);
     return response;
@@ -1098,6 +1232,97 @@ public class DocumentServiceImpl implements DocumentService {
             .years(years)
             .priceRange(priceRange)
             .build();
+  }
+  
+  @Override
+  @Transactional(readOnly = true)
+  public com.capstone.be.dto.response.document.DocumentStatisticsResponse getDocumentStatistics() {
+    log.info("Calculating document statistics for admin");
+    
+    // Total counts
+    long totalDocuments = documentRepository.count();
+    long totalActiveDocuments = documentRepository.count(
+        DocumentSpecification.withFilters(null, null, null, null, null, DocStatus.ACTIVE, null, null, null, null));
+    long totalPremiumDocuments = documentRepository.count(
+        DocumentSpecification.withFilters(null, null, null, null, null, null, null, true, null, null));
+    long totalPublicDocuments = documentRepository.count(
+        DocumentSpecification.withFilters(null, null, null, null, null, null, DocVisibility.PUBLIC, null, null, null));
+    
+    // Status breakdown
+    Map<String, Long> statusBreakdown = new java.util.HashMap<>();
+    for (DocStatus status : DocStatus.values()) {
+      long count = documentRepository.count(
+          DocumentSpecification.withFilters(null, null, null, null, null, status, null, null, null, null));
+      statusBreakdown.put(status.name(), count);
+    }
+    
+    // Visibility breakdown
+    Map<String, Long> visibilityBreakdown = new java.util.HashMap<>();
+    for (DocVisibility visibility : DocVisibility.values()) {
+      long count = documentRepository.count(
+          DocumentSpecification.withFilters(null, null, null, null, null, null, visibility, null, null, null));
+      visibilityBreakdown.put(visibility.name(), count);
+    }
+    
+    // Engagement metrics - aggregate from all documents
+    List<Document> allDocuments = documentRepository.findAll();
+    long totalViews = allDocuments.stream()
+        .mapToLong(doc -> doc.getViewCount() != null ? doc.getViewCount() : 0L)
+        .sum();
+    long totalVotes = allDocuments.stream()
+        .mapToLong(doc -> doc.getUpvoteCount() != null ? doc.getUpvoteCount() : 0L)
+        .sum();
+    
+    // Count from repositories
+    long totalComments = commentRepository.count();
+    long totalSaves = savedListDocumentRepository.count();
+    long totalReports = documentReportRepository.count();
+    long totalPurchases = documentRedemptionRepository.count();
+    
+    // Review metrics - count all review requests by status
+    List<ReviewRequest> allReviewRequests = reviewRequestRepository.findAll();
+    long pendingReviewRequests = allReviewRequests.stream()
+        .filter(rr -> rr.getStatus() == ReviewRequestStatus.PENDING)
+        .count();
+    long acceptedReviewRequests = allReviewRequests.stream()
+        .filter(rr -> rr.getStatus() == ReviewRequestStatus.ACCEPTED)
+        .count();
+    long completedReviews = allReviewRequests.stream()
+        .filter(rr -> rr.getStatus() == ReviewRequestStatus.COMPLETED)
+        .count();
+    long totalReviewRequests = allReviewRequests.size();
+    
+    // Recent activity (last 30 days)
+    Instant thirtyDaysAgo = Instant.now().minusSeconds(30 * 24 * 60 * 60);
+    long documentsUploadedLast30Days = allDocuments.stream()
+        .filter(doc -> doc.getCreatedAt() != null && doc.getCreatedAt().isAfter(thirtyDaysAgo))
+        .count();
+    long documentsActivatedLast30Days = allDocuments.stream()
+        .filter(doc -> doc.getStatus() == DocStatus.ACTIVE 
+            && doc.getUpdatedAt() != null 
+            && doc.getUpdatedAt().isAfter(thirtyDaysAgo))
+        .count();
+    
+    return com.capstone.be.dto.response.document.DocumentStatisticsResponse.builder()
+        .totalDocuments(totalDocuments)
+        .totalActiveDocuments(totalActiveDocuments)
+        .totalPremiumDocuments(totalPremiumDocuments)
+        .totalPublicDocuments(totalPublicDocuments)
+        .statusBreakdown(statusBreakdown)
+        .visibilityBreakdown(visibilityBreakdown)
+        .totalViews(totalViews)
+        .totalComments(totalComments)
+        .totalSaves(totalSaves)
+        .totalVotes(totalVotes)
+        .totalReports(totalReports)
+        .totalPurchases(totalPurchases)
+        .totalReviewRequests(totalReviewRequests)
+        .pendingReviewRequests(pendingReviewRequests)
+        .acceptedReviewRequests(acceptedReviewRequests)
+        .completedReviews(completedReviews)
+        .documentsUploadedLast30Days(documentsUploadedLast30Days)
+        .documentsActivatedLast30Days(documentsActivatedLast30Days)
+        .build();
   }
 
 }

@@ -41,4 +41,10 @@ public interface DocumentReportRepository extends JpaRepository<DocumentReport, 
    * Count pending reports
    */
   long countByStatus(ReportStatus status);
+  
+  /**
+   * Count reports by document
+   */
+  @Query("SELECT COUNT(r) FROM DocumentReport r WHERE r.document.id = :documentId")
+  long countByDocument_Id(@Param("documentId") UUID documentId);
 }

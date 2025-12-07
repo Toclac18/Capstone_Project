@@ -132,6 +132,8 @@ public interface DocumentService {
    * @param status           Filter by document status
    * @param visibility       Filter by visibility
    * @param isPremium        Filter by premium status
+   * @param dateFrom         Filter by created date from (inclusive)
+   * @param dateTo           Filter by created date to (inclusive)
    * @param pageable         Pagination parameters
    * @return Page of documents
    */
@@ -144,6 +146,8 @@ public interface DocumentService {
       DocStatus status,
       DocVisibility visibility,
       Boolean isPremium,
+      java.time.Instant dateFrom,
+      java.time.Instant dateTo,
       Pageable pageable);
 
   /**
@@ -174,4 +178,11 @@ public interface DocumentService {
   Page<DocumentDetailResponse> getHomepageDocuments(UUID userId, int page, int size);
 
   DocumentSearchMetaResponse getPublicSearchMeta();
+  
+  /**
+   * Get document statistics for admin dashboard
+   *
+   * @return Document statistics response
+   */
+  com.capstone.be.dto.response.document.DocumentStatisticsResponse getDocumentStatistics();
 }

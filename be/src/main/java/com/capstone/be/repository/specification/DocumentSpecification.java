@@ -4,6 +4,7 @@ import com.capstone.be.domain.entity.Document;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.DocVisibility;
 import jakarta.persistence.criteria.Predicate;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -22,7 +23,9 @@ public class DocumentSpecification {
       UUID specializationId,
       DocStatus status,
       DocVisibility visibility,
-      Boolean isPremium) {
+      Boolean isPremium,
+      Instant dateFrom,
+      Instant dateTo) {
     return (root, query, criteriaBuilder) -> {
       List<Predicate> predicates = new ArrayList<>();
 
@@ -62,6 +65,15 @@ public class DocumentSpecification {
 
       if (isPremium != null) {
         predicates.add(criteriaBuilder.equal(root.get("isPremium"), isPremium));
+      }
+
+      // Date range filter (createdAt)
+      if (dateFrom != null) {
+        predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), dateFrom));
+      }
+
+      if (dateTo != null) {
+        predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), dateTo));
       }
 
       return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

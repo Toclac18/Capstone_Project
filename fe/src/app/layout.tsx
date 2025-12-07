@@ -11,6 +11,8 @@ import { Providers } from "./providers";
 
 import { ModalPreviewProvider, ModalPreview } from "@/components/ModalPreview";
 import { AlertDialogProvider } from "@/hooks/useAlertDialog";
+import { getServerAuth } from "@/server/auth";
+import { AuthProvider } from "@/lib/auth/provider";
 
 export const metadata: Metadata = {
   title: {
@@ -19,23 +21,30 @@ export const metadata: Metadata = {
   },
   description:
     "Next.js admin dashboard toolkit with 200+ templates, UI components, and integrations for fast dashboard development.",
+  icons: {
+    icon: "/logo-tab.svg",
+    apple: "/logo-tab.svg",
+  },
 };
 
-export default function RootLayout({ children }: PropsWithChildren) {
+export default async function RootLayout({ children }: PropsWithChildren) {
+  const auth = await getServerAuth();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <AlertDialogProvider>
-          <ModalPreviewProvider>
-            <Providers>
-              <NextTopLoader color="#5750F1" showSpinner={false} />
+        <AuthProvider initialAuth={auth}>
+          <AlertDialogProvider>
+            <ModalPreviewProvider>
+              <Providers>
+                <NextTopLoader color="#5750F1" showSpinner={false} />
+                <ConditionalLayout>{children}</ConditionalLayout>
+              </Providers>
 
-              <ConditionalLayout>{children}</ConditionalLayout>
-            </Providers>
-
-            <ModalPreview />
-          </ModalPreviewProvider>
-        </AlertDialogProvider>
+              <ModalPreview />
+            </ModalPreviewProvider>
+          </AlertDialogProvider>
+        </AuthProvider>
       </body>
     </html>
   );

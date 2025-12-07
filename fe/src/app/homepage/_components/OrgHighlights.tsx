@@ -1,13 +1,13 @@
 "use client";
 
 import styles from "../styles.module.css";
-import DocCard, { type DocCardItem } from "./DocCard";
+import DocCard from "./DocCard";
 import { useHomepage } from "../provider";
 import { useModalPreview } from "@/components/ModalPreview";
 import { useMemo } from "react";
-import type { DocumentItem } from "@/types/documentResponse";
+import type { DocumentItem } from "@/types/document-homepage";
 
-type OrgGroup = { orgName: string; items: DocCardItem[] };
+type OrgGroup = { orgName: string; items: DocumentItem[] };
 
 export default function OrgHighlights() {
   const { continueReading, topUpvoted, specGroups } = useHomepage();
@@ -19,7 +19,7 @@ export default function OrgHighlights() {
       ...topUpvoted,
       ...specGroups.flatMap((g) => g.items),
     ];
-    const byOrg = new Map<string, DocCardItem[]>();
+    const byOrg = new Map<string, DocumentItem[]>();
     for (const d of all) {
       const org = (d as any).orgName ?? "Unknown organization";
       const list = byOrg.get(org) ?? [];

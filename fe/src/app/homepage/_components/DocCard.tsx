@@ -3,13 +3,11 @@
 import Image from "next/image";
 import { useState, MouseEvent, KeyboardEvent } from "react";
 import styles from "../styles.module.css";
-import type { DocumentItem as BaseDoc } from "@/types/documentResponse";
+import type { DocumentItem } from "@/types/document-homepage";
 import SaveListModal from "@/components/SaveListModal/SaveListModal";
 
-export type DocCardItem = BaseDoc & { viewCount: number };
-
-type Props = DocCardItem & {
-  onPreview?: (doc: DocCardItem) => void;
+type Props = DocumentItem & {
+  onPreview?: (doc: DocumentItem) => void;
 };
 
 export default function DocCard(props: Props) {
@@ -111,7 +109,6 @@ export default function DocCard(props: Props) {
           </div>
         )}
 
-        {/* Only 1 domain + 1 specialization */}
         <div className={styles.cardTags}>
           <span className={styles.tagPill}>{domain}</span>
           <span className={styles.tagPill}>{specialization}</span>

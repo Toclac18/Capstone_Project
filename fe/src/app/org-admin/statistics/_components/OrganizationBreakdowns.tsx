@@ -40,10 +40,13 @@ export function OrganizationBreakdowns({
     },
     dataLabels: {
       enabled: true,
-      formatter: function (opts: any) {
-        const value = opts.w.globals.series[opts.seriesIndex];
-        const total = opts.w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0);
-        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : "0";
+      formatter: function (val: number, opts: any) {
+        if (!opts?.w?.globals) return "0%";
+        const total = opts.w.globals.seriesTotals.reduce(
+          (a: number, b: number) => a + b,
+          0,
+        );
+        const percentage = total > 0 ? ((val / total) * 100).toFixed(1) : "0";
         return `${percentage}%`;
       },
       style: {
@@ -82,10 +85,13 @@ export function OrganizationBreakdowns({
     },
     dataLabels: {
       enabled: true,
-      formatter: function (opts: any) {
-        const value = opts.w.globals.series[opts.seriesIndex];
-        const total = opts.w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0);
-        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : "0";
+      formatter: function (val: number, opts: any) {
+        if (!opts?.w?.globals) return "0%";
+        const total = opts.w.globals.seriesTotals.reduce(
+          (a: number, b: number) => a + b,
+          0,
+        );
+        const percentage = total > 0 ? ((val / total) * 100).toFixed(1) : "0";
         return `${percentage}%`;
       },
       style: {
@@ -124,10 +130,13 @@ export function OrganizationBreakdowns({
     },
     dataLabels: {
       enabled: true,
-      formatter: function (opts: any) {
-        const value = opts.w.globals.series[opts.seriesIndex];
-        const total = opts.w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0);
-        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : "0";
+      formatter: function (val: number, opts: any) {
+        if (!opts?.w?.globals) return "0%";
+        const total = opts.w.globals.seriesTotals.reduce(
+          (a: number, b: number) => a + b,
+          0,
+        );
+        const percentage = total > 0 ? ((val / total) * 100).toFixed(1) : "0";
         return `${percentage}%`;
       },
       style: {
@@ -166,10 +175,13 @@ export function OrganizationBreakdowns({
     },
     dataLabels: {
       enabled: true,
-      formatter: function (opts: any) {
-        const value = opts.w.globals.series[opts.seriesIndex];
-        const total = opts.w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0);
-        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : "0";
+      formatter: function (val: number, opts: any) {
+        if (!opts?.w?.globals) return "0%";
+        const total = opts.w.globals.seriesTotals.reduce(
+          (a: number, b: number) => a + b,
+          0,
+        );
+        const percentage = total > 0 ? ((val / total) * 100).toFixed(1) : "0";
         return `${percentage}%`;
       },
       style: {
@@ -193,7 +205,7 @@ export function OrganizationBreakdowns({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <Chart
           options={memberStatusOptions}
           series={memberStatusSeries}
@@ -202,7 +214,7 @@ export function OrganizationBreakdowns({
         />
       </div>
 
-      <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <Chart
           options={documentStatusOptions}
           series={documentStatusSeries}
@@ -211,7 +223,7 @@ export function OrganizationBreakdowns({
         />
       </div>
 
-      <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <Chart
           options={visibilityOptions}
           series={visibilitySeries}
@@ -220,7 +232,7 @@ export function OrganizationBreakdowns({
         />
       </div>
 
-      <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <Chart
           options={premiumOptions}
           series={premiumSeries}

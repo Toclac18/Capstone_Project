@@ -6,10 +6,14 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum DocStatus {
-  VERIFYING("Verifying"),
-  VERIFIED("Verified"),
+  AI_VERIFYING("AI Verifying"),
+  AI_VERIFIED("AI Verified"),
+  AI_REJECTED("AI Rejected"),
+
+  REVIEWING("Reviewing"),
+  ACTIVE("Active"),   //Review Success
   REJECTED("Rejected"),
-  ACTIVE("Active"),
+  
   INACTIVE("Inactive"),
   DELETED("Deleted");
 

@@ -146,14 +146,14 @@ export function UserManagement() {
       </div>
 
       {/* Tabs */}
-      <div className="mb-6 rounded-lg border border-stroke bg-white p-4 shadow-default dark:border-strokedark dark:bg-boxdark">
-        <div className="flex space-x-1 border-b border-stroke dark:border-strokedark">
+      <div className="mb-6 rounded-lg border border-stroke bg-white p-4 shadow-default dark:border-dark-3 dark:bg-dark">
+        <div className="flex space-x-1 border-b border-stroke dark:border-dark-3">
           <button
             onClick={() => handleTabChange("readers")}
             className={`px-6 py-3 text-sm font-medium transition-colors ${
               activeTab === "readers"
-                ? "border-b-2 border-primary text-primary"
-                : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                ? "border-b-2 border-primary text-primary dark:text-primary"
+                : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
             }`}
           >
             Readers
@@ -162,8 +162,8 @@ export function UserManagement() {
             onClick={() => handleTabChange("reviewers")}
             className={`px-6 py-3 text-sm font-medium transition-colors ${
               activeTab === "reviewers"
-                ? "border-b-2 border-primary text-primary"
-                : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                ? "border-b-2 border-primary text-primary dark:text-primary"
+                : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
             }`}
           >
             Reviewers

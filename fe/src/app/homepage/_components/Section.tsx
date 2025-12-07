@@ -1,22 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import styles from "../styles.module.css";
-import DocCard, { type DocCardItem } from "./DocCard";
+import DocCard from "./DocCard";
 import { useHomepage } from "../provider";
 import { useModalPreview } from "@/components/ModalPreview";
-import type { DocumentItem as BaseDoc } from "@/types/documentResponse";
-
-function readInt(sp: URLSearchParams, key: string, fallback: number) {
-  const v = parseInt(sp.get(key) || "", 10);
-  return Number.isFinite(v) && v > 0 ? v : fallback;
-}
+import type { DocumentItem as BaseDoc } from "@/types/document-homepage";
 
 export default function Section({
   title,
   items,
-  sectionKey,
   defaultPageSize = 8,
 }: {
   title: string;
@@ -25,11 +18,10 @@ export default function Section({
   defaultPageSize?: number;
 }) {
   const { q } = useHomepage();
-  const spObj = useSearchParams();
-  const router = useRouter();
   const { open } = useModalPreview();
 
-  const normalized: DocCardItem[] = useMemo(
+  // Chuẩn hoá data cho DocCard (bổ sung viewCount nếu thiếu)
+  const normalized: BaseDoc[] = useMemo(
     () =>
       (items ?? []).map((d) => ({
         ...d,
@@ -38,17 +30,9 @@ export default function Section({
     [items],
   );
 
-  const initial = useMemo(() => {
-    const sp = new URLSearchParams(spObj.toString());
-    return {
-      page: readInt(sp, `${sectionKey}Page`, 1),
-      size: readInt(sp, `${sectionKey}Size`, defaultPageSize),
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const [page, setPage] = useState(initial.page);
-  const [size] = useState(initial.size);
+  // Pagination thuần client-side (không sync URL)
+  const [page, setPage] = useState(1);
+  const [size] = useState(defaultPageSize);
 
   // Filter theo q
   const filtered = useMemo(() => {
@@ -74,35 +58,11 @@ export default function Section({
   const start = (clampedPage - 1) * Math.max(1, size);
   const pageItems = filtered.slice(start, start + Math.max(1, size));
 
-  // Khi filter đổi, về page 1 nếu đang ở trang khác
+  // Khi filter hoặc items đổi → quay về page 1
   useEffect(() => {
     if (clampedPage !== 1) setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, items]);
-
-  useEffect(() => {
-    const current = new URLSearchParams(spObj.toString());
-    const next = new URLSearchParams(current.toString());
-    const pk = `${sectionKey}Page`;
-    const sk = `${sectionKey}Size`;
-
-    let changed = false;
-    if (current.get(pk) !== String(clampedPage)) {
-      next.set(pk, String(clampedPage));
-      changed = true;
-    }
-    if (current.get(sk) !== String(size)) {
-      next.set(sk, String(size));
-      changed = true;
-    }
-
-    if (changed) {
-      const qs = next.toString();
-      const url = qs ? `?${qs}` : location.pathname;
-      router.replace(url, { scroll: false });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clampedPage, size, sectionKey, spObj]);
 
   if (!normalized.length) return null;
 

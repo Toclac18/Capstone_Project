@@ -7,14 +7,7 @@ import com.capstone.be.dto.request.document.DocumentUploadHistoryFilter;
 import com.capstone.be.dto.request.document.UpdateDocumentRequest;
 import com.capstone.be.dto.request.document.UploadDocumentInfoRequest;
 import com.capstone.be.dto.request.document.VoteDocumentRequest;
-import com.capstone.be.dto.response.document.DocumentDetailResponse;
-import com.capstone.be.dto.response.document.DocumentLibraryResponse;
-import com.capstone.be.dto.response.document.DocumentPresignedUrlResponse;
-import com.capstone.be.dto.response.document.DocumentReadHistoryResponse;
-import com.capstone.be.dto.response.document.DocumentSearchResponse;
-import com.capstone.be.dto.response.document.DocumentUploadHistoryResponse;
-import com.capstone.be.dto.response.document.DocumentUploadResponse;
-import com.capstone.be.dto.response.document.VoteDocumentResponse;
+import com.capstone.be.dto.response.document.*;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.DocumentService;
 import com.capstone.be.service.DocumentVoteService;
@@ -31,16 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -59,7 +43,7 @@ public class DocumentController {
    * Upload a document POST /api/v1/documents/upload
    *
    * @param userPrincipal Authenticated user (uploader)
-   * @param info          Document information
+   * @param info          Document informatÏion
    * @param file          PDF file to upload
    * @return Document upload response
    */
@@ -269,19 +253,30 @@ public class DocumentController {
    */
   @PostMapping(value = "/search")
   public ResponseEntity<PagedResponse<DocumentSearchResponse>> searchPublicDocuments(
-      @Valid @RequestBody DocumentSearchFilter filter) {
-    Pageable pageable = PageRequest.of(
-        filter.getPage(),
-        filter.getSize(),
-        PagingUtil.parseSort(filter.getSorts())
-    );
-    log.info("Public search request with filter: {} (page: {}, size: {})",
-        filter, pageable.getPageNumber(), pageable.getPageSize());
+          @Valid @RequestBody DocumentSearchFilter filter) {
 
-    Page<DocumentSearchResponse> searchResults = documentService.searchPublicDocuments(filter,
-        pageable);
+    Pageable pageable = PageRequest.of(
+            filter.getPage(),
+            filter.getSize(),
+            PagingUtil.parseSort(filter.getSorts())
+    );
+
+    Page<DocumentSearchResponse> searchResults =
+            documentService.searchPublicDocuments(filter, pageable);
 
     return ResponseEntity.ok(PagedResponse.of(searchResults));
+  }
+
+  /**
+   * Search metadata cho public documents.
+   * Dùng cho Filter Modal ở FE.
+   * Không yêu cầu authentication.
+   */
+  @GetMapping("/search-meta")
+  public ResponseEntity<DocumentSearchMetaResponse> getPublicSearchMeta() {
+    log.info("Received request for public document search meta");
+    DocumentSearchMetaResponse meta = documentService.getPublicSearchMeta();
+    return ResponseEntity.ok(meta);
   }
 
   /**
@@ -325,6 +320,26 @@ public class DocumentController {
     log.info("User {} fetching vote for document {}", userId, documentId);
 
     VoteDocumentResponse response = documentVoteService.getUserVote(documentId, userId);
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * API Homepage: Dành cho cả Guest và User
+   */
+  @GetMapping("/homepage")
+  public ResponseEntity<Page<DocumentDetailResponse>> getHomepageDocuments(
+          @AuthenticationPrincipal UserPrincipal userPrincipal,
+          @RequestParam(name = "page", defaultValue = "0") int page,
+          @RequestParam(name = "size", defaultValue = "20") int size
+  ) {
+    // Nếu chưa đăng nhập -> userId = null
+    UUID userId = userPrincipal != null ? userPrincipal.getId() : null;
+
+    log.info("Homepage request: page={}, size={}, userId={}", page, size, userId);
+
+    Page<DocumentDetailResponse> response =
+            documentService.getHomepageDocuments(userId, page, size);
 
     return ResponseEntity.ok(response);
   }

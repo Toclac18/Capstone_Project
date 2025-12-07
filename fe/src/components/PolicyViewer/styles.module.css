@@ -210,62 +210,60 @@
   cursor: not-allowed;
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .modal {
-    background: #1f2937;
-    color: #f9fafb;
-  }
+/* Dark mode support - follow Tailwind `.dark` class instead of OS setting */
+:global(.dark) .modal {
+  background: #1f2937;
+  color: #f9fafb;
+}
 
-  .header {
-    border-bottom-color: #374151;
-  }
+:global(.dark) .header {
+  border-bottom-color: #374151;
+}
 
-  .title {
-    color: #f9fafb;
-  }
+:global(.dark) .title {
+  color: #f9fafb;
+}
 
-  .meta {
-    color: #9ca3af;
-  }
+:global(.dark) .meta {
+  color: #9ca3af;
+}
 
-  .closeButton {
-    color: #9ca3af;
-  }
+:global(.dark) .closeButton {
+  color: #9ca3af;
+}
 
-  .closeButton:hover {
-    color: #f9fafb;
-  }
+:global(.dark) .closeButton:hover {
+  color: #f9fafb;
+}
 
-  .body {
-    color: #d1d5db;
-  }
+:global(.dark) .body {
+  color: #d1d5db;
+}
 
-  .content {
-    color: #d1d5db;
-  }
+:global(.dark) .content {
+  color: #d1d5db;
+}
 
-  .content h2 {
-    color: #f9fafb;
-  }
+:global(.dark) .content h2 {
+  color: #f9fafb;
+}
 
-  .content h3 {
-    color: #e5e7eb;
-  }
+:global(.dark) .content h3 {
+  color: #e5e7eb;
+}
 
-  .footer {
-    border-top-color: #374151;
-    background: #111827;
-  }
+:global(.dark) .footer {
+  border-top-color: #374151;
+  background: #111827;
+}
 
-  .btnSecondary {
-    background: #374151;
-    color: #f9fafb;
-    border-color: #4b5563;
-  }
+:global(.dark) .btnSecondary {
+  background: #374151;
+  color: #f9fafb;
+  border-color: #4b5563;
+}
 
-  .btnSecondary:hover {
-    background: #4b5563;
-  }
+:global(.dark) .btnSecondary:hover {
+  background: #4b5563;
 }
 

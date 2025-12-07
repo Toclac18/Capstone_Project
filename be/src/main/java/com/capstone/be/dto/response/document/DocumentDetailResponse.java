@@ -27,6 +27,7 @@ public class DocumentDetailResponse {
   private Boolean isPremium;
   private Integer price;
   private String thumbnailUrl;
+  private String presignedUrl;  // Presigned URL for document access (if user has access)
   private Integer pageCount;
   private Integer viewCount;
   private Integer upvoteCount;
@@ -34,6 +35,10 @@ public class DocumentDetailResponse {
   private Integer voteScore;
   private Instant createdAt;
   private Instant updatedAt;
+
+  // --- Summarizations ---
+  // Field này sẽ chứa object { shortSummary, mediumSummary, detailedSummary }
+  private SummarizationInfo summarizations;
 
   // Uploader information
   private UploaderInfo uploader;
@@ -52,6 +57,18 @@ public class DocumentDetailResponse {
 
   // User-specific information
   private UserDocumentInfo userInfo;
+
+  // --- Inner Classes ---
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class SummarizationInfo {
+    private String shortSummary;
+    private String mediumSummary;
+    private String detailedSummary;
+  }
 
   @Data
   @Builder
@@ -128,5 +145,6 @@ public class DocumentDetailResponse {
     private Boolean isUploader;
     private Boolean hasRedeemed;
     private Boolean isMemberOfOrganization;
+    private Boolean isReviewer;  // True if user is assigned as reviewer for this document
   }
 }

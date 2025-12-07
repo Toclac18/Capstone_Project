@@ -1,4 +1,6 @@
+// src/app/search/provider.tsx
 "use client";
+
 import {
   createContext,
   useCallback,
@@ -8,16 +10,16 @@ import {
   useState,
 } from "react";
 import type {
-  DocumentItem,
+  DocumentSearchItem,
   SearchFilters,
   Paged,
-} from "@/types/documentResponse";
-import { fetchDocuments } from "@/services/search-document.service";
+} from "@/types/document-search";
+import { searchDocuments } from "@/services/search-document.service";
 
 export type PerPage = 10 | 20 | 50;
 
 type SearchContextType = {
-  items: DocumentItem[];
+  items: DocumentSearchItem[];
   loading: boolean;
 
   filters: SearchFilters;
@@ -44,7 +46,7 @@ export function useSearch() {
 }
 
 export function SearchProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<DocumentItem[]>([]);
+  const [items, setItems] = useState<DocumentSearchItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [filters, setFilters] = useState<SearchFilters>({});
@@ -57,11 +59,11 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      const data: Paged<DocumentItem> = await fetchDocuments(
+      const data: Paged<DocumentSearchItem> = await searchDocuments({
         filters,
         page,
         perPage,
-      );
+      });
       setItems(data.items);
       setTotal(data.total);
       setPageCount(Math.max(1, data.pageCount || 1));
@@ -70,10 +72,12 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
     }
   }, [filters, page, perPage]);
 
+  // Load mỗi khi filter / page / perPage thay đổi
   useEffect(() => {
     reload();
   }, [reload]);
 
+  // Khi filter đổi, reset page về 1
   useEffect(() => {
     setPage(1);
   }, [filters]);

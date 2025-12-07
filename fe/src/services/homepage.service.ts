@@ -1,63 +1,96 @@
-// src/services/homepageService.ts
-import { apiClient } from "./http";
+// src/services/homepage.service.ts
+"use client";
 
-export type DocumentLite = {
-  id: string;
-  orgId: string;
-  orgName: string;
-  title: string;
-  points?: number;
-  viewCount: number;
-  isPremium: boolean;
-  specialization: string;
-  upvote_counts: number;
-  downvote_counts: number;
-  vote_scores: number;
-  uploader: string;
-  thumbnail: string;
+export type HomepageSpecGroup = {
+  name: string;
+  items: any[];
 };
 
-export type Paginated<T> = {
-  items: T[];
-  total: number;
+export type HomepageSections = {
+  continueReading: any[];
+  topUpvoted: any[];
+  specGroups: HomepageSpecGroup[];
+};
+
+/**
+ * GET /api/homepage?mode=bulk
+ * Trả về cấu trúc:
+ * {
+ *   continueReading: [...],
+ *   topUpvoted: [...],
+ *   specGroups: [{ name, items }]
+ * }
+ */
+export async function fetchHomepageSections(): Promise<HomepageSections> {
+  const res = await fetch("/api/homepage?mode=bulk", {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  const text = await res.text();
+
+  if (!res.ok) {
+    console.error("Homepage bulk failed:", text);
+    return {
+      continueReading: [],
+      topUpvoted: [],
+      specGroups: [],
+    };
+  }
+
+  const json = JSON.parse(text);
+
+  return {
+    continueReading: Array.isArray(json?.continueReading)
+      ? json.continueReading
+      : [],
+
+    topUpvoted: Array.isArray(json?.topUpvoted) ? json.topUpvoted : [],
+
+    specGroups: Array.isArray(json?.specGroups) ? json.specGroups : [],
+  };
+}
+
+/**
+ * Paged Search Mode (SearchBar)
+ * GET /api/homepage?mode=paged&page=1&pageSize=12&q=...
+ */
+export async function fetchHomepagePaged(params: {
   page: number;
   pageSize: number;
-};
-
-export type HomepageQuery = {
   q?: string;
-  page?: number;
-  pageSize?: number;
-  specialization?: string;
-  group?: "continueReading" | "topUpvoted" | "bySpecialization" | "all";
-};
+}) {
+  const qs = new URLSearchParams();
 
-export async function fetchHomepage(params: HomepageQuery = {}) {
-  const res = await apiClient.get("/homepage", { params });
-  return res.data as Paginated<DocumentLite>;
-}
+  qs.set("mode", "paged");
+  qs.set("page", String(params.page));
+  qs.set("pageSize", String(params.pageSize));
 
-export async function fetchTopUpvoted(page = 1, pageSize = 12) {
-  const res = await apiClient.get("/homepage", {
-    params: { group: "topUpvoted", page, pageSize },
+  if (params.q) qs.set("q", params.q);
+
+  const res = await fetch(`/api/homepage?${qs.toString()}`, {
+    method: "GET",
+    cache: "no-store",
   });
-  return res.data as Paginated<DocumentLite>;
-}
 
-export async function fetchContinueReading(page = 1, pageSize = 8) {
-  const res = await apiClient.get("/homepage", {
-    params: { group: "continueReading", page, pageSize },
-  });
-  return res.data as Paginated<DocumentLite>;
-}
+  const text = await res.text();
 
-export async function fetchBySpecialization(
-  specialization: string,
-  page = 1,
-  pageSize = 12,
-) {
-  const res = await apiClient.get("/homepage", {
-    params: { group: "bySpecialization", specialization, page, pageSize },
-  });
-  return res.data as Paginated<DocumentLite>;
+  if (!res.ok) {
+    console.error("Homepage paged failed:", text);
+    return {
+      items: [],
+      total: 0,
+      page: params.page,
+      pageSize: params.pageSize,
+    };
+  }
+
+  const json = JSON.parse(text);
+
+  return {
+    items: json.items ?? [],
+    total: json.total ?? 0,
+    page: json.page ?? params.page,
+    pageSize: json.pageSize ?? params.pageSize,
+  };
 }

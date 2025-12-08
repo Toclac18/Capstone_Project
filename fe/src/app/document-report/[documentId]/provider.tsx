@@ -10,12 +10,9 @@ import React, {
 } from "react";
 import { useRouter } from "next/navigation";
 import { toast, useToast } from "@/components/ui/toast";
-import {
-  CreateReportRequest,
-  CreateReportResponse,
-  ReportReason,
-} from "@/types/document-report";
+import { CreateReportRequest, ReportReason } from "@/types/document-report";
 import { createDocumentReport } from "@/services/document-report.service";
+import { ApiError } from "@/services/http";
 
 export interface SubmitValues {
   reason: ReportReason | "";
@@ -44,52 +41,42 @@ export function DocumentReportProvider({
 }: DocumentReportProviderProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const router = useRouter();
   const { showToast } = useToast();
 
   const submit = useCallback(
     async (values: SubmitValues) => {
       if (!documentId || !values.reason) return;
-
       setLoading(true);
       setError(null);
 
       const payload: CreateReportRequest = {
         documentId,
         reason: values.reason as ReportReason,
-        description: values.description.trim()
-          ? values.description.trim()
-          : null,
+        description: values.description.trim() || null,
       };
 
       try {
-        const res: CreateReportResponse = await createDocumentReport(payload);
+        const res = await createDocumentReport(payload);
 
         if (!res?.success) {
           const msg = res?.message ?? "Failed to submit report";
           setError(msg);
-          showToast(toast.error("Failed to submit report", msg, 5000));
+          showToast(toast.error("Failed", msg));
           return;
         }
 
-        showToast(
-          toast.success(
-            "Report created",
-            "Your report has been submitted. Thank you for your feedback.",
-            4000,
-          ),
-        );
-
+        showToast(toast.success("Success", "Report submitted successfully."));
         router.push(`/docs-view/${documentId}`);
       } catch (err: any) {
-        const msg =
-          typeof err?.message === "string"
-            ? err.message
-            : "Failed to submit report. Please try again.";
+        if (err instanceof ApiError && err.isHandledGlobally) {
+          setLoading(false);
+          return;
+        }
 
+        const msg = typeof err?.message === "string" ? err.message : "Error";
         setError(msg);
-        showToast(toast.error("Failed to submit report", msg, 5000));
+        showToast(toast.error("Error", msg));
       } finally {
         setLoading(false);
       }
@@ -97,17 +84,10 @@ export function DocumentReportProvider({
     [documentId, router, showToast],
   );
 
-  const cancel = useCallback(() => {
-    router.back();
-  }, [router]);
+  const cancel = useCallback(() => router.back(), [router]);
 
-  const value: DocumentReportContextValue = useMemo(
-    () => ({
-      loading,
-      error,
-      submit,
-      cancel,
-    }),
+  const value = useMemo(
+    () => ({ loading, error, submit, cancel }),
     [loading, error, submit, cancel],
   );
 
@@ -118,12 +98,8 @@ export function DocumentReportProvider({
   );
 }
 
-export function useDocumentReport(): DocumentReportContextValue {
+export function useDocumentReport() {
   const ctx = useContext(DocumentReportContext);
-  if (!ctx) {
-    throw new Error(
-      "useDocumentReport must be used inside DocumentReportProvider",
-    );
-  }
+  if (!ctx) throw new Error("Inside Provider only");
   return ctx;
 }

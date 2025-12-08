@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { EmailIcon, GoogleIcon, PasswordIcon, UserIcon } from "@/assets/icons";
+import { EmailIcon, PasswordIcon, UserIcon } from "@/assets/icons";
 import React, { useState, useCallback } from "react";
 import InputGroup from "@/components/(template)/FormElements/InputGroup";
 import Logo from "@/assets/logos/logo-icon.svg";
@@ -215,14 +215,29 @@ export default function Signup() {
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const { name, value } = e.target;
-      setData((prev) => ({ ...prev, [name]: value }));
-      const msg = validateFieldHelper(name, value, userType, {
+      // Prevent space input in password and email fields
+      let filteredValue = value;
+      if ((name === "password" || name === "repassword" || name === "email") && value.includes(" ")) {
+        filteredValue = value.replace(/\s/g, "");
+      }
+      setData((prev) => ({ ...prev, [name]: filteredValue }));
+      const msg = validateFieldHelper(name, filteredValue, userType, {
         ...data,
-        [name]: value,
+        [name]: filteredValue,
       });
       setErrors((prev) => ({ ...prev, [name]: msg }));
     },
     [data, userType],
+  );
+
+  const handlePasswordKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // Prevent space input in password fields
+      if (e.key === " " || e.key === "Spacebar") {
+        e.preventDefault();
+      }
+    },
+    [],
   );
 
   const handleMultiSelectChange = useCallback(
@@ -365,7 +380,7 @@ export default function Signup() {
         const payload: RegisterReaderPayload = {
           email: data.email!,
           password: data.password!,
-          fullName: data.name!,
+          fullName: data.name!.trim(),
           dateOfBirth: data.date_of_birth!,
         };
         await registerReader(payload);
@@ -373,7 +388,7 @@ export default function Signup() {
         const payload: RegisterReviewerPayload = {
           email: data.email!,
           password: data.password!,
-          fullName: data.name!,
+          fullName: data.name!.trim(),
           dateOfBirth: data.date_of_birth!,
           orcid: data.orcid,
           educationLevel: data.educationLevel! as "COLLEGE" | "UNIVERSITY" | "MASTER" | "DOCTORATE",
@@ -387,7 +402,7 @@ export default function Signup() {
         const payload: RegisterOrgAdminPayload = {
           adminEmail: data.email!,
           password: data.password!,
-          adminFullName: data.name!,
+          adminFullName: data.name!.trim(),
           organizationName: data.organizationName!,
           organizationType: data.organizationType! as "SCHOOL" | "COLLEGE" | "UNIVERSITY" | "TRAINING_CENTER",
           organizationEmail: data.organizationEmail!,
@@ -467,28 +482,17 @@ export default function Signup() {
         <Image
           src={Logo}
           alt="Logo"
-          width={100}
-          height={100}
+          width={150}
+          height={150}
           className="dark:hidden"
         />
         <Image
           src={LogoDark}
           alt="Logo"
-          width={100}
-          height={100}
+          width={150}
+          height={150}
           className="hidden dark:block"
         />
-      </div>
-
-      <button className={styles["oauth-btn"]}>
-        <GoogleIcon />
-        Sign up with Google
-      </button>
-
-      <div className={styles.divider}>
-        <span className={styles["divider-line"]}></span>
-        <div className={styles["divider-text"]}>Or sign up with email</div>
-        <span className={styles["divider-line"]}></span>
       </div>
 
       <div>

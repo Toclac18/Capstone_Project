@@ -29,7 +29,7 @@ const securityHeaders = [
       `default-src 'self';`,
       `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${FE_DOMAIN};`,
       `style-src 'self' 'unsafe-inline';`,
-      `img-src 'self' data: blob: https://s3.amazonaws.com https://*.s3.amazonaws.com https://*.s3.ap-southeast-1.amazonaws.com;`,
+      `img-src 'self' data: blob: ${S3_DOMAINS}`,
       `font-src 'self' data:;`,
       `connect-src 'self' ${BE_DOMAIN} ${FE_DOMAIN} ws: wss: ${S3_DOMAINS};`,
       `frame-ancestors 'none';`,

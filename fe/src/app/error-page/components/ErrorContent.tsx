@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import styles from "../styles.module.css";
 import { ErrorIllustration } from "./ErrorIllustration";
 
@@ -15,8 +14,6 @@ export const ErrorContent: React.FC<ErrorContentProps> = ({
   title = "Internal Server Error",
   message = "We apologize for the inconvenience. An unexpected error occurred.",
 }) => {
-  const router = useRouter();
-
   return (
     <div className={styles.container}>
       <div className={styles.card}>

@@ -42,4 +42,9 @@ public class ReviewHistoryFilterRequest {
    * Filter by domain ID
    */
   private UUID domainId;
+
+  /**
+   * Search by document title (case-insensitive, partial match)
+   */
+  private String search;
 }

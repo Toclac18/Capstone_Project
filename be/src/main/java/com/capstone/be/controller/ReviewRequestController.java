@@ -18,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -200,16 +201,17 @@ public class ReviewRequestController {
   public ResponseEntity<PagedResponse<DocumentReviewResponse>> getReviewHistory(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @RequestParam(name = "decision", required = false) ReviewDecision decision,
-      @RequestParam(name = "dateFrom", required = false) Instant dateFrom,
-      @RequestParam(name = "dateTo", required = false) Instant dateTo,
+      @RequestParam(name = "dateFrom", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant dateFrom,
+      @RequestParam(name = "dateTo", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant dateTo,
       @RequestParam(name = "docTypeId", required = false) UUID docTypeId,
       @RequestParam(name = "domainId", required = false) UUID domainId,
+      @RequestParam(name = "search", required = false) String search,
       @RequestParam(name = "page", defaultValue = "0") int page,
       @RequestParam(name = "size", defaultValue = "10") int size) {
 
     UUID reviewerId = userPrincipal.getId();
-    log.info("Reviewer {} requesting review history with filters - decision: {}, dateFrom: {}, dateTo: {}, docTypeId: {}, domainId: {}",
-        reviewerId, decision, dateFrom, dateTo, docTypeId, domainId);
+    log.info("Reviewer {} requesting review history with filters - decision: {}, dateFrom: {}, dateTo: {}, docTypeId: {}, domainId: {}, search: {}",
+        reviewerId, decision, dateFrom, dateTo, docTypeId, domainId, search);
 
     // Build filter request
     ReviewHistoryFilterRequest filter = ReviewHistoryFilterRequest.builder()
@@ -218,6 +220,7 @@ public class ReviewRequestController {
         .dateTo(dateTo)
         .docTypeId(docTypeId)
         .domainId(domainId)
+        .search(search)
         .build();
 
     Pageable pageable = PageRequest.of(page, size);

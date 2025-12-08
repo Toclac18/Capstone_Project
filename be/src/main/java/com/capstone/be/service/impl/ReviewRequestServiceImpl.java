@@ -118,7 +118,12 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     log.info("Successfully assigned reviewer {} to document {}", request.getReviewerId(), documentId);
 
-    return reviewRequestMapper.toResponse(reviewRequest);
+    // Load tags for the document
+    List<Tag> tags = documentTagLinkRepository.findByDocument_Id(reviewRequest.getDocument().getId())
+        .stream()
+        .map(DocumentTagLink::getTag)
+        .collect(Collectors.toList());
+    return reviewRequestMapper.toResponse(reviewRequest, tags);
   }
 
   @Override
@@ -140,7 +145,14 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
         pageable
     );
 
-    return requests.map(reviewRequestMapper::toResponse);
+    return requests.map(request -> {
+      // Load tags for the document
+      List<Tag> tags = documentTagLinkRepository.findByDocument_Id(request.getDocument().getId())
+          .stream()
+          .map(DocumentTagLink::getTag)
+          .collect(Collectors.toList());
+      return reviewRequestMapper.toResponse(request, tags);
+    });
   }
 
   @Override
@@ -158,7 +170,14 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     Page<ReviewRequest> requests = reviewRequestRepository.findByReviewer_Id(reviewerId, pageable);
 
-    return requests.map(reviewRequestMapper::toResponse);
+    return requests.map(request -> {
+      // Load tags for the document
+      List<Tag> tags = documentTagLinkRepository.findByDocument_Id(request.getDocument().getId())
+          .stream()
+          .map(DocumentTagLink::getTag)
+          .collect(Collectors.toList());
+      return reviewRequestMapper.toResponse(request, tags);
+    });
   }
 
   @Override
@@ -215,7 +234,12 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     reviewRequest = reviewRequestRepository.save(reviewRequest);
 
-    return reviewRequestMapper.toResponse(reviewRequest);
+    // Load tags for the document
+    List<Tag> tags = documentTagLinkRepository.findByDocument_Id(reviewRequest.getDocument().getId())
+        .stream()
+        .map(DocumentTagLink::getTag)
+        .collect(Collectors.toList());
+    return reviewRequestMapper.toResponse(reviewRequest, tags);
   }
 
   @Override
@@ -238,7 +262,14 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
         pageable
     );
 
-    return requests.map(reviewRequestMapper::toResponse);
+    return requests.map(request -> {
+      // Load tags for the document
+      List<Tag> tags = documentTagLinkRepository.findByDocument_Id(request.getDocument().getId())
+          .stream()
+          .map(DocumentTagLink::getTag)
+          .collect(Collectors.toList());
+      return reviewRequestMapper.toResponse(request, tags);
+    });
   }
 
   @Override
@@ -253,7 +284,14 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     Page<ReviewRequest> requests = reviewRequestRepository.findByDocument_Id(documentId, pageable);
 
-    return requests.map(reviewRequestMapper::toResponse);
+    return requests.map(request -> {
+      // Load tags for the document
+      List<Tag> tags = documentTagLinkRepository.findByDocument_Id(request.getDocument().getId())
+          .stream()
+          .map(DocumentTagLink::getTag)
+          .collect(Collectors.toList());
+      return reviewRequestMapper.toResponse(request, tags);
+    });
   }
 
   @Override
@@ -263,7 +301,14 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     Page<ReviewRequest> requests = reviewRequestRepository.findAll(pageable);
 
-    return requests.map(reviewRequestMapper::toResponse);
+    return requests.map(request -> {
+      // Load tags for the document
+      List<Tag> tags = documentTagLinkRepository.findByDocument_Id(request.getDocument().getId())
+          .stream()
+          .map(DocumentTagLink::getTag)
+          .collect(Collectors.toList());
+      return reviewRequestMapper.toResponse(request, tags);
+    });
   }
 
   @Override

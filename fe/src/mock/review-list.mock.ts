@@ -367,12 +367,12 @@ export function getReviewHistory(
     filtered = filtered.filter((review) => review.specialization === params.specialization);
   }
 
-  // Filter by action (Active = APPROVE, Rejected = REJECT)
-  if (params?.active !== undefined || params?.rejected !== undefined) {
+  // Filter by action (Approved = APPROVE, Rejected = REJECT)
+  if (params?.approved !== undefined || params?.rejected !== undefined) {
     filtered = filtered.filter((review) => {
-      if (params.active && review.action === "APPROVE") return true;
+      if (params.approved && review.action === "APPROVE") return true;
       if (params.rejected && review.action === "REJECT") return true;
-      if (!params.active && !params.rejected) return true;
+      if (!params.approved && !params.rejected) return true;
       return false;
     });
   }

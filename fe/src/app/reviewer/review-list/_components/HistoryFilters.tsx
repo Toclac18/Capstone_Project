@@ -6,6 +6,8 @@ import type { ReviewHistoryQueryParams } from "@/types/review";
 import {
   getDocumentTypes,
   getDomains,
+  type DocumentType,
+  type Domain,
 } from "@/services/upload-documents.service";
 import styles from "../styles.module.css";
 
@@ -20,7 +22,7 @@ type FilterValues = {
   dateTo: string;
   type: string;
   domain: string;
-  active: boolean;
+  approved: boolean;
   rejected: boolean;
 };
 
@@ -35,14 +37,14 @@ export function HistoryFilters({
       dateTo: "",
       type: "",
       domain: "",
-      active: false,
+      approved: false,
       rejected: false,
     },
   });
 
   const watchedFilters = useWatch({ control });
-  const [documentTypes, setDocumentTypes] = useState<string[]>([]);
-  const [domains, setDomains] = useState<string[]>([]);
+  const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
+  const [domains, setDomains] = useState<Domain[]>([]);
 
   useEffect(() => {
     const loadOptions = async () => {
@@ -51,8 +53,8 @@ export function HistoryFilters({
           getDocumentTypes(),
           getDomains(),
         ]);
-        setDocumentTypes(types.map((t) => t.name));
-        setDomains(domainsData.map((d) => d.name));
+        setDocumentTypes(types);
+        setDomains(domainsData);
       } catch (error) {
         console.error("Failed to load options:", error);
       }
@@ -68,7 +70,7 @@ export function HistoryFilters({
         dateTo: data.dateTo || undefined,
         type: data.type || undefined,
         domain: data.domain || undefined,
-        active: data.active || undefined,
+        approved: data.approved || undefined,
         rejected: data.rejected || undefined,
         page: 1,
       };
@@ -84,7 +86,7 @@ export function HistoryFilters({
       dateTo: "",
       type: "",
       domain: "",
-      active: false,
+      approved: false,
       rejected: false,
     });
     const clearedFilters: ReviewHistoryQueryParams = {
@@ -93,7 +95,7 @@ export function HistoryFilters({
       dateTo: undefined,
       type: undefined,
       domain: undefined,
-      active: undefined,
+      approved: undefined,
       rejected: undefined,
       page: 1,
     };
@@ -106,7 +108,7 @@ export function HistoryFilters({
     watchedFilters.dateTo ||
     watchedFilters.type ||
     watchedFilters.domain ||
-    watchedFilters.active ||
+    watchedFilters.approved ||
     watchedFilters.rejected;
 
   const typeOptions = useMemo(() => {
@@ -114,10 +116,10 @@ export function HistoryFilters({
     map.set("", { value: "", label: "All Types" });
     documentTypes
       .filter(Boolean)
-      .sort()
+      .sort((a, b) => a.name.localeCompare(b.name))
       .forEach((t) => {
-        if (!map.has(t)) {
-          map.set(t, { value: t, label: t });
+        if (!map.has(t.name)) {
+          map.set(t.name, { value: t.name, label: t.name });
         }
       });
     return Array.from(map.values());
@@ -128,10 +130,10 @@ export function HistoryFilters({
     map.set("", { value: "", label: "All Domains" });
     domains
       .filter(Boolean)
-      .sort()
+      .sort((a, b) => a.name.localeCompare(b.name))
       .forEach((d) => {
-        if (!map.has(d)) {
-          map.set(d, { value: d, label: d });
+        if (!map.has(d.name)) {
+          map.set(d.name, { value: d.name, label: d.name });
         }
       });
     return Array.from(map.values());
@@ -199,13 +201,13 @@ export function HistoryFilters({
           <div className={styles["checkbox-group"]}>
             <label className={styles["checkbox-label"]}>
               <input
-                id="active"
+                id="approved"
                 type="checkbox"
-                {...register("active")}
+                {...register("approved")}
                 className={styles["checkbox-input"]}
                 disabled={loading}
               />
-              <span className={styles["checkbox-text"]}>Active</span>
+              <span className={styles["checkbox-text"]}>Approved</span>
             </label>
             <label className={styles["checkbox-label"]}>
               <input
@@ -302,7 +304,7 @@ export function HistoryFilters({
                       dateTo: watchedFilters.dateTo || "",
                       type: watchedFilters.type || "",
                       domain: watchedFilters.domain || "",
-                      active: watchedFilters.active || false,
+                      approved: watchedFilters.approved || false,
                       rejected: watchedFilters.rejected || false,
                     };
                     reset(updatedFilters);
@@ -314,13 +316,13 @@ export function HistoryFilters({
                 </button>
               </span>
             )}
-            {(watchedFilters.active || watchedFilters.rejected) && (
+            {(watchedFilters.approved || watchedFilters.rejected) && (
               <span
                 className={`${styles["filter-tag"]} bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200`}
               >
                 Status:{" "}
                 {[
-                  watchedFilters.active && "Active",
+                  watchedFilters.approved && "Approved",
                   watchedFilters.rejected && "Rejected",
                 ]
                   .filter(Boolean)
@@ -334,7 +336,7 @@ export function HistoryFilters({
                       dateTo: watchedFilters.dateTo || "",
                       type: watchedFilters.type || "",
                       domain: watchedFilters.domain || "",
-                      active: false,
+                      approved: false,
                       rejected: false,
                     };
                     reset(updatedFilters);
@@ -360,7 +362,7 @@ export function HistoryFilters({
                       dateTo: watchedFilters.dateTo || "",
                       type: "",
                       domain: watchedFilters.domain || "",
-                      active: watchedFilters.active || false,
+                      approved: watchedFilters.approved || false,
                       rejected: watchedFilters.rejected || false,
                     };
                     reset(updatedFilters);
@@ -386,7 +388,7 @@ export function HistoryFilters({
                       dateTo: watchedFilters.dateTo || "",
                       type: watchedFilters.type || "",
                       domain: "",
-                      active: watchedFilters.active || false,
+                      approved: watchedFilters.approved || false,
                       rejected: watchedFilters.rejected || false,
                     };
                     reset(updatedFilters);
@@ -413,7 +415,7 @@ export function HistoryFilters({
                       dateTo: "",
                       type: watchedFilters.type || "",
                       domain: watchedFilters.domain || "",
-                      active: watchedFilters.active || false,
+                      approved: watchedFilters.approved || false,
                       rejected: watchedFilters.rejected || false,
                     };
                     reset(updatedFilters);

@@ -1,5 +1,4 @@
-// GET /api/reviewer/review-list/requests -> BE GET /api/review-requests
-// This route is kept for backward compatibility, but should use /api/reviewer/review-list instead
+// GET /api/reviewer/review-list/pending -> BE GET /api/review-requests/pending
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
@@ -15,14 +14,16 @@ async function handleGET(request: Request) {
     : 10;
 
   if (USE_MOCK) {
-    // Mock response
     return jsonResponse(
       {
-        content: [],
-        page: page,
-        size: size,
-        totalElements: 0,
-        totalPages: 0,
+        success: true,
+        data: [],
+        pageInfo: {
+          page: page,
+          size: size,
+          totalElements: 0,
+          totalPages: 0,
+        },
       },
       {
         status: 200,
@@ -42,12 +43,13 @@ async function handleGET(request: Request) {
   if (ip) {
     fh.set("X-Forwarded-For", ip);
   }
+
   const queryParams = new URLSearchParams();
   queryParams.append("page", page.toString());
   queryParams.append("size", size.toString());
 
   const upstream = await fetch(
-    `${BE_BASE}/api/review-requests?${queryParams.toString()}`,
+    `${BE_BASE}/api/review-requests/pending?${queryParams.toString()}`,
     {
       method: "GET",
       headers: fh,
@@ -59,4 +61,3 @@ async function handleGET(request: Request) {
 }
 
 export { handleGET as GET };
-

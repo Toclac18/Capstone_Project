@@ -43,6 +43,8 @@ export function HistoryFilters({
   });
 
   const watchedFilters = useWatch({ control });
+  const dateFrom = watchedFilters.dateFrom;
+  const dateTo = watchedFilters.dateTo;
   const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
   const [domains, setDomains] = useState<Domain[]>([]);
 
@@ -64,6 +66,11 @@ export function HistoryFilters({
 
   const onSubmit = useCallback<SubmitHandler<FilterValues>>(
     (data: FilterValues) => {
+      // Validate date range - dateTo must be greater than or equal to dateFrom
+      if (data.dateFrom && data.dateTo && data.dateTo < data.dateFrom) {
+        return; // Don't submit if validation fails
+      }
+
       const filters: ReviewHistoryQueryParams = {
         search: data.search?.trim() || undefined,
         dateFrom: data.dateFrom || undefined,
@@ -229,10 +236,23 @@ export function HistoryFilters({
           <input
             id="dateFrom"
             type="date"
-            className={styles["input"]}
+            className={`${styles["input"]} ${dateFrom && dateTo && dateFrom > dateTo ? styles["input-error"] : ""}`}
             disabled={loading}
-            {...register("dateFrom")}
+            max={dateTo || undefined}
+            {...register("dateFrom", {
+              validate: (value) => {
+                if (dateTo && value && value > dateTo) {
+                  return "Date From must be less than or equal to Date To";
+                }
+                return true;
+              },
+            })}
           />
+          {dateFrom && dateTo && dateFrom > dateTo && (
+            <p className={styles["field-error"]}>
+              Date From must be less than or equal to Date To
+            </p>
+          )}
         </div>
 
         <div>
@@ -242,10 +262,23 @@ export function HistoryFilters({
           <input
             id="dateTo"
             type="date"
-            className={styles["input"]}
+            className={`${styles["input"]} ${dateFrom && dateTo && dateTo < dateFrom ? styles["input-error"] : ""}`}
             disabled={loading}
-            {...register("dateTo")}
+            min={dateFrom || undefined}
+            {...register("dateTo", {
+              validate: (value) => {
+                if (dateFrom && value && value < dateFrom) {
+                  return "Date To must be greater than or equal to Date From";
+                }
+                return true;
+              },
+            })}
           />
+          {dateFrom && dateTo && dateTo < dateFrom && (
+            <p className={styles["field-error"]}>
+              Date To must be greater than or equal to Date From
+            </p>
+          )}
         </div>
 
         <div>

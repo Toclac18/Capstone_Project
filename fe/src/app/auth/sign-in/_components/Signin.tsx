@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { Eye, EyeOff } from "lucide-react";
 import { login, type LoginPayload } from "../api";
-import { EmailIcon, GoogleIcon } from "@/assets/icons";
+import { EmailIcon } from "@/assets/icons";
 import { useToast } from "@/components/ui/toast";
 import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
@@ -18,9 +18,7 @@ type FormValues = {
   role:
     | "READER"
     | "REVIEWER"
-    | "ORGANIZATION_ADMIN"
-    | "SYSTEM_ADMIN"
-    | "BUSINESS_ADMIN";
+    | "ORGANIZATION_ADMIN";
   remember: boolean;
 };
 
@@ -67,10 +65,8 @@ export default function Signin() {
       // Redirect based on role
       const roleRoutes: Record<typeof data.role, string> = {
         READER: "/homepage",
-        REVIEWER: "/reviewer",
-        ORGANIZATION_ADMIN: "/org-admin/readers",
-        SYSTEM_ADMIN: "/admin",
-        BUSINESS_ADMIN: "/business-admin",
+        REVIEWER: "/homepage",
+        ORGANIZATION_ADMIN: "/homepage",
       };
 
       const targetRoute = roleRoutes[data.role] || "/";
@@ -101,29 +97,19 @@ export default function Signin() {
         <Image
           src={Logo}
           alt="Logo"
-          width={100}
-          height={100}
+          width={150}
+          height={150}
           className="dark:hidden"
         />
         <Image
           src={LogoDark}
           alt="Logo"
-          width={100}
-          height={100}
+          width={150}
+          height={150}
           className="hidden dark:block"
         />
       </div>
 
-      <button className={styles["oauth-btn"]}>
-        <GoogleIcon />
-        Sign in with Google
-      </button>
-
-      <div className={styles.divider}>
-        <span className={styles["divider-line"]}></span>
-        <div className={styles["divider-text"]}>Or sign in with email</div>
-        <span className={styles["divider-line"]}></span>
-      </div>
 
       <div>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -145,8 +131,6 @@ export default function Signin() {
                 <option value="READER">Reader</option>
                 <option value="REVIEWER">Reviewer</option>
                 <option value="ORGANIZATION_ADMIN">Organization Admin</option>
-                <option value="SYSTEM_ADMIN">System Admin</option>
-                <option value="BUSINESS_ADMIN">Business Admin</option>
               </select>
               <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">
                 <svg width={20} height={20} fill="none" viewBox="0 0 20 20">

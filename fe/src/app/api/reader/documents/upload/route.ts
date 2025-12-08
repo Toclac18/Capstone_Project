@@ -1,7 +1,10 @@
 import { headers } from "next/headers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
+import axios from "axios";
+import FormDataLib from "form-data";
 
 async function handlePOST(request: Request) {
   try {
@@ -37,29 +40,92 @@ async function handlePOST(request: Request) {
       );
     }
 
+    const bearerToken = await getAuthHeader();
     const h = await headers();
-    const authHeader = h.get("authorization") || "";
-    const cookieHeader = h.get("cookie") || "";
+    const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
 
-    const fh = new Headers();
-    if (authHeader) fh.set("Authorization", authHeader);
-    if (cookieHeader) fh.set("Cookie", cookieHeader);
-
-    // Read FormData from request and create new one for forwarding
+    // Read FormData from request
     const formData = await request.formData();
-    const forwardFormData = new FormData();
-    formData.forEach((value, key) => {
-      forwardFormData.append(key, value);
+    
+    // Validate required parts
+    const infoPart = formData.get("info");
+    const filePart = formData.get("file");
+    
+    if (!infoPart) {
+      return jsonResponse(
+        { error: "Missing 'info' part in form data" },
+        { status: 400 }
+      );
+    }
+    if (!filePart || !(filePart instanceof File)) {
+      return jsonResponse(
+        { error: "Missing 'file' part in form data" },
+        { status: 400 }
+      );
+    }
+    
+    // Use form-data library to ensure proper Content-Type with boundary
+    const forwardFormData = new FormDataLib();
+    
+    // Append "info" part as JSON string with Content-Type: application/json
+    forwardFormData.append("info", infoPart as string, {
+      contentType: "application/json",
+    });
+    
+    // Append "file" part as Buffer
+    const fileBuffer = Buffer.from(await (filePart as File).arrayBuffer());
+    forwardFormData.append("file", fileBuffer, {
+      filename: (filePart as File).name,
+      contentType: (filePart as File).type || "application/octet-stream",
     });
 
-    const upstream = await fetch(`${BE_BASE}/api/reader/documents/upload`, {
-      method: "POST",
-      headers: fh,
-      body: forwardFormData,
-      cache: "no-store",
-    });
+    // Use axios to forward request - it handles form-data library correctly
+    const axiosHeaders: Record<string, string> = {};
+    if (bearerToken) {
+      axiosHeaders["Authorization"] = bearerToken;
+    }
+    if (ip) {
+      axiosHeaders["X-Forwarded-For"] = ip;
+    }
+    
+    // form-data library sets Content-Type with boundary automatically
+    const contentType = forwardFormData.getHeaders()["content-type"];
+    if (contentType) {
+      axiosHeaders["Content-Type"] = contentType;
+    }
 
-    return proxyJsonResponse(upstream, { mode: "real" });
+    try {
+      const response = await axios.post(
+        `${BE_BASE}/api/documents/upload`,
+        forwardFormData,
+        {
+          headers: axiosHeaders,
+          maxBodyLength: Infinity,
+          maxContentLength: Infinity,
+        },
+      );
+
+      return jsonResponse(response.data, {
+        status: response.status,
+        mode: "real",
+      });
+    } catch (error: any) {
+      if (error.response) {
+        return proxyJsonResponse(
+          new Response(JSON.stringify(error.response.data), {
+            status: error.response.status,
+            headers: {
+              "content-type": "application/json",
+            },
+          }),
+          { mode: "real" },
+        );
+      }
+      return jsonResponse(
+        { error: error.message || "Failed to upload document" },
+        { status: 500 },
+      );
+    }
   } catch (error) {
     console.error("Upload error:", error);
     return new Response(

@@ -3,7 +3,7 @@
 import Breadcrumb from "@/components/(template)/Breadcrumbs/Breadcrumb";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, X, AlertCircle, Plus, FileText } from "lucide-react";
+import { Upload, X, AlertCircle, Plus, FileText, Building2, Check } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import {
   fetchDocumentTypes,
@@ -16,7 +16,15 @@ import {
   type Tag,
   type Specialization,
 } from "./api";
+import { getMyOrganizations, type OrganizationSummary } from "@/services/organizations.service";
+import { sanitizeImageUrl } from "@/utils/imageUrl";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
+import mammoth from "mammoth";
 import styles from "./styles.module.css";
+
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 export default function UploadDocumentPage() {
   const { showToast } = useToast();
@@ -26,6 +34,7 @@ export default function UploadDocumentPage() {
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const typeIdRef = useRef<HTMLSelectElement>(null);
   const domainRef = useRef<HTMLSelectElement>(null);
+  const tagDropdownRef = useRef<HTMLDivElement>(null);
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -41,7 +50,8 @@ export default function UploadDocumentPage() {
   const [fileType, setFileType] = useState<string>("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [visibility, setVisibility] = useState<"PUBLIC" | "INTERNAL" | "PRIVATE">("PUBLIC");
+  const [visibility, setVisibility] = useState<"PUBLIC" | "INTERNAL">("PUBLIC");
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>("");
   const [typeId, setTypeId] = useState("");
   const [selectedDomainId, setSelectedDomainId] = useState<string>("");
   const [selectedSpecializationId, setSelectedSpecializationId] = useState<string>("");
@@ -56,6 +66,14 @@ export default function UploadDocumentPage() {
   const [tags, setTags] = useState<Tag[]>([]);
   const [tagSearch, setTagSearch] = useState("");
   const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const [organizations, setOrganizations] = useState<OrganizationSummary[]>([]);
+  const [orgLogoErrors, setOrgLogoErrors] = useState<Set<string>>(new Set());
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [docxHtml, setDocxHtml] = useState<string | null>(null);
+  const [docxError, setDocxError] = useState<string | null>(null);
+
+  const LOGO_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/org-logos/";
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -65,14 +83,16 @@ export default function UploadDocumentPage() {
       setLoading(true);
       setError(null);
       try {
-        const [types, domainsData, tagsData] = await Promise.all([
+        const [types, domainsData, tagsData, orgsData] = await Promise.all([
           fetchDocumentTypes(),
           fetchDomains(),
           fetchTags(),
+          getMyOrganizations().catch(() => ({ items: [], total: 0 })), // Ignore errors if user has no orgs
         ]);
         setDocumentTypes(types);
         setDomains(domainsData);
         setTags(tagsData);
+        setOrganizations(orgsData.items);
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : "Failed to load options";
         setError(msg);
@@ -127,6 +147,26 @@ export default function UploadDocumentPage() {
     loadTags();
   }, [tagSearch]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        tagDropdownRef.current &&
+        !tagDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowTagDropdown(false);
+      }
+    };
+
+    if (showTagDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showTagDropdown]);
+
   // Cleanup file preview URL when component unmounts
   useEffect(() => {
     return () => {
@@ -161,16 +201,21 @@ export default function UploadDocumentPage() {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
 
-    // Validate file type (PDF, DOC, DOCX, etc.)
+    // Validate file type (PDF and DOCX only)
     const allowedTypes = [
       "application/pdf",
-      "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ];
     if (!allowedTypes.includes(selectedFile.type)) {
       setErrors({
         ...errors,
-        file: "Please upload a PDF or Word document",
+        file: "Please upload a PDF or DOCX document only",
+      });
+      showToast({
+        type: "error",
+        title: "Invalid file type",
+        message: "Only PDF and DOCX files are supported.",
+        duration: 3000,
       });
       return;
     }
@@ -203,18 +248,38 @@ export default function UploadDocumentPage() {
     setFileType(selectedFile.type);
     setTitle(selectedFile.name.replace(/\.[^/.]+$/, "")); // Auto-fill title from filename
     setFileSelected(true);
+    setPdfError(null);
+    setNumPages(null);
+    setDocxHtml(null);
+    setDocxError(null);
     
-    // Generate preview for PDF (store as data URL)
+    // Generate preview for PDF (create blob URL for better performance)
     if (selectedFile.type === "application/pdf") {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setFilePreview(result);
-      };
-      reader.readAsDataURL(selectedFile);
-    } else {
-      // For DOC/DOCX, we'll show file info instead
+      // Create blob URL for PDF preview
+      const blobUrl = URL.createObjectURL(selectedFile);
+      setFilePreview(blobUrl);
+    } else if (selectedFile.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+      // Preview DOCX using mammoth
       setFilePreview(null);
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const arrayBuffer = e.target?.result as ArrayBuffer;
+          const result = await mammoth.convertToHtml({ arrayBuffer });
+          setDocxHtml(result.value);
+          setDocxError(null);
+        } catch (error) {
+          console.error("DOCX conversion error:", error);
+          setDocxError("Failed to preview DOCX file");
+          setDocxHtml(null);
+        }
+      };
+      reader.readAsArrayBuffer(selectedFile);
+    } else {
+      // For DOC (old format) or other file types, no preview available
+      setFilePreview(null);
+      setDocxHtml(null);
+      setDocxError(null);
     }
     
     if (errors.file) {
@@ -239,17 +304,22 @@ export default function UploadDocumentPage() {
     const droppedFile = e.dataTransfer.files?.[0];
     if (!droppedFile) return;
 
-    // Validate file type (PDF, DOC, DOCX only)
+    // Validate file type (PDF and DOCX only)
     const allowedTypes = [
       "application/pdf",
-      "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ];
     
     if (!allowedTypes.includes(droppedFile.type)) {
       setErrors({
         ...errors,
-        file: "Please upload a PDF or Word document (PDF, DOC, DOCX)",
+        file: "Please upload a PDF or DOCX document only",
+      });
+      showToast({
+        type: "error",
+        title: "Invalid file type",
+        message: "Only PDF and DOCX files are supported.",
+        duration: 3000,
       });
       return;
     }
@@ -282,18 +352,38 @@ export default function UploadDocumentPage() {
     setFileType(droppedFile.type);
     setTitle(droppedFile.name.replace(/\.[^/.]+$/, "")); // Auto-fill title from filename
     setFileSelected(true);
+    setPdfError(null);
+    setNumPages(null);
+    setDocxHtml(null);
+    setDocxError(null);
     
-    // Generate preview for PDF (store as data URL)
+    // Generate preview for PDF (create blob URL for better performance)
     if (droppedFile.type === "application/pdf") {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setFilePreview(result);
-      };
-      reader.readAsDataURL(droppedFile);
-    } else {
-      // For DOC/DOCX, we'll show file info instead
+      // Create blob URL for PDF preview
+      const blobUrl = URL.createObjectURL(droppedFile);
+      setFilePreview(blobUrl);
+    } else if (droppedFile.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+      // Preview DOCX using mammoth
       setFilePreview(null);
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const arrayBuffer = e.target?.result as ArrayBuffer;
+          const result = await mammoth.convertToHtml({ arrayBuffer });
+          setDocxHtml(result.value);
+          setDocxError(null);
+        } catch (error) {
+          console.error("DOCX conversion error:", error);
+          setDocxError("Failed to preview DOCX file");
+          setDocxHtml(null);
+        }
+      };
+      reader.readAsArrayBuffer(droppedFile);
+    } else {
+      // For DOC (old format) or other file types, no preview available
+      setFilePreview(null);
+      setDocxHtml(null);
+      setDocxError(null);
     }
     
     if (errors.file) {
@@ -316,6 +406,17 @@ export default function UploadDocumentPage() {
   const handleDomainChange = (domainId: string) => {
     setSelectedDomainId(domainId);
     setSelectedSpecializationId(""); // Reset specialization when domain changes
+  };
+
+  const handleVisibilityChange = (newVisibility: "PUBLIC" | "INTERNAL") => {
+    setVisibility(newVisibility);
+    if (newVisibility === "PUBLIC") {
+      setSelectedOrganizationId("");
+    }
+  };
+
+  const handleOrgLogoError = (orgId: string) => {
+    setOrgLogoErrors((prev) => new Set(prev).add(orgId));
   };
 
   const handleToggleTag = (tagId: string) => {
@@ -355,6 +456,18 @@ export default function UploadDocumentPage() {
       newErrors.domain = "Domain is required";
     }
 
+    if (!selectedSpecializationId) {
+      newErrors.specialization = "Specialization is required";
+    }
+
+    if (visibility === "INTERNAL") {
+      if (organizations.length === 0) {
+        newErrors.visibility = "You must be a member of at least one organization to upload internal documents";
+      } else if (!selectedOrganizationId) {
+        newErrors.organization = "Please select an organization for internal documents";
+      }
+    }
+
     setErrors(newErrors);
     
     // Get first error field and message
@@ -381,6 +494,7 @@ export default function UploadDocumentPage() {
     setNewTagInput("");
     setTagSearch("");
     setShowTagDropdown(false);
+    setSelectedOrganizationId("");
     setErrors({});
     setError(null);
   };
@@ -409,6 +523,7 @@ export default function UploadDocumentPage() {
     setNewTagInput("");
     setTagSearch("");
     setShowTagDropdown(false);
+    setSelectedOrganizationId("");
     setErrors({});
     setError(null);
     
@@ -462,7 +577,9 @@ export default function UploadDocumentPage() {
         domainIds: [selectedDomainId],
         specializationIds: selectedSpecializationId ? [selectedSpecializationId] : [],
         tagIds: selectedTagIds,
+        tags: tags, // Pass tags list to map tagIds to tagCodes
         newTags: newTags.length > 0 ? newTags : undefined,
+        organizationId: visibility === "INTERNAL" ? selectedOrganizationId : undefined,
       });
 
       showToast({
@@ -504,9 +621,6 @@ export default function UploadDocumentPage() {
         </div>
       )}
 
-      {error && !loading && (
-        <div className={styles["error-container"]}>{error}</div>
-      )}
 
       {!loading && !fileSelected && (
         <div className={styles["pre-upload-container"]}>
@@ -528,7 +642,7 @@ export default function UploadDocumentPage() {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".pdf,.doc,.docx"
+              accept=".pdf,.docx"
               onChange={handleFileChange}
               className={styles["file-input"]}
             />
@@ -547,7 +661,7 @@ export default function UploadDocumentPage() {
 
           {/* Supported File Types */}
           <p className={styles["supported-files"]}>
-            Supported file types: PDF, DOC, DOCX
+            Supported file types: PDF, DOCX
           </p>
 
             {/* Uploader Agreement */}
@@ -610,21 +724,90 @@ export default function UploadDocumentPage() {
                   </div>
                   {filePreview && fileType === "application/pdf" ? (
                     <div className={styles["preview-content"]}>
-                      <object
-                        data={filePreview}
-                        type="application/pdf"
-                        className={styles["preview-object"]}
-                        title="PDF Preview"
-                      >
+                      {pdfError ? (
                         <div className={styles["preview-fallback"]}>
                           <FileText className={styles["preview-icon"]} />
                           <p className={styles["preview-text"]}>
-                            Your browser doesn&apos;t support PDF preview.
+                            {pdfError}
                           </p>
                         </div>
-                      </object>
+                      ) : (
+                        <>
+                          <div className={styles["preview-pdf-wrapper"]}>
+                            <Document
+                              file={file}
+                              onLoadSuccess={({ numPages }) => {
+                                setNumPages(numPages);
+                                setPdfError(null);
+                              }}
+                              onLoadError={(error) => {
+                                console.error("PDF load error:", error);
+                                setPdfError("Failed to load PDF preview. Please try downloading the file instead.");
+                              }}
+                              loading={
+                                <div className={styles["preview-loading"]}>
+                                  Loading PDF preview...
+                                </div>
+                              }
+                              error={
+                                <div className={styles["preview-fallback"]}>
+                                  <FileText className={styles["preview-icon"]} />
+                                  <p className={styles["preview-text"]}>
+                                    Failed to load PDF preview
+                                  </p>
+                                </div>
+                              }
+                            >
+                              <Page
+                                pageNumber={1}
+                                width={400}
+                                renderTextLayer={true}
+                                renderAnnotationLayer={true}
+                              />
+                            </Document>
+                          </div>
+                          {numPages && numPages > 1 && (
+                            <div className={styles["preview-page-info"]}>
+                              Page 1 of {numPages}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ) : docxHtml && fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ? (
+                    <div className={styles["preview-content"]}>
+                      {docxError ? (
+                        <div className={styles["preview-fallback"]}>
+                          <FileText className={styles["preview-icon"]} />
+                          <p className={styles["preview-text"]}>
+                            {docxError}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className={styles["preview-docx-wrapper"]}>
+                          <div 
+                            className={styles["preview-docx-content"]}
+                            dangerouslySetInnerHTML={{ __html: docxHtml }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : file && fileType === "application/msword" ? (
+                    // DOC files - no preview available, show file info only
+                    <div className={styles["preview-placeholder"]}>
+                      <FileText className={styles["preview-icon"]} />
+                      <p className={styles["preview-text"]}>Preview not available for DOC files</p>
+                      <div className={styles["preview-file-info"]}>
+                        <p className={styles["preview-file-type"]}>
+                          Type: {getFileTypeName(fileType)}
+                        </p>
+                        <p className={styles["preview-file-size"]}>
+                          Size: {formatFileSize(fileSize)}
+                        </p>
+                      </div>
                     </div>
                   ) : file ? (
+                    // Other file types - show file info
                     <div className={styles["preview-placeholder"]}>
                       <FileText className={styles["preview-icon"]} />
                       <p className={styles["preview-text"]}>Document Preview</p>
@@ -760,7 +943,7 @@ export default function UploadDocumentPage() {
                     <select
                       value={selectedSpecializationId}
                       onChange={(e) => setSelectedSpecializationId(e.target.value)}
-                      className={`${styles["select"]} ${errors.domain ? styles["input-error"] : ""}`}
+                      className={`${styles["select"]} ${errors.specialization ? styles["input-error"] : ""}`}
                     >
                       <option value="">Select specialization</option>
                       {specializations.length > 0 ? (
@@ -775,31 +958,96 @@ export default function UploadDocumentPage() {
                         </option>
                       )}
                     </select>
+                    {errors.specialization && (
+                      <p className={styles["field-error"]}>{errors.specialization}</p>
+                    )}
                   </div>
                 )}
 
                 {/* Visibility */}
                 <div className={styles["field-group"]}>
                   <label className={styles["field-label"]}>
-                    Public / Internal / Private <span className={styles["required"]}>*</span>
+                    Public / Internal <span className={styles["required"]}>*</span>
                   </label>
                   <select
                     value={visibility}
                     onChange={(e) =>
-                      setVisibility(e.target.value as "PUBLIC" | "INTERNAL" | "PRIVATE")
+                      handleVisibilityChange(e.target.value as "PUBLIC" | "INTERNAL")
                     }
-                    className={styles["select"]}
+                    className={`${styles["select"]} ${errors.visibility ? styles["input-error"] : ""}`}
                   >
                     <option value="PUBLIC">Public</option>
                     <option value="INTERNAL">Internal</option>
-                    <option value="PRIVATE">Private</option>
                   </select>
+                  {errors.visibility && (
+                    <p className={styles["field-error"]}>{errors.visibility}</p>
+                  )}
                 </div>
+
+                {/* Organization Selection for Internal Documents */}
+                {visibility === "INTERNAL" && (
+                  <div className={styles["field-group"]}>
+                    <label className={styles["field-label"]}>
+                      Organization <span className={styles["required"]}>*</span>
+                    </label>
+                    {organizations.length === 0 ? (
+                      <div className={styles["field-error"]}>
+                        You must be a member of at least one organization to upload internal documents.
+                      </div>
+                    ) : (
+                      <>
+                        <div className={styles["org-selection-grid"]}>
+                          {organizations.map((org) => {
+                            const hasLogoError = orgLogoErrors.has(org.id);
+                            const logoUrl = org.logo && !hasLogoError 
+                              ? sanitizeImageUrl(org.logo, LOGO_BASE_URL, null)
+                              : null;
+                            const isSelected = selectedOrganizationId === org.id;
+                            
+                            return (
+                              <div
+                                key={org.id}
+                                className={`${styles["org-selection-card"]} ${isSelected ? styles["org-selection-card-selected"] : ""}`}
+                                onClick={() => setSelectedOrganizationId(org.id)}
+                              >
+                                <div className={styles["org-selection-logo-wrapper"]}>
+                                  {logoUrl ? (
+                                    <img
+                                      src={logoUrl}
+                                      alt={`${org.name} logo`}
+                                      className={styles["org-selection-logo"]}
+                                      onError={() => handleOrgLogoError(org.id)}
+                                    />
+                                  ) : (
+                                    <div className={styles["org-selection-logo-fallback"]}>
+                                      <Building2 className={styles["org-selection-logo-icon"]} />
+                                    </div>
+                                  )}
+                                  {isSelected && (
+                                    <div className={styles["org-selection-check"]}>
+                                      <Check className={styles["org-selection-check-icon"]} />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className={styles["org-selection-name"]}>
+                                  {org.name}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {errors.organization && (
+                          <p className={styles["field-error"]}>{errors.organization}</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
 
                 {/* Tags Multi-select with Combobox */}
                 <div className={styles["field-group"]}>
                   <label className={styles["field-label"]}>Tags (optional)</label>
-                  <div className={styles["tags-wrapper"]}>
+                  <div className={styles["tags-wrapper"]} ref={tagDropdownRef}>
                     {/* Search input */}
                     <div className={styles["tag-search-wrapper"]}>
                       <input

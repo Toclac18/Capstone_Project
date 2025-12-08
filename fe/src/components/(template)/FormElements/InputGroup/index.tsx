@@ -88,7 +88,7 @@ const InputGroup: React.FC<InputGroupProps> = ({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-1 top-1/2 -translate-y-1/2 text-dark-6 hover:text-dark dark:text-dark-6 dark:hover:text-white focus:outline-none"
+            className="absolute right-4.5 top-1/2 -translate-y-1/2 flex items-center justify-center text-dark-6 hover:text-dark dark:text-dark-6 dark:hover:text-white focus:outline-none"
             tabIndex={-1}
           >
             {showPassword ? (
@@ -107,7 +107,7 @@ const InputGroup: React.FC<InputGroupProps> = ({
           </button>
         )}
         {error && (
-          <span className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-red">
+          <span className="pointer-events-none absolute right-4.5 top-1/2 -translate-y-1/2 flex items-center justify-center text-red">
             {/* exclamation icon */}
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-4a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 6zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />

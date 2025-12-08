@@ -109,7 +109,7 @@ public interface DocumentRepository extends JpaRepository<Document, UUID>,
       where d.visibility = com.capstone.be.domain.enums.DocVisibility.PUBLIC
         and d.status = com.capstone.be.domain.enums.DocStatus.ACTIVE
         and d.createdAt >= :sevenDaysAgo
-      order by (d.viewCount + d.upvoteCount * 3 + d.commentCount * 2) desc
+      order by (d.viewCount + d.upvoteCount * 3) desc
       """)
   Page<Document> findTopDocumentsLast7Days(
       @Param("sevenDaysAgo") Instant sevenDaysAgo,

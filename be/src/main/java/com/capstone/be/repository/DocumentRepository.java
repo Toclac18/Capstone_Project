@@ -2,6 +2,7 @@ package com.capstone.be.repository;
 
 import com.capstone.be.domain.entity.*;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -100,4 +102,17 @@ public interface DocumentRepository extends JpaRepository<Document, UUID>,
         and d.isPremium = true
       """)
   Integer findMaxPremiumPriceForPublicSearch();
+
+  @Query("""
+      select d
+      from Document d
+      where d.visibility = com.capstone.be.domain.enums.DocVisibility.PUBLIC
+        and d.status = com.capstone.be.domain.enums.DocStatus.ACTIVE
+        and d.createdAt >= :sevenDaysAgo
+      order by (d.viewCount + d.upvoteCount * 3 + d.commentCount * 2) desc
+      """)
+  Page<Document> findTopDocumentsLast7Days(
+      @Param("sevenDaysAgo") Instant sevenDaysAgo,
+      Pageable pageable
+  );
 }

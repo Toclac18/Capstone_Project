@@ -2,6 +2,8 @@ package com.capstone.be.controller;
 
 import com.capstone.be.dto.response.statistics.BusinessAdminDashboardResponse;
 import com.capstone.be.dto.response.statistics.GlobalDocumentStatisticsResponse;
+import com.capstone.be.dto.response.statistics.HomepageTrendingDocumentsResponse;
+import com.capstone.be.dto.response.statistics.HomepageTrendingReviewersResponse;
 import com.capstone.be.dto.response.statistics.OrganizationStatisticsResponse;
 import com.capstone.be.dto.response.statistics.PersonalDocumentStatisticsResponse;
 import com.capstone.be.dto.response.statistics.ReportHandlingStatisticsResponse;
@@ -13,6 +15,7 @@ import com.capstone.be.service.BusinessAdminStatisticsService;
 import com.capstone.be.service.OrganizationStatisticsService;
 import com.capstone.be.service.PersonalStatisticsService;
 import com.capstone.be.service.SystemAdminStatisticsService;
+import com.capstone.be.service.TrendingDataCacheService;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.UUID;
@@ -41,6 +44,7 @@ public class StatisticsController {
   private final OrganizationStatisticsService organizationStatisticsService;
   private final BusinessAdminStatisticsService businessAdminStatisticsService;
   private final SystemAdminStatisticsService systemAdminStatisticsService;
+  private final TrendingDataCacheService trendingDataCacheService;
   private final OrganizationProfileRepository organizationProfileRepository;
 
   /**
@@ -332,6 +336,38 @@ public class StatisticsController {
     log.info("System admin {} requesting dashboard statistics from {} to {}", adminId, start, end);
 
     SystemAdminDashboardResponse response = systemAdminStatisticsService.getDashboardStatistics(start, end);
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Get homepage trending documents (Public endpoint - no auth required)
+   * GET /api/statistics/homepage/trending-documents
+   *
+   * @return Trending documents response (cached, updated hourly)
+   */
+  @GetMapping("/homepage/trending-documents")
+  @PreAuthorize("permitAll()")
+  public ResponseEntity<HomepageTrendingDocumentsResponse> getHomepageTrendingDocuments() {
+    log.debug("Requesting homepage trending documents");
+
+    HomepageTrendingDocumentsResponse response = trendingDataCacheService.getTrendingDocuments();
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Get homepage trending reviewers (Public endpoint - no auth required)
+   * GET /api/statistics/homepage/trending-reviewers
+   *
+   * @return Trending reviewers response (cached, updated hourly)
+   */
+  @GetMapping("/homepage/trending-reviewers")
+  @PreAuthorize("permitAll()")
+  public ResponseEntity<HomepageTrendingReviewersResponse> getHomepageTrendingReviewers() {
+    log.debug("Requesting homepage trending reviewers");
+
+    HomepageTrendingReviewersResponse response = trendingDataCacheService.getTrendingReviewers();
 
     return ResponseEntity.ok(response);
   }

@@ -230,16 +230,6 @@ export default function Signup() {
     [data, userType],
   );
 
-  const handlePasswordKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      // Prevent space input in password fields
-      if (e.key === " " || e.key === "Spacebar") {
-        e.preventDefault();
-      }
-    },
-    [],
-  );
-
   const handleMultiSelectChange = useCallback(
     (name: string, value: string, checked: boolean) => {
       setData((prev) => {

@@ -30,7 +30,7 @@ export function HistoryFilters({
   onFiltersChange,
   loading = false,
 }: HistoryFiltersProps) {
-  const { register, handleSubmit, reset, control, watch } = useForm<FilterValues>({
+  const { register, handleSubmit, reset, control } = useForm<FilterValues>({
     defaultValues: {
       search: "",
       dateFrom: "",

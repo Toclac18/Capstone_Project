@@ -14,7 +14,7 @@ interface ReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   document: ReviewDocument | null;
-  onSubmit: (data: { action: "APPROVE" | "REJECT"; reportFile: File; documentId: string }) => Promise<void>;
+  onSubmit: (data: { action: "APPROVE" | "REJECT"; reportFile: File; reviewRequestId: string }) => Promise<void>;
 }
 
 export function ReviewModal({
@@ -46,7 +46,7 @@ export function ReviewModal({
     try {
       setIsLoading(true);
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      await onSubmit({ action, reportFile, documentId: document!.id });
+      await onSubmit({ action, reportFile, reviewRequestId: (document as any).reviewRequestId || document!.id });
       onClose();
     } catch (error) {
       console.error("Failed to submit review:", error);
@@ -64,6 +64,22 @@ export function ReviewModal({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
+
+      // Validate file extension (only .doc or .docx)
+      const fileName = file.name.toLowerCase();
+      if (!fileName.endsWith(".doc") && !fileName.endsWith(".docx")) {
+        showToast({
+          type: "error",
+          title: "Invalid file type",
+          message: "Review report file must be a Word document (.doc or .docx).",
+          duration: 3000,
+        });
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        setReportFile(null);
+        return;
+      }
 
       const MAX_REPORT_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
       if (file.size > MAX_REPORT_SIZE_BYTES) {
@@ -188,7 +204,7 @@ export function ReviewModal({
                     type="file"
                     name="reviewReport"
                     id="reviewReport"
-                    accept=".doc,.docx,.pdf"
+                    accept=".doc,.docx"
                     onChange={handleFileChange}
                     disabled={isLoading}
                     className={styles["file-upload-input"]}
@@ -204,7 +220,7 @@ export function ReviewModal({
                       <span className={styles["file-upload-text-primary"]}>Click to upload</span> or drag and drop
                     </p>
                     <p className={styles["file-upload-hint"]}>
-                      DOC, DOCX, or PDF (max. 10MB)
+                      DOC or DOCX (max. 10MB)
                     </p>
                   </label>
                 </div>

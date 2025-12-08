@@ -64,10 +64,10 @@ export function TodoTab() {
     }
   }, []);
 
-  const handleSubmitReview = useCallback(async (data: { action: "APPROVE" | "REJECT"; reportFile: File; documentId: string }) => {
+  const handleSubmitReview = useCallback(async (data: { action: "APPROVE" | "REJECT"; reportFile: File; reviewRequestId: string }) => {
     try {
       // Call API to submit review with file
-      await submitReview(data.documentId, data.action, data.reportFile);
+      await submitReview(data.reviewRequestId, data.action, data.reportFile);
       
       // Refresh data
       await fetchData();
@@ -120,19 +120,29 @@ export function TodoTab() {
           <table className={styles["table"]}>
             <thead className={styles["table-header"]}>
               <tr>
-                <th className={styles["table-header-cell"]} style={{ width: "20%" }}>Title</th>
-                <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Type</th>
-                <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Domain</th>
-                <th className={styles["table-header-cell"]} style={{ width: "12%" }}>Specialization</th>
-                <th className={styles["table-header-cell"]} style={{ width: "15%" }}>Tags</th>
-                <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Uploader</th>
-                <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Date Upload</th>
+                <th className={styles["table-header-cell"]} style={{ width: "18%" }}>Title</th>
+                <th className={styles["table-header-cell"]} style={{ width: "9%" }}>Type</th>
+                <th className={styles["table-header-cell"]} style={{ width: "9%" }}>Domain</th>
+                <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Specialization</th>
+                <th className={styles["table-header-cell"]} style={{ width: "13%" }}>Tags</th>
+                <th className={styles["table-header-cell"]} style={{ width: "9%" }}>Uploader</th>
+                <th className={styles["table-header-cell"]} style={{ width: "9%" }}>Date Upload</th>
+                <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Due Date</th>
                 <th className={styles["table-header-cell"]} style={{ width: "13%" }}>Action</th>
               </tr>
             </thead>
             <tbody className={styles["table-body"]}>
-              {documents.map((doc) => (
-                <tr key={doc.id} className={styles["table-row"]}>
+              {documents.map((doc) => {
+                const isExpired = doc.reviewDeadline
+                  ? new Date(doc.reviewDeadline) < new Date()
+                  : false;
+                return (
+                  <tr
+                    key={doc.id}
+                    className={`${styles["table-row"]} ${
+                      isExpired ? styles["table-row-expired"] : ""
+                    }`}
+                  >
                   <td className={styles["table-cell"]}>
                     <div className={styles["table-cell-main"]}>
                       <Link href={`/docs-view/${doc.id}`} className={styles["document-link"]}>
@@ -183,26 +193,46 @@ export function TodoTab() {
                     </span>
                   </td>
                   <td className={styles["table-cell"]}>
-                    <div className={styles["action-cell"]}>
-                      <button
-                        type="button"
-                        onClick={() => handleReviewClick(doc)}
-                        disabled={loadingButtonId === doc.id}
-                        className={styles["action-button-review"]}
+                    {doc.reviewDeadline ? (
+                      <span
+                        className={`${styles["table-cell-value"]} ${
+                          isExpired ? styles["due-date-expired"] : styles["due-date-active"]
+                        }`}
                       >
-                        {loadingButtonId === doc.id ? (
-                          <>
-                            <Spinner size="md" className="mr-2" />
-                            Reviewing...
-                          </>
-                        ) : (
-                          "Review"
-                        )}
-                      </button>
-                    </div>
+                        {formatDate(doc.reviewDeadline)}
+                      </span>
+                    ) : (
+                      <span className={styles["text-muted"]}>—</span>
+                    )}
+                  </td>
+                  <td className={styles["table-cell"]}>
+                    {isExpired ? (
+                      <div className={styles["expired-status"]}>
+                        <span className={styles["expired-text"]}>Expired</span>
+                      </div>
+                    ) : (
+                      <div className={styles["action-cell"]}>
+                        <button
+                          type="button"
+                          onClick={() => handleReviewClick(doc)}
+                          disabled={loadingButtonId === doc.id}
+                          className={styles["action-button-review"]}
+                        >
+                          {loadingButtonId === doc.id ? (
+                            <>
+                              <Spinner size="md" className="mr-2" />
+                              Reviewing...
+                            </>
+                          ) : (
+                            "Review"
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </div>

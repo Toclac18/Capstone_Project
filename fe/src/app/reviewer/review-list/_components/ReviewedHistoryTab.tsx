@@ -7,6 +7,7 @@ import type { ReviewHistoryQueryParams } from "@/types/review";
 import { HistoryFilters } from "./HistoryFilters";
 import { Pagination } from "@/components/ui/pagination";
 import { formatDate, formatTime } from "@/utils/format-date";
+import { getDocumentTypes, getDomains } from "@/services/upload-documents.service";
 import styles from "../styles.module.css";
 import { CheckCircle, XCircle } from "lucide-react";
 
@@ -24,16 +25,93 @@ export function ReviewedHistoryTab() {
     page: 1,
     limit: ITEMS_PER_PAGE,
   });
+  const [documentTypes, setDocumentTypes] = useState<Array<{ id: string; name: string }>>([]);
+  const [domains, setDomains] = useState<Array<{ id: string; name: string }>>([]);
+  const [optionsLoaded, setOptionsLoaded] = useState(false);
+
+  // Load document types and domains for mapping
+  useEffect(() => {
+    const loadOptions = async () => {
+      try {
+        const [types, domainsData] = await Promise.all([
+          getDocumentTypes(),
+          getDomains(),
+        ]);
+        setDocumentTypes(types);
+        setDomains(domainsData);
+        setOptionsLoaded(true);
+      } catch (error) {
+        console.error("Failed to load filter options:", error);
+        setOptionsLoaded(true); // Set to true even on error to prevent infinite waiting
+      }
+    };
+    loadOptions();
+  }, []);
+
+  // Map frontend filters to backend API parameters
+  const mapFiltersToApiParams = useCallback((frontendFilters: ReviewHistoryQueryParams) => {
+    const params: Parameters<typeof getReviewedHistory>[0] = {
+      page: frontendFilters.page || currentPage,
+      limit: frontendFilters.limit || ITEMS_PER_PAGE,
+    };
+
+    // Format date to ISO 8601 with time (DATE_TIME format for Instant)
+    if (frontendFilters.dateFrom) {
+      // Convert "YYYY-MM-DD" to "YYYY-MM-DDTHH:mm:ssZ" (start of day in UTC)
+      const date = new Date(frontendFilters.dateFrom);
+      date.setUTCHours(0, 0, 0, 0);
+      params.dateFrom = date.toISOString();
+    }
+    if (frontendFilters.dateTo) {
+      // Convert "YYYY-MM-DD" to "YYYY-MM-DDTHH:mm:ssZ" (end of day in UTC)
+      const date = new Date(frontendFilters.dateTo);
+      date.setUTCHours(23, 59, 59, 999);
+      params.dateTo = date.toISOString();
+    }
+
+    // Map approved/rejected to decision
+    if (frontendFilters.approved && frontendFilters.rejected) {
+      // If both are selected, don't filter by decision (show all)
+    } else if (frontendFilters.approved) {
+      params.decision = "APPROVED";
+    } else if (frontendFilters.rejected) {
+      params.decision = "REJECTED";
+    }
+
+    // Map type name to docTypeId (only if options are loaded)
+    if (frontendFilters.type && optionsLoaded) {
+      const typeObj = documentTypes.find(t => t.name === frontendFilters.type);
+      if (typeObj) {
+        params.docTypeId = typeObj.id;
+      } else {
+        console.warn(`Document type not found: "${frontendFilters.type}". Available types:`, documentTypes.map(t => t.name));
+      }
+    }
+
+    // Map domain name to domainId (only if options are loaded)
+    if (frontendFilters.domain && optionsLoaded) {
+      const domainObj = domains.find(d => d.name === frontendFilters.domain);
+      if (domainObj) {
+        params.domainId = domainObj.id;
+      } else {
+        console.warn(`Domain not found: "${frontendFilters.domain}". Available domains:`, domains.map(d => d.name));
+      }
+    }
+
+    // Map search parameter
+    if (frontendFilters.search) {
+      params.search = frontendFilters.search;
+    }
+
+    return params;
+  }, [currentPage, documentTypes, domains, optionsLoaded]);
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getReviewedHistory({
-        ...filters,
-        page: currentPage,
-        limit: ITEMS_PER_PAGE,
-      });
+      const apiParams = mapFiltersToApiParams(filters);
+      const response = await getReviewedHistory(apiParams);
       setReviews(response.reviews);
       setTotal(response.total);
       setTotalPages(Math.ceil(response.total / ITEMS_PER_PAGE));
@@ -42,7 +120,7 @@ export function ReviewedHistoryTab() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, filters]);
+  }, [filters, mapFiltersToApiParams]);
 
   useEffect(() => {
     fetchData();

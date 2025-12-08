@@ -121,10 +121,10 @@ export function ReviewRequestsTab() {
     }
   }, []);
 
-  const handleRejectRequest = useCallback(async (requestId: string) => {
+  const handleRejectRequest = useCallback(async (requestId: string, rejectionReason?: string) => {
     try {
-      // Call API to approve (reject) review request
-      await approveReviewRequest(requestId, "REJECT");
+      // Call API to reject review request
+      await approveReviewRequest(requestId, "REJECT", rejectionReason);
       
       // Refresh data
       await fetchData();
@@ -177,19 +177,29 @@ export function ReviewRequestsTab() {
           <table className={styles["table"]}>
             <thead className={styles["table-header"]}>
               <tr>
-                <th className={styles["table-header-cell"]} style={{ width: "20%" }}>Title</th>
-                <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Type</th>
-                <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Domain</th>
-                <th className={styles["table-header-cell"]} style={{ width: "12%" }}>Specialization</th>
-                <th className={styles["table-header-cell"]} style={{ width: "13%" }}>Tags</th>
-                <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Uploader</th>
-                <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Date Upload</th>
+                <th className={styles["table-header-cell"]} style={{ width: "18%" }}>Title</th>
+                <th className={styles["table-header-cell"]} style={{ width: "9%" }}>Type</th>
+                <th className={styles["table-header-cell"]} style={{ width: "9%" }}>Domain</th>
+                <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Specialization</th>
+                <th className={styles["table-header-cell"]} style={{ width: "11%" }}>Tags</th>
+                <th className={styles["table-header-cell"]} style={{ width: "9%" }}>Uploader</th>
+                <th className={styles["table-header-cell"]} style={{ width: "9%" }}>Date Upload</th>
+                <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Due Date</th>
                 <th className={styles["table-header-cell"]} style={{ width: "15%" }}>Action</th>
               </tr>
             </thead>
             <tbody className={styles["table-body"]}>
-              {requests.map((req) => (
-                <tr key={req.id} className={styles["table-row"]}>
+              {requests.map((req) => {
+                const isExpired = req.responseDeadline
+                  ? new Date(req.responseDeadline) < new Date()
+                  : false;
+                return (
+                  <tr
+                    key={req.id}
+                    className={`${styles["table-row"]} ${
+                      isExpired ? styles["table-row-expired"] : ""
+                    }`}
+                  >
                   <td className={styles["table-cell"]}>
                     <div className={styles["table-cell-main"]}>
                       <Link href={`/docs-view/${req.id}`} className={styles["document-link"]}>
@@ -240,39 +250,59 @@ export function ReviewRequestsTab() {
                     </span>
                   </td>
                   <td className={styles["table-cell"]}>
-                    <div className={styles["action-cell"]}>
-                      <button
-                        type="button"
-                        onClick={() => handleAcceptClick(req)}
-                        disabled={loadingButtonId === req.id}
-                        className={styles["action-button-accept"]}
+                    {req.responseDeadline ? (
+                      <span
+                        className={`${styles["table-cell-value"]} ${
+                          isExpired ? styles["due-date-expired"] : styles["due-date-active"]
+                        }`}
                       >
-                        {loadingButtonId === req.id && loadingButtonAction === "accept" ? (
-                          <>
-                            <Spinner size="md" className="mr-2" />
-                          </>
-                        ) : (
-                          "Accept"
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRejectClick(req)}
-                        disabled={loadingButtonId === req.id}
-                        className={styles["action-button-reject"]}
-                      >
-                        {loadingButtonId === req.id && loadingButtonAction === "reject" ? (
-                          <>
-                            <Spinner size="md" className="mr-2" />
-                          </>
-                        ) : (
-                          "Reject"
-                        )}
-                      </button>
-                    </div>
+                        {formatDate(req.responseDeadline)}
+                      </span>
+                    ) : (
+                      <span className={styles["text-muted"]}>—</span>
+                    )}
+                  </td>
+                  <td className={styles["table-cell"]}>
+                    {isExpired ? (
+                      <div className={styles["expired-status"]}>
+                        <span className={styles["expired-text"]}>Expired</span>
+                      </div>
+                    ) : (
+                      <div className={styles["action-cell"]}>
+                        <button
+                          type="button"
+                          onClick={() => handleAcceptClick(req)}
+                          disabled={loadingButtonId === req.id}
+                          className={styles["action-button-accept"]}
+                        >
+                          {loadingButtonId === req.id && loadingButtonAction === "accept" ? (
+                            <>
+                              <Spinner size="md" className="mr-2" />
+                            </>
+                          ) : (
+                            "Accept"
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRejectClick(req)}
+                          disabled={loadingButtonId === req.id}
+                          className={styles["action-button-reject"]}
+                        >
+                          {loadingButtonId === req.id && loadingButtonAction === "reject" ? (
+                            <>
+                              <Spinner size="md" className="mr-2" />
+                            </>
+                          ) : (
+                            "Reject"
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </div>

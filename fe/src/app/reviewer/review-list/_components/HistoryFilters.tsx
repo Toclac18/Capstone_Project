@@ -42,10 +42,9 @@ export function HistoryFilters({
     },
   });
 
-  const dateFrom = watch("dateFrom");
-  const dateTo = watch("dateTo");
-
   const watchedFilters = useWatch({ control });
+  const dateFrom = watchedFilters.dateFrom;
+  const dateTo = watchedFilters.dateTo;
   const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
   const [domains, setDomains] = useState<Domain[]>([]);
 

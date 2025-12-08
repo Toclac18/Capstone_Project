@@ -79,15 +79,16 @@ export function validateField(
       }
       return "";
 
-    case "repassword":
-      if (!val) return "Please confirm your password";
-      // Compare passwords exactly as entered (including spaces, no trimming)
-      const passwordValue = typeof ctx?.password === "string" ? ctx.password : "";
-      const repasswordValue = typeof val === "string" ? val : "";
-      if (repasswordValue !== passwordValue) {
-        return "Passwords do not match";
+      case "repassword": {
+        if (!val) return "Please confirm your password";
+        // Compare passwords exactly as entered (including spaces, no trimming)
+        const passwordValue = typeof ctx?.password === "string" ? ctx.password : "";
+        const repasswordValue = typeof val === "string" ? val : "";
+        if (repasswordValue !== passwordValue) {
+          return "Passwords do not match";
+        }
+        return "";
       }
-      return "";
   }
 
   // Reviewer fields validation

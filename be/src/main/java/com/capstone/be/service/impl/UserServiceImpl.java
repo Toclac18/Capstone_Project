@@ -21,6 +21,7 @@ import com.capstone.be.exception.BusinessException;
 import com.capstone.be.exception.DuplicateResourceException;
 import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
+import com.capstone.be.exception.UnauthorizedException;
 import com.capstone.be.repository.EmailChangeRequestRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.PasswordResetRequestRepository;
@@ -114,7 +115,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional
-  public void deleteAccount(UUID userId) {
+  public void deleteAccount(UUID userId, String password) {
     log.info("Deleting account for user ID: {}", userId);
 
     // Find user
@@ -132,6 +133,11 @@ public class UserServiceImpl implements UserService {
           HttpStatus.BAD_REQUEST,
           "ACCOUNT_ALREADY_DELETED"
       );
+    }
+
+    // Verify password
+    if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+      throw UnauthorizedException.invalidPassword();
     }
 
     // Soft delete - set status to DELETED

@@ -2,6 +2,7 @@ package com.capstone.be.controller;
 
 import com.capstone.be.dto.request.user.ChangeEmailRequest;
 import com.capstone.be.dto.request.user.ChangePasswordRequest;
+import com.capstone.be.dto.request.user.DeleteAccountRequest;
 import com.capstone.be.dto.request.user.VerifyEmailChangeOtpRequest;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.UserService;
@@ -53,17 +54,20 @@ public class UserController {
 
   /**
    * Delete account for the authenticated user (soft delete)
+   * Requires password verification
    * DELETE /api/v1/user/account
    *
+   * @param request Delete account request (contains password)
    * @return 204 No Content on success
    */
   @DeleteMapping("/account")
   public ResponseEntity<Void> deleteAccount(
-      @AuthenticationPrincipal UserPrincipal userPrincipal) {
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @Valid @RequestBody DeleteAccountRequest request) {
     UUID userId = userPrincipal.getId();
     log.info("Delete account request for user: {}", userId);
 
-    userService.deleteAccount(userId);
+    userService.deleteAccount(userId, request.getPassword());
 
     return ResponseEntity.noContent().build();
   }

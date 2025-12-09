@@ -294,8 +294,8 @@ export default function Page() {
     });
   };
 
-  const handleDeleteAccount = async () => {
-    await deleteAccount();
+  const handleDeleteAccount = async (password: string) => {
+    await deleteAccount(password);
     showToast({
       type: "success",
       title: "Account Deleted",
@@ -711,7 +711,7 @@ export default function Page() {
         isOpen={isDeleteAccountOpen}
         onClose={() => setIsDeleteAccountOpen(false)}
         email={profile?.email || ""}
-        onDelete={() => handleDeleteAccount()}
+        onDelete={handleDeleteAccount}
       />
       {role === "READER" && (
         <InvitationsModal

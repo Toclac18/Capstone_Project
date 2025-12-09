@@ -73,10 +73,12 @@ public interface UserService {
 
   /**
    * Delete user account (soft delete - set status to DELETED)
+   * Requires password verification
    *
-   * @param userId User ID
+   * @param userId  User ID
+   * @param password User password for verification
    */
-  void deleteAccount(UUID userId);
+  void deleteAccount(UUID userId, String password);
 
   void uploadAvatar(UUID userId, MultipartFile file);
 

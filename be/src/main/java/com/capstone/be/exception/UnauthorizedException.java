@@ -72,4 +72,11 @@ public class UnauthorizedException extends BusinessException {
         ErrorCode.UNAUTHORIZED.getCode()
     );
   }
+
+  public static UnauthorizedException invalidPassword() {
+    return new UnauthorizedException(
+        "Sai mật khẩu",
+        ErrorCode.INVALID_CREDENTIALS.getCode()
+    );
+  }
 }

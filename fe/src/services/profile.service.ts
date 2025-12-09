@@ -155,7 +155,9 @@ export async function uploadAvatar(file: File): Promise<void> {
  * Delete user account
  * DELETE /api/profile/delete-account
  */
-export async function deleteAccount(): Promise<void> {
-  await apiClient.delete("/profile/delete-account");
+export async function deleteAccount(password: string): Promise<void> {
+  await apiClient.delete("/profile/delete-account", {
+    data: { password },
+  });
 }
 

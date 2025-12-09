@@ -33,7 +33,7 @@ public class DocTypeController {
    * @return List of all document types
    */
   @GetMapping
-  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN', 'REVIEWER')")
   public ResponseEntity<List<DocType>> getDocTypes(
       @AuthenticationPrincipal UserPrincipal userPrincipal) {
     log.info("User {} requesting all document types", userPrincipal.getId());

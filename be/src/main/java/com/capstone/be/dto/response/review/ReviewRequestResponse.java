@@ -39,6 +39,50 @@ public class ReviewRequestResponse {
     private String thumbnailUrl;
     private Integer pageCount;
     private Integer price;
+    private DocTypeInfo docType;
+    private DomainInfo domain;
+    private SpecializationInfo specialization;
+    private java.util.List<TagInfo> tags;
+  }
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class DocTypeInfo {
+    private UUID id;
+    private Integer code;
+    private String name;
+  }
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class DomainInfo {
+    private UUID id;
+    private Integer code;
+    private String name;
+  }
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class SpecializationInfo {
+    private UUID id;
+    private Integer code;
+    private String name;
+  }
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class TagInfo {
+    private UUID id;
+    private Long code;
+    private String name;
   }
 
   @Data

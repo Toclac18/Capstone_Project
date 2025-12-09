@@ -28,10 +28,12 @@ public interface DocTypeService {
    * For Business Admin
    *
    * @param name     Filter by name (optional)
+   * @param dateFrom Filter by creation date from (optional)
+   * @param dateTo   Filter by creation date to (optional)
    * @param pageable Pagination parameters
    * @return Page of DocTypeDetailResponse
    */
-  Page<DocTypeDetailResponse> getAllDocTypesForAdmin(String name, Pageable pageable);
+  Page<DocTypeDetailResponse> getAllDocTypesForAdmin(String name, java.time.Instant dateFrom, java.time.Instant dateTo, Pageable pageable);
 
   /**
    * Get document type by ID

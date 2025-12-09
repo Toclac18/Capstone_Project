@@ -45,6 +45,9 @@ public class AdminTagController {
    *
    * @param status   Tag status filter (optional)
    * @param name     Tag name filter (optional)
+   * @param search   Tag name search filter (optional, takes precedence over name)
+   * @param dateFrom Filter by creation date from (optional)
+   * @param dateTo   Filter by creation date to (optional)
    * @param pageable Pagination parameters
    * @return PagedResponse of TagResponse
    */
@@ -53,11 +56,13 @@ public class AdminTagController {
   public ResponseEntity<PagedResponse<TagResponse>> getAllTags(
       @RequestParam(name = "status", required = false) TagStatus status,
       @RequestParam(name = "name", required = false) String name,
+      @RequestParam(name = "dateFrom", required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant dateFrom,
+      @RequestParam(name = "dateTo", required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant dateTo,
       Pageable pageable) {
-    log.info("Admin requesting all tags - status: {}, name: {}, page: {}, size: {}",
-        status, name, pageable.getPageNumber(), pageable.getPageSize());
-
-    Page<TagResponse> page = tagService.getAllTagsForAdmin(status, name, pageable);
+    log.info("Admin requesting all tags - status: {}, name: {}, dateFrom: {}, dateTo: {}, page: {}, size: {}",
+        status, name, dateFrom, dateTo, pageable.getPageNumber(), pageable.getPageSize());
+    
+    Page<TagResponse> page = tagService.getAllTagsForAdmin(status, name, dateFrom, dateTo, pageable);
 
     PagedResponse<TagResponse> response = PagedResponse.of(page, "Tags retrieved successfully");
 

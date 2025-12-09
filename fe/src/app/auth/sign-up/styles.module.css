@@ -23,7 +23,7 @@
 
 /* Header / logo */
 .logo-row {
-  @apply flex items-center justify-center;
+  @apply flex items-center justify-center mb-8;
 }
 
 /* OAuth button */

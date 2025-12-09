@@ -3,18 +3,59 @@
 import { useMemo } from "react";
 import { useSearch } from "../provider";
 import styles from "../styles.module.css";
+import { useModalPreview } from "@/components/ModalPreview/Provider";
+import type { DocumentSearchItem } from "@/types/document-search";
+
+/**
+ * Map DocumentSearchItem → ModalPreviewDoc
+ * để dùng với ModalPreview
+ */
+function toModalPreviewDoc(doc: DocumentSearchItem) {
+  const created = new Date(doc.createdAt);
+  const publicYear = Number.isNaN(created.getTime())
+    ? undefined
+    : created.getFullYear();
+
+  return {
+    id: doc.id,
+    title: doc.title,
+    orgName: doc.organizationName,
+    specialization: doc.specializationName,
+    publicYear,
+    uploader: doc.uploader.fullName,
+    isPremium: doc.isPremium,
+    points: doc.price,
+    thumbnail: doc.thumbnailUrl || undefined,
+    description: doc.description,
+    summarizations: doc.summarizations
+      ? {
+          short: doc.summarizations.shortSummary ?? undefined,
+          medium: doc.summarizations.mediumSummary ?? undefined,
+          detailed: doc.summarizations.detailedSummary ?? undefined,
+        }
+      : undefined,
+    pageCount: undefined,
+    viewCount: doc.viewCount,
+    views: doc.viewCount,
+    upvote_counts: doc.upvoteCount,
+    upvotes: doc.upvoteCount,
+    downvote_counts: 0,
+    downvotes: 0,
+  };
+}
 
 export default function DocumentList() {
   const { items, loading } = useSearch();
+  const { open } = useModalPreview();
 
   if (loading) {
-    return <div className={styles.skeleton}>Loading…</div>;
+    return <div className={styles.skeleton}>Loading document…</div>;
   }
 
   if (!items || items.length === 0) {
     return (
       <div className={styles.listWrapper}>
-        <p className={styles.empty}>There is no document existed!</p>
+        <p className={styles.empty}>No document found!!!</p>
       </div>
     );
   }
@@ -28,7 +69,6 @@ export default function DocumentList() {
 
           const description = doc.description;
 
-          // format ngày tạo
           const createdAt = useMemo(() => {
             try {
               return new Date(doc.createdAt).toLocaleDateString(undefined, {
@@ -44,13 +84,32 @@ export default function DocumentList() {
           const isPremium = doc.isPremium;
           const priceLabel = isPremium
             ? `${doc.price?.toLocaleString?.() ?? doc.price} pts`
-            : "Miễn phí";
+            : "PUBLIC";
+
+          const handleOpen = () => {
+            open(toModalPreviewDoc(doc));
+          };
+
+          const onKey = (e: React.KeyboardEvent<HTMLLIElement>) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handleOpen();
+            }
+          };
 
           return (
-            <li className={styles.card} key={doc.id}>
+            <li
+              key={doc.id}
+              className={styles.card}
+              role="button"
+              tabIndex={0}
+              onClick={handleOpen}
+              onKeyDown={onKey}
+            >
               {/* Thumbnail bên trái */}
               <div className={styles.cardThumbWrapper}>
                 {thumb ? (
+                  // dùng <img> thường để tránh ràng buộc của next/image trong list đơn giản
                   <img
                     src={thumb}
                     alt={doc.title}
@@ -90,7 +149,7 @@ export default function DocumentList() {
                   )}
 
                   <span className={styles.metaValue}>
-                    <span className={styles.metaLabel}>Domain:</span>{" "}
+                    <span className={styles.metaLabel}>Majority:</span>{" "}
                     {doc.domainName}
                   </span>
 

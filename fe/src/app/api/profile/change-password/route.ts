@@ -3,15 +3,22 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, badRequest } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 export const dynamic = "force-dynamic";
 
 async function handlePUT(req: Request) {
   const body = await req.json().catch(() => null);
 
-  if (!body || !body.currentPassword || !body.newPassword || !body.confirmPassword) {
-    return badRequest("Missing required fields: currentPassword, newPassword, confirmPassword");
+  if (
+    !body ||
+    !body.currentPassword ||
+    !body.newPassword ||
+    !body.confirmPassword
+  ) {
+    return badRequest(
+      "Missing required fields: currentPassword, newPassword, confirmPassword",
+    );
   }
 
   if (USE_MOCK) {

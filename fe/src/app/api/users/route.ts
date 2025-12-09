@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, proxyJsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { getUsers } from "@/mock/business-admin-users";
 import { UserQueryParams } from "@/types/user";
 
@@ -28,9 +28,10 @@ async function handleGET(req: NextRequest): Promise<Response> {
       dateFrom: searchParams.get("dateFrom") || undefined,
       dateTo: searchParams.get("dateTo") || undefined,
       sortBy: searchParams.get("sortBy") || undefined,
-      sortOrder: (sortOrderParam === "asc" || sortOrderParam === "desc")
-        ? (sortOrderParam as "asc" | "desc")
-        : undefined,
+      sortOrder:
+        sortOrderParam === "asc" || sortOrderParam === "desc"
+          ? (sortOrderParam as "asc" | "desc")
+          : undefined,
     };
 
     const result = getUsers(params);
@@ -77,9 +78,10 @@ async function handlePOST(req: NextRequest): Promise<Response> {
       dateFrom: body?.dateFrom || undefined,
       dateTo: body?.dateTo || undefined,
       sortBy: body?.sortBy || undefined,
-      sortOrder: (sortOrderParam === "asc" || sortOrderParam === "desc")
-        ? (sortOrderParam as "asc" | "desc")
-        : undefined,
+      sortOrder:
+        sortOrderParam === "asc" || sortOrderParam === "desc"
+          ? (sortOrderParam as "asc" | "desc")
+          : undefined,
     };
 
     const result = getUsers(params);

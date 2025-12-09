@@ -1,0 +1,202 @@
+/* src/app/error-page/styles.module.css */
+
+:root {
+  /* Backgrounds */
+  --ep-bg-page: #f1f5f9;
+  --ep-bg-card: #ffffff;
+  --ep-border-card: transparent;
+
+  /* Text */
+  --ep-text-title: #1e293b;
+  --ep-text-desc: #64748b;
+  --ep-text-code: #f1f5f9;
+
+  /* Shadows */
+  --ep-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+
+  /* SVG Colors */
+  --ep-svg-bg: #f8fafc;
+  --ep-svg-stroke-main: #64748b;
+  --ep-svg-stroke-accent: #94a3b8;
+  --ep-svg-stroke-muted: #cbd5e1;
+
+  /* Button Secondary */
+  --ep-btn-sec-bg: #ffffff;
+  --ep-btn-sec-text: #475569;
+  --ep-btn-sec-border: #e2e8f0;
+  --ep-btn-sec-hover-bg: #f8fafc;
+}
+
+:global(.dark) {
+  /* Backgrounds */
+  --ep-bg-page: #020617;
+  --ep-bg-card: #0f172a;
+  --ep-border-card: #1e293b;
+
+  /* Text */
+  --ep-text-title: #f8fafc;
+  --ep-text-desc: #94a3b8;
+  --ep-text-code: #1e293b;
+
+  /* Shadows */
+  --ep-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+
+  /* SVG Colors */
+  --ep-svg-bg: #1e293b;
+  --ep-svg-stroke-main: #e2e8f0;
+  --ep-svg-stroke-accent: #cbd5e1;
+  --ep-svg-stroke-muted: #334155;
+
+  /* Button Secondary */
+  --ep-btn-sec-bg: transparent;
+  --ep-btn-sec-text: #cbd5e1;
+  --ep-btn-sec-border: #334155;
+  --ep-btn-sec-hover-bg: #1e293b;
+}
+
+/* --- Layout --- */
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  font-family: var(--font-satoshi, sans-serif);
+  transition: background-color 0.3s ease;
+}
+
+.card {
+  max-width: 32rem;
+  width: 100%;
+  text-align: center;
+  background-color: var(--ep-bg-card);
+  border: 1px solid var(--ep-border-card);
+  border-radius: 1.5rem;
+  box-shadow: var(--ep-shadow);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+/* --- Typography --- */
+.errorCode {
+  font-size: 8rem;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--ep-text-code);
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 0;
+  user-select: none;
+  opacity: 0.8;
+  transition: color 0.3s ease;
+}
+
+.contentWrapper {
+  position: relative;
+  z-index: 1;
+}
+
+.illustrationWrapper {
+  margin: 3.5rem auto 2rem;
+  width: 160px;
+  height: 160px;
+  animation: float 6s ease-in-out infinite;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--ep-text-title);
+  margin-bottom: 0.75rem;
+  transition: color 0.3s ease;
+}
+
+.description {
+  font-size: 1rem;
+  color: var(--ep-text-desc);
+  margin-bottom: 2rem;
+  line-height: 1.6;
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+  transition: color 0.3s ease;
+}
+
+/* --- Actions --- */
+.actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.buttonBase {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.primaryButton {
+  background-color: #3c50e0;
+  color: white;
+  box-shadow: 0 4px 10px rgba(60, 80, 224, 0.2);
+}
+.primaryButton:hover {
+  background-color: #3041c2;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(60, 80, 224, 0.3);
+}
+
+.secondaryButton {
+  background-color: var(--ep-btn-sec-bg);
+  color: var(--ep-btn-sec-text);
+  border: 1px solid var(--ep-btn-sec-border);
+}
+.secondaryButton:hover {
+  background-color: var(--ep-btn-sec-hover-bg);
+  border-color: var(--ep-btn-sec-hover-bg);
+  transform: translateY(-2px);
+}
+
+/* --- SVG Classes --- */
+.svgIcon {
+  width: 100%;
+  height: 100%;
+}
+.svgBg {
+  fill: var(--ep-svg-bg);
+  transition: fill 0.3s ease;
+}
+.svgMain {
+  stroke: var(--ep-svg-stroke-main);
+  transition: stroke 0.3s ease;
+}
+.svgAccent {
+  stroke: var(--ep-svg-stroke-accent);
+  transition: stroke 0.3s ease;
+}
+.svgMuted {
+  stroke: var(--ep-svg-stroke-muted);
+  transition: stroke 0.3s ease;
+}
+
+/* --- Animation --- */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}

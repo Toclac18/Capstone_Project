@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, proxyJsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { mockGetOrganizationById } from "@/mock/organizations.mock";
 
 async function handleGET(
@@ -16,10 +16,13 @@ async function handleGET(
   if (USE_MOCK) {
     const org = mockGetOrganizationById(id);
     if (!org) {
-      return jsonResponse({ error: "Organization not found" }, {
-        status: 404,
-        mode: "mock",
-      });
+      return jsonResponse(
+        { error: "Organization not found" },
+        {
+          status: 404,
+          mode: "mock",
+        },
+      );
     }
     return jsonResponse(org, { status: 200, mode: "mock" });
   }

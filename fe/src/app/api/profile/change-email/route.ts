@@ -3,7 +3,7 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, badRequest } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +40,9 @@ async function handlePOST(req: Request) {
     data = json.data || json;
   } catch {
     // Backend returns plain text message
-    data = { message: text || "OTP has been sent to your current email address" };
+    data = {
+      message: text || "OTP has been sent to your current email address",
+    };
   }
 
   return jsonResponse(data, { status: upstream.status, mode: "real" });

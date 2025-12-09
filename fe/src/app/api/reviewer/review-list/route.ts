@@ -1,56 +1,61 @@
-import { getReviewDocuments } from "@/mock/review-list.mock";
+// GET /api/reviewer/review-list -> BE GET /api/review-requests
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
+import { headers } from "next/headers";
 
-export async function GET(request: Request) {
+async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const search = searchParams.get("search") || undefined;
-  const status =
-    (searchParams.get("status") as "PENDING" | undefined) || "PENDING";
   const page = searchParams.get("page")
     ? parseInt(searchParams.get("page")!)
-    : 1;
-  const limit = searchParams.get("limit")
-    ? parseInt(searchParams.get("limit")!)
-    : 12;
+    : 0;
+  const size = searchParams.get("size") || searchParams.get("limit")
+    ? parseInt(searchParams.get("size") || searchParams.get("limit")!)
+    : 10;
 
   if (USE_MOCK) {
-    const result = getReviewDocuments({
-      page,
-      limit,
-      status,
-      search,
-    });
-    return jsonResponse(result, {
-      status: 200,
-      headers: {
-        "content-type": "application/json",
-        "x-mode": "mock",
+    // Mock response
+    return jsonResponse(
+      {
+        content: [],
+        page: page,
+        size: size,
+        totalElements: 0,
+        totalPages: 0,
       },
-    });
+      {
+        status: 200,
+        mode: "mock",
+      },
+    );
   }
 
-  // Get authentication from cookie
   const bearerToken = await getAuthHeader();
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
 
   const fh = new Headers();
   if (bearerToken) {
     fh.set("Authorization", bearerToken);
   }
+  if (ip) {
+    fh.set("X-Forwarded-For", ip);
+  }
+
   const queryParams = new URLSearchParams();
-  if (search) queryParams.append("search", search);
-  if (status) queryParams.append("status", status);
   queryParams.append("page", page.toString());
-  queryParams.append("limit", limit.toString());
+  queryParams.append("size", size.toString());
 
-  const url = `${BE_BASE}/api/reviewer/review-list?${queryParams.toString()}`;
-
-  const upstream = await fetch(url, {
-    method: "GET",
-    headers: fh,
-    cache: "no-store",
-  });
+  const upstream = await fetch(
+    `${BE_BASE}/api/review-requests?${queryParams.toString()}`,
+    {
+      method: "GET",
+      headers: fh,
+      cache: "no-store",
+    },
+  );
 
   return proxyJsonResponse(upstream, { mode: "real" });
 }
+
+export { handleGET as GET };

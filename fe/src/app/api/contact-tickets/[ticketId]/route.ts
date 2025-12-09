@@ -1,6 +1,6 @@
 // app/api/contact-tickets/[ticketId]/route.ts
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { badRequest, proxyJsonResponse, jsonResponse } from "@/server/response";
 import {
   MOCK_CONTACT_TICKET,

@@ -1,6 +1,6 @@
 // Re-export from service layer
 export {
-  getTodoDocuments,
+  getTodoDocumentsLegacy as getTodoDocuments,
   getReviewRequests,
   getReviewedHistory,
   submitReview,

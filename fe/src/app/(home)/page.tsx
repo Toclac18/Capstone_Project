@@ -1,33 +1,56 @@
 "use client";
 
-import { FeaturedCarousel } from "./_components/FeaturedCarousel";
+import { useState, useEffect } from "react";
 import { SystemDescription } from "./_components/SystemDescription";
-import { ContentCards } from "./_components/ContentCard";
+import { FeaturedCarousel } from "./_components/FeaturedCarousel";
+import { TrendingReviewers } from "./_components/TrendingReviewers";
 import {
-  mockFeaturedCards,
-  mockContentCards,
-} from "./_components/featured-carousel-mock";
+  fetchTrendingDocuments,
+  fetchTrendingReviewers,
+  type TrendingDocument,
+  type TrendingReviewer,
+} from "@/services/homepage.service";
 import { useToast } from "@/components/ui/toast";
+import { useRouter } from "next/navigation";
 
 const Home = () => {
   const { showToast } = useToast();
+  const router = useRouter();
+  const [trendingDocuments, setTrendingDocuments] = useState<TrendingDocument[]>([]);
+  const [trendingReviewers, setTrendingReviewers] = useState<TrendingReviewer[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleFeaturedCardClick = (card: any) => {
-    showToast({
-      type: "info",
-      title: "Featured Course",
-      message: `You clicked on "${card.title}"`,
-      duration: 3000,
-    });
-  };
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        // Force refresh on mount to get latest data
+        const [documents, reviewers] = await Promise.all([
+          fetchTrendingDocuments(),
+          fetchTrendingReviewers(true), // Force refresh to bypass cache
+        ]);
+        setTrendingDocuments(documents);
+        setTrendingReviewers(reviewers);
+      } catch (error: any) {
+        console.error("Failed to load homepage data:", error);
+        showToast({
+          type: "error",
+          title: "Load Error",
+          message: "Failed to load trending data. Please try again later.",
+          duration: 5000,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleContentCardClick = (card: any) => {
-    showToast({
-      type: "info",
-      title: "Course Selected",
-      message: `You selected "${card.title}"`,
-      duration: 3000,
-    });
+    loadData();
+  }, [showToast]);
+
+  const handleDocumentClick = (card: TrendingDocument | any) => {
+    if (card && card.id) {
+      router.push(`/docs-view/${card.id}`);
+    }
   };
 
   return (
@@ -36,39 +59,34 @@ const Home = () => {
         {/* System Description */}
         <SystemDescription />
 
-        {/* Featured Carousel */}
-        <div className="mb-12">
-          {/* <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Featured Courses
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
-              Discover our most popular and trending courses
-            </p>
-          </div> */}
-
-          <FeaturedCarousel
-            cards={mockFeaturedCards}
-            onCardClick={handleFeaturedCardClick}
-          />
-        </div>
-
-        {/* Content Cards */}
-        <div className="mb-12">
-          <div className="mb-8 text-center">
-            <h2 className="mb-4 text-3xl font-bold text-gray-900 dark:text-white">
-              Popular Learning Paths
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
-              Comprehensive courses designed to advance your career
-            </p>
+        {/* Loading State */}
+        {loading && (
+          <div className="mb-12 text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading trending data...</p>
           </div>
+        )}
 
-          <ContentCards
-            cards={mockContentCards}
-            onCardClick={handleContentCardClick}
-          />
-        </div>
+        {/* Trending Documents Carousel */}
+        {!loading && trendingDocuments.length > 0 && (
+          <div className="mb-12 mt-12">
+            <div className="mb-8 text-center">
+              <h2 className="mb-4 text-3xl font-bold text-gray-900 dark:text-white">
+                Trending Documents
+              </h2>
+              <p className="text-lg text-gray-600 dark:text-gray-300">
+                Most popular documents in the last 7 days
+              </p>
+            </div>
+            <FeaturedCarousel
+              documents={trendingDocuments}
+              onCardClick={handleDocumentClick}
+            />
+          </div>
+        )}
+
+        {/* Trending Reviewers */}
+        {!loading && <TrendingReviewers reviewers={trendingReviewers} />}
 
         {/* Additional Info Section */}
         <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 p-8 text-white shadow-xl transition-all duration-500 hover:shadow-2xl">
@@ -80,7 +98,7 @@ const Home = () => {
               Join thousands of students who are already advancing their careers
               with our courses
             </p>
-            <button className="rounded-full bg-white px-8 py-3 font-semibold text-blue-600 shadow-lg transition-all duration-300 hover:scale-105 hover:bg-gray-100 hover:shadow-xl">
+            <button className="rounded-full bg-white px-8 py-3 font-semibold text-blue-600 shadow-lg transition-all duration-300 hover:scale-105 hover:bg-gray-100 hover:shadow-xl" onClick={() => router.push("/signup")}>
               Get Started Today
             </button>
           </div>

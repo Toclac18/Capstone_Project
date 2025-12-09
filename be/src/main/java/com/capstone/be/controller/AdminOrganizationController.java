@@ -47,14 +47,49 @@ public class AdminOrganizationController {
       @RequestParam(name = "sort", defaultValue = "createdAt") String sort,
       @RequestParam(name = "order", defaultValue = "desc") String order) {
 
-    log.info("Admin get all organizations - status: {}, search: {}, page: {}, size: {}", status,
-        search, page, size);
+    // Trim search string
+    String trimmedSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
+
+    // Map frontend field names to entity field names
+    // Frontend uses "organizationName" but entity has "fullName"
+    if ("organizationName".equalsIgnoreCase(sort)) {
+      sort = "fullName";
+    }
+    // Frontend uses "organizationEmail" but entity has "email"
+    if ("organizationEmail".equalsIgnoreCase(sort)) {
+      sort = "email";
+    }
+    // Frontend uses "adminEmail" but entity has "email" (admin is the user)
+    if ("adminEmail".equalsIgnoreCase(sort)) {
+      sort = "email";
+    }
+
+    // Validate sortBy - only allow valid User entity fields
+    // Valid fields: email, fullName, status, createdAt, updatedAt
+    String[] validSortFields = {"email", "fullName", "status", "createdAt", "updatedAt"};
+    boolean isValidField = false;
+    for (String validField : validSortFields) {
+      if (validField.equalsIgnoreCase(sort)) {
+        isValidField = true;
+        sort = validField; // Normalize case
+        break;
+      }
+    }
+    
+    // If invalid field, default to createdAt
+    if (!isValidField) {
+      log.warn("Invalid sort field: {}. Defaulting to createdAt", sort);
+      sort = "createdAt";
+    }
+
+    log.info("Admin get all organizations - status: {}, search: {}, page: {}, size: {}, sort: {}, order: {}",
+        status, trimmedSearch, page, size, sort, order);
 
     Sort.Direction direction =
         order.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sort));
 
-    Page<AdminOrganizationResponse> organizations = userService.getAllOrganizations(status, search,
+    Page<AdminOrganizationResponse> organizations = userService.getAllOrganizations(status, trimmedSearch,
         pageable);
 
     return ResponseEntity.ok(organizations);

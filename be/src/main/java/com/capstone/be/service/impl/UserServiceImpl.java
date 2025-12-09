@@ -21,6 +21,7 @@ import com.capstone.be.exception.BusinessException;
 import com.capstone.be.exception.DuplicateResourceException;
 import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
+import com.capstone.be.exception.UnauthorizedException;
 import com.capstone.be.repository.EmailChangeRequestRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.PasswordResetRequestRepository;
@@ -114,7 +115,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional
-  public void deleteAccount(UUID userId) {
+  public void deleteAccount(UUID userId, String password) {
     log.info("Deleting account for user ID: {}", userId);
 
     // Find user
@@ -132,6 +133,11 @@ public class UserServiceImpl implements UserService {
           HttpStatus.BAD_REQUEST,
           "ACCOUNT_ALREADY_DELETED"
       );
+    }
+
+    // Verify password
+    if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+      throw UnauthorizedException.invalidPassword();
     }
 
     // Soft delete - set status to DELETED
@@ -187,6 +193,27 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional
+  public void verifyPasswordForEmailChange(UUID userId, String password) {
+    log.info("Verify password for email change for user ID: {}", userId);
+
+    // Find user
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new BusinessException(
+            "User not found with id: " + userId,
+            HttpStatus.NOT_FOUND,
+            "USER_NOT_FOUND"
+        ));
+
+    // Verify password
+    if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+      throw UnauthorizedException.invalidPassword();
+    }
+
+    log.info("Password verified for email change for user: {}", userId);
+  }
+
+  @Override
+  @Transactional
   public void requestEmailChange(UUID userId, ChangeEmailRequest request) {
     log.info("Request email change for user ID: {} to new email: {}", userId,
         request.getNewEmail());
@@ -198,6 +225,11 @@ public class UserServiceImpl implements UserService {
             HttpStatus.NOT_FOUND,
             "USER_NOT_FOUND"
         ));
+
+    // Verify password
+    if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+      throw UnauthorizedException.invalidPassword();
+    }
 
     // Check if new email is same as current email
     if (user.getEmail().equalsIgnoreCase(request.getNewEmail())) {
@@ -245,17 +277,15 @@ public class UserServiceImpl implements UserService {
 
     emailChangeRequestRepository.save(emailChangeRequest);
 
-    // Send OTP to current email
-    emailService.sendEmailChangeOtp(userId, user.getEmail(), request.getNewEmail(), otp);
+    // Send OTP to new email (not current email)
+    emailService.sendEmailChangeOtp(userId, request.getNewEmail(), request.getNewEmail(), otp);
 
-    log.info("Created email change request and sent OTP to current email for user: {}", userId);
+    log.info("Created email change request and sent OTP to new email for user: {}", userId);
   }
 
   @Override
-  @Transactional
+  @Transactional(noRollbackFor = InvalidRequestException.class)
   public void verifyEmailChangeOtp(UUID userId, String otp) {
-    log.info("Verify email change OTP for user ID: {}", userId);
-
     // Find user
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new BusinessException(
@@ -277,7 +307,7 @@ public class UserServiceImpl implements UserService {
       throw new InvalidRequestException("OTP has expired. Please request a new email change");
     }
 
-    // Check if max attempts reached
+    // Check if max attempts reached (check BEFORE incrementing)
     if (emailChangeRequest.isMaxAttemptsReached()) {
       emailChangeRequest.setStatus(EmailChangeStatus.EXPIRED);
       emailChangeRequestRepository.save(emailChangeRequest);
@@ -287,11 +317,15 @@ public class UserServiceImpl implements UserService {
 
     // Increment attempt count
     emailChangeRequest.incrementAttemptCount();
+    int newAttemptCount = emailChangeRequest.getAttemptCount();
+    
+    // Save and flush to ensure attemptCount is persisted immediately
+    emailChangeRequestRepository.saveAndFlush(emailChangeRequest);
 
     // Verify OTP using password encoder (constant-time comparison)
     if (!passwordEncoder.matches(otp, emailChangeRequest.getOtpHash())) {
-      emailChangeRequestRepository.save(emailChangeRequest);
-      int remainingAttempts = 5 - emailChangeRequest.getAttemptCount();
+      // Use the incremented value directly since we just saved it
+      int remainingAttempts = 5 - newAttemptCount;
       throw new InvalidRequestException(
           "Invalid OTP code. " + remainingAttempts + " attempts remaining");
     }
@@ -508,7 +542,13 @@ public class UserServiceImpl implements UserService {
       UserStatus status, String search, Pageable pageable) {
     log.info("Admin getting all readers - status: {}, search: {}", status, search);
 
-    Specification<User> spec = UserSpecification.withFilters(UserRole.READER, status, search);
+    // If status is null (not filtered), exclude DELETED by default
+    Specification<User> spec = Specification
+        .where(UserSpecification.hasRole(UserRole.READER))
+        .and(status != null 
+            ? UserSpecification.hasStatus(status) 
+            : UserSpecification.hasStatusNot(UserStatus.DELETED))
+        .and(UserSpecification.searchByKeyword(search));
     Page<User> users = userRepository.findAll(spec, pageable);
 
     return users.map(this::buildAdminReaderResponse);
@@ -576,7 +616,13 @@ public class UserServiceImpl implements UserService {
       UserStatus status, String search, Pageable pageable) {
     log.info("Admin getting all reviewers - status: {}, search: {}", status, search);
 
-    Specification<User> spec = UserSpecification.withFilters(UserRole.REVIEWER, status, search);
+    // If status is null (not filtered), exclude DELETED by default
+    Specification<User> spec = Specification
+        .where(UserSpecification.hasRole(UserRole.REVIEWER))
+        .and(status != null 
+            ? UserSpecification.hasStatus(status) 
+            : UserSpecification.hasStatusNot(UserStatus.DELETED))
+        .and(UserSpecification.searchByKeyword(search));
     Page<User> users = userRepository.findAll(spec, pageable);
 
     return users.map(this::buildAdminReviewerResponse);
@@ -644,8 +690,15 @@ public class UserServiceImpl implements UserService {
       UserStatus status, String search, Pageable pageable) {
     log.info("Admin getting all organizations - status: {}, search: {}", status, search);
 
-    Specification<User> spec = UserSpecification.withFilters(UserRole.ORGANIZATION_ADMIN, status,
-        search);
+    // Use searchOrganizationsByKeyword for organizations to search in multiple fields
+    // If status is null (not filtered), exclude DELETED by default
+    Specification<User> spec = Specification
+        .where(UserSpecification.hasRole(UserRole.ORGANIZATION_ADMIN))
+        .and(status != null 
+            ? UserSpecification.hasStatus(status) 
+            : UserSpecification.hasStatusNot(UserStatus.DELETED))
+        .and(UserSpecification.searchOrganizationsByKeyword(search));
+    
     Page<User> users = userRepository.findAll(spec, pageable);
 
     return users.map(this::buildAdminOrganizationResponse);

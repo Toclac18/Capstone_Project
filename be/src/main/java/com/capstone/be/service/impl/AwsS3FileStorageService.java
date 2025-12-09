@@ -39,7 +39,7 @@ public class AwsS3FileStorageService implements FileStorageService {
   // Max file size: 10MB
   private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-  // Allowed file types for credentials
+  // Allowed file types for credentials and review reports
   private static final List<String> ALLOWED_CONTENT_TYPES = List.of(
       "application/pdf",
       "image/jpeg",
@@ -47,7 +47,9 @@ public class AwsS3FileStorageService implements FileStorageService {
       "image/jpg",
       "image/gif",
       "image/webp",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+      "application/msword" // .doc
   );
 
   @Override

@@ -59,7 +59,7 @@ public class UserAndProfileSeeder {
   public void run() {
     if (userRepository.count() > 0) {
       log.warn("Users already exist → skip seeding.");
-      eventPublisher.publishEvent(UserSeededEvent.class);
+      eventPublisher.publishEvent(new UserSeededEvent());
       return;
     }
 
@@ -188,6 +188,63 @@ public class UserAndProfileSeeder {
         List.of(itDomain, engineeringDomain), itSpecs
     );
 
+    // Additional active reviewers for trending test
+    createReviewerUser(
+        seed++, "reviewer4@gmail.com", "PGS.TS. Nguyễn Thị Lan", UserStatus.ACTIVE,
+        LocalDate.of(1982, 4, 10), "0000-0008-9012-3456",
+        EducationLevel.DOCTORATE, "Đại học Kinh tế Quốc dân", "lan.nguyen@neu.edu.vn",
+        List.of("https://s3.amazonaws.com/reviewer-credentials/lan-cv.pdf"),
+        List.of(itDomain), itSpecs
+    );
+
+    createReviewerUser(
+        seed++, "reviewer5@gmail.com", "TS. Trần Văn Hùng", UserStatus.ACTIVE,
+        LocalDate.of(1986, 9, 22), "0000-0009-0123-4567",
+        EducationLevel.DOCTORATE, "Đại học Công nghệ - ĐHQG Hà Nội", "hung.tran@vnu.edu.vn",
+        List.of("https://s3.amazonaws.com/reviewer-credentials/hung-cv.pdf"),
+        List.of(itDomain, engineeringDomain), itSpecs
+    );
+
+    createReviewerUser(
+        seed++, "reviewer6@gmail.com", "PGS.TS. Phạm Thị Mai", UserStatus.ACTIVE,
+        LocalDate.of(1983, 12, 5), "0000-0010-1234-5678",
+        EducationLevel.DOCTORATE, "Đại học Y Hà Nội", "mai.pham@hmu.edu.vn",
+        List.of("https://s3.amazonaws.com/reviewer-credentials/mai-cv.pdf"),
+        List.of(healthDomain), healthSpecs
+    );
+
+    createReviewerUser(
+        seed++, "reviewer7@gmail.com", "TS. Hoàng Văn Đức", UserStatus.ACTIVE,
+        LocalDate.of(1987, 6, 18), "0000-0011-2345-6789",
+        EducationLevel.DOCTORATE, "Đại học Bách Khoa TP.HCM", "duc.hoang@hcmut.edu.vn",
+        List.of("https://s3.amazonaws.com/reviewer-credentials/duc-cv.pdf"),
+        List.of(engineeringDomain), engSpecs
+    );
+
+    createReviewerUser(
+        seed++, "reviewer8@gmail.com", "TS. Lê Thị Hoa", UserStatus.ACTIVE,
+        LocalDate.of(1989, 3, 25), "0000-0012-3456-7890",
+        EducationLevel.DOCTORATE, "Đại học Khoa học Tự nhiên - ĐHQG TP.HCM", "hoa.le@hcmus.edu.vn",
+        List.of("https://s3.amazonaws.com/reviewer-credentials/hoa-cv.pdf"),
+        List.of(itDomain), itSpecs
+    );
+
+    createReviewerUser(
+        seed++, "reviewer9@gmail.com", "PGS.TS. Vũ Minh Quang", UserStatus.ACTIVE,
+        LocalDate.of(1981, 8, 14), "0000-0013-4567-8901",
+        EducationLevel.DOCTORATE, "Viện Hàn lâm Khoa học và Công nghệ Việt Nam", "quang.vu@vast.vn",
+        List.of("https://s3.amazonaws.com/reviewer-credentials/quang-cv.pdf"),
+        List.of(itDomain, engineeringDomain), itSpecs
+    );
+
+    createReviewerUser(
+        seed++, "reviewer10@gmail.com", "TS. Đỗ Thị Linh", UserStatus.ACTIVE,
+        LocalDate.of(1984, 11, 30), "0000-0014-5678-9012",
+        EducationLevel.DOCTORATE, "Đại học Sư phạm Hà Nội", "linh.do@hnue.edu.vn",
+        List.of("https://s3.amazonaws.com/reviewer-credentials/linh-cv.pdf"),
+        List.of(engineeringDomain), engSpecs
+    );
+
     // Pending approval reviewers
     createReviewerUser(
         seed++, "reviewer.pending1@gmail.com", "ThS. Trịnh Văn Long", UserStatus.PENDING_APPROVE,
@@ -224,7 +281,7 @@ public class UserAndProfileSeeder {
     );
 
     log.info(
-        "Seeded 7 Reviewers (3 active, 2 pending approval, 1 pending email, 1 rejected)");
+        "Seeded 15 Reviewers (10 active, 2 pending approval, 1 pending email, 1 rejected)");
   }
 
   private void seedOrganizations() {

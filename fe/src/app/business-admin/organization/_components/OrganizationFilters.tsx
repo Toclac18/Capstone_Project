@@ -63,6 +63,7 @@ export function OrganizationFilters({
   const onSubmit: SubmitHandler<FilterValues> = (data: FilterValues) => {
     const filters: OrganizationQueryParams = {
       ...data,
+      search: data.search?.trim() || "",
       page: 1,
     };
     onFiltersChange(filters);

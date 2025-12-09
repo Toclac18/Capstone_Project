@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, proxyJsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { mockGetOrganizations } from "@/mock/organizations.mock";
 
 async function handleGET(req: NextRequest): Promise<Response> {

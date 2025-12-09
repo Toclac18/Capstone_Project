@@ -9,8 +9,8 @@ spring:
   profiles:
     active: dev
   datasource:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}?sslmode=${DB_SSLMODE}
-    #url: jdbc:postgresql://dpg-d4p3qhi4i8rc73cfc7eg-a.singapore-postgres.render.com:5432/readee_db?sslmode=${DB_SSLMODE}
+    #url: ${DB_URL}${DB_SSLMODE_QUERY}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}${DB_SSLMODE_QUERY}
     username:  ${DB_USERNAME}
     password:  ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
@@ -71,6 +71,11 @@ app:
   s3:
     document:
       presignedExpInMinutes: 20
+
+  ai:
+    moderationService:
+      url: ${AI_MODERATION_SERVICE_URL:http://localhost:8000}
+      apiKey: ${AI_MODERATION_API_KEY}
 
 logging:
   level:

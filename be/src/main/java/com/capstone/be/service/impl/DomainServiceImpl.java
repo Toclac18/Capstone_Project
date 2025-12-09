@@ -118,11 +118,11 @@ public class DomainServiceImpl implements DomainService {
 
   @Override
   @Transactional(readOnly = true)
-  public Page<DomainDetailResponse> getAllDomainsForAdmin(String name, Pageable pageable) {
-    log.info("Admin fetching domains - name: {}, page: {}, size: {}",
-        name, pageable.getPageNumber(), pageable.getPageSize());
+  public Page<DomainDetailResponse> getAllDomainsForAdmin(String name, java.time.Instant dateFrom, java.time.Instant dateTo, Pageable pageable) {
+    log.info("Admin fetching domains - name: {}, dateFrom: {}, dateTo: {}, page: {}, size: {}",
+        name, dateFrom, dateTo, pageable.getPageNumber(), pageable.getPageSize());
 
-    Specification<Domain> spec = DomainSpecification.withFilters(name);
+    Specification<Domain> spec = DomainSpecification.withFilters(name, dateFrom, dateTo);
     Page<Domain> domainPage = domainRepository.findAll(spec, pageable);
 
     log.info("Retrieved {} domains for admin", domainPage.getTotalElements());

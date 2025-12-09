@@ -1,6 +1,6 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 import { getUsers as mockGetUsers } from "@/mock/business-admin-users";
 
@@ -45,8 +45,8 @@ async function handleGET(request: Request) {
   queryParams.append("size", limit);
   queryParams.append("sort", sort);
   queryParams.append("order", order);
-  if (search) {
-    queryParams.append("search", search);
+  if (search && search.trim()) {
+    queryParams.append("search", search.trim());
   }
   if (status) {
     // Backend enum values: PENDING_EMAIL_VERIFY, PENDING_APPROVE, ACTIVE, INACTIVE, REJECTED, DELETED
@@ -69,7 +69,10 @@ async function handleGET(request: Request) {
     const errorText = await errorClone.text();
     console.error(`[users] Backend error (${upstream.status}):`, errorText);
     console.error(`[users] Request URL: ${url}`);
-    console.error(`[users] Request headers:`, Object.fromEntries(headers.entries()));
+    console.error(
+      `[users] Request headers:`,
+      Object.fromEntries(headers.entries()),
+    );
     return proxyJsonResponse(upstream, { mode: "real" });
   }
 
@@ -105,7 +108,7 @@ async function handleGET(request: Request) {
         "content-type": "application/json",
         "x-mode": "real",
       },
-    }
+    },
   );
 }
 
@@ -114,4 +117,3 @@ export async function GET(request: Request) {
     context: "api/business-admin/users/route.ts/GET",
   });
 }
-

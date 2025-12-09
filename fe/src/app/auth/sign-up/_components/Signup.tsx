@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
-import { EmailIcon, GoogleIcon, PasswordIcon, UserIcon } from "@/assets/icons";
+import { EmailIcon, PasswordIcon, UserIcon } from "@/assets/icons";
 import React, { useState, useCallback } from "react";
 import InputGroup from "@/components/(template)/FormElements/InputGroup";
 import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
 import Image from "next/image";
 import { useToast } from "@/components/ui/toast";
+import PolicyViewer from "@/components/PolicyViewer/PolicyViewer";
 import {
   registerReader,
   registerReviewer,
@@ -134,6 +135,10 @@ export default function Signup() {
   const [backgroundFiles, setBackgroundFiles] = useState<File[]>([]);
   const [certificateFiles, setCertificateFiles] = useState<File[]>([]);
 
+  // Terms of Use
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isPolicyViewerOpen, setIsPolicyViewerOpen] = useState(false);
+
   // Options for reviewer
   const [domainOptions, setDomainOptions] = useState<
     Array<{ id: string; name: string }>
@@ -215,10 +220,15 @@ export default function Signup() {
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const { name, value } = e.target;
-      setData((prev) => ({ ...prev, [name]: value }));
-      const msg = validateFieldHelper(name, value, userType, {
+      // Prevent space input in password and email fields
+      let filteredValue = value;
+      if ((name === "password" || name === "repassword" || name === "email") && value.includes(" ")) {
+        filteredValue = value.replace(/\s/g, "");
+      }
+      setData((prev) => ({ ...prev, [name]: filteredValue }));
+      const msg = validateFieldHelper(name, filteredValue, userType, {
         ...data,
-        [name]: value,
+        [name]: filteredValue,
       });
       setErrors((prev) => ({ ...prev, [name]: msg }));
     },
@@ -365,7 +375,7 @@ export default function Signup() {
         const payload: RegisterReaderPayload = {
           email: data.email!,
           password: data.password!,
-          fullName: data.name!,
+          fullName: data.name!.trim(),
           dateOfBirth: data.date_of_birth!,
         };
         await registerReader(payload);
@@ -373,7 +383,7 @@ export default function Signup() {
         const payload: RegisterReviewerPayload = {
           email: data.email!,
           password: data.password!,
-          fullName: data.name!,
+          fullName: data.name!.trim(),
           dateOfBirth: data.date_of_birth!,
           orcid: data.orcid,
           educationLevel: data.educationLevel! as "COLLEGE" | "UNIVERSITY" | "MASTER" | "DOCTORATE",
@@ -387,7 +397,7 @@ export default function Signup() {
         const payload: RegisterOrgAdminPayload = {
           adminEmail: data.email!,
           password: data.password!,
-          adminFullName: data.name!,
+          adminFullName: data.name!.trim(),
           organizationName: data.organizationName!,
           organizationType: data.organizationType! as "SCHOOL" | "COLLEGE" | "UNIVERSITY" | "TRAINING_CENTER",
           organizationEmail: data.organizationEmail!,
@@ -467,28 +477,17 @@ export default function Signup() {
         <Image
           src={Logo}
           alt="Logo"
-          width={100}
-          height={100}
+          width={150}
+          height={150}
           className="dark:hidden"
         />
         <Image
           src={LogoDark}
           alt="Logo"
-          width={100}
-          height={100}
+          width={150}
+          height={150}
           className="hidden dark:block"
         />
-      </div>
-
-      <button className={styles["oauth-btn"]}>
-        <GoogleIcon />
-        Sign up with Google
-      </button>
-
-      <div className={styles.divider}>
-        <span className={styles["divider-line"]}></span>
-        <div className={styles["divider-text"]}>Or sign up with email</div>
-        <span className={styles["divider-line"]}></span>
       </div>
 
       <div>
@@ -1007,19 +1006,33 @@ export default function Signup() {
           )}
 
           <div className="mb-4.5 mt-6">
-            <p className={styles["terms-text"]}>
-              By clicking Create Account, you agree to our{" "}
-              <Link
-                href="/terms-of-use"
-                className="text-primary hover:underline"
-              >
-                Terms Of Use
-              </Link>
-            </p>
+            <div className={styles["terms-checkbox-container"]}>
+              <label className={styles["terms-checkbox-label"]}>
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className={styles["terms-checkbox"]}
+                />
+                <span className={styles["terms-checkbox-text"]}>
+                  I agree to the{" "}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsPolicyViewerOpen(true);
+                    }}
+                    className={styles["terms-link"]}
+                  >
+                    Terms of Use
+                  </button>
+                </span>
+              </label>
+            </div>
             <button
               type="submit"
               className={styles["submit-btn"]}
-              disabled={loading}
+              disabled={loading || !agreedToTerms}
             >
               {loading ? (
                 <>
@@ -1042,6 +1055,12 @@ export default function Signup() {
           </Link>
         </p>
       </div>
+
+      {/* Policy Viewer Modal */}
+      <PolicyViewer
+        isOpen={isPolicyViewerOpen}
+        onClose={() => setIsPolicyViewerOpen(false)}
+      />
     </>
   );
 }

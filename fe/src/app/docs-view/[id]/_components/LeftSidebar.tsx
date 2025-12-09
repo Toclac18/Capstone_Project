@@ -15,6 +15,23 @@ export default function LeftSidebar() {
 
   const totalPages = numPages || 1;
 
+  if (!detail.fileUrl) {
+    return (
+      <aside className={styles.leftSidebar}>
+        <div className={styles.leftHeaderRow}>
+          <div className={styles.leftHeader}>Pages</div>
+          <div className={styles.pageJump}>
+            <span>{page}</span>
+            <span className={styles.pageJumpTotal}>/ {totalPages}</span>
+          </div>
+        </div>
+        <div className={styles.pageThumbList}>
+          <div className={styles.loading}>Loading PDF URL…</div>
+        </div>
+      </aside>
+    );
+  }
+
   return (
     <aside className={styles.leftSidebar}>
       <div className={styles.leftHeaderRow}>
@@ -30,6 +47,9 @@ export default function LeftSidebar() {
           file={detail.fileUrl}
           loading={<div className={styles.loading}>Loading pages…</div>}
           error={<div className={styles.loading}>Failed to load pages</div>}
+          onLoadError={(err) => {
+            console.error("LeftSidebar PDF load error:", err, detail.fileUrl);
+          }}
         >
           {Array.from({ length: totalPages }, (_, idx) => {
             const pageNumber = idx + 1;

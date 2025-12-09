@@ -7,7 +7,7 @@ export const NAV_DATA = [
       {
         title: "Home",
         icon: Icons.HomeIcon,
-        url: "/",
+        url: "/homepage",
       },
     ],
   },
@@ -56,6 +56,11 @@ export const REVIEWER_NAV_DATA = [
         title: "View Review List",
         icon: Icons.ClipboardCheckIcon,
         url: "/reviewer/review-list",
+      },
+      {
+        title: "My Statistics",
+        icon: Icons.BarChartIcon,
+        url: "/reviewer/statistics",
       },
     ],
   },
@@ -114,6 +119,11 @@ export const BUSINESS_ADMIN_NAV_DATA = [
         title: "Document Management",
         icon: Icons.FileTextIcon,
         url: "/business-admin/document",
+      },
+      {
+        title: "Review Management",
+        icon: Icons.ClipboardCheckIcon,
+        url: "/business-admin/reviews",
       },
       {
         title: "Document Domain Management",

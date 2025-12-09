@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Mail, X, AlertCircle } from "lucide-react";
+import { Mail, X, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
 import styles from "@/app/profile/styles.module.css";
 
 interface ChangeEmailModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentEmail: string;
-  onRequestEmailChange: (newEmail: string, otp?: string) => Promise<{ step: string } | { step: string }>;
+  onRequestEmailChange: (password: string, newEmail: string, otp: string) => Promise<{ step: string }>;
 }
 
 export default function ChangeEmailModal({
@@ -17,11 +18,15 @@ export default function ChangeEmailModal({
   currentEmail,
   onRequestEmailChange,
 }: ChangeEmailModalProps) {
+  const { showToast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState<"request" | "verify">("request");
+  const [step, setStep] = useState<"password" | "email" | "verify">("password");
+  const [password, setPassword] = useState("");
   const [newEmail, setNewEmail] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
+    password: "",
     newEmail: "",
     otp: "",
   });
@@ -33,14 +38,27 @@ export default function ChangeEmailModal({
 
   useEffect(() => {
     if (isOpen) {
-      setStep("request");
+      setStep("password");
+      setPassword("");
       setNewEmail("");
-      setFormData({ newEmail: "", otp: "" });
+      setFormData({ password: "", newEmail: "", otp: "" });
       setErrors({});
+      setShowPassword(false);
     }
   }, [isOpen]);
 
-  const validateRequestForm = (): boolean => {
+  const validatePasswordForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateEmailForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.newEmail) {
@@ -68,20 +86,69 @@ export default function ChangeEmailModal({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleRequestSubmit = async (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateRequestForm()) return;
+    if (!validatePasswordForm()) return;
 
     try {
       setIsLoading(true);
-      const result = await onRequestEmailChange(formData.newEmail);
+      const result = await onRequestEmailChange(formData.password, "", "");
+      if (result.step === "email") {
+        setPassword(formData.password);
+        setStep("email");
+        setFormData({ ...formData, password: "", newEmail: "" });
+      }
+    } catch (error: any) {
+      // Extract error message from ApiError (axios interceptor wraps errors)
+      // ApiError has message property directly, or check response.data.message
+      const errorMessage = 
+        error?.message ||
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "Failed to verify password";
+      
+      setErrors({ submit: errorMessage });
+      // Show toast error
+      showToast({
+        type: "error",
+        title: "Password Verification Failed",
+        message: errorMessage,
+        duration: 5000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateEmailForm()) return;
+
+    try {
+      setIsLoading(true);
+      const result = await onRequestEmailChange(password, formData.newEmail, "");
       if (result.step === "verify") {
         setNewEmail(formData.newEmail);
         setStep("verify");
         setFormData({ ...formData, newEmail: "", otp: "" });
       }
     } catch (error: any) {
-      setErrors({ submit: error?.message || "Failed to request email change" });
+      // Extract error message from ApiError (axios interceptor wraps errors)
+      // ApiError has message property directly, or check response.data.message
+      const errorMessage = 
+        error?.message ||
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "Failed to request email change";
+      
+      setErrors({ submit: errorMessage });
+      // Show toast error
+      showToast({
+        type: "error",
+        title: "Email Change Request Failed",
+        message: errorMessage,
+        duration: 5000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -93,10 +160,25 @@ export default function ChangeEmailModal({
 
     try {
       setIsLoading(true);
-      await onRequestEmailChange(newEmail, formData.otp);
+      await onRequestEmailChange(password, newEmail, formData.otp);
       onClose();
     } catch (error: any) {
-      setErrors({ submit: error?.message || "Failed to verify OTP" });
+      // Extract error message from ApiError (axios interceptor wraps errors)
+      // ApiError has message property directly, or check response.data.message
+      const errorMessage = 
+        error?.message ||
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "Failed to verify OTP";
+      
+      setErrors({ submit: errorMessage });
+      // Show toast error
+      showToast({
+        type: "error",
+        title: "OTP Verification Failed",
+        message: errorMessage,
+        duration: 5000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -130,8 +212,92 @@ export default function ChangeEmailModal({
             </button>
           </div>
 
-          {step === "request" ? (
-            <form onSubmit={handleRequestSubmit} className={styles["modal-form"]}>
+          {step === "password" ? (
+            <form onSubmit={handlePasswordSubmit} className={styles["modal-form"]}>
+              <div className={styles["form-fields"]}>
+                <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
+                  <label className={`${styles["field-label"]} ${styles["field-label-sm"]}`}>
+                    Enter your password <span className={`${styles["field-label-required"]} ${styles["field-label-required-sm"]}`}>*</span>
+                  </label>
+                  <div className={styles["field-icon-wrapper"]}>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) => {
+                        setFormData({ ...formData, password: e.target.value });
+                        if (errors.password) setErrors({ ...errors, password: "" });
+                      }}
+                      placeholder="Enter your password"
+                      className={`${styles["field-input"]} ${styles["field-input-sm"]} ${errors.password ? styles.error : ""}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className={styles["field-toggle-btn"]}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOff className={styles["field-toggle-icon"]} />
+                      ) : (
+                        <Eye className={styles["field-toggle-icon"]} />
+                      )}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <div className={`${styles["field-error"]} ${styles["field-error-inline"]}`}>
+                      <AlertCircle className={styles["error-icon"]} />
+                      {errors.password}
+                    </div>
+                  )}
+                </div>
+
+                {errors.submit && (
+                  <div className={styles["alert-error"]}>
+                    <div className={styles["alert-error-content"]}>
+                      <AlertCircle className={styles["alert-icon"]} />
+                      {errors.submit}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className={`${styles["modal-actions"]} ${styles["modal-actions-end"]}`}>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className={`${styles["btn-cancel"]} ${styles["btn-cancel-sm"]}`}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`${styles["btn-submit"]} ${styles["blue"]} ${styles["btn-submit-sm"]}`}
+                >
+                  {isLoading && (
+                    <svg className={styles["spinner"]} fill="none" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                  )}
+                  {isLoading ? "Verifying..." : "Next"}
+                </button>
+              </div>
+            </form>
+          ) : step === "email" ? (
+            <form onSubmit={handleEmailSubmit} className={styles["modal-form"]}>
               <div className={styles["form-fields"]}>
                 <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
                   <label className={`${styles["field-label"]} ${styles["field-label-sm"]}`}>Current Email</label>
@@ -178,11 +344,15 @@ export default function ChangeEmailModal({
               <div className={`${styles["modal-actions"]} ${styles["modal-actions-end"]}`}>
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={() => {
+                    setStep("password");
+                    setFormData({ ...formData, newEmail: "" });
+                    setErrors({});
+                  }}
                   className={`${styles["btn-cancel"]} ${styles["btn-cancel-sm"]}`}
                   disabled={isLoading}
                 >
-                  Cancel
+                  Back
                 </button>
                 <button
                   type="submit"
@@ -261,7 +431,7 @@ export default function ChangeEmailModal({
                 <button
                   type="button"
                   onClick={() => {
-                    setStep("request");
+                    setStep("email");
                     setFormData({ ...formData, otp: "" });
                     setErrors({});
                   }}

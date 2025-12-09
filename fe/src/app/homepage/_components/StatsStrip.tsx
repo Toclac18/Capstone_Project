@@ -32,12 +32,12 @@ export default function StatsStrip() {
           <div className={styles.statsSub}>in your READEE library</div>
         </div>
         <div className={styles.statsCard}>
-          <div className={styles.statsLabel}>Specializations</div>
+          <div className={styles.statsLabel}>Specs</div>
           <div className={styles.statsValue}>{totalSpecs || "—"}</div>
           <div className={styles.statsSub}>expertise areas to explore</div>
         </div>
         <div className={styles.statsCard}>
-          <div className={styles.statsLabel}>Organizations</div>
+          <div className={styles.statsLabel}>Orgs</div>
           <div className={styles.statsValue}>{totalOrgs || "—"}</div>
           <div className={styles.statsSub}>trusted academic sources</div>
         </div>

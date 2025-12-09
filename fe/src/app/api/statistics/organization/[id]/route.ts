@@ -1,7 +1,7 @@
 import { mockGetOrganizationStatistics } from "@/mock/statistics.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { jsonResponse } from "@/server/response";
 
 async function handleGET(
@@ -77,10 +77,11 @@ async function handleGET(
     // For now, return a clear error message
     if (errorMessage.includes("Organization not found")) {
       return jsonResponse(
-        { 
-          error: "Organization not found. The provided ID appears to be a user ID (admin ID) rather than an organization ID. The system needs the organization profile ID to fetch statistics.",
+        {
+          error:
+            "Organization not found. The provided ID appears to be a user ID (admin ID) rather than an organization ID. The system needs the organization profile ID to fetch statistics.",
           details: errorMessage,
-          hint: "Please ensure the organization list includes the organization profile ID, not just the admin user ID."
+          hint: "Please ensure the organization list includes the organization profile ID, not just the admin user ID.",
         },
         {
           status: upstream.status,
@@ -88,7 +89,7 @@ async function handleGET(
             "content-type": "application/json",
             "x-mode": "real",
           },
-        }
+        },
       );
     }
 
@@ -100,7 +101,7 @@ async function handleGET(
           "content-type": "application/json",
           "x-mode": "real",
         },
-      }
+      },
     );
   }
 
@@ -124,4 +125,3 @@ export async function GET(
     context: "api/statistics/organization/[id]/route.ts/GET",
   });
 }
-

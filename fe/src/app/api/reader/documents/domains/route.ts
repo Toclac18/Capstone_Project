@@ -1,7 +1,7 @@
 import { mockDocumentsDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { jsonResponse, parseError } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";
 
 async function handleGET() {
@@ -31,15 +31,15 @@ async function handleGET() {
     const text = await upstream.text();
     return jsonResponse(
       { error: parseError(text, "Failed to fetch domains") },
-      { status: upstream.status }
+      { status: upstream.status },
     );
   }
 
   // Parse response - backend may return { success: true, data: [...], timestamp: ... } or direct array
   const responseData = await upstream.json();
-  const domains = Array.isArray(responseData) 
-    ? responseData 
-    : (responseData?.data || []);
+  const domains = Array.isArray(responseData)
+    ? responseData
+    : responseData?.data || [];
 
   return jsonResponse(domains, { status: upstream.status, mode: "real" });
 }

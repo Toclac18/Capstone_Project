@@ -47,6 +47,8 @@ OCR_Service/ocr_outputs/
 *.txt
 
 # Model files (usually large, should be downloaded separately)
+# Ignore entire models directory
+Readee_AI_System/models/
 # Ignore all model weight files in models directory
 Readee_AI_System/models/**/*.pth
 Readee_AI_System/models/**/*.safetensors

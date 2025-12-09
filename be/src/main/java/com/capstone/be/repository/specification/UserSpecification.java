@@ -1,9 +1,12 @@
 package com.capstone.be.repository.specification;
 
+import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.domain.enums.UserStatus;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import java.time.Instant;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -42,6 +45,20 @@ public class UserSpecification {
   }
 
   /**
+   * Filter users by excluding a specific status
+   * @param status the user status to exclude (nullable)
+   * @return Specification that excludes the status, or null if status is null
+   */
+  public static Specification<User> hasStatusNot(UserStatus status) {
+    return (root, query, criteriaBuilder) -> {
+      if (status == null) {
+        return null;
+      }
+      return criteriaBuilder.notEqual(root.get("status"), status);
+    };
+  }
+
+  /**
    * Search users by keyword in email or full name (case-insensitive)
    * @param search the keyword to search for (nullable)
    * @return Specification that searches in email and fullName, or null if search is null/empty
@@ -65,6 +82,82 @@ public class UserSpecification {
       );
 
       return criteriaBuilder.or(emailPredicate, fullNamePredicate);
+    };
+  }
+
+  /**
+   * Search organizations by keyword in multiple fields (case-insensitive)
+   * Searches in:
+   * - User email (Admin Email)
+   * - OrganizationProfile name (Organization Name)
+   * - OrganizationProfile email (Organization Email)
+   * - OrganizationProfile hotline (Phone)
+   * @param search the keyword to search for (nullable)
+   * @return Specification that searches in multiple fields with subquery to OrganizationProfile
+   */
+  public static Specification<User> searchOrganizationsByKeyword(String search) {
+    return (root, query, criteriaBuilder) -> {
+      if (search == null || search.trim().isEmpty()) {
+        return null;
+      }
+
+      String searchPattern = "%" + search.toLowerCase() + "%";
+
+      // Search in User email (Admin Email)
+      Predicate adminEmailPredicate = criteriaBuilder.like(
+          criteriaBuilder.lower(root.get("email")),
+          searchPattern
+      );
+
+      // Use exists subquery for OrganizationProfile searches
+      // Search in OrganizationProfile name (Organization Name)
+      Subquery<Long> orgNameSubquery = query.subquery(Long.class);
+      Root<OrganizationProfile> orgNameRoot = orgNameSubquery.from(OrganizationProfile.class);
+      orgNameSubquery.select(criteriaBuilder.literal(1L));
+      orgNameSubquery.where(
+          criteriaBuilder.and(
+              criteriaBuilder.equal(orgNameRoot.get("admin"), root),
+              criteriaBuilder.like(
+                  criteriaBuilder.lower(orgNameRoot.get("name")),
+                  searchPattern
+              )
+          )
+      );
+
+      // Search in OrganizationProfile email (Organization Email)
+      Subquery<Long> orgEmailSubquery = query.subquery(Long.class);
+      Root<OrganizationProfile> orgEmailRoot = orgEmailSubquery.from(OrganizationProfile.class);
+      orgEmailSubquery.select(criteriaBuilder.literal(1L));
+      orgEmailSubquery.where(
+          criteriaBuilder.and(
+              criteriaBuilder.equal(orgEmailRoot.get("admin"), root),
+              criteriaBuilder.like(
+                  criteriaBuilder.lower(orgEmailRoot.get("email")),
+                  searchPattern
+              )
+          )
+      );
+
+      // Search in OrganizationProfile hotline (Phone)
+      Subquery<Long> phoneSubquery = query.subquery(Long.class);
+      Root<OrganizationProfile> phoneRoot = phoneSubquery.from(OrganizationProfile.class);
+      phoneSubquery.select(criteriaBuilder.literal(1L));
+      phoneSubquery.where(
+          criteriaBuilder.and(
+              criteriaBuilder.equal(phoneRoot.get("admin"), root),
+              criteriaBuilder.like(
+                  criteriaBuilder.lower(phoneRoot.get("hotline")),
+                  searchPattern
+              )
+          )
+      );
+
+      return criteriaBuilder.or(
+          adminEmailPredicate,
+          criteriaBuilder.exists(orgNameSubquery),
+          criteriaBuilder.exists(orgEmailSubquery),
+          criteriaBuilder.exists(phoneSubquery)
+      );
     };
   }
 

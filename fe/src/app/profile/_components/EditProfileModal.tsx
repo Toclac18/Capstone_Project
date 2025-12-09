@@ -188,7 +188,7 @@ export default function EditProfileModal({
                 />
               </div>
               <div>
-                <h3 className={styles["modal-title"]}>Edit Profile</h3>
+                <h3 className={styles["modal-title"]}>Change Profile</h3>
                 <p className={styles["modal-subtitle"]}>
                   Update your profile information
                 </p>

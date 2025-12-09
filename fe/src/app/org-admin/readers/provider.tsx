@@ -17,6 +17,7 @@ import {
   OrgEnrollmentListResponse,
   changeEnrollmentStatus,
 } from "@/services/org-admin-reader.service";
+import { ApiError } from "@/services/http";
 
 export type ReaderStatusFilter = OrgEnrollStatus | "ALL";
 
@@ -102,8 +103,6 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
     async (enrollmentId: string, enable: boolean) => {
       const nextStatus: OrgEnrollStatus = enable ? "JOINED" : "REMOVED";
 
-      const prevReaders = readers;
-
       setReaders((prev) =>
         prev.map((r) =>
           r.enrollmentId === enrollmentId ? { ...r, status: nextStatus } : r,
@@ -116,13 +115,17 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
           status: nextStatus,
         });
       } catch (err: any) {
-        const msg = err?.message ?? "Failed to change reader access";
+        if (err instanceof ApiError && err.isHandledGlobally) {
+          setLoading(false);
+          return;
+        }
+
+        const msg = typeof err?.message === "string" ? err.message : "Error";
         setError(msg);
-        showToast(toast.error("Update failed", msg));
-        setReaders(prevReaders);
+        showToast(toast.error("Error", msg));
       }
     },
-    [readers, showToast, changeEnrollmentStatus], // nên thêm changeEnrollmentStatus vào deps
+    [showToast, changeEnrollmentStatus],
   );
 
   useEffect(() => {

@@ -746,15 +746,14 @@
 }
 
 /* Input with icon on the left - ensure text doesn't overlap icon */
-/* Only apply left padding if input is not password/text (which have toggle on right) */
-.field-icon-wrapper > .field-input:not([type="password"]):not([type="text"]) {
+.field-icon-wrapper > .field-input {
   @apply pl-13 pr-5;
 }
 
-/* Password/text input with toggle button on the right - normal padding */
-.field-icon-wrapper > .field-input[type="password"],
-.field-icon-wrapper > .field-input[type="text"] {
-  @apply px-3;
+/* Password input with toggle button on the right - override padding */
+/* Only apply to password inputs that have a toggle button (not all text inputs) */
+.field-icon-wrapper > .field-input[type="password"] {
+  @apply pl-3;
   padding-right: 2.75rem; /* pr-11 equivalent for toggle button space */
 }
 

@@ -1,62 +1,127 @@
 // src/services/http.ts
-import axios from "axios";
+import axios, {
+  AxiosError,
+  AxiosInstance,
+  AxiosRequestHeaders,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from "axios";
+import type { ErrorDialogPayload } from "@/server/withErrorBoundary";
 
-/**
- * HTTP client dùng chung:
- * - baseURL: "/api" (đi qua middleware + API Route)
- * - withCredentials: true (tự gửi cookie httpOnly: access_token)
- * - interceptor:
- *   + Request: nếu là FormData thì KHÔNG set Content-Type
- *   + Response: chuẩn hoá message lỗi
- */
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL?.trim() || "/api"
 ).replace(/\/+$/, "");
+
 const API_TIMEOUT = parseInt(
   process.env.NEXT_PUBLIC_API_TIMEOUT || "10000",
   10,
 );
 
-export const apiClient = axios.create({
+// ───────────── ApiError ─────────────
+
+export interface ApiErrorPayload {
+  status: number | null;
+  message: string;
+  data?: unknown;
+  dialog?: ErrorDialogPayload;
+}
+
+export class ApiError extends Error implements ApiErrorPayload {
+  status: number | null;
+  data?: unknown;
+  dialog?: ErrorDialogPayload;
+  isHandledGlobally: boolean = false;
+
+  constructor(payload: ApiErrorPayload) {
+    super(payload.message);
+    this.name = "ApiError";
+    this.status = payload.status;
+    this.data = payload.data;
+    this.dialog = payload.dialog;
+  }
+}
+
+// ───────────── Global error handler ─────────────
+
+export type ApiClientErrorHandler = ((error: ApiError) => void) | null;
+
+let apiClientErrorHandler: ApiClientErrorHandler = null;
+
+export function setApiClientErrorHandler(handler: ApiClientErrorHandler) {
+  apiClientErrorHandler = handler;
+}
+
+// ───────────── Axios instance ─────────────
+
+export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: API_TIMEOUT,
   withCredentials: true,
+  headers: {
+    Accept: "application/json",
+  },
 });
 
-apiClient.interceptors.request.use((config) => {
-  const isFormData =
-    typeof FormData !== "undefined" && config.data instanceof FormData;
+apiClient.interceptors.request.use(
+  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+    const isFormData =
+      typeof FormData !== "undefined" && config.data instanceof FormData;
+    const headers = (config.headers ?? {}) as AxiosRequestHeaders;
 
-  config.headers = config.headers ?? {};
-
-  if (isFormData) {
-    delete (config.headers as any)["Content-Type"];
-    delete (config.headers as any)["content-type"];
-  } else {
-    if (
-      !(config.headers as any)["Content-Type"] &&
-      !(config.headers as any)["content-type"]
-    ) {
-      (config.headers as any)["Content-Type"] = "application/json";
+    if (isFormData) {
+      delete headers["Content-Type"];
+      delete headers["content-type"];
+    } else if (!headers["Content-Type"] && !headers["content-type"]) {
+      headers["Content-Type"] = "application/json";
     }
-  }
+    config.headers = headers;
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
 
-  return config;
-});
+const getErrorMessage = (error: AxiosError): string => {
+  const status = error.response?.status ?? null;
+  const payload = error.response?.data as any;
+
+  if (payload?.message) return String(payload.message);
+
+  if (error.code === "ECONNABORTED") return "Request timeout.";
+  if (!error.response) return "Cannot connect to server.";
+
+  if (status === 401) return "Session expired.";
+  if (status === 403) return "Permission denied.";
+  if (status === 404) return "Resource not found.";
+  if (status && status >= 500) return "Server error.";
+
+  return error.message || "Request error.";
+};
 
 apiClient.interceptors.response.use(
-  (res) => {
-    // Handle 204 NO_CONTENT responses (no body)
-    if (res.status === 204) {
-      // Return response with empty data object for consistency
-      res.data = res.data || { message: "Success" };
+  (res: AxiosResponse) => {
+    if (res.status === 204 && (res.data == null || res.data === "")) {
+      return { ...res, data: { message: "Success" } };
     }
     return res;
   },
-  (err) => {
-    // If error is 204, treat it as success (some servers return 204 differently)
-    if (err?.response?.status === 204) {
-      return { status: 204, data: { message: "Success" } };
+  (error: AxiosError) => {
+    const data = error.response?.data as any;
+    const dialog = data?.dialog as ErrorDialogPayload | undefined;
+
+    const apiError = new ApiError({
+      status: error.response?.status ?? null,
+      message: getErrorMessage(error),
+      data,
+      dialog,
+    });
+
+    if (apiClientErrorHandler) {
+      try {
+        apiClientErrorHandler(apiError);
+        apiError.isHandledGlobally = true;
+      } catch (e) {
+        console.error("[apiClient] error handler failed:", e);
+      }
     }
     
     const msg =
@@ -68,3 +133,5 @@ apiClient.interceptors.response.use(
     return Promise.reject(new Error(msg));
   },
 );
+
+export default apiClient;

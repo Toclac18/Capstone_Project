@@ -1,11 +1,22 @@
 "use client";
 
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { useRouter, usePathname } from "next/navigation";
 import {
   AlertDialog,
   AlertDialogVariant,
 } from "@/components/AlertDialog/AlertDialog";
-import React, { createContext, useCallback, useContext, useState } from "react";
+import { ApiError, setApiClientErrorHandler } from "@/services/http";
+import type { ErrorDialogPayload } from "@/server/withErrorBoundary";
 
+// --- Types ---
 export interface ShowAlertOptions {
   variant?: AlertDialogVariant;
   title?: string;
@@ -23,22 +34,31 @@ type AlertDialogContextValue = {
 
 const AlertDialogContext = createContext<AlertDialogContextValue | null>(null);
 
+// --- Provider Component ---
 export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
   children,
 }) => {
+  const router = useRouter();
+  const pathname = usePathname();
   const [state, setState] = useState<
     (ShowAlertOptions & { isOpen: boolean }) | null
   >(null);
+
+  const routerRef = useRef(router);
+  const pathnameRef = useRef(pathname);
+
+  // Update refs after render to avoid mutating refs during render phase
+  useEffect(() => {
+    routerRef.current = router;
+    pathnameRef.current = pathname;
+  }, [router, pathname]);
 
   const hideAlert = useCallback(() => {
     setState((prev) => (prev ? { ...prev, isOpen: false } : prev));
   }, []);
 
   const showAlert = useCallback((options: ShowAlertOptions) => {
-    setState({
-      ...options,
-      isOpen: true,
-    });
+    setState({ ...options, isOpen: true });
   }, []);
 
   const showError = useCallback(
@@ -53,12 +73,112 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
     [showAlert],
   );
 
-  const ctx: AlertDialogContextValue = {
-    showAlert,
-    showError,
-    hideAlert,
-  };
+  // ─────────────────────────────────────────────────────────────
+  // Xử lý lỗi theo Status Code
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    console.log("🛠️ [AlertDialogProvider] Connecting to Axios...");
 
+    const handleAxiosError = (error: ApiError) => {
+      console.log("⚡ [GlobalHandler] Received error:", error.status);
+
+      const { status } = error;
+      const serverDialog = error.dialog as ErrorDialogPayload | undefined;
+      const currentPath = pathnameRef.current;
+      const currentRouter = routerRef.current;
+
+      // Cấu hình Dialog cơ bản (Fallback)
+      const baseConfig: ShowAlertOptions = {
+        variant: serverDialog?.variant ?? "error",
+        title: serverDialog?.title ?? "Request Error",
+        description: serverDialog?.description ?? error.message,
+        primaryActionLabel: serverDialog?.primaryActionLabel ?? "OK",
+        onPrimaryAction: hideAlert, // Mặc định là đóng dialog
+      };
+
+      switch (status) {
+        // Unauthorized -> Login
+        case 401:
+          // Nếu đang ở trang login rồi thì không hiện nữa
+          if (currentPath?.includes("/auth/sign-in")) return;
+
+          showAlert({
+            ...baseConfig,
+            title: "Session Expired",
+            description: "Your session has expired. Please sign in again.",
+            primaryActionLabel: "Sign In",
+            onPrimaryAction: () => {
+              hideAlert();
+              currentRouter.push("/auth/sign-in");
+            },
+          });
+          break;
+
+        // Bad Request -> Đóng dialog
+        case 400:
+          showAlert({
+            ...baseConfig,
+            title: serverDialog?.title ?? "Invalid Request",
+            onPrimaryAction: hideAlert, // Chỉ đóng dialog
+          });
+          break;
+
+        // Forbidden -> Đóng dialog
+        case 403:
+          showAlert({
+            ...baseConfig,
+            title: serverDialog?.title ?? "Access Denied",
+            description:
+              serverDialog?.description ??
+              "You do not have permission to perform this action.",
+            onPrimaryAction: hideAlert, // Chỉ đóng dialog
+          });
+          break;
+
+        // Not Found -> Homepage
+        case 404:
+          showAlert({
+            ...baseConfig,
+            title: serverDialog?.title ?? "Page Not Found",
+            description:
+              serverDialog?.description ??
+              "The resource you are looking for does not exist.",
+            primaryActionLabel: "Go Home",
+            onPrimaryAction: () => {
+              hideAlert();
+              currentRouter.push("/homepage");
+            },
+          });
+          break;
+
+        // Server Error -> Error Page
+        case 500:
+          showAlert({
+            ...baseConfig,
+            title: serverDialog?.title ?? "Internal Server Error",
+            primaryActionLabel: "View Details",
+            onPrimaryAction: () => {
+              hideAlert();
+              currentRouter.push("/error-page");
+            },
+          });
+          break;
+
+        // Default: Các lỗi khác -> Đóng dialog
+        default:
+          showAlert(baseConfig);
+          break;
+      }
+    };
+
+    // Đăng ký handler
+    setApiClientErrorHandler(handleAxiosError);
+
+    // Cleanup
+    return () => setApiClientErrorHandler(null);
+  }, [showAlert, hideAlert]);
+
+  const ctx: AlertDialogContextValue = { showAlert, showError, hideAlert };
   const isOpen = state?.isOpen ?? false;
 
   return (
@@ -66,7 +186,7 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
       {children}
       <AlertDialog
         isOpen={isOpen}
-        variant={state?.variant ?? "info"}
+        variant={state?.variant ?? "error"}
         title={state?.title}
         description={state?.description}
         primaryActionLabel={state?.primaryActionLabel ?? "OK"}
@@ -78,6 +198,7 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
   );
 };
 
+// --- Hook ---
 export function useAlertDialog(): AlertDialogContextValue {
   const ctx = useContext(AlertDialogContext);
   if (!ctx) {

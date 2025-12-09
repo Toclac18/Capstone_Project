@@ -51,8 +51,11 @@ export default function Signin() {
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setLoading(true);
 
+    // Normalize email to lowercase
+    const normalizedEmail = data.email.toLowerCase().trim();
+
     const payload: LoginPayload = {
-      email: data.email,
+      email: normalizedEmail,
       password: data.password,
       role: data.role,
       remember: data.remember,
@@ -352,7 +355,9 @@ export default function Signin() {
 
                         setResendLoading(true);
                         try {
-                          await resendVerificationEmail({ email: resendEmail.trim() });
+                          // Normalize email to lowercase
+                          const normalizedEmail = resendEmail.trim().toLowerCase();
+                          await resendVerificationEmail({ email: normalizedEmail });
                           showToast({
                             type: "success",
                             title: "Email Sent",

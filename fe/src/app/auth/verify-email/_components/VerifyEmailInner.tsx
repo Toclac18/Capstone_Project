@@ -215,7 +215,9 @@ function VerifyEmailInner() {
                     onClick={async () => {
                       setResendLoading(true);
                       try {
-                        await resendVerificationEmail({ email });
+                        // Normalize email to lowercase
+                        const normalizedEmail = email.toLowerCase().trim();
+                        await resendVerificationEmail({ email: normalizedEmail });
                         showToast({
                           type: "success",
                           title: "Email Sent",

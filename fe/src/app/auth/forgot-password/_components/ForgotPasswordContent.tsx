@@ -56,8 +56,12 @@ export default function ForgotPasswordContent() {
     setLoading(true);
     setError(null);
 
+    // Normalize email to lowercase
+    const normalizedEmail = email.toLowerCase().trim();
+    setEmail(normalizedEmail); // Update state with normalized email
+
     try {
-      await sendPasswordResetOtp({ email });
+      await sendPasswordResetOtp({ email: normalizedEmail });
       setStep("otp");
       showToast({
         type: "success",
@@ -84,15 +88,27 @@ export default function ForgotPasswordContent() {
         });
       }, 1000);
     } catch (e: unknown) {
-      const msg =
-        e instanceof Error
-          ? e.message
-          : "Failed to send OTP. Please try again.";
+      let msg = "Failed to send OTP. Please try again.";
+      
+      if (e instanceof Error) {
+        msg = e.message;
+      }
+      
+      // Provide more specific error messages
+      if (msg.toLowerCase().includes("no account found") || 
+          msg.toLowerCase().includes("not found")) {
+        msg = "No account found with this email address. Please check your email or sign up.";
+      } else if (msg.toLowerCase().includes("not active")) {
+        msg = "This account is not active. Please contact support for assistance.";
+      } else if (msg.toLowerCase().includes("rate limit") || 
+                 msg.toLowerCase().includes("too many")) {
+        msg = "Too many requests. Please try again in 15 minutes.";
+      }
       
       setError(msg);
       showToast({
         type: "error",
-        title: "Error",
+        title: "Cannot Send OTP",
         message: msg,
       });
     } finally {
@@ -105,8 +121,11 @@ export default function ForgotPasswordContent() {
     setLoading(true);
     setError(null);
 
+    // Normalize email to lowercase
+    const normalizedEmail = email.toLowerCase().trim();
+
     try {
-      await sendPasswordResetOtp({ email });
+      await sendPasswordResetOtp({ email: normalizedEmail });
       showToast({
         type: "success",
         title: "OTP Resent",
@@ -131,14 +150,22 @@ export default function ForgotPasswordContent() {
         });
       }, 1000);
     } catch (e: unknown) {
-      const msg =
-        e instanceof Error
-          ? e.message
-          : "Failed to resend OTP. Please try again.";
+      let msg = "Failed to resend OTP. Please try again.";
+      
+      if (e instanceof Error) {
+        msg = e.message;
+      }
+      
+      // Handle specific errors
+      if (msg.toLowerCase().includes("rate limit") || 
+          msg.toLowerCase().includes("too many")) {
+        msg = "Too many requests. Please try again in 15 minutes.";
+      }
+      
       setError(msg);
       showToast({
         type: "error",
-        title: "Error",
+        title: "Cannot Resend OTP",
         message: msg,
       });
     } finally {
@@ -183,8 +210,11 @@ export default function ForgotPasswordContent() {
     setLoading(true);
     setError(null);
 
+    // Normalize email to lowercase
+    const normalizedEmail = email.toLowerCase().trim();
+
     try {
-      const response = await verifyOtp({ email, otp });
+      const response = await verifyOtp({ email: normalizedEmail, otp });
       
       if (!response.valid || !response.resetToken) {
         setError("Invalid OTP. Please try again.");

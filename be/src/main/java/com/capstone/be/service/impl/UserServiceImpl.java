@@ -359,6 +359,8 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional(noRollbackFor = InvalidRequestException.class)
   public void sendPasswordResetOtp(String email) {
+    // Normalize email to lowercase
+    email = email.toLowerCase().trim();
     log.info("Send password reset OTP for email: {}", email);
 
     // Rate limiting: check recent requests (max 3 requests per 15 minutes)
@@ -375,18 +377,18 @@ public class UserServiceImpl implements UserService {
     // Find user by email
     Optional<User> userOptional = userRepository.findByEmail(email);
 
-    // Always return success to prevent email enumeration
+    // Throw exception if email not found (better UX)
     if (userOptional.isEmpty()) {
-      log.info("User not found for email: {}, returning generic success", email);
-      return;
+      log.info("User not found for email: {}", email);
+      throw new InvalidRequestException("No account found with this email address");
     }
 
     User user = userOptional.get();
 
     // Check if user is active
     if (user.getStatus() != UserStatus.ACTIVE) {
-      log.info("User account not active for: {}, returning generic success", email);
-      return;
+      log.info("User account not active for: {}", email);
+      throw new InvalidRequestException("This account is not active. Please contact support");
     }
 
     // Cancel any existing pending request for this user
@@ -424,6 +426,8 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional(noRollbackFor = InvalidRequestException.class)
   public String verifyOtpAndGenerateResetToken(String email, String otp) {
+    // Normalize email to lowercase
+    email = email.toLowerCase().trim();
     log.info("Verify OTP for email: {}", email);
 
     // Find user by email

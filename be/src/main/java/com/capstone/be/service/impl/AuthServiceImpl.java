@@ -197,11 +197,14 @@ public class AuthServiceImpl implements AuthService {
     String ipAddress = HttpRequestUtil.extractIpAddress(httpRequest);
     String userAgent = HttpRequestUtil.extractUserAgent(httpRequest);
     
+    // Normalize email to lowercase
+    String normalizedEmail = request.getEmail().toLowerCase().trim();
+    
     try {
       // Authenticate user (will throw BadCredentialsException if wrong credentials)
       Authentication authentication = authenticationManager.authenticate(
           new UsernamePasswordAuthenticationToken(
-              request.getEmail(),
+              normalizedEmail,
               request.getPassword()
           )
       );

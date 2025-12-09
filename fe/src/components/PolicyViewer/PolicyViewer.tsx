@@ -2,58 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import {
-  getActivePolicyByType,
-  getPolicyView,
-  acceptPolicy,
-} from "@/services/policyService";
-import { decodeJwtPayload, extractReaderId } from "@/utils/jwt";
-import type { Policy, PolicyType } from "@/types/policy";
+import { getActivePolicy } from "@/services/policyService";
+import type { Policy } from "@/types/policy";
 import styles from "./styles.module.css";
-
-function getUserIdFromToken(): string | null {
-  if (typeof document === "undefined") return null;
-
-  const all = document.cookie || "";
-  const match = all.match(/(?:^|;\s*)Authorization=([^;]+)/);
-  if (!match) return null;
-
-  try {
-    const token = decodeURIComponent(match[1]);
-    const payload = decodeJwtPayload(token);
-    return extractReaderId(payload);
-  } catch {
-    return null;
-  }
-}
 
 interface PolicyViewerProps {
   isOpen: boolean;
   onClose: () => void;
-  policyType: PolicyType;
-  userId?: string;
-  onAccept?: () => void;
-  showAcceptButton?: boolean;
-  disableClose?: boolean; // Prevent closing when true (e.g., when user must accept)
+  policyId?: string; // Optional: if provided, fetch by ID; otherwise fetch active policy
 }
 
 export default function PolicyViewer({
   isOpen,
   onClose,
-  policyType,
-  userId,
-  onAccept,
-  showAcceptButton = false,
-  disableClose = false,
+  policyId,
 }: PolicyViewerProps) {
   const [policy, setPolicy] = useState<Policy | null>(null);
-  const [hasAccepted, setHasAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Auto-get userId from token if not provided
-  const effectiveUserId = userId || getUserIdFromToken();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -64,30 +30,10 @@ export default function PolicyViewer({
 
     const fetchPolicy = async () => {
       try {
-        // Get active policy by type
-        const activePolicy = await getActivePolicyByType(policyType);
+        // Get active policy (for registration/display)
+        const activePolicy = await getActivePolicy();
         if (mounted) {
           setPolicy(activePolicy);
-
-          // If userId available, check acceptance status
-          if (effectiveUserId && activePolicy) {
-            try {
-              const result = await getPolicyView(
-                activePolicy.id,
-                effectiveUserId,
-              );
-              if (mounted) {
-                setHasAccepted(result.hasAccepted);
-              }
-            } catch {
-              // If check fails, just set to false
-              if (mounted) {
-                setHasAccepted(false);
-              }
-            }
-          } else {
-            setHasAccepted(false);
-          }
         }
       } catch (e: unknown) {
         if (mounted) {
@@ -107,7 +53,7 @@ export default function PolicyViewer({
     return () => {
       mounted = false;
     };
-  }, [isOpen, policyType, effectiveUserId]);
+  }, [isOpen, policyId]);
 
   useEffect(() => {
     if (isOpen) {
@@ -121,37 +67,18 @@ export default function PolicyViewer({
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen || disableClose) return;
+    if (!isOpen) return;
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose, disableClose]);
-
-  const handleAccept = async () => {
-    if (!policy || hasAccepted || !effectiveUserId) return;
-
-    setAccepting(true);
-    try {
-      await acceptPolicy(policy.id);
-      setHasAccepted(true);
-      onAccept?.();
-    } catch (e: unknown) {
-      const errorMessage =
-        e instanceof Error ? e.message : "Failed to accept policy";
-      setError(errorMessage);
-    } finally {
-      setAccepting(false);
-    }
-  };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   const handleBackdropClick = () => {
-    if (!disableClose) {
-      onClose();
-    }
+    onClose();
   };
 
   return (
@@ -165,26 +92,24 @@ export default function PolicyViewer({
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.headerContent}>
-            <h2 className={styles.title}>{policy?.title || "Policy"}</h2>
-            {policy && policy.updatedAt && (
+            <h2 className={styles.title}>{policy?.title || "Term of User"}</h2>
+            {policy && (
               <div className={styles.meta}>
                 <span className={styles.date}>
-                  Last updated:{" "}
+                  Version {policy.version} - Last updated:{" "}
                   {new Date(policy.updatedAt).toLocaleDateString()}
                 </span>
               </div>
             )}
           </div>
-          {!disableClose && (
-            <button
-              type="button"
-              className={styles.closeButton}
-              onClick={onClose}
-              aria-label="Close"
-            >
-              <X className={styles.closeIcon} />
-            </button>
-          )}
+          <button
+            type="button"
+            className={styles.closeButton}
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X className={styles.closeIcon} />
+          </button>
         </div>
 
         {/* Content */}
@@ -205,38 +130,21 @@ export default function PolicyViewer({
             />
           ) : (
             <div className={styles.empty}>
-              <p>Policy not found</p>
+              <p>No active policy found</p>
             </div>
           )}
         </div>
 
         {/* Footer */}
         <div className={styles.footer}>
-          {hasAccepted && policy && (
-            <div className={styles.acceptedBadge}>
-              ✓ You have accepted this policy
-            </div>
-          )}
           <div className={styles.actions}>
-            {!disableClose && (
-              <button
-                type="button"
-                className={styles.btnSecondary}
-                onClick={onClose}
-              >
-                {hasAccepted ? "Close" : "Cancel"}
-              </button>
-            )}
-            {showAcceptButton && !hasAccepted && policy && effectiveUserId && (
-              <button
-                type="button"
-                className={styles.btnPrimary}
-                onClick={handleAccept}
-                disabled={accepting}
-              >
-                {accepting ? "Accepting..." : "Accept"}
-              </button>
-            )}
+            <button
+              type="button"
+              className={styles.btnSecondary}
+              onClick={onClose}
+            >
+              Close
+            </button>
           </div>
         </div>
       </div>

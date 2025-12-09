@@ -20,4 +20,10 @@ public class AssignReviewerRequest {
 
   @Size(max = 1000, message = "Note must not exceed 1000 characters")
   private String note;
+
+  /**
+   * Optional: ID of existing review request to cancel when changing reviewer
+   * Only used when changing reviewer for a document with PENDING review request
+   */
+  private UUID existingReviewRequestId;
 }

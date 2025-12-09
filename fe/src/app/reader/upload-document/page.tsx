@@ -393,10 +393,35 @@ export default function UploadDocumentPage() {
 
   const handleAddNewTag = () => {
     const tag = newTagInput.trim();
-    if (tag && !newTags.includes(tag)) {
-      setNewTags([...newTags, tag]);
+    if (!tag) return;
+    
+    // Check if tag already exists in existing tags list
+    const tagExists = tags.some((t) => t.name.toLowerCase() === tag.toLowerCase());
+    if (tagExists) {
+      showToast({
+        type: "error",
+        title: "Tag already exists",
+        message: `Tag "${tag}" already exists in the list. Please select it from the dropdown.`,
+        duration: 3000,
+      });
       setNewTagInput("");
+      return;
     }
+    
+    // Check if tag already exists in newTags
+    if (newTags.some((t) => t.toLowerCase() === tag.toLowerCase())) {
+      showToast({
+        type: "error",
+        title: "Duplicate tag",
+        message: `Tag "${tag}" has already been added.`,
+        duration: 3000,
+      });
+      setNewTagInput("");
+      return;
+    }
+    
+    setNewTags([...newTags, tag]);
+    setNewTagInput("");
   };
 
   const handleRemoveNewTag = (tag: string) => {
@@ -594,7 +619,7 @@ export default function UploadDocumentPage() {
 
       // Redirect to documents list after 2 seconds
       setTimeout(() => {
-        router.push("/reader/documents");
+        router.push("/reader/upload-document");
       }, 2000);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Failed to upload document";
@@ -1128,7 +1153,7 @@ export default function UploadDocumentPage() {
                           ) : null;
                         })}
                         {newTags.map((tag, idx) => (
-                          <span key={`new-${idx}`} className={styles["tag-chip"]}>
+                          <span key={`new-${idx}`} className={`${styles["tag-chip"]} ${styles["tag-chip-new"]}`}>
                             {tag}
                             <button
                               type="button"

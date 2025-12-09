@@ -20,7 +20,6 @@ const STATUS_OPTIONS = [
 const SORT_OPTIONS = [
   { value: "name", label: "Name" },
   { value: "email", label: "Email" },
-  { value: "role", label: "Role" },
   { value: "status", label: "Status" },
   { value: "createdAt", label: "Created Date" },
 ] as const;
@@ -66,6 +65,7 @@ export function UserFilters({
   const onSubmit: SubmitHandler<FilterValues> = (data: FilterValues) => {
     const filters: UserQueryParams = {
       ...data,
+      search: data.search?.trim() || "",
       page: 1,
     };
     onFiltersChange(filters);

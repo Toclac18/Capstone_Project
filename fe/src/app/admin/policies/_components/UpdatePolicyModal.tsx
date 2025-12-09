@@ -4,18 +4,12 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { PolicyEditor } from "./PolicyEditor";
-import { updatePolicyByType } from "@/services/policyService";
+import { updatePolicy } from "@/services/policyService";
 import { useToast, toast } from "@/components/ui/toast";
 import type { Policy, UpdatePolicyRequest } from "@/types/policy";
-import { PolicyStatus } from "@/types/policy";
 import styles from "./styles.module.css";
 
-const STATUS_OPTIONS: { value: PolicyStatus; label: string }[] = [
-  { value: PolicyStatus.ACTIVE, label: "Active" },
-  { value: PolicyStatus.INACTIVE, label: "Inactive" },
-];
-
-interface EditPolicyModalProps {
+interface UpdatePolicyModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -25,16 +19,14 @@ interface EditPolicyModalProps {
 type FormData = {
   title: string;
   content: string;
-  status: PolicyStatus;
-  isRequired: boolean;
 };
 
-export function EditPolicyModal({
+export function UpdatePolicyModal({
   isOpen,
   onClose,
   onSuccess,
   policy,
-}: EditPolicyModalProps) {
+}: UpdatePolicyModalProps) {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const {
@@ -53,8 +45,6 @@ export function EditPolicyModal({
       reset({
         title: policy.title,
         content: policy.content,
-        status: policy.status as PolicyStatus,
-        isRequired: policy.isRequired,
       });
     }
   }, [policy, isOpen, reset]);
@@ -73,22 +63,39 @@ export function EditPolicyModal({
   const onSubmit = async (data: FormData) => {
     if (!policy) return;
 
-    if (!data.content || data.content.trim() === "" || data.content === "<p><br></p>") {
+    // Validate that at least title or content is provided
+    const hasTitle = data.title && data.title.trim() !== "";
+    const hasContent = data.content && data.content.trim() !== "" && data.content !== "<p><br></p>";
+    
+    if (!hasTitle && !hasContent) {
+      showToast(toast.error("Error", "At least title or content must be provided"));
+      return;
+    }
+
+    if (!hasContent) {
       showToast(toast.error("Error", "Content is required"));
       return;
     }
 
     setLoading(true);
     try {
+      // Ensure we don't send empty strings
       const request: UpdatePolicyRequest = {
-        title: data.title,
-        content: data.content,
-        status: data.status,
-        isRequired: data.isRequired,
+        title: hasTitle ? data.title.trim() : undefined,
+        content: hasContent ? data.content : undefined,
       };
 
-      await updatePolicyByType(policy.type, request);
-      showToast(toast.success("Success", "Policy updated successfully"));
+      await updatePolicy(policy.id, request);
+      
+      if (policy.isActive) {
+        showToast(toast.warning(
+          "Policy Updated", 
+          "Active policy has been updated. This will affect users during registration."
+        ));
+      } else {
+        showToast(toast.success("Success", "Policy updated successfully"));
+      }
+      
       onSuccess();
       onClose();
     } catch (e: unknown) {
@@ -109,8 +116,13 @@ export function EditPolicyModal({
           <div>
             <h2 className={styles.modalTitle}>Edit Policy</h2>
             <p className={styles.modalSubtitle}>
-              {policy.title}
+              Version {policy.version} {policy.isActive && "(Active)"}
             </p>
+            {policy.isActive && (
+              <p className={styles.warningText}>
+                ⚠️ This policy is currently active. Changes will affect users during registration.
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -123,6 +135,21 @@ export function EditPolicyModal({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className={styles.modalForm}>
+          <div className={styles.formGroup}>
+            <label className={styles.label}>
+              Version
+            </label>
+            <input
+              type="text"
+              value={policy.version}
+              className={styles.input}
+              disabled
+            />
+            <p className={styles.helperText}>
+              Version cannot be changed after creation.
+            </p>
+          </div>
+
           <div className={styles.formGroup}>
             <label className={styles.label}>
               Title <span className={styles.required}>*</span>
@@ -154,40 +181,6 @@ export function EditPolicyModal({
             )}
           </div>
 
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Status <span className={styles.required}>*</span>
-              </label>
-              <select
-                {...register("status", { required: "Status is required" })}
-                className={`${styles.select} ${errors.status ? styles.inputError : ""}`}
-                disabled={loading}
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              {errors.status && (
-                <span className={styles.errorMessage}>{errors.status.message}</span>
-              )}
-            </div>
-
-            <div className={styles.formGroup}>
-              <label className={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  {...register("isRequired")}
-                  className={styles.checkbox}
-                  disabled={loading}
-                />
-                <span>Required for users to accept</span>
-              </label>
-            </div>
-          </div>
-
           <div className={styles.modalFooter}>
             <button
               type="button"
@@ -210,3 +203,4 @@ export function EditPolicyModal({
     </div>
   );
 }
+

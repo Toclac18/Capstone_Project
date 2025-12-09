@@ -141,18 +141,17 @@ export function UserActivityTab({ state, statistics, error }: UserActivityTabPro
       min: 0,
       forceNiceScale: true,
       tickAmount: 5,
-    },
-    legend: { position: "top" },
-    title: {
-      text: "User Growth by Role Over Time",
-      style: {
-        fontSize: "16px",
-        fontWeight: 600,
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
       },
+      decimalsInFloat: 0,
     },
     tooltip: {
       shared: true,
       intersect: false,
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
       x: {
         formatter: function (val: number, opts: any) {
           const index = opts.dataPointIndex;
@@ -161,6 +160,14 @@ export function UserActivityTab({ state, statistics, error }: UserActivityTabPro
           }
           return val.toString();
         },
+      },
+    },
+    legend: { position: "top" },
+    title: {
+      text: "User Growth by Role Over Time",
+      style: {
+        fontSize: "16px",
+        fontWeight: 600,
       },
     },
   };
@@ -241,6 +248,24 @@ export function UserActivityTab({ state, statistics, error }: UserActivityTabPro
       min: 0,
       forceNiceScale: true,
       tickAmount: 5,
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      x: {
+        formatter: function (val: number, opts: any) {
+          const index = opts.dataPointIndex;
+          if (newUsersDates.length > 0 && index >= 0 && index < newUsersDates.length) {
+            return formatDateForTooltip(newUsersDates[index]);
+          }
+          return val.toString();
+        },
+      },
     },
     plotOptions: {
       bar: {
@@ -253,19 +278,6 @@ export function UserActivityTab({ state, statistics, error }: UserActivityTabPro
       style: {
         fontSize: "16px",
         fontWeight: 600,
-      },
-    },
-    tooltip: {
-      shared: true,
-      intersect: false,
-      x: {
-        formatter: function (val: number, opts: any) {
-          const index = opts.dataPointIndex;
-          if (index >= 0 && index < newUsersDates.length) {
-            return formatDateForTooltip(newUsersDates[index]);
-          }
-          return val.toString();
-        },
       },
     },
   };

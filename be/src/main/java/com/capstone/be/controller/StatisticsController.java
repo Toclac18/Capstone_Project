@@ -7,6 +7,7 @@ import com.capstone.be.dto.response.statistics.HomepageTrendingReviewersResponse
 import com.capstone.be.dto.response.statistics.OrganizationStatisticsResponse;
 import com.capstone.be.dto.response.statistics.PersonalDocumentStatisticsResponse;
 import com.capstone.be.dto.response.statistics.ReportHandlingStatisticsResponse;
+import com.capstone.be.dto.response.statistics.ReviewerStatisticsResponse;
 import com.capstone.be.dto.response.statistics.SystemAdminDashboardResponse;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.repository.OrganizationProfileRepository;
@@ -14,6 +15,7 @@ import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.BusinessAdminStatisticsService;
 import com.capstone.be.service.OrganizationStatisticsService;
 import com.capstone.be.service.PersonalStatisticsService;
+import com.capstone.be.service.ReviewerStatisticsService;
 import com.capstone.be.service.SystemAdminStatisticsService;
 import com.capstone.be.service.TrendingDataCacheService;
 import java.time.Instant;
@@ -45,6 +47,7 @@ public class StatisticsController {
   private final BusinessAdminStatisticsService businessAdminStatisticsService;
   private final SystemAdminStatisticsService systemAdminStatisticsService;
   private final TrendingDataCacheService trendingDataCacheService;
+  private final ReviewerStatisticsService reviewerStatisticsService;
   private final OrganizationProfileRepository organizationProfileRepository;
 
   /**
@@ -370,6 +373,39 @@ public class StatisticsController {
     log.debug("Requesting homepage trending reviewers (forceRefresh: {})", forceRefresh);
 
     HomepageTrendingReviewersResponse response = trendingDataCacheService.getTrendingReviewers(forceRefresh);
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Get reviewer statistics
+   * GET /api/statistics/reviewer
+   *
+   * @param userPrincipal Authenticated reviewer
+   * @param startDate     Optional start date filter (ISO format: yyyy-MM-dd)
+   * @param endDate       Optional end date filter (ISO format: yyyy-MM-dd)
+   * @return Reviewer statistics response
+   */
+  @GetMapping("/reviewer")
+  @PreAuthorize("hasRole('REVIEWER')")
+  public ResponseEntity<ReviewerStatisticsResponse> getReviewerStatistics(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String startDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String endDate) {
+    UUID reviewerId = userPrincipal.getId();
+
+    Instant start = startDate != null
+        ? java.time.LocalDate.parse(startDate).atStartOfDay(ZoneId.systemDefault()).toInstant()
+        : null;
+    Instant end = endDate != null
+        ? java.time.LocalDate.parse(endDate).atTime(23, 59, 59).atZone(ZoneId.systemDefault())
+            .toInstant()
+        : null;
+
+    log.info("Reviewer {} requesting statistics from {} to {}", reviewerId, start, end);
+
+    ReviewerStatisticsResponse response = reviewerStatisticsService.getReviewerStatistics(
+        reviewerId, start, end);
 
     return ResponseEntity.ok(response);
   }

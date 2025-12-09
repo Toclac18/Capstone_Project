@@ -36,18 +36,32 @@ async function handlePOST(req: Request) {
     cache: "no-store",
   });
 
+  if (upstream.status === 200) {
+    const text = await upstream.text();
+    let data;
+    try {
+      const json = JSON.parse(text);
+      data = json.data || json;
+    } catch {
+      // Backend returns plain text message
+      data = {
+        message:
+          text ||
+          "Email changed successfully. Please login again with your new email",
+      };
+    }
+    return jsonResponse(data, { status: 200, mode: "real" });
+  }
+
+  // Handle error response
   const text = await upstream.text();
   let data;
   try {
     const json = JSON.parse(text);
-    data = json.data || json;
+    // Backend returns { success: false, message: "...", data: {...} }
+    data = { message: json.message || json.error || text || "Failed to verify OTP" };
   } catch {
-    // Backend returns plain text message
-    data = {
-      message:
-        text ||
-        "Email changed successfully. Please login again with your new email",
-    };
+    data = { message: text || "Failed to verify OTP" };
   }
 
   return jsonResponse(data, { status: upstream.status, mode: "real" });

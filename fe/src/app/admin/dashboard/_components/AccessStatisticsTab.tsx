@@ -137,19 +137,17 @@ export function AccessStatisticsTab({ state, statistics, error }: AccessStatisti
       min: 0,
       forceNiceScale: true,
       tickAmount: 5,
-    },
-    legend: { position: "top" },
-    colors: ["#10B981"],
-    title: {
-      text: "Successful Logins Over Time",
-      style: {
-        fontSize: "16px",
-        fontWeight: 600,
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
       },
+      decimalsInFloat: 0,
     },
     tooltip: {
       shared: true,
       intersect: false,
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
       x: {
         formatter: function (val: number, opts: any) {
           const index = opts.dataPointIndex;
@@ -158,6 +156,15 @@ export function AccessStatisticsTab({ state, statistics, error }: AccessStatisti
           }
           return val.toString();
         },
+      },
+    },
+    legend: { position: "top" },
+    colors: ["#10B981"],
+    title: {
+      text: "Successful Logins Over Time",
+      style: {
+        fontSize: "16px",
+        fontWeight: 600,
       },
     },
   };
@@ -190,19 +197,17 @@ export function AccessStatisticsTab({ state, statistics, error }: AccessStatisti
       min: 0,
       forceNiceScale: true,
       tickAmount: 5,
-    },
-    legend: { position: "top" },
-    colors: ["#EF4444"],
-    title: {
-      text: "Failed Logins Over Time",
-      style: {
-        fontSize: "16px",
-        fontWeight: 600,
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
       },
+      decimalsInFloat: 0,
     },
     tooltip: {
       shared: true,
       intersect: false,
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
       x: {
         formatter: function (val: number, opts: any) {
           const index = opts.dataPointIndex;
@@ -211,6 +216,15 @@ export function AccessStatisticsTab({ state, statistics, error }: AccessStatisti
           }
           return val.toString();
         },
+      },
+    },
+    legend: { position: "top" },
+    colors: ["#EF4444"],
+    title: {
+      text: "Failed Logins Over Time",
+      style: {
+        fontSize: "16px",
+        fontWeight: 600,
       },
     },
   };
@@ -244,18 +258,15 @@ export function AccessStatisticsTab({ state, statistics, error }: AccessStatisti
       min: 0,
       forceNiceScale: true,
       tickAmount: 5,
-    },
-    colors: ["#3C50E0"],
-    title: {
-      text: "Daily Active Users",
-      style: {
-        fontSize: "16px",
-        fontWeight: 600,
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
       },
+      decimalsInFloat: 0,
     },
     tooltip: {
-      shared: true,
-      intersect: false,
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
       x: {
         formatter: function (val: number, opts: any) {
           const index = opts.dataPointIndex;
@@ -264,6 +275,14 @@ export function AccessStatisticsTab({ state, statistics, error }: AccessStatisti
           }
           return val.toString();
         },
+      },
+    },
+    colors: ["#3C50E0"],
+    title: {
+      text: "Daily Active Users",
+      style: {
+        fontSize: "16px",
+        fontWeight: 600,
       },
     },
   };

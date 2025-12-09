@@ -44,11 +44,13 @@ public class AdminDocTypeController {
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
   public ResponseEntity<PagedResponse<DocTypeDetailResponse>> getAllDocTypes(
       @RequestParam(name = "name", required = false) String name,
+      @RequestParam(name = "dateFrom", required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant dateFrom,
+      @RequestParam(name = "dateTo", required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant dateTo,
       Pageable pageable) {
-    log.info("Admin requesting all document types - name: {}, page: {}, size: {}",
-        name, pageable.getPageNumber(), pageable.getPageSize());
-
-    Page<DocTypeDetailResponse> page = docTypeService.getAllDocTypesForAdmin(name, pageable);
+    log.info("Admin requesting all document types - name: {}, dateFrom: {}, dateTo: {}, page: {}, size: {}",
+        name, dateFrom, dateTo, pageable.getPageNumber(), pageable.getPageSize());
+    
+    Page<DocTypeDetailResponse> page = docTypeService.getAllDocTypesForAdmin(name, dateFrom, dateTo, pageable);
 
     PagedResponse<DocTypeDetailResponse> response = PagedResponse.of(page,
         "Document types retrieved successfully");

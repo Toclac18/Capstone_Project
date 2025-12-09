@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Power, PowerOff } from "lucide-react";
 import type { Organization } from "../../api";
 import { getOrganization, updateOrganizationStatus } from "../../api";
-import StatusConfirmation from "@/components/ui/status-confirmation";
+import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
 import { useToast, toast } from "@/components/ui/toast";
 import styles from "../styles.module.css";
 
@@ -39,6 +39,15 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    content: string;
+    subContent?: string;
+    confirmLabel: string;
+    newStatus: string;
+  } | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const fetchOrganization = useCallback(async () => {
     setLoading(true);
@@ -76,26 +85,134 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
     }
   }, [organization]);
 
-  const handleStatusUpdate = async (newStatus: "PENDING_EMAIL_VERIFY" | "PENDING_APPROVE" | "ACTIVE" | "INACTIVE" | "REJECTED" | "DELETED") => {
-    setLoading(true);
+  const handleStatusUpdate = async (newStatus: string) => {
+    if (!organization) return;
+
+    setIsUpdating(true);
     setError(null);
     setSuccess(null);
 
     try {
-      if (organization) {
-        // Backend API needs userId (admin ID), not organizationId
-        const userId = organization.userId || organization.id;
-        const updated = await updateOrganizationStatus(userId, newStatus);
-        setOrganization(updated);
-        showToast(toast.success("Status Updated", `Organization status updated to ${newStatus} successfully`));
-      }
+      // Backend API needs userId (admin ID), not organizationId
+      const userId = organization.userId || organization.id;
+      const updated = await updateOrganizationStatus(userId, newStatus as any);
+      setOrganization(updated);
+      showToast(toast.success("Status Updated", `Organization status updated to ${newStatus} successfully`));
+      setConfirmModal(null);
     } catch (e: unknown) {
       const errorMessage =
         e instanceof Error ? e.message : "Failed to update organization status";
       showToast(toast.error("Update Failed", errorMessage));
       setError(errorMessage);
     } finally {
-      setLoading(false);
+      setIsUpdating(false);
+    }
+  };
+
+  const handleStatusAction = (action: "approve" | "reject" | "activate" | "deactivate") => {
+    if (!organization) return;
+
+    const orgName = organization.name || organization.email;
+
+    switch (action) {
+      case "approve":
+        setConfirmModal({
+          open: true,
+          title: "Approve Organization Registration",
+          content: `Are you sure you want to approve "${orgName}"?`,
+          subContent: "This will activate the organization account and allow them to access the system.",
+          confirmLabel: "Approve",
+          newStatus: "ACTIVE",
+        });
+        break;
+      case "reject":
+        setConfirmModal({
+          open: true,
+          title: "Reject Organization Registration",
+          content: `Are you sure you want to reject "${orgName}"?`,
+          subContent: "This will reject the organization registration. They will not be able to access the system.",
+          confirmLabel: "Reject",
+          newStatus: "REJECTED",
+        });
+        break;
+      case "activate":
+        setConfirmModal({
+          open: true,
+          title: "Activate Organization Account",
+          content: `Are you sure you want to activate "${orgName}"?`,
+          subContent: "This will reactivate the organization account and allow them to access the system.",
+          confirmLabel: "Activate",
+          newStatus: "ACTIVE",
+        });
+        break;
+      case "deactivate":
+        setConfirmModal({
+          open: true,
+          title: "Deactivate Organization Account",
+          content: `Are you sure you want to deactivate "${orgName}"?`,
+          subContent: "This will temporarily disable the organization account. They will not be able to access the system.",
+          confirmLabel: "Deactivate",
+          newStatus: "INACTIVE",
+        });
+        break;
+    }
+  };
+
+  const getAvailableActions = (currentStatus: string) => {
+    switch (currentStatus) {
+      case "PENDING_APPROVE":
+        return [
+          {
+            label: "Approve",
+            action: "approve" as const,
+            icon: CheckCircle,
+            variant: "success",
+          },
+          {
+            label: "Reject",
+            action: "reject" as const,
+            icon: XCircle,
+            variant: "danger",
+          },
+        ];
+      case "ACTIVE":
+        return [
+          {
+            label: "Deactivate",
+            action: "deactivate" as const,
+            icon: PowerOff,
+            variant: "warning",
+          },
+        ];
+      case "INACTIVE":
+        return [
+          {
+            label: "Activate",
+            action: "activate" as const,
+            icon: Power,
+            variant: "success",
+          },
+        ];
+      case "REJECTED":
+        return [
+          {
+            label: "Approve",
+            action: "approve" as const,
+            icon: CheckCircle,
+            variant: "success",
+          },
+        ];
+      case "DELETED":
+        return [
+          {
+            label: "Activate",
+            action: "activate" as const,
+            icon: Power,
+            variant: "success",
+          },
+        ];
+      default:
+        return [];
     }
   };
 
@@ -116,14 +233,6 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
     }
   };
 
-  const getCurrentStatusForToggle = (status?: string, active?: boolean) => {
-    // For StatusConfirmation, we need to determine if it's "active" or "inactive"
-    // ACTIVE is considered "active", everything else is "inactive"
-    if (status === "ACTIVE" || active) {
-      return "ACTIVE" as const;
-    }
-    return "INACTIVE" as const;
-  };
 
   if (loading && !organization) {
     return (
@@ -286,11 +395,49 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
               <div className={styles["field-item"]}>
                 <label className={styles["label"]}>Status</label>
                 <div className={styles["status-container"]}>
-                  <span
-                    className={`${styles["status-badge"]} ${getStatusBadgeClass(organization.status)}`}
-                  >
-                    {organization.status || (organization.active ? "ACTIVE" : "INACTIVE")}
-                  </span>
+                  <div className="space-y-3">
+                    <div>
+                      <span
+                        className={`${styles["status-badge"]} ${getStatusBadgeClass(organization.status)}`}
+                      >
+                        {organization.status || (organization.active ? "ACTIVE" : "INACTIVE")}
+                      </span>
+                    </div>
+                    {organization.status && getAvailableActions(organization.status).length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {getAvailableActions(organization.status).map((actionItem, index) => {
+                          const Icon = actionItem.icon;
+                          const variantClasses: Record<string, string> = {
+                            success: "bg-green-600 hover:bg-green-700 text-white border-green-600",
+                            danger: "bg-red-600 hover:bg-red-700 text-white border-red-600",
+                            warning: "bg-orange-600 hover:bg-orange-700 text-white border-orange-600",
+                          };
+                          return (
+                            <button
+                              key={index}
+                              onClick={() => handleStatusAction(actionItem.action)}
+                              disabled={isUpdating || loading}
+                              className={`
+                                inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg
+                                border transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                                ${variantClasses[actionItem.variant] || ""}
+                              `}
+                            >
+                              <Icon className="w-4 h-4" />
+                              {actionItem.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {organization.status && (organization.status === "PENDING_EMAIL_VERIFY" || organization.status === "DELETED") && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                        {organization.status === "PENDING_EMAIL_VERIFY" 
+                          ? "Waiting for organization admin to verify their email address."
+                          : "This organization has been deleted and cannot be modified."}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -350,34 +497,23 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
             </div>
           </div>
 
-          {/* Actions */}
-          <div className={styles["card"]}>
-            <h2 className={styles["section-header"]}>
-              Actions
-            </h2>
-            <div className={styles["sidebar-section"]}>
-              <StatusConfirmation
-                onConfirm={handleStatusUpdate}
-                currentStatus={getCurrentStatusForToggle(organization.status, organization.active)}
-                itemName={organization.name || organization.email}
-                title={
-                  (organization.status === "ACTIVE" || organization.active)
-                    ? "Confirm Inactive Status"
-                    : "Confirm Active Status"
-                }
-                description={
-                  (organization.status === "ACTIVE" || organization.active)
-                    ? `Are you sure you want to set "${organization.name || organization.email}" to Inactive?`
-                    : `Are you sure you want to set "${organization.name || organization.email}" to Active?`
-                }
-                size="lg"
-                variant="outline"
-                className="w-full"
-              />
-            </div>
-          </div>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmModal && (
+        <ConfirmModal
+          open={confirmModal.open}
+          title={confirmModal.title}
+          content={confirmModal.content}
+          subContent={confirmModal.subContent}
+          confirmLabel={confirmModal.confirmLabel}
+          cancelLabel="Cancel"
+          loading={isUpdating}
+          onConfirm={() => handleStatusUpdate(confirmModal.newStatus)}
+          onCancel={() => setConfirmModal(null)}
+        />
+      )}
     </div>
   );
 }

@@ -5,7 +5,6 @@ import type { PropsWithChildren } from "react";
 import { Header } from "@/components/layouts/header";
 import { Sidebar } from "@/components/layouts/sidebar/Sidebar";
 import { useSidebarContext } from "@/components/layouts/sidebar/SidebarContext";
-import PolicyAcceptanceGuard from "@/components/PolicyAcceptanceGuard/PolicyAcceptanceGuard";
 
 export default function ConditionalLayout({ children }: PropsWithChildren) {
   const pathname = usePathname();
@@ -22,22 +21,20 @@ export default function ConditionalLayout({ children }: PropsWithChildren) {
   }
 
   return (
-    <PolicyAcceptanceGuard>
-      <div className="flex min-h-screen">
-        <Sidebar />
+    <div className="flex min-h-screen overflow-x-hidden">
+      <Sidebar />
 
-        <div
-          className={`flex-1 bg-gray-2 transition-all duration-200 dark:bg-[#020d1a] ${
-            !isMobile && !isOpen ? "ml-0" : ""
-          }`}
-        >
-          <Header />
+      <div
+        className={`flex-1 min-w-0 bg-gray-2 transition-all duration-200 dark:bg-[#020d1a] ${
+          !isMobile && !isOpen ? "ml-0" : ""
+        }`}
+      >
+        <Header />
 
-          <main className="mx-auto w-full max-w-screen-2xl overflow-hidden p-4 md:p-6 2xl:p-10">
-            {children}
-          </main>
-        </div>
+        <main className="mx-auto w-full max-w-screen-2xl overflow-hidden p-4 md:p-6 2xl:p-10">
+          {children}
+        </main>
       </div>
-    </PolicyAcceptanceGuard>
+    </div>
   );
 }

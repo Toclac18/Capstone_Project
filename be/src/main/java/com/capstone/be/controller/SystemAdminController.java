@@ -64,8 +64,32 @@ public class SystemAdminController {
     String sortBy = request.getSortBy() != null ? request.getSortBy() : "createdAt";
     String sortOrder = request.getSortOrder() != null ? request.getSortOrder() : "desc";
 
-    log.info("System admin get all users - search: {}, role: {}, status: {}, page: {}, limit: {}",
-        request.getSearch(), request.getRole(), request.getStatus(), page, limit);
+    // Map frontend field names to entity field names
+    // Frontend uses "name" but entity has "fullName"
+    if ("name".equalsIgnoreCase(sortBy)) {
+      sortBy = "fullName";
+    }
+
+    // Validate sortBy - only allow valid User entity fields
+    // Valid fields: email, fullName, role, status, createdAt, updatedAt
+    String[] validSortFields = {"email", "fullName", "role", "status", "createdAt", "updatedAt"};
+    boolean isValidField = false;
+    for (String validField : validSortFields) {
+      if (validField.equalsIgnoreCase(sortBy)) {
+        isValidField = true;
+        sortBy = validField; // Normalize case
+        break;
+      }
+    }
+    
+    // If invalid field, default to createdAt
+    if (!isValidField) {
+      log.warn("Invalid sortBy field: {}. Defaulting to createdAt", request.getSortBy());
+      sortBy = "createdAt";
+    }
+
+    log.info("System admin get all users - search: {}, role: {}, status: {}, page: {}, limit: {}, sortBy: {}, sortOrder: {}",
+        request.getSearch(), request.getRole(), request.getStatus(), page, limit, sortBy, sortOrder);
 
     Sort.Direction direction =
         sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;

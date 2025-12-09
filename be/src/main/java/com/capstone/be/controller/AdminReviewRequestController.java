@@ -3,6 +3,7 @@ package com.capstone.be.controller;
 import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
+import com.capstone.be.dto.response.review.DocumentReviewResponse;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
 import com.capstone.be.scheduler.ReviewRequestExpirationJob;
 import com.capstone.be.security.model.UserPrincipal;
@@ -108,6 +109,25 @@ public class AdminReviewRequestController {
     Page<ReviewRequestResponse> result = reviewRequestService.getAllReviewRequests(pageable);
 
     return ResponseEntity.ok(PagedResponse.of(result, "All review requests retrieved successfully"));
+  }
+
+  /**
+   * Get document review by review request ID
+   * GET /api/v1/admin/review-requests/{reviewRequestId}/review
+   *
+   * @param reviewRequestId Review request ID
+   * @return Document review response
+   */
+  @GetMapping("/admin/review-requests/{reviewRequestId}/review")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  public ResponseEntity<ApiResponse<DocumentReviewResponse>> getDocumentReviewByReviewRequestId(
+      @PathVariable(name = "reviewRequestId") UUID reviewRequestId) {
+
+    log.info("Business Admin requesting document review for review request {}", reviewRequestId);
+
+    DocumentReviewResponse response = reviewRequestService.getDocumentReviewByReviewRequestId(reviewRequestId);
+
+    return ResponseEntity.ok(ApiResponse.success(response, "Document review retrieved successfully"));
   }
 
   /**

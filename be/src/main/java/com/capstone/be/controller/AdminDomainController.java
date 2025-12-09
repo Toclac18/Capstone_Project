@@ -43,11 +43,13 @@ public class AdminDomainController {
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
   public ResponseEntity<PagedResponse<DomainDetailResponse>> getAllDomains(
       @RequestParam(name = "name", required = false) String name,
+      @RequestParam(name = "dateFrom", required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant dateFrom,
+      @RequestParam(name = "dateTo", required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant dateTo,
       Pageable pageable) {
-    log.info("Admin requesting all domains - name: {}, page: {}, size: {}",
-        name, pageable.getPageNumber(), pageable.getPageSize());
-
-    Page<DomainDetailResponse> page = domainService.getAllDomainsForAdmin(name, pageable);
+    log.info("Admin requesting all domains - name: {}, dateFrom: {}, dateTo: {}, page: {}, size: {}",
+        name, dateFrom, dateTo, pageable.getPageNumber(), pageable.getPageSize());
+    
+    Page<DomainDetailResponse> page = domainService.getAllDomainsForAdmin(name, dateFrom, dateTo, pageable);
 
     PagedResponse<DomainDetailResponse> response = PagedResponse.of(page,
         "Domains retrieved successfully");

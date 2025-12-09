@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Eye, FileText, X, UserPlus } from "lucide-react";
+import { ArrowLeft, Eye, FileText, X, UserPlus, PowerOff, Power } from "lucide-react";
 import type { DocumentDetail } from "../../api";
-import { getDocument, deleteDocument } from "../../api";
+import { getDocument, deleteDocument, deactivateDocument, activateDocument } from "../../api";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
+import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
 import { useToast, toast } from "@/components/ui/toast";
 import { AssignReviewerModal } from "../../_components/AssignReviewerModal";
 import styles from "../styles.module.css";
@@ -22,6 +23,10 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
   const [error, setError] = useState<string | null>(null);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [showAssignReviewerModal, setShowAssignReviewerModal] = useState(false);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [isDeactivating, setIsDeactivating] = useState(false);
+  const [showActivateModal, setShowActivateModal] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
 
   const fetchDocument = useCallback(async () => {
     setLoading(true);
@@ -73,6 +78,50 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
   const handleViewDocument = () => {
     // Navigate to reader view document page
     router.push(`/docs-view/${documentId}`);
+  };
+
+  const handleDeactivate = async () => {
+    if (!document) return;
+    
+    setIsDeactivating(true);
+    setError(null);
+
+    try {
+      await deactivateDocument(document.id);
+      showToast(toast.success("Document Deactivated", "Document status changed to INACTIVE successfully"));
+      setShowDeactivateModal(false);
+      // Reload document to get updated status
+      await fetchDocument();
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Failed to deactivate document";
+      showToast(toast.error("Deactivate Failed", errorMessage));
+      setError(errorMessage);
+    } finally {
+      setIsDeactivating(false);
+    }
+  };
+
+  const handleActivate = async () => {
+    if (!document) return;
+    
+    setIsActivating(true);
+    setError(null);
+
+    try {
+      await activateDocument(document.id);
+      showToast(toast.success("Document Activated", "Document status changed to ACTIVE successfully"));
+      setShowActivateModal(false);
+      // Reload document to get updated status
+      await fetchDocument();
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Failed to activate document";
+      showToast(toast.error("Activate Failed", errorMessage));
+      setError(errorMessage);
+    } finally {
+      setIsActivating(false);
+    }
   };
 
   if (loading && !document) {
@@ -487,7 +536,27 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
                     <span>View Summary</span>
                   </button>
                 )}
-                {document.status !== "DELETED" && (
+                {document.status === "ACTIVE" && (
+                  <button
+                    onClick={() => setShowDeactivateModal(true)}
+                    className={`${styles["action-button"]} ${styles["action-button-warning"]}`}
+                    disabled={loading || isDeactivating}
+                  >
+                    <PowerOff className="w-4 h-4" />
+                    <span>Deactivate</span>
+                  </button>
+                )}
+                {document.status === "DELETED" && (
+                  <button
+                    onClick={() => setShowActivateModal(true)}
+                    className={`${styles["action-button"]} ${styles["action-button-primary"]}`}
+                    disabled={loading || isActivating}
+                  >
+                    <Power className="w-4 h-4" />
+                    <span>Activate</span>
+                  </button>
+                )}
+                {document.status !== "DELETED" && document.status !== "ACTIVE" && (
                   <DeleteConfirmation
                     onDelete={handleDelete}
                     itemId={document.id}
@@ -582,6 +651,36 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Deactivate Confirmation Modal */}
+      {showDeactivateModal && document && (
+        <ConfirmModal
+          open={showDeactivateModal}
+          title="Deactivate Document"
+          content={`Are you sure you want to deactivate "${document.title || "this document"}"?`}
+          subContent="This will change the document status to INACTIVE. Users will not be able to access this document until it is reactivated."
+          confirmLabel="Deactivate"
+          cancelLabel="Cancel"
+          loading={isDeactivating}
+          onConfirm={handleDeactivate}
+          onCancel={() => setShowDeactivateModal(false)}
+        />
+      )}
+
+      {/* Activate Confirmation Modal */}
+      {showActivateModal && document && (
+        <ConfirmModal
+          open={showActivateModal}
+          title="Activate Document"
+          content={`Are you sure you want to activate "${document.title || "this document"}"?`}
+          subContent="This will change the document status to ACTIVE and make it available to users."
+          confirmLabel="Activate"
+          cancelLabel="Cancel"
+          loading={isActivating}
+          onConfirm={handleActivate}
+          onCancel={() => setShowActivateModal(false)}
+        />
       )}
     </div>
   );

@@ -3,6 +3,7 @@
 
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import type { SystemLogQueryParams } from "@/types/system-log";
+import { useToast, toast } from "@/components/ui/toast";
 import styles from "../styles.module.css";
 
 const ACTION_OPTIONS = [
@@ -48,6 +49,7 @@ export function SystemLogFilters({
   onFiltersChange,
   loading = false,
 }: SystemLogFiltersProps) {
+  const { showToast } = useToast();
   const {
     register,
     handleSubmit,
@@ -66,14 +68,24 @@ export function SystemLogFilters({
   });
 
   const onSubmit: SubmitHandler<FilterValues> = (data: FilterValues) => {
+    // Validate date range (datetime-local format)
+    if (data.dateFrom && data.dateTo) {
+      const fromDate = new Date(data.dateFrom);
+      const toDate = new Date(data.dateTo);
+      if (fromDate > toDate) {
+        showToast(toast.error("Validation Error", "Date From must be before or equal to Date To"));
+        return;
+      }
+    }
+    
     const filters: SystemLogQueryParams = {
       ...data,
       action: data.action || undefined,
       userRole: data.userRole || undefined,
-      ipAddress: data.ipAddress || undefined,
+      ipAddress: data.ipAddress?.trim() || undefined,
       startDate: data.dateFrom || undefined,
       endDate: data.dateTo || undefined,
-      search: data.search || undefined,
+      search: data.search?.trim() || undefined,
       page: 1,
     };
     onFiltersChange(filters);

@@ -5,8 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { getReader, getReviewer, updateReaderStatus, updateReviewerStatus } from "../../api";
 import type { User } from "../../api";
 import { useToast, toast } from "@/components/ui/toast";
-import StatusConfirmation from "@/components/ui/status-confirmation";
-import { ArrowLeft, Mail, Calendar, Building2 } from "lucide-react";
+import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
+import { ArrowLeft, Mail, Calendar, Building2, CheckCircle, XCircle, Power, PowerOff } from "lucide-react";
 import styles from "../../styles.module.css";
 
 export default function UserDetailPage() {
@@ -19,6 +19,15 @@ export default function UserDetailPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    content: string;
+    subContent?: string;
+    confirmLabel: string;
+    newStatus: string;
+  } | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (!id || !type) return;
@@ -44,9 +53,10 @@ export default function UserDetailPage() {
     loadUser();
   }, [id, type, showToast]);
 
-  const handleUpdateStatus = async (newStatus: "ACTIVE" | "INACTIVE") => {
+  const handleUpdateStatus = async (newStatus: string) => {
     if (!user) return;
     
+    setIsUpdating(true);
     try {
       if (type === "readers") {
         await updateReaderStatus(user.id, newStatus);
@@ -59,9 +69,120 @@ export default function UserDetailPage() {
         ? await getReader(id)
         : await getReviewer(id);
       setUser(userData);
+      setConfirmModal(null);
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : "Failed to update status";
       showToast(toast.error("Update Failed", errorMessage));
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleStatusAction = (action: "approve" | "reject" | "activate" | "deactivate") => {
+    if (!user) return;
+
+    const userName = (user as any).fullName || user.name || user.email;
+    const userType = type === "readers" ? "Reader" : "Reviewer";
+
+    switch (action) {
+      case "approve":
+        setConfirmModal({
+          open: true,
+          title: "Approve User Registration",
+          content: `Are you sure you want to approve "${userName}"?`,
+          subContent: "This will activate the user account and allow them to access the system.",
+          confirmLabel: "Approve",
+          newStatus: "ACTIVE",
+        });
+        break;
+      case "reject":
+        setConfirmModal({
+          open: true,
+          title: "Reject User Registration",
+          content: `Are you sure you want to reject "${userName}"?`,
+          subContent: "This will reject the user registration. They will not be able to access the system.",
+          confirmLabel: "Reject",
+          newStatus: "REJECTED",
+        });
+        break;
+      case "activate":
+        setConfirmModal({
+          open: true,
+          title: "Activate User Account",
+          content: `Are you sure you want to activate "${userName}"?`,
+          subContent: "This will reactivate the user account and allow them to access the system.",
+          confirmLabel: "Activate",
+          newStatus: "ACTIVE",
+        });
+        break;
+      case "deactivate":
+        setConfirmModal({
+          open: true,
+          title: "Deactivate User Account",
+          content: `Are you sure you want to deactivate "${userName}"?`,
+          subContent: "This will temporarily disable the user account. They will not be able to access the system.",
+          confirmLabel: "Deactivate",
+          newStatus: "INACTIVE",
+        });
+        break;
+    }
+  };
+
+  const getAvailableActions = (currentStatus: string) => {
+    switch (currentStatus) {
+      case "PENDING_APPROVE":
+        return [
+          {
+            label: "Approve",
+            action: "approve" as const,
+            icon: CheckCircle,
+            variant: "success",
+          },
+          {
+            label: "Reject",
+            action: "reject" as const,
+            icon: XCircle,
+            variant: "danger",
+          },
+        ];
+      case "ACTIVE":
+        return [
+          {
+            label: "Deactivate",
+            action: "deactivate" as const,
+            icon: PowerOff,
+            variant: "warning",
+          },
+        ];
+      case "INACTIVE":
+        return [
+          {
+            label: "Activate",
+            action: "activate" as const,
+            icon: Power,
+            variant: "success",
+          },
+        ];
+      case "REJECTED":
+        return [
+          {
+            label: "Approve",
+            action: "approve" as const,
+            icon: CheckCircle,
+            variant: "success",
+          },
+        ];
+      case "DELETED":
+        return [
+          {
+            label: "Activate",
+            action: "activate" as const,
+            icon: Power,
+            variant: "success",
+          },
+        ];
+      default:
+        return [];
     }
   };
 
@@ -228,36 +349,53 @@ export default function UserDetailPage() {
               <label className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 block">
                 Status
               </label>
-              <div className="flex items-center gap-3">
-                <span
-                  className={`${styles["status-badge"]} ${
-                    user.status === "ACTIVE"
-                      ? styles["status-active"]
-                      : user.status === "PENDING_EMAIL_VERIFY" || user.status === "PENDING_APPROVE"
-                      ? styles["status-pending"]
-                      : styles["status-inactive"]
-                  }`}
-                >
-                  {user.status || "UNKNOWN"}
-                </span>
-                {user.status && (user.status === "ACTIVE" || user.status === "INACTIVE") && (
-                  <StatusConfirmation
-                    onConfirm={handleUpdateStatus}
-                    currentStatus={user.status === "ACTIVE" ? "ACTIVE" : "INACTIVE"}
-                    itemName={(userData.fullName || user.name || user.email)}
-                    title={
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`${styles["status-badge"]} ${
                       user.status === "ACTIVE"
-                        ? "Confirm Inactive Status"
-                        : "Confirm Active Status"
-                    }
-                    description={
-                      user.status === "ACTIVE"
-                        ? `Are you sure you want to set "${userData.fullName || user.name || user.email}" to Inactive?`
-                        : `Are you sure you want to set "${userData.fullName || user.name || user.email}" to Active?`
-                    }
-                    size="sm"
-                    variant="outline"
-                  />
+                        ? styles["status-active"]
+                        : user.status === "PENDING_EMAIL_VERIFY" || user.status === "PENDING_APPROVE"
+                        ? styles["status-pending"]
+                        : styles["status-inactive"]
+                    }`}
+                  >
+                    {user.status || "UNKNOWN"}
+                  </span>
+                </div>
+                {user.status && getAvailableActions(user.status).length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {getAvailableActions(user.status).map((actionItem, index) => {
+                      const Icon = actionItem.icon;
+                      const variantClasses = {
+                        success: "bg-green-600 hover:bg-green-700 text-white border-green-600",
+                        danger: "bg-red-600 hover:bg-red-700 text-white border-red-600",
+                        warning: "bg-orange-600 hover:bg-orange-700 text-white border-orange-600",
+                      };
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handleStatusAction(actionItem.action)}
+                          disabled={isUpdating}
+                          className={`
+                            inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg
+                            border transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                            ${variantClasses[actionItem.variant]}
+                          `}
+                        >
+                          <Icon className="w-4 h-4" />
+                          {actionItem.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {user.status && (user.status === "PENDING_EMAIL_VERIFY" || user.status === "DELETED") && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                    {user.status === "PENDING_EMAIL_VERIFY" 
+                      ? "Waiting for user to verify their email address."
+                      : "This account has been deleted and cannot be modified."}
+                  </p>
                 )}
               </div>
             </div>
@@ -305,6 +443,21 @@ export default function UserDetailPage() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmModal && (
+        <ConfirmModal
+          open={confirmModal.open}
+          title={confirmModal.title}
+          content={confirmModal.content}
+          subContent={confirmModal.subContent}
+          confirmLabel={confirmModal.confirmLabel}
+          cancelLabel="Cancel"
+          loading={isUpdating}
+          onConfirm={() => handleUpdateStatus(confirmModal.newStatus)}
+          onCancel={() => setConfirmModal(null)}
+        />
       )}
     </div>
   );

@@ -7,6 +7,7 @@ import type { DocumentQueryParams } from "../api";
 import { apiClient } from "@/services/http";
 import type { Organization } from "@/types/organization";
 import { useClickOutside } from "@/hooks/use-click-outside";
+import { useToast, toast } from "@/components/ui/toast";
 import styles from "../styles.module.css";
 
 const SORT_OPTIONS = [
@@ -54,6 +55,7 @@ export function DocumentFilters({
   onFiltersChange,
   loading = false,
 }: DocumentFiltersProps) {
+  const { showToast } = useToast();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [orgSearch, setOrgSearch] = useState("");
   const [loadingOrgs, setLoadingOrgs] = useState(false);
@@ -130,8 +132,19 @@ export function DocumentFilters({
   }, [orgSearch]);
 
   const onSubmit: SubmitHandler<FilterValues> = (data: FilterValues) => {
+    // Validate date range
+    if (data.dateFrom && data.dateTo) {
+      const fromDate = new Date(data.dateFrom);
+      const toDate = new Date(data.dateTo);
+      if (fromDate > toDate) {
+        showToast(toast.error("Validation Error", "Date From must be before or equal to Date To"));
+        return;
+      }
+    }
+    
     const filters: DocumentQueryParams = {
       ...data,
+      search: data.search?.trim() || undefined,
       organizationId: data.organizationId || undefined,
       typeId: data.typeId || undefined,
       isPublic: data.isPublic === "" ? undefined : data.isPublic === "true",

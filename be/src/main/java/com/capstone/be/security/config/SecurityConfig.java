@@ -56,6 +56,7 @@ public class SecurityConfig {
                 "/documents/search/**",
                 "documents/search-meta/**",
                 "/auth/**",
+                "/policies/active", // Public endpoint for viewing active policy (for sign up)
 
                 "/v3/api-docs/**",
                 "/swagger-ui/**",

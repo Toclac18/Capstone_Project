@@ -8,7 +8,8 @@ import { UserFilters } from "./UserFilters";
 import { Pagination } from "./Pagination";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
 import { useToast, toast } from "@/components/ui/toast";
-import { Eye } from "lucide-react";
+import { Eye, Power } from "lucide-react";
+import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
 import styles from "../styles.module.css";
 
 type UserType = "readers" | "reviewers";
@@ -23,6 +24,12 @@ export function UserManagement() {
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [activateModal, setActivateModal] = useState<{
+    open: boolean;
+    userId: string;
+    userName: string;
+  } | null>(null);
+  const [isActivating, setIsActivating] = useState(false);
 
   const [filters, setFilters] = useState<UserQueryParams>({
     page: 1,
@@ -112,6 +119,32 @@ export function UserManagement() {
       setError(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleActivate = async () => {
+    if (!activateModal) return;
+
+    setIsActivating(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      if (activeTab === "readers") {
+        await updateReaderStatus(activateModal.userId, "ACTIVE");
+      } else {
+        await updateReviewerStatus(activateModal.userId, "ACTIVE");
+      }
+      showToast(toast.success("User Activated", `${activeTab === "readers" ? "Reader" : "Reviewer"} activated successfully`));
+      setActivateModal(null);
+      await fetchUsers(filters, activeTab);
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Failed to activate user";
+      showToast(toast.error("Activate Failed", errorMessage));
+      setError(errorMessage);
+    } finally {
+      setIsActivating(false);
     }
   };
 
@@ -265,18 +298,34 @@ export function UserManagement() {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <div className={styles["delete-btn-wrapper"]}>
-                          <DeleteConfirmation
-                            onDelete={handleDelete}
-                            itemId={user.id}
-                            itemName={(user as any).fullName || user.name || user.email}
-                            title={`Delete ${activeTab === "readers" ? "Reader" : "Reviewer"}`}
-                            description={`Are you sure you want to delete "${(user as any).fullName || user.name || user.email}"?`}
-                            size="sm"
-                            variant="outline"
-                            className="!h-9 !px-3 !min-w-[90px]"
-                          />
-                        </div>
+                        {user.status === "DELETED" ? (
+                          <button
+                            onClick={() => setActivateModal({
+                              open: true,
+                              userId: user.id,
+                              userName: (user as any).fullName || user.name || user.email,
+                            })}
+                            disabled={loading || isActivating}
+                            className="h-9 px-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 border border-green-300 bg-white text-green-600 hover:text-green-700 hover:border-green-400 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-green-300 disabled:hover:bg-white shadow-sm hover:shadow-md dark:border-green-700 dark:bg-gray-800 dark:text-green-400 dark:hover:text-green-300 dark:hover:border-green-600 dark:hover:bg-green-900/20 dark:disabled:hover:border-green-700 dark:disabled:hover:bg-gray-800"
+                            title="Activate User"
+                          >
+                            <Power className="w-4 h-4" />
+                            <span>Activate</span>
+                          </button>
+                        ) : (
+                          <div className={styles["delete-btn-wrapper"]}>
+                            <DeleteConfirmation
+                              onDelete={handleDelete}
+                              itemId={user.id}
+                              itemName={(user as any).fullName || user.name || user.email}
+                              title={`Delete ${activeTab === "readers" ? "Reader" : "Reviewer"}`}
+                              description={`Are you sure you want to delete "${(user as any).fullName || user.name || user.email}"?`}
+                              size="sm"
+                              variant="outline"
+                              className="!h-9 !px-3 !min-w-[90px]"
+                            />
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -295,6 +344,21 @@ export function UserManagement() {
           onPageChange={handlePageChange}
           loading={loading}
         />
+
+        {/* Activate Confirmation Modal */}
+        {activateModal && (
+          <ConfirmModal
+            open={activateModal.open}
+            title={`Activate ${activeTab === "readers" ? "Reader" : "Reviewer"}`}
+            content={`Are you sure you want to activate "${activateModal.userName}"?`}
+            subContent="This will change the user status to ACTIVE and allow them to access the system."
+            confirmLabel="Activate"
+            cancelLabel="Cancel"
+            loading={isActivating}
+            onConfirm={handleActivate}
+            onCancel={() => setActivateModal(null)}
+          />
+        )}
       </div>
     </div>
   );

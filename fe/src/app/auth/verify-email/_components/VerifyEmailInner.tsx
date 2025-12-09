@@ -27,6 +27,7 @@ function VerifyEmailInner() {
   const [email, setEmail] = useState("");
   const [resendLoading, setResendLoading] = useState(false);
   const [isTokenExpired, setIsTokenExpired] = useState(false);
+  const [countdown, setCountdown] = useState(3);
   const emailRef = useRef<string>("");
 
   const verifiedRef = useRef(false);
@@ -57,11 +58,8 @@ function VerifyEmailInner() {
         setStatus("success");
         // Backend returns AuthResponse, show success message
         setMessage("Email has been verified successfully! You can now login.");
-
-        // Redirect sang login sau 3 giây
-        setTimeout(() => {
-          router.push("/auth/sign-in");
-        }, 3000);
+        // Reset countdown to 3 when status changes to success
+        setCountdown(3);
       } catch (e: unknown) {
         const msg =
           e instanceof Error
@@ -92,6 +90,29 @@ function VerifyEmailInner() {
 
     run();
   }, [token, router]);
+
+  // Countdown timer for redirect
+  useEffect(() => {
+    if (status !== "success") return;
+
+    if (countdown === 0) {
+      router.push("/auth/sign-in");
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          router.push("/auth/sign-in");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [status, countdown, router]);
 
   return (
     <div className={styles["page-container"]}>
@@ -156,7 +177,7 @@ function VerifyEmailInner() {
               <h2 className={styles["title-success"]}>Email Verified!</h2>
               <p className={styles["body-text-spaced"]}>{message}</p>
               <p className="text-sm">
-                Redirecting to login page in 3 seconds...
+                Redirecting to login page in <span className="font-semibold text-primary">{countdown}</span> {countdown === 1 ? "second" : "seconds"}...
               </p>
               <Link
                 href="/auth/sign-in"

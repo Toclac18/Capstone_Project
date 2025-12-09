@@ -118,13 +118,30 @@ export function TagManagement() {
       }
     }
     
+    // Format date to ISO 8601 with time (DATE_TIME format for Instant)
+    let formattedDateFrom: string | undefined = undefined;
+    if (data.dateFrom) {
+      // Convert "YYYY-MM-DD" to "YYYY-MM-DDTHH:mm:ssZ" (start of day in UTC)
+      const date = new Date(data.dateFrom);
+      date.setUTCHours(0, 0, 0, 0);
+      formattedDateFrom = date.toISOString();
+    }
+    
+    let formattedDateTo: string | undefined = undefined;
+    if (data.dateTo) {
+      // Convert "YYYY-MM-DD" to "YYYY-MM-DDTHH:mm:ssZ" (end of day in UTC)
+      const date = new Date(data.dateTo);
+      date.setUTCHours(23, 59, 59, 999);
+      formattedDateTo = date.toISOString();
+    }
+    
     setError(null);
     const newFilters: TagQueryParams = {
       ...filters,
       search: data.search?.trim() || undefined,
       status: (data.status as TagStatus) || undefined,
-      dateFrom: data.dateFrom || undefined,
-      dateTo: data.dateTo || undefined,
+      dateFrom: formattedDateFrom,
+      dateTo: formattedDateTo,
       page: 1,
       limit: itemsPerPage,
     };

@@ -41,6 +41,7 @@ export function TypeManagement() {
     reset,
     control,
     getValues,
+    formState: { errors },
   } = useForm<FilterValues>({
     defaultValues: {
       search: "",
@@ -98,11 +99,28 @@ export function TypeManagement() {
 
   // Apply filters when form is submitted
   const onSubmit: SubmitHandler<FilterValues> = (data: FilterValues) => {
+    // Format date to ISO 8601 with time (DATE_TIME format for Instant)
+    let formattedDateFrom: string | undefined = undefined;
+    if (data.dateFrom) {
+      // Convert "YYYY-MM-DD" to "YYYY-MM-DDTHH:mm:ssZ" (start of day in UTC)
+      const date = new Date(data.dateFrom);
+      date.setUTCHours(0, 0, 0, 0);
+      formattedDateFrom = date.toISOString();
+    }
+    
+    let formattedDateTo: string | undefined = undefined;
+    if (data.dateTo) {
+      // Convert "YYYY-MM-DD" to "YYYY-MM-DDTHH:mm:ssZ" (end of day in UTC)
+      const date = new Date(data.dateTo);
+      date.setUTCHours(23, 59, 59, 999);
+      formattedDateTo = date.toISOString();
+    }
+    
     const newFilters: TypeQueryParams = {
       ...filters,
       search: data.search?.trim() || undefined,
-      dateFrom: data.dateFrom || undefined,
-      dateTo: data.dateTo || undefined,
+      dateFrom: formattedDateFrom,
+      dateTo: formattedDateTo,
       page: 1,
       limit: itemsPerPage,
     };
@@ -336,10 +354,26 @@ export function TypeManagement() {
             <input
               id="dateFrom"
               type="date"
-              {...register("dateFrom")}
-              className={styles["input"]}
+              {...register("dateFrom", {
+                validate: (value) => {
+                  const dateToValue = getValues("dateTo");
+                  if (value && dateToValue) {
+                    const fromDate = new Date(value);
+                    const toDate = new Date(dateToValue);
+                    if (fromDate > toDate) {
+                      return "Date From must be less than or equal to Date To";
+                    }
+                  }
+                  return true;
+                },
+              })}
+              max={dateToValue || undefined}
+              className={styles["input"] + (errors.dateFrom ? " border-red-500" : "")}
               disabled={loading}
             />
+            {errors.dateFrom && (
+              <p className="mt-1 text-sm text-red-500">{errors.dateFrom.message}</p>
+            )}
           </div>
 
           <div>
@@ -349,10 +383,26 @@ export function TypeManagement() {
             <input
               id="dateTo"
               type="date"
-              {...register("dateTo")}
-              className={styles["input"]}
+              {...register("dateTo", {
+                validate: (value) => {
+                  const dateFromValue = getValues("dateFrom");
+                  if (value && dateFromValue) {
+                    const fromDate = new Date(dateFromValue);
+                    const toDate = new Date(value);
+                    if (fromDate > toDate) {
+                      return "Date To must be greater than or equal to Date From";
+                    }
+                  }
+                  return true;
+                },
+              })}
+              min={dateFromValue || undefined}
+              className={styles["input"] + (errors.dateTo ? " border-red-500" : "")}
               disabled={loading}
             />
+            {errors.dateTo && (
+              <p className="mt-1 text-sm text-red-500">{errors.dateTo.message}</p>
+            )}
           </div>
         </div>
 

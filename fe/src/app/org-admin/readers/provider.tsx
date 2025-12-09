@@ -103,17 +103,16 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
     async (enrollmentId: string, enable: boolean) => {
       const nextStatus: OrgEnrollStatus = enable ? "JOINED" : "REMOVED";
 
-      setReaders((prev) =>
-        prev.map((r) =>
-          r.enrollmentId === enrollmentId ? { ...r, status: nextStatus } : r,
-        ),
-      );
-
       try {
         await changeEnrollmentStatus({
           enrollmentId,
           status: nextStatus,
         });
+        setReaders((prev) =>
+          prev.map((r) =>
+            r.enrollmentId === enrollmentId ? { ...r, status: nextStatus } : r,
+          ),
+        );
       } catch (err: any) {
         if (err instanceof ApiError && err.isHandledGlobally) {
           setLoading(false);

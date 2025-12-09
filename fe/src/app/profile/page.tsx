@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   getProfile,
   updateProfile,
+  verifyPasswordForEmailChange,
   requestEmailChange,
   verifyEmailChangeOtp,
   changePassword,
@@ -253,29 +254,41 @@ export default function Page() {
     await loadProfile();
   };
 
-  const handleChangeEmail = async (newEmail: string, otp: string) => {
-    if (!otp) {
-      await requestEmailChange(newEmail);
+  const handleChangeEmail = async (password: string, newEmail: string, otp: string) => {
+    // Step 1: Verify password
+    if (password && !newEmail && !otp) {
+      await verifyPasswordForEmailChange(password);
+      return { step: "email" };
+    }
+    
+    // Step 2: Request email change (password + newEmail)
+    if (password && newEmail && !otp) {
+      await requestEmailChange(password, newEmail);
       showToast({
         type: "success",
         title: "OTP Sent",
-        message: "OTP has been sent to your current email address",
+        message: "OTP has been sent to your new email address",
       });
       return { step: "verify" };
     }
     
-    await verifyEmailChangeOtp(otp);
-    showToast({
-      type: "success",
-      title: "Email Changed",
-      message: "Your email has been changed successfully. Please login again with your new email",
-    });
+    // Step 3: Verify OTP
+    if (password && newEmail && otp) {
+      await verifyEmailChangeOtp(otp);
+      showToast({
+        type: "success",
+        title: "Email Changed",
+        message: "Your email has been changed successfully. Please login again with your new email",
+      });
+      
+      setTimeout(() => {
+        window.location.href = "/auth/sign-in";
+      }, 2000);
+      
+      return { step: "complete" };
+    }
     
-    setTimeout(() => {
-      window.location.href = "/auth/sign-in";
-    }, 2000);
-    
-    return { step: "complete" };
+    throw new Error("Invalid step");
   };
 
   const handleChangePassword = async (
@@ -698,8 +711,8 @@ export default function Page() {
         isOpen={isChangeEmailOpen}
         onClose={() => setIsChangeEmailOpen(false)}
         currentEmail={profile?.email || ""}
-        onRequestEmailChange={async (newEmail: string, otp?: string) => {
-          return await handleChangeEmail(newEmail, otp || "");
+        onRequestEmailChange={async (password: string, newEmail: string, otp: string) => {
+          return await handleChangeEmail(password, newEmail, otp);
         }}
       />
       <ChangePasswordModal

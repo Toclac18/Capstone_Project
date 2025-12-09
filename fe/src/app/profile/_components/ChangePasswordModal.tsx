@@ -104,7 +104,7 @@ export default function ChangePasswordModal({
         lowerMessage.includes("current password is incorrect") ||
         lowerMessage.includes("invalid_current_password") ||
         (lowerMessage.includes("incorrect") && lowerMessage.includes("current")) ||
-        lowerMessage.includes("sai mật khẩu");
+        lowerMessage.includes("incorrect password");
       
       if (isInvalidCurrentPassword) {
         // Set error on currentPassword field

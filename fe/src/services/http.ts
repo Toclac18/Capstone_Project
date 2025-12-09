@@ -59,30 +59,11 @@ apiClient.interceptors.response.use(
       return { status: 204, data: { message: "Success" } };
     }
     
-    // Try to extract error message from various response formats
-    let msg = "Request error";
-    
-    if (err?.response?.data) {
-      const data = err.response.data;
-      // Backend format: { success: false, message: "...", data: {...} }
-      msg = data.message || data.error || msg;
-      
-      // If message is still default, try to get from nested data
-      if (msg === "Request error" && data.data) {
-        if (typeof data.data === "string") {
-          msg = data.data;
-        } else if (data.data.message) {
-          msg = data.data.message;
-        } else if (data.data.error) {
-          msg = data.data.error;
-        }
-      }
-    }
-    
-    // Fallback to axios error message if available
-    if (msg === "Request error" && err?.message) {
-      msg = err.message;
-    }
+    const msg =
+      err?.response?.data?.error ||
+      err?.response?.data?.message ||
+      err?.message ||
+      "Request error";
     
     return Promise.reject(new Error(msg));
   },

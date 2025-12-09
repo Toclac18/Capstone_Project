@@ -175,6 +175,15 @@ public interface DocumentService {
    */
   void deactivateDocument(UUID documentId);
 
+  /**
+   * Update document status
+   * Only admin can update document status
+   *
+   * @param documentId Document ID to update
+   * @param status      New status to set
+   */
+  void updateDocumentStatus(UUID documentId, DocStatus status);
+
   Page<DocumentDetailResponse> getHomepageDocuments(UUID userId, int page, int size);
 
   DocumentSearchMetaResponse getPublicSearchMeta();

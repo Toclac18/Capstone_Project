@@ -58,6 +58,7 @@ export function DocumentFilters({
   const [orgSearch, setOrgSearch] = useState("");
   const [loadingOrgs, setLoadingOrgs] = useState(false);
   const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const {
     register,
@@ -135,10 +136,13 @@ export function DocumentFilters({
       typeId: data.typeId || undefined,
       isPublic: data.isPublic === "" ? undefined : data.isPublic === "true",
       isPremium: data.isPremium === "" ? undefined : data.isPremium === "true",
+      // Only include status if explicitly selected, otherwise exclude DELETED by default
       status: data.status || undefined,
       dateFrom: data.dateFrom || undefined,
       dateTo: data.dateTo || undefined,
       page: 1,
+      // Exclude DELETED when status is not selected (deleted: false means exclude deleted)
+      deleted: data.status ? undefined : false,
     };
     onFiltersChange(filters);
   };
@@ -158,6 +162,7 @@ export function DocumentFilters({
       dateFrom: undefined,
       dateTo: undefined,
       page: 1,
+      deleted: false, // Exclude DELETED by default
     };
     onFiltersChange(clearedFilters);
   };
@@ -178,9 +183,11 @@ export function DocumentFilters({
       onSubmit={handleSubmit(onSubmit)}
       className={styles["filters-container"]}
     >
-      {/* Search Bar */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-6">
-        <div className="flex-1 lg:min-w-[400px]">
+      {/* Main Filter Row - Compact Layout */}
+      <div className="flex flex-col lg:flex-row gap-3 items-end">
+        {/* Search Bar */}
+        <div className="flex-1 w-full lg:min-w-[300px]">
+          <label className={`${styles["label"]} mb-1.5`}>Search</label>
           <div className={styles["search-container"]}>
             <svg
               className={styles["search-icon"]}
@@ -198,7 +205,7 @@ export function DocumentFilters({
             <input
               id="search"
               type="text"
-              placeholder="Search by title, description, or file name..."
+              placeholder="Search documents..."
               className={styles["search-input"]}
               disabled={loading}
               {...register("search")}
@@ -206,205 +213,224 @@ export function DocumentFilters({
           </div>
         </div>
 
-        <div className="flex gap-2 lg:flex-shrink-0">
+        {/* Organization */}
+        <div className="w-full lg:w-[200px]">
+          <label className={`${styles["label"]} mb-1.5`}>Organization</label>
+          <div className="relative" ref={orgDropdownRef}>
+            <input
+              type="text"
+              placeholder="Select organization..."
+              value={orgSearch}
+              onChange={(e) => {
+                setOrgSearch(e.target.value);
+                setIsOrgDropdownOpen(true);
+              }}
+              onFocus={() => setIsOrgDropdownOpen(true)}
+              className={`${styles["search-input"]} pl-10`}
+              disabled={loading || loadingOrgs}
+              style={{ paddingLeft: '2.5rem' }}
+            />
+            <svg
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            {isOrgDropdownOpen && orgSearch && (
+              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {filteredOrganizations.length === 0 ? (
+                  <div className="p-2 text-sm text-gray-500 dark:text-gray-400">No organizations found</div>
+                ) : (
+                  filteredOrganizations.map((org) => (
+                    <button
+                      key={org.id}
+                      type="button"
+                      onClick={() => {
+                        setValue("organizationId", org.id);
+                        setOrgSearch(org.name);
+                        setIsOrgDropdownOpen(false);
+                      }}
+                      className="w-full text-left p-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                    >
+                      {org.name}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+          <input type="hidden" {...register("organizationId")} />
+        </div>
+
+        {/* Status */}
+        <div className="w-full lg:w-[160px]">
+          <label className={`${styles["label"]} mb-1.5`}>Status</label>
+          <select
+            id="status"
+            className={`${styles["select"]} ${errors.status ? styles.error : ""}`}
+            disabled={loading}
+            {...register("status")}
+          >
+            {STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Visibility */}
+        <div className="w-full lg:w-[130px]">
+          <label className={`${styles["label"]} mb-1.5`}>Visibility</label>
+          <select
+            id="isPublic"
+            className={`${styles["select"]} ${errors.isPublic ? styles.error : ""}`}
+            disabled={loading}
+            {...register("isPublic")}
+          >
+            <option value="">All</option>
+            <option value="true">Public</option>
+            <option value="false">Private</option>
+          </select>
+        </div>
+
+        {/* Premium */}
+        <div className="w-full lg:w-[130px]">
+          <label className={`${styles["label"]} mb-1.5`}>Premium</label>
+          <select
+            id="isPremium"
+            className={`${styles["select"]} ${errors.isPremium ? styles.error : ""}`}
+            disabled={loading}
+            {...register("isPremium")}
+          >
+            <option value="">All</option>
+            <option value="true">Premium</option>
+            <option value="false">Free</option>
+          </select>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 w-full lg:w-auto items-end">
           <button
             type="submit"
             disabled={loading}
-            className={`${styles["btn"]} ${styles["btn-primary"]} whitespace-nowrap`}
+            className={`${styles["btn"]} ${styles["btn-primary"]} whitespace-nowrap flex-1 lg:flex-none h-[52px]`}
           >
             {loading ? "Searching..." : "Search"}
           </button>
-
           <button
             type="button"
             onClick={handleClearFilters}
             disabled={loading}
-            className={`${styles["btn"]} ${styles["btn-secondary"]} whitespace-nowrap`}
+            className={`${styles["btn"]} ${styles["btn-secondary"]} whitespace-nowrap h-[52px]`}
           >
-            Clear All
+            Clear
           </button>
         </div>
       </div>
 
-      {/* Filter Groups */}
-      <div className="space-y-4">
-        {/* Basic Filters Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="min-w-[200px]">
-            <label className={styles["label"]}>Organization</label>
-            <div className="relative" ref={orgDropdownRef}>
+      {/* Advanced Filters - Collapsible */}
+      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+        >
+          <svg
+            className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+          Advanced Filters
+        </button>
+
+        {showAdvanced && (
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Date From */}
+            <div>
+              <label htmlFor="dateFrom" className={`${styles["label"]} mb-1.5`}>
+                From Date
+              </label>
               <input
-                type="text"
-                placeholder="Search organization..."
-                value={orgSearch}
-                onChange={(e) => {
-                  setOrgSearch(e.target.value);
-                  setIsOrgDropdownOpen(true);
-                }}
-                onFocus={() => setIsOrgDropdownOpen(true)}
-                className={`${styles["search-input"]} pl-10`}
-                disabled={loading || loadingOrgs}
-                style={{ paddingLeft: '2.5rem' }}
+                id="dateFrom"
+                type="date"
+                className={`${styles["input"]} ${errors.dateFrom ? styles.error : ""}`}
+                disabled={loading}
+                {...register("dateFrom")}
               />
-              <svg
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-              {isOrgDropdownOpen && orgSearch && (
-                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {filteredOrganizations.length === 0 ? (
-                    <div className="p-2 text-sm text-gray-500 dark:text-gray-400">No organizations found</div>
-                  ) : (
-                    filteredOrganizations.map((org) => (
-                      <button
-                        key={org.id}
-                        type="button"
-                        onClick={() => {
-                          setValue("organizationId", org.id);
-                          setOrgSearch(org.name);
-                          setIsOrgDropdownOpen(false);
-                        }}
-                        className="w-full text-left p-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
-                      >
-                        {org.name}
-                      </button>
-                    ))
-                  )}
-                </div>
-              )}
             </div>
-            <input type="hidden" {...register("organizationId")} />
-          </div>
 
-          <div>
-            <label className={styles["label"]}>Status</label>
-            <select
-              id="status"
-              className={`${styles["select"]} ${errors.status ? styles.error : ""}`}
-              disabled={loading}
-              {...register("status")}
-            >
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+            {/* Date To */}
+            <div>
+              <label htmlFor="dateTo" className={`${styles["label"]} mb-1.5`}>
+                To Date
+              </label>
+              <input
+                id="dateTo"
+                type="date"
+                className={`${styles["input"]} ${errors.dateTo ? styles.error : ""}`}
+                disabled={loading}
+                {...register("dateTo")}
+              />
+            </div>
 
-          <div>
-            <label className={styles["label"]}>Visibility</label>
-            <select
-              id="isPublic"
-              className={`${styles["select"]} ${errors.isPublic ? styles.error : ""}`}
-              disabled={loading}
-              {...register("isPublic")}
-            >
-              <option value="">All</option>
-              <option value="true">Public</option>
-              <option value="false">Private</option>
-            </select>
-          </div>
+            {/* Sort By */}
+            <div>
+              <label className={`${styles["label"]} mb-1.5`}>Sort By</label>
+              <select
+                id="sortBy"
+                className={`${styles["select"]} ${errors.sortBy ? styles.error : ""}`}
+                disabled={loading}
+                {...register("sortBy")}
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label className={styles["label"]}>Premium</label>
-            <select
-              id="isPremium"
-              className={`${styles["select"]} ${errors.isPremium ? styles.error : ""}`}
-              disabled={loading}
-              {...register("isPremium")}
-            >
-              <option value="">All</option>
-              <option value="true">Premium</option>
-              <option value="false">Free</option>
-            </select>
+            {/* Sort Order */}
+            <div>
+              <label className={`${styles["label"]} mb-1.5`}>Sort Order</label>
+              <select
+                id="sortOrder"
+                className={`${styles["select"]} ${errors.sortOrder ? styles.error : ""}`}
+                disabled={loading}
+                {...register("sortOrder")}
+              >
+                {SORT_ORDER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-        </div>
-
-        {/* Date Range Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="dateFrom" className={styles["label"]}>
-              From Date
-            </label>
-            <input
-              id="dateFrom"
-              type="date"
-              className={`${styles["input"]} ${errors.dateFrom ? styles.error : ""}`}
-              disabled={loading}
-              {...register("dateFrom")}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="dateTo" className={styles["label"]}>
-              To Date
-            </label>
-            <input
-              id="dateTo"
-              type="date"
-              className={`${styles["input"]} ${errors.dateTo ? styles.error : ""}`}
-              disabled={loading}
-              {...register("dateTo")}
-            />
-          </div>
-        </div>
-
-        {/* Sort Options Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className={styles["label"]}>Sort By</label>
-            <select
-              id="sortBy"
-              className={`${styles["select"]} ${errors.sortBy ? styles.error : ""}`}
-              disabled={loading}
-              {...register("sortBy")}
-            >
-              {SORT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className={styles["label"]}>Sort Order</label>
-            <select
-              id="sortOrder"
-              className={`${styles["select"]} ${errors.sortOrder ? styles.error : ""}`}
-              disabled={loading}
-              {...register("sortOrder")}
-            >
-              {SORT_ORDER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Active Filters Summary */}
+      {/* Active Filters Summary - Compact */}
       {hasActiveFilters && (
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex flex-wrap gap-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              Active filters:
+        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mr-1">
+              Active:
             </span>
             {watchedFilters.search && (
-              <span className={`${styles["filter-tag"]} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`}>
-                Search: {watchedFilters.search}
+              <span className={`${styles["filter-tag"]} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs px-2 py-0.5`}>
+                {watchedFilters.search.length > 20 ? watchedFilters.search.substring(0, 20) + "..." : watchedFilters.search}
                 <button
                   type="button"
                   onClick={() => {
@@ -412,15 +438,16 @@ export function DocumentFilters({
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
-                  className="ml-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                  className="ml-1.5 hover:font-bold"
+                  title="Remove filter"
                 >
                   ×
                 </button>
               </span>
             )}
             {watchedFilters.organizationId && (
-              <span className={`${styles["filter-tag"]} bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200`}>
-                Org: {organizations.find(o => o.id === watchedFilters.organizationId)?.name || watchedFilters.organizationId}
+              <span className={`${styles["filter-tag"]} bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs px-2 py-0.5`}>
+                {organizations.find(o => o.id === watchedFilters.organizationId)?.name || "Org"}
                 <button
                   type="button"
                   onClick={() => {
@@ -429,15 +456,16 @@ export function DocumentFilters({
                     setOrgSearch("");
                     onSubmit(updatedFilters);
                   }}
-                  className="ml-1 text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-200"
+                  className="ml-1.5 hover:font-bold"
+                  title="Remove filter"
                 >
                   ×
                 </button>
               </span>
             )}
             {watchedFilters.isPublic !== "" && (
-              <span className={`${styles["filter-tag"]} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`}>
-                Public: {watchedFilters.isPublic === "true" ? "Yes" : "No"}
+              <span className={`${styles["filter-tag"]} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs px-2 py-0.5`}>
+                {watchedFilters.isPublic === "true" ? "Public" : "Private"}
                 <button
                   type="button"
                   onClick={() => {
@@ -445,15 +473,16 @@ export function DocumentFilters({
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
-                  className="ml-1 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
+                  className="ml-1.5 hover:font-bold"
+                  title="Remove filter"
                 >
                   ×
                 </button>
               </span>
             )}
             {watchedFilters.isPremium !== "" && (
-              <span className={`${styles["filter-tag"]} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200`}>
-                Premium: {watchedFilters.isPremium === "true" ? "Yes" : "No"}
+              <span className={`${styles["filter-tag"]} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs px-2 py-0.5`}>
+                {watchedFilters.isPremium === "true" ? "Premium" : "Free"}
                 <button
                   type="button"
                   onClick={() => {
@@ -461,15 +490,16 @@ export function DocumentFilters({
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
-                  className="ml-1 text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-200"
+                  className="ml-1.5 hover:font-bold"
+                  title="Remove filter"
                 >
                   ×
                 </button>
               </span>
             )}
             {watchedFilters.status !== "" && (
-              <span className={`${styles["filter-tag"]} bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200`}>
-                Status: {STATUS_OPTIONS.find(s => s.value === watchedFilters.status)?.label || watchedFilters.status}
+              <span className={`${styles["filter-tag"]} bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 text-xs px-2 py-0.5`}>
+                {STATUS_OPTIONS.find(s => s.value === watchedFilters.status)?.label || watchedFilters.status}
                 <button
                   type="button"
                   onClick={() => {
@@ -477,15 +507,16 @@ export function DocumentFilters({
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
-                  className="ml-1 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200"
+                  className="ml-1.5 hover:font-bold"
+                  title="Remove filter"
                 >
                   ×
                 </button>
               </span>
             )}
             {(watchedFilters.dateFrom || watchedFilters.dateTo) && (
-              <span className={`${styles["filter-tag"]} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`}>
-                Date: {watchedFilters.dateFrom || "Start"} - {watchedFilters.dateTo || "End"}
+              <span className={`${styles["filter-tag"]} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 text-xs px-2 py-0.5`}>
+                {watchedFilters.dateFrom || "..."} - {watchedFilters.dateTo || "..."}
                 <button
                   type="button"
                   onClick={() => {
@@ -493,7 +524,8 @@ export function DocumentFilters({
                     reset(updatedFilters);
                     onSubmit(updatedFilters);
                   }}
-                  className="ml-1 text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-200"
+                  className="ml-1.5 hover:font-bold"
+                  title="Remove filter"
                 >
                   ×
                 </button>

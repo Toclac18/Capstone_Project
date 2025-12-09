@@ -43,24 +43,27 @@ async function handlePUT(
   }
   const raw = await req.text();
 
-  const upstream = await fetch(
-    `${BE_BASE}/api/review-requests/${id}/respond`,
-    {
-      method: "PUT",
-      headers: fh,
-      body: raw,
-      cache: "no-store",
-    },
-  );
+  const url = `${BE_BASE}/api/review-requests/${id}/respond`;
+  console.log(`[review-request-respond] Calling backend: ${url}`, { body: raw });
+
+  const upstream = await fetch(url, {
+    method: "PUT",
+    headers: fh,
+    body: raw,
+    cache: "no-store",
+  });
 
   // Backend returns ApiResponse<ReviewRequestResponse>
   if (!upstream.ok) {
+    console.error(`[review-request-respond] Backend error: ${upstream.status}`, await upstream.text().catch(() => ""));
     return proxyJsonResponse(upstream, { mode: "real" });
   }
 
   // Unwrap backend response: { success: true, data: {...} }
   const json = await upstream.json();
   const data = json?.data || json;
+  
+  console.log(`[review-request-respond] Success. Document status: ${data.document?.status || "N/A"}`);
 
   return jsonResponse(data, {
     status: upstream.status,

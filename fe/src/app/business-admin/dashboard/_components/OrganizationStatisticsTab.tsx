@@ -156,6 +156,16 @@ export function OrganizationStatisticsTab({
       title: {
         text: "Number of Organizations",
       },
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
     },
     colors: ["#3C50E0"],
     title: {
@@ -201,6 +211,16 @@ export function OrganizationStatisticsTab({
     yaxis: {
       title: {
         text: "Number of Members",
+      },
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
       },
     },
     colors: ["#10B981"],
@@ -248,6 +268,18 @@ export function OrganizationStatisticsTab({
       title: {
         text: "Count",
       },
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      shared: true,
+      intersect: false,
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
     },
     legend: {
       position: "top",
@@ -259,10 +291,6 @@ export function OrganizationStatisticsTab({
         fontSize: "16px",
         fontWeight: 600,
       },
-    },
-    tooltip: {
-      shared: true,
-      intersect: false,
     },
   };
 
@@ -327,6 +355,16 @@ export function OrganizationStatisticsTab({
     yaxis: {
       title: {
         text: "Number of Organizations",
+      },
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
       },
     },
     colors: ["#3C50E0"],

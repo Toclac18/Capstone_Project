@@ -40,6 +40,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -59,11 +60,13 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
   private static final int RESPONSE_DEADLINE_DAYS = 1;
   private static final int REVIEW_DEADLINE_DAYS = 3;
+  private static final int PRESIGNED_URL_EXPIRATION_MINUTES = 60; // 1 hour
 
   @Override
   @Transactional
   public ReviewRequestResponse assignReviewer(UUID businessAdminId, UUID documentId, AssignReviewerRequest request) {
-    log.info("Business Admin {} assigning reviewer {} to document {}", businessAdminId, request.getReviewerId(), documentId);
+    log.info("Business Admin {} assigning reviewer {} to document {} - existingReviewRequestId: {}", 
+        businessAdminId, request.getReviewerId(), documentId, request.getExistingReviewRequestId());
 
     // Validate Business Admin
     User businessAdmin = userRepository.findById(businessAdminId)
@@ -95,7 +98,72 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
       throw new InvalidRequestException("User is not a reviewer");
     }
 
-    // Check if already assigned to this reviewer
+    // If changing reviewer, update the existing PENDING review request
+    if (request.getExistingReviewRequestId() != null) {
+      log.info("Changing reviewer for existing review request {} to reviewer {} for document {}", 
+          request.getExistingReviewRequestId(), request.getReviewerId(), documentId);
+      
+      ReviewRequest existingRequest = reviewRequestRepository.findById(request.getExistingReviewRequestId())
+          .orElseThrow(() -> new ResourceNotFoundException("Existing review request not found with ID: " + request.getExistingReviewRequestId()));
+      
+      log.info("Found existing review request: id={}, status={}, currentReviewer={}, document={}", 
+          existingRequest.getId(), existingRequest.getStatus(), existingRequest.getReviewer().getId(), existingRequest.getDocument().getId());
+      
+      // Verify the existing request belongs to this document
+      if (!existingRequest.getDocument().getId().equals(documentId)) {
+        throw new InvalidRequestException("Existing review request does not belong to this document");
+      }
+      
+      // Only allow change if status is PENDING (cannot change if already ACCEPTED, COMPLETED, etc.)
+      if (existingRequest.getStatus() != ReviewRequestStatus.PENDING) {
+        throw new InvalidRequestException("Cannot change reviewer. Existing review request status is " + existingRequest.getStatus() + ". Only PENDING requests can be changed.");
+      }
+      
+      // Check if new reviewer is different from current reviewer
+      if (existingRequest.getReviewer().getId().equals(request.getReviewerId())) {
+        throw new InvalidRequestException("The new reviewer is the same as the current reviewer");
+      }
+      
+      // Check if new reviewer is already assigned to this document (in another review request, excluding current one)
+      Optional<ReviewRequest> existingAssignment = reviewRequestRepository.findByDocument_IdAndReviewer_Id(documentId, request.getReviewerId());
+      if (existingAssignment.isPresent() && !existingAssignment.get().getId().equals(existingRequest.getId())) {
+        log.warn("Reviewer {} is already assigned to document {} in review request {}", 
+            request.getReviewerId(), documentId, existingAssignment.get().getId());
+        throw new InvalidRequestException("This reviewer has already been assigned to this document");
+      }
+      
+      // Update reviewer and assignedBy
+      UUID oldReviewerId = existingRequest.getReviewer().getId();
+      existingRequest.setReviewer(reviewer);
+      existingRequest.setAssignedBy(businessAdmin);
+      
+      // Update note if provided
+      if (request.getNote() != null) {
+        existingRequest.setNote(request.getNote());
+      }
+      
+      // Reset response deadline (1 day from now)
+      Instant now = Instant.now();
+      Instant responseDeadline = calculateDeadline(now, RESPONSE_DEADLINE_DAYS);
+      existingRequest.setResponseDeadline(responseDeadline);
+      
+      // Reset respondedAt if it was set
+      existingRequest.setRespondedAt(null);
+      
+      ReviewRequest updatedRequest = reviewRequestRepository.save(existingRequest);
+      
+      log.info("Successfully changed reviewer for review request {} from {} to {} for document {}", 
+          updatedRequest.getId(), oldReviewerId, request.getReviewerId(), documentId);
+      
+      // Load tags for the document
+      List<Tag> tags = documentTagLinkRepository.findByDocument_Id(updatedRequest.getDocument().getId())
+          .stream()
+          .map(DocumentTagLink::getTag)
+          .collect(Collectors.toList());
+      return reviewRequestMapper.toResponse(updatedRequest, tags);
+    }
+
+    // New assignment: Check if already assigned to this reviewer
     if (reviewRequestRepository.existsByDocument_IdAndReviewer_Id(documentId, request.getReviewerId())) {
       throw new InvalidRequestException("This reviewer has already been assigned to this document");
     }
@@ -104,7 +172,7 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
     Instant now = Instant.now();
     Instant responseDeadline = calculateDeadline(now, RESPONSE_DEADLINE_DAYS);
 
-    // Create ReviewRequest
+    // Create new ReviewRequest
     ReviewRequest reviewRequest = ReviewRequest.builder()
         .document(document)
         .reviewer(reviewer)
@@ -116,7 +184,9 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     reviewRequest = reviewRequestRepository.save(reviewRequest);
 
-    log.info("Successfully assigned reviewer {} to document {}", request.getReviewerId(), documentId);
+    // Document status remains AI_VERIFIED until reviewer accepts
+    // Will be updated to REVIEWING when reviewer accepts the request
+    log.info("Successfully assigned reviewer {} to document {}. Review request created with PENDING status", request.getReviewerId(), documentId);
 
     // Load tags for the document
     List<Tag> tags = documentTagLinkRepository.findByDocument_Id(reviewRequest.getDocument().getId())
@@ -220,15 +290,25 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
     Instant respondedAt = Instant.now();
     reviewRequest.setRespondedAt(respondedAt);
 
+    // Get document
+    Document document = reviewRequest.getDocument();
+
     if (request.getAccept()) {
       reviewRequest.setStatus(ReviewRequestStatus.ACCEPTED);
       // Calculate review deadline (3 days from acceptance)
       Instant reviewDeadline = calculateDeadline(respondedAt, REVIEW_DEADLINE_DAYS);
       reviewRequest.setReviewDeadline(reviewDeadline);
-      log.info("Reviewer {} accepted review request {}. Review deadline: {}", reviewerId, reviewRequestId, reviewDeadline);
+      
+      // Update document status to REVIEWING when reviewer accepts
+      document.setStatus(DocStatus.REVIEWING);
+      documentRepository.save(document);
+      
+      log.info("Reviewer {} accepted review request {}. Document status updated to REVIEWING. Review deadline: {}", reviewerId, reviewRequestId, reviewDeadline);
     } else {
       reviewRequest.setStatus(ReviewRequestStatus.REJECTED);
       reviewRequest.setRejectionReason(request.getRejectionReason());
+      // Document status remains AI_VERIFIED if reviewer rejects
+      // Business admin can assign another reviewer
       log.info("Reviewer {} rejected review request {}", reviewerId, reviewRequestId);
     }
 
@@ -387,18 +467,14 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     documentReview = documentReviewRepository.save(documentReview);
 
-    // Update document status based on decision
     if (request.getDecision() == ReviewDecision.APPROVED) {
       document.setStatus(DocStatus.ACTIVE);
-      log.info("Document {} status updated to ACTIVE", document.getId());
     } else if (request.getDecision() == ReviewDecision.REJECTED) {
       document.setStatus(DocStatus.REJECTED);
-      log.info("Document {} status updated to REJECTED", document.getId());
     }
 
     documentRepository.save(document);
 
-    // Update review request status to COMPLETED
     reviewRequest.setStatus(ReviewRequestStatus.COMPLETED);
     reviewRequestRepository.save(reviewRequest);
 
@@ -438,8 +514,68 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
           .stream()
           .map(DocumentTagLink::getTag)
           .collect(Collectors.toList());
-      return documentReviewMapper.toResponse(review, tags);
+      
+      DocumentReviewResponse response = documentReviewMapper.toResponse(review, tags);
+
+      // Generate presigned URL for report file
+      if (review.getReportFilePath() != null) {
+        try {
+          // reportFilePath is the filename returned from uploadFile (format: review_xxx_filename.docx)
+          // uploadFile returns only filename, not full path
+          String filename = review.getReportFilePath();
+          String reportFileUrl = fileStorageService.generatePresignedUrl(
+              com.capstone.be.config.constant.FileStorage.REVIEW_REPORT_FOLDER,
+              filename,
+              PRESIGNED_URL_EXPIRATION_MINUTES
+          );
+          response.setReportFileUrl(reportFileUrl);
+        } catch (Exception e) {
+          log.error("Failed to generate presigned URL for report file: {}", e.getMessage(), e);
+          // Continue without presigned URL
+        }
+      }
+
+      return response;
     });
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public DocumentReviewResponse getDocumentReviewByReviewRequestId(UUID reviewRequestId) {
+    log.info("Getting document review for review request {}", reviewRequestId);
+
+    // Get DocumentReview by review request ID
+    DocumentReview documentReview = documentReviewRepository.findByReviewRequest_Id(reviewRequestId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document review not found for review request ID: " + reviewRequestId));
+
+    // Load tags for the document
+    List<Tag> tags = documentTagLinkRepository.findByDocument_Id(documentReview.getDocument().getId())
+        .stream()
+        .map(DocumentTagLink::getTag)
+        .collect(Collectors.toList());
+
+    DocumentReviewResponse response = documentReviewMapper.toResponse(documentReview, tags);
+
+    // Generate presigned URL for report file
+    if (documentReview.getReportFilePath() != null) {
+      try {
+        // reportFilePath is the filename returned from uploadFile (format: review_xxx_filename.docx)
+        // uploadFile returns only filename, not full path
+        String filename = documentReview.getReportFilePath();
+        String reportFileUrl = fileStorageService.generatePresignedUrl(
+            com.capstone.be.config.constant.FileStorage.REVIEW_REPORT_FOLDER,
+            filename,
+            PRESIGNED_URL_EXPIRATION_MINUTES
+        );
+        response.setReportFileUrl(reportFileUrl);
+        log.info("Generated presigned URL for report file: {} (filename: {})", reportFileUrl, filename);
+      } catch (Exception e) {
+        log.error("Failed to generate presigned URL for report file: {}", e.getMessage(), e);
+        // Continue without presigned URL
+      }
+    }
+
+    return response;
   }
 
   /**

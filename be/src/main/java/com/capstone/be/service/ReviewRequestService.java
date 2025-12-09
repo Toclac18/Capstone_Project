@@ -104,4 +104,12 @@ public interface ReviewRequestService {
    * @return Page of document review responses
    */
   Page<DocumentReviewResponse> getReviewerHistory(UUID reviewerId, ReviewHistoryFilterRequest filter, Pageable pageable);
+
+  /**
+   * Business Admin - Get document review by review request ID
+   *
+   * @param reviewRequestId Review request ID
+   * @return Document review response
+   */
+  DocumentReviewResponse getDocumentReviewByReviewRequestId(UUID reviewRequestId);
 }

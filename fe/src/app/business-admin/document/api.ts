@@ -16,21 +16,6 @@ export type {
   DocumentStatistics,
 };
 
-// BE response wrapper
-interface SuccessResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
-
-interface PagedResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
-}
-
 /**
  * Get list documents with query parameters
  * Uses GET /business-admin/documents (goes through Next.js API route)
@@ -130,11 +115,21 @@ export async function deactivateDocument(id: string): Promise<void> {
 }
 
 /**
- * Delete document (for admin - uses deactivate)
- * Uses PATCH /business-admin/documents/{id}/deactivate
- * Note: Admin cannot directly delete documents, so we deactivate them instead.
+ * Update document status
+ * Uses PATCH /business-admin/documents/{id}/status
+ */
+export async function updateDocumentStatus(
+  id: string,
+  status: string,
+): Promise<void> {
+  await apiClient.patch(`/business-admin/documents/${id}/status`, { status });
+}
+
+/**
+ * Delete document (sets status to DELETED)
+ * Uses PATCH /business-admin/documents/{id}/status
  */
 export async function deleteDocument(id: string): Promise<void> {
-  await deactivateDocument(id);
+  await updateDocumentStatus(id, "DELETED");
 }
 

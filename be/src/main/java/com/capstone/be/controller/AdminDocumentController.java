@@ -4,9 +4,11 @@ import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.DocVisibility;
 import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.dto.common.PagedResponse;
+import com.capstone.be.dto.request.admin.UpdateDocumentStatusRequest;
 import com.capstone.be.dto.response.document.AdminDocumentListResponse;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.service.DocumentService;
+import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -115,6 +118,23 @@ public class AdminDocumentController {
     ApiResponse<Void> response = ApiResponse.<Void>builder()
         .success(true)
         .message("Document deactivated successfully")
+        .build();
+
+    return ResponseEntity.ok(response);
+  }
+
+  @PatchMapping("/{documentId}/status")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  public ResponseEntity<ApiResponse<Void>> updateDocumentStatus(
+      @PathVariable(name = "documentId") UUID documentId,
+      @Valid @RequestBody UpdateDocumentStatusRequest request) {
+    log.info("Admin updating document {} status to {}", documentId, request.getStatus());
+
+    documentService.updateDocumentStatus(documentId, request.getStatus());
+
+    ApiResponse<Void> response = ApiResponse.<Void>builder()
+        .success(true)
+        .message("Document status updated successfully")
         .build();
 
     return ResponseEntity.ok(response);

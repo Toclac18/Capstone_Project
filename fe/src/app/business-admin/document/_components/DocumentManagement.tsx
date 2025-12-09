@@ -33,6 +33,7 @@ export function DocumentManagement() {
     search: "",
     sortBy: "createdAt",
     sortOrder: "desc",
+    deleted: false, // Exclude DELETED by default
   });
 
   // Fetch documents from API
@@ -43,8 +44,19 @@ export function DocumentManagement() {
     try {
       const updatedFilters = { ...queryParams, limit: itemsPerPage };
       const response: DocumentListResponse = await getDocuments(updatedFilters);
-      setDocuments(response.documents);
-      setTotalItems(response.total);
+      
+      // Filter out DELETED documents if deleted is false and status is not explicitly selected
+      let filteredDocuments = response.documents;
+      let adjustedTotal = response.total;
+      if (updatedFilters.deleted === false && !updatedFilters.status) {
+        filteredDocuments = response.documents.filter(doc => doc.status !== "DELETED");
+        // Adjust total count based on filtered results (approximate)
+        const deletedCount = response.documents.length - filteredDocuments.length;
+        adjustedTotal = Math.max(0, response.total - deletedCount);
+      }
+      
+      setDocuments(filteredDocuments);
+      setTotalItems(adjustedTotal);
       setCurrentPage(response.page);
       setFilters(updatedFilters);
     } catch (e: unknown) {
@@ -84,7 +96,7 @@ export function DocumentManagement() {
 
     try {
       await deleteDocument(String(docId));
-      showToast(toast.success("Document Deleted", "Document deleted successfully"));
+      showToast(toast.success("Document Deleted", "Document status changed to DELETED successfully"));
       await fetchDocuments(filters);
     } catch (e: unknown) {
       const errorMessage =
@@ -171,7 +183,7 @@ export function DocumentManagement() {
                       {doc.organization?.name || "N/A"}
                     </td>
                     <td className={styles["table-cell"]}>
-                      {doc.type?.name || doc.docTypeName || "N/A"}
+                      {doc.docTypeName || "N/A"}
                     </td>
                     <td className={styles["table-cell"]}>
                       <span
@@ -235,16 +247,18 @@ export function DocumentManagement() {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <DeleteConfirmation
-                          onDelete={handleDelete}
-                          itemId={doc.id}
-                          itemName={doc.title || "Document"}
-                          title="Delete Document"
-                          description={`Are you sure you want to delete "${doc.title || "this document"}"?`}
-                          size="sm"
-                          variant="text"
-                          className={styles["delete-btn-wrapper"]}
-                        />
+                        {doc.status !== "DELETED" && (
+                          <DeleteConfirmation
+                            onDelete={handleDelete}
+                            itemId={doc.id}
+                            itemName={doc.title || "Document"}
+                            title="Delete Document"
+                            description={`Are you sure you want to delete "${doc.title || "this document"}"?`}
+                            size="sm"
+                            variant="text"
+                            className={styles["delete-btn-wrapper"]}
+                          />
+                        )}
                       </div>
                     </td>
                   </tr>

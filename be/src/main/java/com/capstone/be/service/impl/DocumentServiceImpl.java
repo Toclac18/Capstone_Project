@@ -1047,6 +1047,21 @@ public class DocumentServiceImpl implements DocumentService {
 
     log.info("Successfully deactivated document {}", documentId);
   }
+
+  @Override
+  @Transactional
+  public void updateDocumentStatus(UUID documentId, DocStatus status) {
+    log.info("Admin updating document {} status to {}", documentId, status);
+
+    Document document = documentRepository.findById(documentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+
+    document.setStatus(status);
+    documentRepository.save(document);
+
+    log.info("Successfully updated document {} status to {}", documentId, status);
+  }
+
   private DocumentDetailResponse mapDocumentToDetailResponse(Document document, UUID userId) {
     DocumentDetailResponse response = documentMapper.toDetailResponse(document);
 

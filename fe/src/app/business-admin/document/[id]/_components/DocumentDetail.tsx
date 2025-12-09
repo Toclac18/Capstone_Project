@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Eye, FileText, X } from "lucide-react";
+import { ArrowLeft, Eye, FileText, X, UserPlus } from "lucide-react";
 import type { DocumentDetail } from "../../api";
 import { getDocument, deleteDocument } from "../../api";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
 import { useToast, toast } from "@/components/ui/toast";
+import { AssignReviewerModal } from "../../_components/AssignReviewerModal";
 import styles from "../styles.module.css";
 
 interface DocumentDetailProps {
@@ -20,6 +21,7 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [showAssignReviewerModal, setShowAssignReviewerModal] = useState(false);
 
   const fetchDocument = useCallback(async () => {
     setLoading(true);
@@ -37,6 +39,11 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
     }
   }, [documentId]);
 
+  const handleAssignReviewerSuccess = () => {
+    // Refresh document to get updated status
+    fetchDocument();
+  };
+
   useEffect(() => {
     fetchDocument();
   }, [fetchDocument]);
@@ -49,14 +56,14 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
 
     try {
       await deleteDocument(document.id);
-      showToast(toast.success("Document Deactivated", "Document has been deactivated successfully"));
+      showToast(toast.success("Document Deleted", "Document status changed to DELETED successfully"));
       setTimeout(() => {
         router.push("/business-admin/document");
       }, 1500);
     } catch (e: unknown) {
       const errorMessage =
-        e instanceof Error ? e.message : "Failed to deactivate document";
-      showToast(toast.error("Deactivation Failed", errorMessage));
+        e instanceof Error ? e.message : "Failed to delete document";
+      showToast(toast.error("Delete Failed", errorMessage));
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -317,7 +324,7 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
               <div className={styles["field-item"]}>
                 <label className={styles["label"]}>Type Name</label>
                 <p className={styles["field-value"]}>
-                  {document.docType?.name || document.type?.name || "N/A"}
+                  {document.docType?.name || "N/A"}
                 </p>
               </div>
             </div>
@@ -344,29 +351,6 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
                     </p>
                   </div>
                 )}
-              </div>
-            </div>
-          )}
-          {/* Specializations (backward compatibility - if array exists) */}
-          {document.specializations && document.specializations.length > 0 && (
-            <div className={styles["card"]}>
-              <h2 className={styles["section-header"]}>
-                Specializations
-              </h2>
-              <div className="space-y-2">
-                {document.specializations.map((spec) => (
-                  <div key={spec.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <p className="font-semibold">{spec.name || "N/A"}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Code: {spec.code ?? "N/A"}
-                    </p>
-                    {spec.domain && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Domain: {spec.domain.name || "N/A"}
-                      </p>
-                    )}
-                  </div>
-                ))}
               </div>
             </div>
           )}
@@ -402,13 +386,13 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
               <div className={styles["stat-card"]}>
                 <label className={styles["stat-label"]}>Comments</label>
                 <p className={styles["stat-value"]}>
-                  {document.commentCount ?? 0}
+                  {document.adminInfo?.commentCount ?? 0}
                 </p>
               </div>
               <div className={styles["stat-card"]}>
                 <label className={styles["stat-label"]}>Saves</label>
                 <p className={styles["stat-value"]}>
-                  {document.saveCount ?? 0}
+                  {document.adminInfo?.saveCount ?? 0}
                 </p>
               </div>
               <div className={styles["stat-card"]}>
@@ -426,14 +410,14 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
               <div className={styles["stat-card"]}>
                 <label className={styles["stat-label"]}>Reports</label>
                 <p className={styles["stat-value"]}>
-                  {document.reportCount ?? 0}
+                  {document.adminInfo?.reportCount ?? 0}
                 </p>
               </div>
-              {document.isPremium && document.purchaseCount !== undefined && (
+              {document.isPremium && document.adminInfo?.purchaseCount !== undefined && (
                 <div className={styles["stat-card"]}>
                   <label className={styles["stat-label"]}>Purchases</label>
                   <p className={styles["stat-value"]}>
-                    {document.purchaseCount ?? 0}
+                    {document.adminInfo.purchaseCount ?? 0}
                   </p>
                 </div>
               )}
@@ -483,6 +467,16 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
                   <Eye className="w-4 h-4" />
                   <span>View Document</span>
                 </button>
+                {document.isPremium && document.status === "AI_VERIFIED" && (
+                  <button
+                    onClick={() => setShowAssignReviewerModal(true)}
+                    className={`${styles["action-button"]} ${styles["action-button-primary"]}`}
+                    disabled={loading}
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Assign Reviewer</span>
+                  </button>
+                )}
                 {document.summarizations && (
                   <button
                     onClick={() => setShowSummaryModal(true)}
@@ -493,21 +487,36 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
                     <span>View Summary</span>
                   </button>
                 )}
-                <DeleteConfirmation
-                  onDelete={handleDelete}
-                  itemId={document.id}
-                  itemName={document.title || "Document"}
-                  title="Deactivate Document"
-                  description={`Are you sure you want to deactivate "${document.title || "this document"}"? This will make it inactive but not permanently delete it.`}
-                  size="lg"
-                  variant="outline"
-                  className="w-full"
-                />
+                {document.status !== "DELETED" && (
+                  <DeleteConfirmation
+                    onDelete={handleDelete}
+                    itemId={document.id}
+                    itemName={document.title || "Document"}
+                    title="Delete Document"
+                    description={`Are you sure you want to delete "${document.title || "this document"}"? This will change its status to DELETED.`}
+                    size="lg"
+                    variant="outline"
+                    className="w-full"
+                  />
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Assign Reviewer Modal */}
+      {showAssignReviewerModal && document && (
+        <AssignReviewerModal
+          open={showAssignReviewerModal}
+          documentId={document.id}
+          documentTitle={document.title || "Document"}
+          documentDomain={document.specialization?.domain?.name}
+          documentSpecialization={document.specialization?.name}
+          onClose={() => setShowAssignReviewerModal(false)}
+          onSuccess={handleAssignReviewerSuccess}
+        />
+      )}
 
       {/* Summary Modal */}
       {showSummaryModal && document.summarizations && (

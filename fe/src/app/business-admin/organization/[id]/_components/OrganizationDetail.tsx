@@ -407,7 +407,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                       <div className="flex flex-wrap gap-2">
                         {getAvailableActions(organization.status).map((actionItem, index) => {
                           const Icon = actionItem.icon;
-                          const variantClasses = {
+                          const variantClasses: Record<string, string> = {
                             success: "bg-green-600 hover:bg-green-700 text-white border-green-600",
                             danger: "bg-red-600 hover:bg-red-700 text-white border-red-600",
                             warning: "bg-orange-600 hover:bg-orange-700 text-white border-orange-600",
@@ -420,7 +420,7 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
                               className={`
                                 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg
                                 border transition-colors disabled:opacity-50 disabled:cursor-not-allowed
-                                ${variantClasses[actionItem.variant]}
+                                ${variantClasses[actionItem.variant] || ""}
                               `}
                             >
                               <Icon className="w-4 h-4" />

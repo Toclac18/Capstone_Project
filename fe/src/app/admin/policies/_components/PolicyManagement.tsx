@@ -20,7 +20,7 @@ export function PolicyManagement() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewPolicy, setViewPolicy] = useState<Policy | null>(null);
-  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [_isViewerOpen, setIsViewerOpen] = useState(false);
   const [editPolicy, setEditPolicy] = useState<Policy | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);

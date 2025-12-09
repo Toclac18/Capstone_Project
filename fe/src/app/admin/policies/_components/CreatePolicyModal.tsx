@@ -195,7 +195,7 @@ export function CreatePolicyModal({
               </span>
             )}
             <p className={styles.helperText}>
-              Version identifier (e.g., "1.0", "2.0", "v1", "v2"). This cannot be changed later.
+              Version identifier (e.g., &quot;1.0&quot;, &quot;2.0&quot;, &quot;v1&quot;, &quot;v2&quot;). This cannot be changed later.
             </p>
           </div>
 

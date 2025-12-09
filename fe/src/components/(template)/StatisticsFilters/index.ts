@@ -1,2 +1,0 @@
-export { StatisticsFilters } from "./StatisticsFilters";
-

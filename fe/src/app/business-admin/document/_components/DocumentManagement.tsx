@@ -33,6 +33,7 @@ export function DocumentManagement() {
     search: "",
     sortBy: "createdAt",
     sortOrder: "desc",
+    deleted: false, // Exclude DELETED by default
   });
 
   // Fetch documents from API
@@ -43,8 +44,19 @@ export function DocumentManagement() {
     try {
       const updatedFilters = { ...queryParams, limit: itemsPerPage };
       const response: DocumentListResponse = await getDocuments(updatedFilters);
-      setDocuments(response.documents);
-      setTotalItems(response.total);
+      
+      // Filter out DELETED documents if deleted is false and status is not explicitly selected
+      let filteredDocuments = response.documents;
+      let adjustedTotal = response.total;
+      if (updatedFilters.deleted === false && !updatedFilters.status) {
+        filteredDocuments = response.documents.filter(doc => doc.status !== "DELETED");
+        // Adjust total count based on filtered results (approximate)
+        const deletedCount = response.documents.length - filteredDocuments.length;
+        adjustedTotal = Math.max(0, response.total - deletedCount);
+      }
+      
+      setDocuments(filteredDocuments);
+      setTotalItems(adjustedTotal);
       setCurrentPage(response.page);
       setFilters(updatedFilters);
     } catch (e: unknown) {
@@ -84,7 +96,7 @@ export function DocumentManagement() {
 
     try {
       await deleteDocument(String(docId));
-      showToast(toast.success("Document Deleted", "Document deleted successfully"));
+      showToast(toast.success("Document Deleted", "Document status changed to DELETED successfully"));
       await fetchDocuments(filters);
     } catch (e: unknown) {
       const errorMessage =
@@ -115,13 +127,15 @@ export function DocumentManagement() {
       )}
 
       {/* Filters */}
-      <DocumentFilters
-        onFiltersChange={handleFiltersChange}
-        loading={loading}
-      />
+      <div className="mb-6">
+        <DocumentFilters
+          onFiltersChange={handleFiltersChange}
+          loading={loading}
+        />
+      </div>
 
       {/* Documents Table */}
-      <div className={styles["table-container"]}>
+      <div className={`${styles["table-container"]} mt-6`}>
         <div className="overflow-x-auto">
           <table className={styles["table"]}>
             <thead className={styles["table-header"]}>
@@ -130,6 +144,7 @@ export function DocumentManagement() {
                 <th className={styles["table-header-cell"]}>Uploader</th>
                 <th className={styles["table-header-cell"]}>Organization</th>
                 <th className={styles["table-header-cell"]}>Type</th>
+                <th className={styles["table-header-cell"]}>Status</th>
                 <th className={styles["table-header-cell"]}>Public</th>
                 <th className={styles["table-header-cell"]}>Premium</th>
                 <th className={styles["table-header-cell"]}>Views</th>
@@ -140,7 +155,7 @@ export function DocumentManagement() {
             <tbody className={styles["table-body"]}>
               {loading ? (
                 <tr>
-                  <td colSpan={9} className={styles["loading-container"]}>
+                  <td colSpan={10} className={styles["loading-container"]}>
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                       <span className="ml-2">Loading documents...</span>
@@ -149,7 +164,7 @@ export function DocumentManagement() {
                 </tr>
               ) : documents.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className={styles["empty-container"]}>
+                  <td colSpan={10} className={styles["empty-container"]}>
                     No documents found.
                   </td>
                 </tr>
@@ -168,17 +183,40 @@ export function DocumentManagement() {
                       {doc.organization?.name || "N/A"}
                     </td>
                     <td className={styles["table-cell"]}>
-                      {doc.type?.name || "N/A"}
+                      {doc.docTypeName || "N/A"}
                     </td>
                     <td className={styles["table-cell"]}>
                       <span
                         className={`${styles["status-badge"]} ${
-                          doc.isPublic
+                          doc.status === "ACTIVE"
+                            ? styles["status-active"]
+                            : doc.status === "REJECTED" || doc.status === "DELETED"
+                            ? styles["status-inactive"]
+                            : doc.status === "REVIEWING" || doc.status === "AI_VERIFYING"
+                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                            : doc.status === "AI_VERIFIED"
+                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                            : doc.status === "AI_REJECTED"
+                            ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                            : doc.status === "INACTIVE"
+                            ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                            : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                        }`}
+                      >
+                        {doc.status 
+                          ? doc.status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+                          : "N/A"}
+                      </span>
+                    </td>
+                    <td className={styles["table-cell"]}>
+                      <span
+                        className={`${styles["status-badge"]} ${
+                          doc.visibility === "PUBLIC"
                             ? styles["status-active"]
                             : styles["status-inactive"]
                         }`}
                       >
-                        {doc.isPublic ? "Public" : "Private"}
+                        {doc.visibility === "PUBLIC" ? "Public" : "Private"}
                       </span>
                     </td>
                     <td className={styles["table-cell"]}>
@@ -209,16 +247,18 @@ export function DocumentManagement() {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <DeleteConfirmation
-                          onDelete={handleDelete}
-                          itemId={doc.id}
-                          itemName={doc.title || "Document"}
-                          title="Delete Document"
-                          description={`Are you sure you want to delete "${doc.title || "this document"}"?`}
-                          size="sm"
-                          variant="text"
-                          className={styles["delete-btn-wrapper"]}
-                        />
+                        {doc.status !== "DELETED" && (
+                          <DeleteConfirmation
+                            onDelete={handleDelete}
+                            itemId={doc.id}
+                            itemName={doc.title || "Document"}
+                            title="Delete Document"
+                            description={`Are you sure you want to delete "${doc.title || "this document"}"?`}
+                            size="sm"
+                            variant="text"
+                            className={styles["delete-btn-wrapper"]}
+                          />
+                        )}
                       </div>
                     </td>
                   </tr>

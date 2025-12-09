@@ -13,11 +13,15 @@ const seedDocuments: DocumentListItem[] = [
   {
     id: "doc-1",
     title: "Introduction to Machine Learning",
+    status: "ACTIVE",
+    visibility: "PUBLIC",
     isPublic: true,
     isPremium: false,
     viewCount: 1250,
-    deleted: false,
+    upvoteCount: 89,
+    voteScore: 84,
     createdAt: new Date("2024-01-15").toISOString(),
+    updatedAt: new Date("2024-01-15").toISOString(),
     uploader: {
       id: "user-1",
       fullName: "John Doe",
@@ -25,19 +29,22 @@ const seedDocuments: DocumentListItem[] = [
       avatarUrl: undefined,
     },
     organization: null,
-    type: {
-      id: "type-1",
-      name: "Research Paper",
-    },
+    docTypeName: "Research Paper",
+    specializationName: "Machine Learning",
   },
   {
     id: "doc-2",
     title: "Advanced Algorithms in Python",
+    status: "ACTIVE",
+    visibility: "PUBLIC",
     isPublic: true,
     isPremium: true,
+    price: 100,
     viewCount: 890,
-    deleted: false,
+    upvoteCount: 120,
+    voteScore: 112,
     createdAt: new Date("2024-02-20").toISOString(),
+    updatedAt: new Date("2024-02-20").toISOString(),
     uploader: {
       id: "user-2",
       fullName: "Jane Smith",
@@ -49,19 +56,21 @@ const seedDocuments: DocumentListItem[] = [
       name: "Tech Innovation Hub",
       logo: undefined,
     },
-    type: {
-      id: "type-2",
-      name: "Tutorial",
-    },
+    docTypeName: "Tutorial",
+    specializationName: "Software Engineering",
   },
   {
     id: "doc-3",
     title: "Database Design Patterns",
+    status: "ACTIVE",
+    visibility: "PRIVATE",
     isPublic: false,
     isPremium: false,
     viewCount: 450,
-    deleted: false,
+    upvoteCount: 45,
+    voteScore: 40,
     createdAt: new Date("2024-03-10").toISOString(),
+    updatedAt: new Date("2024-03-10").toISOString(),
     uploader: {
       id: "user-1",
       fullName: "John Doe",
@@ -69,19 +78,22 @@ const seedDocuments: DocumentListItem[] = [
       avatarUrl: undefined,
     },
     organization: null,
-    type: {
-      id: "type-3",
-      name: "Reference Guide",
-    },
+    docTypeName: "Reference Guide",
+    specializationName: "Database Systems",
   },
   {
     id: "doc-4",
     title: "React Best Practices 2025",
+    status: "ACTIVE",
+    visibility: "PUBLIC",
     isPublic: true,
     isPremium: true,
+    price: 150,
     viewCount: 2100,
-    deleted: false,
+    upvoteCount: 200,
+    voteScore: 190,
     createdAt: new Date("2024-04-05").toISOString(),
+    updatedAt: new Date("2024-04-05").toISOString(),
     uploader: {
       id: "user-2",
       fullName: "Jane Smith",
@@ -93,19 +105,21 @@ const seedDocuments: DocumentListItem[] = [
       name: "Tech Innovation Hub",
       logo: undefined,
     },
-    type: {
-      id: "type-2",
-      name: "Tutorial",
-    },
+    docTypeName: "Tutorial",
+    specializationName: "Web Development",
   },
   {
     id: "doc-5",
     title: "Deleted Document Example",
+    status: "DELETED",
+    visibility: "PUBLIC",
     isPublic: true,
     isPremium: false,
     viewCount: 100,
-    deleted: true,
+    upvoteCount: 5,
+    voteScore: 3,
     createdAt: new Date("2024-01-01").toISOString(),
+    updatedAt: new Date("2024-01-01").toISOString(),
     uploader: {
       id: "user-1",
       fullName: "John Doe",
@@ -113,10 +127,8 @@ const seedDocuments: DocumentListItem[] = [
       avatarUrl: undefined,
     },
     organization: null,
-    type: {
-      id: "type-1",
-      name: "Research Paper",
-    },
+    docTypeName: "Research Paper",
+    specializationName: "General",
   },
 ];
 
@@ -126,12 +138,16 @@ const seedDocumentDetails: Record<string, DocumentDetail> = {
     id: "doc-1",
     title: "Introduction to Machine Learning",
     description: "Comprehensive guide to ML fundamentals",
-    file_name: "ml-intro.pdf",
-    isPublic: true,
+    visibility: "PUBLIC",
+    status: "ACTIVE",
     isPremium: false,
     price: null,
+    thumbnailUrl: null,
+    pageCount: 50,
     viewCount: 1250,
-    deleted: false,
+    upvoteCount: 89,
+    downvoteCount: 5,
+    voteScore: 84,
     createdAt: new Date("2024-01-15").toISOString(),
     updatedAt: new Date("2024-01-15").toISOString(),
     uploader: {
@@ -143,44 +159,44 @@ const seedDocumentDetails: Record<string, DocumentDetail> = {
       status: "ACTIVE",
     },
     organization: null,
-    type: {
+    docType: {
       id: "type-1",
       name: "Research Paper",
+      description: null,
     },
-    specializations: [
-      {
-        id: "spec-1",
-        code: 1,
-        name: "Machine Learning",
-        domain: {
-          id: "domain-1",
-          code: 1,
-          name: "Computer Science",
-        },
+    specialization: {
+      id: "spec-1",
+      name: "Machine Learning",
+      domain: {
+        id: "domain-1",
+        name: "Computer Science",
       },
-    ],
+    },
     tags: [
       { id: "tag-1", name: "Machine Learning" },
       { id: "tag-2", name: "AI" },
     ],
-    commentCount: 15,
-    saveCount: 42,
-    upvoteCount: 89,
-    downvoteCount: 5,
-    reportCount: 0,
-    purchaseCount: null,
-    reviewer: null,
+    adminInfo: {
+      commentCount: 15,
+      saveCount: 42,
+      reportCount: 0,
+      purchaseCount: null,
+    },
   },
   "doc-2": {
     id: "doc-2",
     title: "Advanced Algorithms in Python",
     description: "Deep dive into algorithm optimization",
-    file_name: "algorithms-python.pdf",
-    isPublic: true,
+    visibility: "PUBLIC",
+    status: "ACTIVE",
     isPremium: true,
     price: 100,
+    thumbnailUrl: null,
+    pageCount: 75,
     viewCount: 890,
-    deleted: false,
+    upvoteCount: 120,
+    downvoteCount: 8,
+    voteScore: 112,
     createdAt: new Date("2024-02-20").toISOString(),
     updatedAt: new Date("2024-02-20").toISOString(),
     uploader: {
@@ -199,37 +215,28 @@ const seedDocumentDetails: Record<string, DocumentDetail> = {
       email: "contact@techhub.org",
       status: "ACTIVE",
     },
-    type: {
+    docType: {
       id: "type-2",
       name: "Tutorial",
+      description: null,
     },
-    specializations: [
-      {
-        id: "spec-4",
-        code: 4,
-        name: "Software Engineering",
-        domain: {
-          id: "domain-1",
-          code: 1,
-          name: "Computer Science",
-        },
+    specialization: {
+      id: "spec-4",
+      name: "Software Engineering",
+      domain: {
+        id: "domain-1",
+        name: "Computer Science",
       },
-    ],
+    },
     tags: [
       { id: "tag-3", name: "Algorithms" },
       { id: "tag-4", name: "Python" },
     ],
-    commentCount: 28,
-    saveCount: 67,
-    upvoteCount: 120,
-    downvoteCount: 8,
-    reportCount: 1,
-    purchaseCount: 45,
-    reviewer: {
-      id: "user-3",
-      fullName: "Dr. Alice Johnson",
-      username: "alice.johnson",
-      email: "reviewer1@example.com",
+    adminInfo: {
+      commentCount: 28,
+      saveCount: 67,
+      reportCount: 1,
+      purchaseCount: 45,
     },
   },
 };
@@ -276,10 +283,8 @@ export function getDocuments(params?: DocumentQueryParams): DocumentListResponse
     );
   }
 
-  // Filter by typeId
-  if (params?.typeId) {
-    filtered = filtered.filter((d) => d.type.id === params.typeId);
-  }
+  // Filter by typeId (not supported in mock, would need to check docTypeName)
+  // Note: typeId filter is not fully supported in mock data
 
   // Filter by isPublic
   if (params?.isPublic !== undefined) {
@@ -291,12 +296,15 @@ export function getDocuments(params?: DocumentQueryParams): DocumentListResponse
     filtered = filtered.filter((d) => d.isPremium === params.isPremium);
   }
 
-  // Filter by deleted
-  if (params?.deleted !== undefined) {
-    filtered = filtered.filter((d) => d.deleted === params.deleted);
-  } else {
+  // Filter by status (including DELETED)
+  if (params?.status) {
+    filtered = filtered.filter((d) => d.status === params.status);
+  } else if (params?.deleted === false) {
+    // Exclude DELETED when deleted: false
+    filtered = filtered.filter((d) => d.status !== "DELETED");
+  } else if (params?.deleted === undefined) {
     // Default: exclude deleted
-    filtered = filtered.filter((d) => !d.deleted);
+    filtered = filtered.filter((d) => d.status !== "DELETED");
   }
 
   // Filter by date range
@@ -350,13 +358,13 @@ export function deleteDocument(id: string): boolean {
 
   _documents[index] = {
     ..._documents[index],
-    deleted: true,
+    status: "DELETED",
   };
 
   if (_documentDetails[id]) {
     _documentDetails[id] = {
       ..._documentDetails[id],
-      deleted: true,
+      status: "DELETED",
     };
   }
 

@@ -130,7 +130,21 @@ public interface DocumentMapper {
   @Mapping(source = "uploader.id", target = "uploader.id")
   @Mapping(source = "uploader.fullName", target = "uploader.fullName")
   @Mapping(source = "uploader.email", target = "uploader.email")
-  @Mapping(source = "organization.id", target = "organization.id")
-  @Mapping(source = "organization.name", target = "organization.name")
+  @Mapping(source = "organization", target = "organization", qualifiedByName = "mapOrganization")
   AdminDocumentListResponse toAdminListResponse(Document document);
+  
+  /**
+   * Map organization to AdminDocumentListResponse.OrganizationInfo (null-safe)
+   */
+  @Named("mapOrganization")
+  default AdminDocumentListResponse.OrganizationInfo mapOrganization(
+      com.capstone.be.domain.entity.OrganizationProfile org) {
+    if (org == null) {
+      return null;
+    }
+    return AdminDocumentListResponse.OrganizationInfo.builder()
+        .id(org.getId())
+        .name(org.getName())
+        .build();
+  }
 }

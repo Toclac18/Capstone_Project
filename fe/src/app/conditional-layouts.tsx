@@ -23,11 +23,11 @@ export default function ConditionalLayout({ children }: PropsWithChildren) {
 
   return (
     <PolicyAcceptanceGuard>
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen overflow-x-hidden">
         <Sidebar />
 
         <div
-          className={`flex-1 bg-gray-2 transition-all duration-200 dark:bg-[#020d1a] ${
+          className={`flex-1 min-w-0 bg-gray-2 transition-all duration-200 dark:bg-[#020d1a] ${
             !isMobile && !isOpen ? "ml-0" : ""
           }`}
         >

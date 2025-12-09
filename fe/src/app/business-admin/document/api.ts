@@ -5,6 +5,7 @@ import type {
   DocumentDetail,
   DocumentListResponse,
   DocumentQueryParams,
+  DocumentStatistics,
 } from "@/types/document-management";
 
 export type {
@@ -12,59 +13,123 @@ export type {
   DocumentDetail,
   DocumentListResponse,
   DocumentQueryParams,
+  DocumentStatistics,
 };
-
-// BE response wrapper
-interface SuccessResponse<T> {
-  data: T;
-  meta?: any;
-}
 
 /**
  * Get list documents with query parameters
+ * Uses GET /business-admin/documents (goes through Next.js API route)
  */
 export async function getDocuments(
   params?: DocumentQueryParams,
 ): Promise<DocumentListResponse> {
-  const res = await apiClient.post<SuccessResponse<DocumentListResponse>>(
-    "/documents",
-    params || {},
-  );
-  // Handle SuccessResponse wrapper
-  if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-    return (res.data as SuccessResponse<DocumentListResponse>).data;
+  const queryParams = new URLSearchParams();
+  
+  if (params?.page !== undefined) {
+    queryParams.append("page", String(params.page - 1)); // Backend uses 0-based
   }
-  return res.data as DocumentListResponse;
+  if (params?.limit !== undefined) {
+    queryParams.append("size", String(params.limit));
+  }
+  if (params?.search) {
+    queryParams.append("title", params.search);
+  }
+  if (params?.organizationId) {
+    queryParams.append("organizationId", params.organizationId);
+  }
+  if (params?.typeId) {
+    queryParams.append("docTypeId", params.typeId);
+  }
+  if (params?.isPremium !== undefined) {
+    queryParams.append("isPremium", String(params.isPremium));
+  }
+  if (params?.isPublic !== undefined) {
+    queryParams.append("visibility", params.isPublic ? "PUBLIC" : "PRIVATE");
+  }
+  if (params?.status) {
+    queryParams.append("status", params.status);
+  }
+  if (params?.dateFrom) {
+    // Convert YYYY-MM-DD to ISO date-time (start of day)
+    const dateFrom = new Date(params.dateFrom);
+    dateFrom.setHours(0, 0, 0, 0);
+    queryParams.append("dateFrom", dateFrom.toISOString());
+  }
+  if (params?.dateTo) {
+    // Convert YYYY-MM-DD to ISO date-time (end of day)
+    const dateTo = new Date(params.dateTo);
+    dateTo.setHours(23, 59, 59, 999);
+    queryParams.append("dateTo", dateTo.toISOString());
+  }
+  // Sort parameters - Spring Data format: sort=fieldName,direction
+  if (params?.sortBy) {
+    const sortDirection = params.sortOrder || "desc";
+    queryParams.append("sort", `${params.sortBy},${sortDirection}`);
+  }
+  
+  const res = await apiClient.get<DocumentListResponse>(
+    `/business-admin/documents?${queryParams.toString()}`,
+  );
+  
+  return res.data;
 }
 
 /**
  * Get document detail by ID
+ * Uses GET /business-admin/documents/{id} (goes through Next.js API route)
  */
 export async function getDocument(
   id: string,
 ): Promise<DocumentDetail> {
-  const res = await apiClient.get<SuccessResponse<DocumentDetail>>(`/documents/${id}`);
-  // Handle SuccessResponse wrapper
-  if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-    return (res.data as SuccessResponse<DocumentDetail>).data;
-  }
-  return res.data as DocumentDetail;
+  const res = await apiClient.get<DocumentDetail>(
+    `/business-admin/documents/${id}`,
+  );
+  return res.data;
 }
 
 /**
- * Delete document
+ * Get document statistics
+ * Uses GET /business-admin/documents/statistics (goes through Next.js API route)
  */
-export async function deleteDocument(
-  id: string,
-): Promise<{ message: string }> {
-  const res = await apiClient.delete<SuccessResponse<{ message: string }>>(
-    `/documents/${id}`,
+export async function getDocumentStatistics(): Promise<DocumentStatistics> {
+  const res = await apiClient.get<DocumentStatistics>(
+    "/business-admin/documents/statistics",
   );
-  // Handle SuccessResponse wrapper - delete might return null data
-  if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-    const data = (res.data as SuccessResponse<{ message: string } | null>).data;
-    return data || { message: "Document deleted successfully" };
-  }
-  return res.data as { message: string } || { message: "Document deleted successfully" };
+  return res.data;
+}
+
+/**
+ * Activate document
+ * Uses PATCH /business-admin/documents/{id}/activate (goes through Next.js API route)
+ */
+export async function activateDocument(id: string): Promise<void> {
+  await apiClient.patch(`/business-admin/documents/${id}/activate`);
+}
+
+/**
+ * Deactivate document
+ * Uses PATCH /business-admin/documents/{id}/deactivate (goes through Next.js API route)
+ */
+export async function deactivateDocument(id: string): Promise<void> {
+  await apiClient.patch(`/business-admin/documents/${id}/deactivate`);
+}
+
+/**
+ * Update document status
+ * Uses PATCH /business-admin/documents/{id}/status
+ */
+export async function updateDocumentStatus(
+  id: string,
+  status: string,
+): Promise<void> {
+  await apiClient.patch(`/business-admin/documents/${id}/status`, { status });
+}
+
+/**
+ * Delete document (sets status to DELETED)
+ * Uses PATCH /business-admin/documents/{id}/status
+ */
+export async function deleteDocument(id: string): Promise<void> {
+  await updateDocumentStatus(id, "DELETED");
 }
 

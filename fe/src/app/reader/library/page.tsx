@@ -36,7 +36,7 @@ import {
 type LoadState = "loading" | "success" | "empty" | "error";
 
 const ITEMS_PER_PAGE = 12;
-const THUMBNAIL_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/avatars/";
+const THUMBNAIL_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/thumb/";
 const DEFAULT_THUMBNAIL = "/images/document.jpg";
 
 export default function LibraryPage() {

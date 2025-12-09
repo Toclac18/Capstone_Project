@@ -45,10 +45,12 @@ public interface DomainService {
    * Get all domains (paginated) For Business Admin
    *
    * @param name     Filter by name (optional)
+   * @param dateFrom Filter by creation date from (optional)
+   * @param dateTo   Filter by creation date to (optional)
    * @param pageable Pagination parameters
    * @return Page of DomainDetailResponse
    */
-  Page<DomainDetailResponse> getAllDomainsForAdmin(String name, Pageable pageable);
+  Page<DomainDetailResponse> getAllDomainsForAdmin(String name, java.time.Instant dateFrom, java.time.Instant dateTo, Pageable pageable);
 
   /**
    * Get domain by ID For Business Admin

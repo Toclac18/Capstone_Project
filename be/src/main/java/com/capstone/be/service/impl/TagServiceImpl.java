@@ -63,11 +63,11 @@ public class TagServiceImpl implements TagService {
 
   @Override
   @Transactional(readOnly = true)
-  public Page<TagResponse> getAllTagsForAdmin(TagStatus status, String name, Pageable pageable) {
-    log.info("Admin fetching tags - status: {}, name: {}, page: {}, size: {}",
-        status, name, pageable.getPageNumber(), pageable.getPageSize());
+  public Page<TagResponse> getAllTagsForAdmin(TagStatus status, String name, java.time.Instant dateFrom, java.time.Instant dateTo, Pageable pageable) {
+    log.info("Admin fetching tags - status: {}, name: {}, dateFrom: {}, dateTo: {}, page: {}, size: {}",
+        status, name, dateFrom, dateTo, pageable.getPageNumber(), pageable.getPageSize());
 
-    Specification<Tag> spec = TagSpecification.withFilters(status, name);
+    Specification<Tag> spec = TagSpecification.withFilters(status, name, dateFrom, dateTo);
     Page<Tag> tagPage = tagRepository.findAll(spec, pageable);
 
     log.info("Retrieved {} tags for admin", tagPage.getTotalElements());

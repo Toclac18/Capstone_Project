@@ -43,10 +43,12 @@ public interface TagService {
    *
    * @param status Tag status filter (optional)
    * @param name   Tag name filter (optional)
+   * @param dateFrom Filter by creation date from (optional)
+   * @param dateTo   Filter by creation date to (optional)
    * @param pageable Pagination parameters
    * @return Page of TagResponse
    */
-  Page<TagResponse> getAllTagsForAdmin(TagStatus status, String name, Pageable pageable);
+  Page<TagResponse> getAllTagsForAdmin(TagStatus status, String name, java.time.Instant dateFrom, java.time.Instant dateTo, Pageable pageable);
 
   /**
    * Get tag by ID

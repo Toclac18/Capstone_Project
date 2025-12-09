@@ -15,9 +15,12 @@ export default function ConditionalLayout({ children }: PropsWithChildren) {
 
   if (isAuthRoute) {
     return (
-      <main className="isolate mx-auto w-full max-w-screen-2xl overflow-hidden p-4 md:p-6 2xl:p-10">
-        {children}
-      </main>
+      <div className="flex min-h-screen flex-col bg-gray-2 dark:bg-[#020d1a]">
+        <main className="flex-1 isolate mx-auto w-full max-w-screen-2xl overflow-hidden p-4 md:p-6 2xl:p-10">
+          {children}
+        </main>
+        <Footer />
+      </div>
     );
   }
 
@@ -28,11 +31,11 @@ export default function ConditionalLayout({ children }: PropsWithChildren) {
       <div
         className={`flex-1 min-w-0 bg-gray-2 transition-all duration-200 dark:bg-[#020d1a] ${
           !isMobile && isOpen ? "ml-[290px]" : ""
-        }`}
+        } flex min-h-screen flex-col`}
       >
         <Header />
 
-        <main className="mx-auto w-full max-w-screen-2xl overflow-hidden p-4 md:p-6 2xl:p-10">
+        <main className="flex-1 mx-auto w-full max-w-screen-2xl overflow-hidden p-4 md:p-6 2xl:p-10">
           {children}
         </main>
         <Footer />

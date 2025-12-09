@@ -17,7 +17,10 @@ import tempfile
 import os
 import time
 import asyncio
+import gc
 from pathlib import Path
+
+# Note: GPU cache clearing is handled in summary/worker.py
 
 from src.services.document_service import DocumentService
 from src.services.text_moderation_service import TextModerationService
@@ -141,6 +144,9 @@ async def process_document(
     text_mod_ms = 0.0
     summary_ms = 0.0
     temp_file_path: str | None = None
+    images = None
+    full_text = None
+    chunks = None
 
     try:
         logger.info(f"Processing document: {file.filename}")
@@ -156,6 +162,8 @@ async def process_document(
             content = await file.read()
             temp.write(content)
             temp_file_path = temp.name
+        # Clear file content từ memory ngay sau khi write
+        del content
 
         doc_service = get_doc_service()
         text_service = get_text_service()
@@ -176,6 +184,7 @@ async def process_document(
             t1 = time.time()
             img_results = image_service.predict_batch(images)
             img_mod_ms = (time.time() - t1) * 1000.0
+            
             for idx, res in enumerate(img_results):
                 if res["is_toxic"] and res["confidence"] >= IMAGE_THRESHOLD:
                     violations.append(
@@ -188,6 +197,10 @@ async def process_document(
                     )
                     # stop at first violation
                     break
+            # Clear images ngay sau khi moderation xong (tiết kiệm RAM)
+            del images
+            images = None
+            gc.collect()
 
         # ----- Text moderation -----
         if not violations and full_text.strip():
@@ -195,6 +208,7 @@ async def process_document(
             t2 = time.time()
             txt_results = text_service.predict_batch(chunks)
             text_mod_ms = (time.time() - t2) * 1000.0
+            
             for idx, res in enumerate(txt_results):
                 if res["is_toxic"] and res["confidence"] >= TEXT_THRESHOLD:
                     snippet = chunks[idx][:200]
@@ -208,8 +222,16 @@ async def process_document(
                         }
                     )
                     break
+            # Clear chunks sau khi moderation xong
+            del chunks
+            chunks = None
+            gc.collect()
 
         if violations:
+            # Clear full_text nếu có violations (không cần summary)
+            if full_text:
+                del full_text
+                full_text = None
             logger.info(
                 f"Document blocked. Violations: {len(violations)}. "
                 f"Total time: {time.time() - start_time:.2f}s"
@@ -231,9 +253,23 @@ async def process_document(
         summary_service = get_summary_service()
         t3 = time.time()
         # Speed mode mặc định = True để tối ưu tốc độ
-        summary_result = await summary_service.summarize_triple(
-            text=full_text, speed=True
-        )
+        try:
+            summary_result = await summary_service.summarize_triple(
+                text=full_text, speed=True
+            )
+        except Exception as e:
+            # Log OOM error với message rõ ràng
+            if "out of memory" in str(e).lower() or "CUDA" in str(e):
+                logger.error(
+                    f"GPU out of memory during summary. "
+                    f"Consider reducing MAX_GPU_CONCURRENCY or using smaller model."
+                )
+            raise
+        finally:
+            # Clear full_text sau khi summary xong
+            if full_text:
+                del full_text
+                full_text = None
         summary_ms = (time.time() - t3) * 1000.0
 
         logger.info(
@@ -259,10 +295,19 @@ async def process_document(
             status_code=500, detail=f"Document processing failed: {str(e)}"
         )
     finally:
+        # Cleanup tất cả
+        if 'images' in locals() and images:
+            del images
+        if 'full_text' in locals() and full_text:
+            del full_text
+        if 'chunks' in locals() and chunks:
+            del chunks
         if temp_file_path and os.path.exists(temp_file_path):
             try:
                 os.unlink(temp_file_path)
             except Exception:
                 pass
+        # Force garbage collection để giải phóng memory
+        gc.collect()
 
 

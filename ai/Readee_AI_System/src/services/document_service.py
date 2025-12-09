@@ -45,9 +45,27 @@ class DocumentService:
                     xref = img[0]
                     base_image = doc.extract_image(xref)
                     image_bytes = base_image["image"]
-                    images.append(Image.open(io.BytesIO(image_bytes)))
+                    img_obj = Image.open(io.BytesIO(image_bytes))
+                    
+                    # Convert sang RGB nếu cần (giảm memory cho RGBA)
+                    if img_obj.mode != "RGB":
+                        img_obj = img_obj.convert("RGB")
+                    
+                    # Resize nếu quá lớn (giảm RAM usage)
+                    max_size = (1920, 1920)  # Max 1920x1920
+                    if img_obj.size[0] > max_size[0] or img_obj.size[1] > max_size[1]:
+                        img_obj.thumbnail(max_size, Image.Resampling.LANCZOS)
+                    
+                    images.append(img_obj)
+                    
+                    # Clear image_bytes ngay sau khi tạo Image object
+                    del image_bytes, base_image
+                
+                # Clear page object sau mỗi page
+                del page
         finally:
             doc.close()
+            del doc
         return images
 
     # --------------------- DOCX helpers ---------------------
@@ -72,9 +90,25 @@ class DocumentService:
         for rel in doc.part.rels.values():
             if "image" in rel.reltype:
                 img_data = rel.target_part.blob
-                images.append(Image.open(io.BytesIO(img_data)))
+                img_obj = Image.open(io.BytesIO(img_data))
+                
+                # Convert sang RGB nếu cần (giảm memory cho RGBA)
+                if img_obj.mode != "RGB":
+                    img_obj = img_obj.convert("RGB")
+                
+                # Resize nếu quá lớn (giảm RAM usage)
+                max_size = (1920, 1920)  # Max 1920x1920
+                if img_obj.size[0] > max_size[0] or img_obj.size[1] > max_size[1]:
+                    img_obj.thumbnail(max_size, Image.Resampling.LANCZOS)
+                
+                images.append(img_obj)
+                
+                # Clear img_data ngay sau khi tạo Image object
+                del img_data
 
         full_text = "\n".join(texts)
+        # Clear texts list sau khi join
+        del texts
         return full_text, images
 
     # --------------------- Public API ---------------------

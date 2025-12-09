@@ -53,6 +53,10 @@ class AsyncSummarizer:
         return await loop.run_in_executor(None, lambda: fn(*args, **kwargs))
 
     def _summarize_triple_sync(self, text: str, speed: bool = False) -> Dict[str, Any]:
+        import torch
+        import logging
+        logger = logging.getLogger(__name__)
+        
         tok = self.tokenizer
         cleaned = preclean(text)
         n_in = count_tokens(tok, cleaned)
@@ -69,6 +73,19 @@ class AsyncSummarizer:
             base_text, n_in = build_partials(
                 tok, self.model, cleaned, speed=partial_speed
             )
+            # Clear cache sau map-reduce để giải phóng memory
+            if torch.cuda.is_available():
+                device = next(self.model.parameters()).device
+                before_allocated = torch.cuda.memory_allocated(device.index) / 1024**3
+                before_reserved = torch.cuda.memory_reserved(device.index) / 1024**3
+                torch.cuda.empty_cache()
+                after_allocated = torch.cuda.memory_allocated(device.index) / 1024**3
+                after_reserved = torch.cuda.memory_reserved(device.index) / 1024**3
+                logger.info(
+                    f"GPU cache cleared after map-reduce: "
+                    f"allocated {before_allocated:.2f}→{after_allocated:.2f} GB, "
+                    f"reserved {before_reserved:.2f}→{after_reserved:.2f} GB"
+                )
 
         budgets = {
             level: _compute_budget_for_level(
@@ -77,12 +94,44 @@ class AsyncSummarizer:
             for level in ("short", "medium", "detailed")
         }
 
-        results, runtime_ms = generate_triple_one_shot(
-            tokenizer=tok,
-            model=self.model,
-            text=base_text,
-            budgets=budgets,
-        )
+        try:
+            results, runtime_ms = generate_triple_one_shot(
+                tokenizer=tok,
+                model=self.model,
+                text=base_text,
+                budgets=budgets,
+            )
+        except torch.cuda.OutOfMemoryError as e:
+            # Clear cache và log memory info
+            if torch.cuda.is_available():
+                device = next(self.model.parameters()).device
+                before_allocated = torch.cuda.memory_allocated(device.index) / 1024**3
+                before_reserved = torch.cuda.memory_reserved(device.index) / 1024**3
+                torch.cuda.empty_cache()
+                after_allocated = torch.cuda.memory_allocated(device.index) / 1024**3
+                after_reserved = torch.cuda.memory_reserved(device.index) / 1024**3
+                logger.error(
+                    f"CUDA OOM during summary generation. "
+                    f"Before clear: allocated={before_allocated:.2f} GB, reserved={before_reserved:.2f} GB. "
+                    f"After clear: allocated={after_allocated:.2f} GB, reserved={after_reserved:.2f} GB"
+                )
+            raise
+        finally:
+            # Luôn clear cache sau mỗi request để giải phóng memory
+            if torch.cuda.is_available():
+                device = next(self.model.parameters()).device
+                before_allocated = torch.cuda.memory_allocated(device.index) / 1024**3
+                before_reserved = torch.cuda.memory_reserved(device.index) / 1024**3
+                torch.cuda.empty_cache()
+                after_allocated = torch.cuda.memory_allocated(device.index) / 1024**3
+                after_reserved = torch.cuda.memory_reserved(device.index) / 1024**3
+                logger.info(
+                    f"GPU cache cleared after summary: "
+                    f"allocated {before_allocated:.2f}→{after_allocated:.2f} GB "
+                    f"({before_allocated - after_allocated:.2f} GB freed), "
+                    f"reserved {before_reserved:.2f}→{after_reserved:.2f} GB "
+                    f"({before_reserved - after_reserved:.2f} GB freed)"
+                )
 
         for level in ("short", "medium", "detailed"):
             if level not in results or results[level].get("text") is None:
@@ -127,6 +176,10 @@ class AsyncSummarizer:
     def _summarize_single_sync(
         self, level: str, text: str, speed: bool = False
     ) -> Dict[str, Any]:
+        import torch
+        import logging
+        logger = logging.getLogger(__name__)
+        
         tok = self.tokenizer
         cleaned = preclean(text)
         n_in = count_tokens(tok, cleaned)
@@ -142,19 +195,64 @@ class AsyncSummarizer:
             base_text, n_in = build_partials(
                 tok, self.model, cleaned, speed=(speed or auto_speed)
             )
+            # Clear cache sau map-reduce
+            if torch.cuda.is_available():
+                device = next(self.model.parameters()).device
+                before_allocated = torch.cuda.memory_allocated(device.index) / 1024**3
+                before_reserved = torch.cuda.memory_reserved(device.index) / 1024**3
+                torch.cuda.empty_cache()
+                after_allocated = torch.cuda.memory_allocated(device.index) / 1024**3
+                after_reserved = torch.cuda.memory_reserved(device.index) / 1024**3
+                logger.info(
+                    f"GPU cache cleared after map-reduce: "
+                    f"allocated {before_allocated:.2f}→{after_allocated:.2f} GB, "
+                    f"reserved {before_reserved:.2f}→{after_reserved:.2f} GB"
+                )
 
         budget = _compute_budget_for_level(
             level, n_in, speed=(speed or auto_speed)
         )
 
-        res = generate_with_budget(
-            tokenizer=tok,
-            model=self.model,
-            level=level,
-            text=base_text,
-            n_in_tokens=n_in,
-            speed=(speed or auto_speed),
-        )
+        try:
+            res = generate_with_budget(
+                tokenizer=tok,
+                model=self.model,
+                level=level,
+                text=base_text,
+                n_in_tokens=n_in,
+                speed=(speed or auto_speed),
+            )
+        except torch.cuda.OutOfMemoryError as e:
+            # Clear cache và log memory info
+            if torch.cuda.is_available():
+                device = next(self.model.parameters()).device
+                before_allocated = torch.cuda.memory_allocated(device.index) / 1024**3
+                before_reserved = torch.cuda.memory_reserved(device.index) / 1024**3
+                torch.cuda.empty_cache()
+                after_allocated = torch.cuda.memory_allocated(device.index) / 1024**3
+                after_reserved = torch.cuda.memory_reserved(device.index) / 1024**3
+                logger.error(
+                    f"CUDA OOM during single summary. "
+                    f"Before clear: allocated={before_allocated:.2f} GB, reserved={before_reserved:.2f} GB. "
+                    f"After clear: allocated={after_allocated:.2f} GB, reserved={after_reserved:.2f} GB"
+                )
+            raise
+        finally:
+            # Luôn clear cache sau mỗi request
+            if torch.cuda.is_available():
+                device = next(self.model.parameters()).device
+                before_allocated = torch.cuda.memory_allocated(device.index) / 1024**3
+                before_reserved = torch.cuda.memory_reserved(device.index) / 1024**3
+                torch.cuda.empty_cache()
+                after_allocated = torch.cuda.memory_allocated(device.index) / 1024**3
+                after_reserved = torch.cuda.memory_reserved(device.index) / 1024**3
+                logger.info(
+                    f"GPU cache cleared after single summary: "
+                    f"allocated {before_allocated:.2f}→{after_allocated:.2f} GB "
+                    f"({before_allocated - after_allocated:.2f} GB freed), "
+                    f"reserved {before_reserved:.2f}→{after_reserved:.2f} GB "
+                    f"({before_reserved - after_reserved:.2f} GB freed)"
+                )
 
         return {
             "input_tokens": n_in,

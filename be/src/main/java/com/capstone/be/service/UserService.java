@@ -30,10 +30,19 @@ public interface UserService {
   void changePassword(UUID userId, ChangePasswordRequest request);
 
   /**
-   * Request email change - sends OTP to current email address
+   * Verify password for email change
    *
    * @param userId  User ID
-   * @param request Change email request (contains new email)
+   * @param password User password for verification
+   */
+  void verifyPasswordForEmailChange(UUID userId, String password);
+
+  /**
+   * Request email change - sends OTP to new email address
+   * Requires password verification first
+   *
+   * @param userId  User ID
+   * @param request Change email request (contains password and new email)
    */
   void requestEmailChange(UUID userId, ChangeEmailRequest request);
 

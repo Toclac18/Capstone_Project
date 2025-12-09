@@ -12,6 +12,36 @@ export type HomepageSections = {
   specGroups: HomepageSpecGroup[];
 };
 
+// Trending Document types
+export type TrendingDocument = {
+  id: string;
+  title: string;
+  description: string;
+  thumbnailUrl: string | null;
+  docType: string | null;
+  specialization: string | null;
+  viewCount: number;
+  voteScore: number;
+  engagementScore: number;
+  createdAt: string;
+  uploader: {
+    id: string;
+    fullName: string;
+    avatarUrl: string | null;
+  };
+};
+
+// Trending Reviewer types
+export type TrendingReviewer = {
+  id: string;
+  fullName: string;
+  avatarUrl: string | null;
+  organizationName: string | null;
+  totalReviewsSubmitted: number;
+  approvalRate: number;
+  performanceScore: number;
+};
+
 /**
  * GET /api/homepage?mode=bulk
  * Trả về cấu trúc:
@@ -93,4 +123,50 @@ export async function fetchHomepagePaged(params: {
     page: json.page ?? params.page,
     pageSize: json.pageSize ?? params.pageSize,
   };
+}
+
+/**
+ * Fetch trending documents (top 5)
+ * GET /api/homepage/trending-documents
+ */
+export async function fetchTrendingDocuments(): Promise<TrendingDocument[]> {
+  const res = await fetch("/api/homepage/trending-documents", {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  const text = await res.text();
+
+  if (!res.ok) {
+    console.error("Trending documents failed:", text);
+    return [];
+  }
+
+  const json = JSON.parse(text);
+  return Array.isArray(json?.documents) ? json.documents : [];
+}
+
+/**
+ * Fetch trending reviewers (top 5)
+ * GET /api/homepage/trending-reviewers?forceRefresh=true
+ */
+export async function fetchTrendingReviewers(forceRefresh: boolean = false): Promise<TrendingReviewer[]> {
+  const url = forceRefresh 
+    ? "/api/homepage/trending-reviewers?forceRefresh=true"
+    : "/api/homepage/trending-reviewers";
+    
+  const res = await fetch(url, {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  const text = await res.text();
+
+  if (!res.ok) {
+    console.error("Trending reviewers failed:", text);
+    return [];
+  }
+
+  const json = JSON.parse(text);
+  return Array.isArray(json?.reviewers) ? json.reviewers : [];
 }

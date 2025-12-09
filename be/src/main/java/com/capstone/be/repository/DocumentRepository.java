@@ -106,6 +106,9 @@ public interface DocumentRepository extends JpaRepository<Document, UUID>,
   @Query("""
       select d
       from Document d
+        left join fetch d.docType
+        left join fetch d.specialization
+        left join fetch d.uploader
       where d.visibility = com.capstone.be.domain.enums.DocVisibility.PUBLIC
         and d.status = com.capstone.be.domain.enums.DocStatus.ACTIVE
         and d.createdAt >= :sevenDaysAgo

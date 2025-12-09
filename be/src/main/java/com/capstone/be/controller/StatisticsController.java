@@ -358,16 +358,18 @@ public class StatisticsController {
 
   /**
    * Get homepage trending reviewers (Public endpoint - no auth required)
-   * GET /api/statistics/homepage/trending-reviewers
+   * GET /api/statistics/homepage/trending-reviewers?forceRefresh=true
    *
+   * @param forceRefresh Optional query parameter to bypass cache and fetch fresh data
    * @return Trending reviewers response (cached, updated hourly)
    */
   @GetMapping("/homepage/trending-reviewers")
   @PreAuthorize("permitAll()")
-  public ResponseEntity<HomepageTrendingReviewersResponse> getHomepageTrendingReviewers() {
-    log.debug("Requesting homepage trending reviewers");
+  public ResponseEntity<HomepageTrendingReviewersResponse> getHomepageTrendingReviewers(
+      @RequestParam(required = false) Boolean forceRefresh) {
+    log.debug("Requesting homepage trending reviewers (forceRefresh: {})", forceRefresh);
 
-    HomepageTrendingReviewersResponse response = trendingDataCacheService.getTrendingReviewers();
+    HomepageTrendingReviewersResponse response = trendingDataCacheService.getTrendingReviewers(forceRefresh);
 
     return ResponseEntity.ok(response);
   }

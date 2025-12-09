@@ -56,6 +56,7 @@ public class SecurityConfig {
                 "/documents/search/**",
                 "documents/search-meta/**",
                 "/auth/**",
+                "/statistics/homepage/**", // Public endpoints for trending documents and reviewers
 
                 "/v3/api-docs/**",
                 "/swagger-ui/**",

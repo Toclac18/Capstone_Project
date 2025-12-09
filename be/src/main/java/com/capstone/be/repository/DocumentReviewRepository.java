@@ -43,16 +43,34 @@ public interface DocumentReviewRepository extends JpaRepository<DocumentReview, 
   /**
    * Find top reviewers by number of reviews submitted in the last 7 days
    */
-  @Query("""
-      select dr.reviewer, count(dr) as review_count,
-             sum(case when dr.decision = 'APPROVED' then 1 else 0 end) as approved_count
-      from DocumentReview dr
-      where dr.submittedAt >= :sevenDaysAgo
-      group by dr.reviewer
-      order by review_count desc, approved_count desc
-      """)
+  @Query(value = """
+      SELECT u.id, u.full_name, u.avatar_key,
+             COUNT(dr.id) as review_count,
+             SUM(CASE WHEN dr.decision = 'APPROVED' THEN 1 ELSE 0 END) as approved_count
+      FROM document_review dr
+      INNER JOIN users u ON dr.reviewer_id = u.id
+      WHERE dr.submitted_at >= :sevenDaysAgo
+      GROUP BY u.id, u.full_name, u.avatar_key
+      ORDER BY review_count DESC, approved_count DESC
+      """, nativeQuery = true)
   Page<Object[]> findTopReviewersLast7Days(
       @Param("sevenDaysAgo") Instant sevenDaysAgo,
+      Pageable pageable
+  );
+
+  /**
+   * Find top reviewers by number of reviews submitted (all time)
+   */
+  @Query(value = """
+      SELECT u.id, u.full_name, u.avatar_key,
+             COUNT(dr.id) as review_count,
+             SUM(CASE WHEN dr.decision = 'APPROVED' THEN 1 ELSE 0 END) as approved_count
+      FROM document_review dr
+      INNER JOIN users u ON dr.reviewer_id = u.id
+      GROUP BY u.id, u.full_name, u.avatar_key
+      ORDER BY review_count DESC, approved_count DESC
+      """, nativeQuery = true)
+  Page<Object[]> findTopReviewersAllTime(
       Pageable pageable
   );
 }

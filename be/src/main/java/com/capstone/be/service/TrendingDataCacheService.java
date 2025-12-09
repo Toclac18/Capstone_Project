@@ -16,9 +16,10 @@ public interface TrendingDataCacheService {
 
   /**
    * Get cached trending reviewers
-   * @return Trending reviewers from cache
+   * @param forceRefresh If true, bypass cache and fetch fresh data
+   * @return Trending reviewers from cache or fresh data
    */
-  HomepageTrendingReviewersResponse getTrendingReviewers();
+  HomepageTrendingReviewersResponse getTrendingReviewers(Boolean forceRefresh);
 
   /**
    * Refresh trending documents cache (called by scheduler)

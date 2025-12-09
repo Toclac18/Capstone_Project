@@ -52,9 +52,13 @@ async function handlePUT(req: Request) {
   let data;
   try {
     const json = JSON.parse(text);
-    data = json.data || json;
+    // Backend returns { success: false, message: "...", data: { errorCode: "..." } }
+    // Extract message for error display
+    const message = json.message || json.error || "Failed to change password";
+    // Return as object with message/error field for axios interceptor to parse
+    data = { message, error: message };
   } catch {
-    data = { error: text || "Failed to change password" };
+    data = { error: text || "Failed to change password", message: text || "Failed to change password" };
   }
 
   return jsonResponse(data, { status: upstream.status, mode: "real" });

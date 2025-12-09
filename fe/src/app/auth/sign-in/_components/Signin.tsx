@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/toast";
 import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
 import styles from "../styles.module.css";
+import { useAuthContext } from "@/lib/auth/provider";
 
 type FormValues = {
   email: string;
@@ -26,6 +27,7 @@ type FormValues = {
 export default function Signin() {
   const { showToast } = useToast();
   const router = useRouter();
+  const { setAuthInfo } = useAuthContext();
 
   const {
     register,
@@ -63,6 +65,15 @@ export default function Signin() {
       if (response.fullName) {
         localStorage.setItem("userName", response.fullName);
       }
+
+      // Update auth context immediately so header/sidebar reflect new state
+      setAuthInfo({
+        isAuthenticated: true,
+        readerId: response.userId ?? null,
+        email: response.email ?? null,
+        role: response.role ?? data.role,
+        payload: null,
+      });
 
       showToast({ type: "success", title: "Login Successful" });
 

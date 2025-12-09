@@ -14,7 +14,7 @@ export async function getTypes(params?: TypeQueryParams): Promise<TypeResponse> 
   const queryParams = new URLSearchParams();
   if (params?.page) queryParams.append("page", String(params.page));
   if (params?.limit) queryParams.append("limit", String(params.limit));
-  if (params?.search) queryParams.append("search", params.search);
+  if (params?.search) queryParams.append("name", params.search);
   if (params?.dateFrom) queryParams.append("dateFrom", params.dateFrom);
   if (params?.dateTo) queryParams.append("dateTo", params.dateTo);
   // Note: sortBy and sortOrder are handled in FE, not sent to BE

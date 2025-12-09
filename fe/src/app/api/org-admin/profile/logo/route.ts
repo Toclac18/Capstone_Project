@@ -3,7 +3,7 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,10 @@ async function handlePOST(req: Request) {
     const file = formData.get("file") as File;
 
     if (!file) {
-      return jsonResponse({ error: "File is required" }, { status: 400, mode: "mock" });
+      return jsonResponse(
+        { error: "File is required" },
+        { status: 400, mode: "mock" },
+      );
     }
 
     // Mock response
@@ -70,4 +73,3 @@ export const POST = (...args: Parameters<typeof handlePOST>) =>
   withErrorBoundary(() => handlePOST(...args), {
     context: "api/org-admin/profile/logo/route.ts/POST",
   });
-

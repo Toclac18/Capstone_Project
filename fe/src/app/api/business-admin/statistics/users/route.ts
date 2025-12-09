@@ -1,6 +1,6 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { jsonResponse } from "@/server/response";
 
 async function handleGET(request: Request) {
@@ -99,13 +99,15 @@ async function handleGET(request: Request) {
       statusText: response.statusText,
       error: errorData,
     });
-    throw new Error(errorData.error || errorData.message || "Failed to fetch user statistics");
+    throw new Error(
+      errorData.error || errorData.message || "Failed to fetch user statistics",
+    );
   }
 
   const responseData = await response.json();
   // Handle response that might have data wrapped in 'data' field
   const data = responseData?.data || responseData;
-  
+
   return jsonResponse(data, {
     status: 200,
     headers: {
@@ -120,5 +122,3 @@ export async function GET(request: Request) {
     context: "api/business-admin/statistics/users/route.ts/GET",
   });
 }
-
-

@@ -7,7 +7,7 @@ export const NAV_DATA = [
       {
         title: "Home",
         icon: Icons.HomeIcon,
-        url: "/",
+        url: "/homepage",
       },
     ],
   },

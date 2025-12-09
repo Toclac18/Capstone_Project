@@ -1,6 +1,6 @@
 import { mockOrganizationsDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 import { getAuthHeader } from "@/server/auth";
 
@@ -26,11 +26,14 @@ async function handleGET() {
     fh.set("Authorization", authHeader);
   }
 
-  const upstream = await fetch(`${BE_BASE}/api/reader/enrollments/organizations`, {
-    method: "GET",
-    headers: fh,
-    cache: "no-store",
-  });
+  const upstream = await fetch(
+    `${BE_BASE}/api/reader/enrollments/organizations`,
+    {
+      method: "GET",
+      headers: fh,
+      cache: "no-store",
+    },
+  );
 
   if (!upstream.ok) {
     return proxyJsonResponse(upstream, { mode: "real" });
@@ -40,11 +43,13 @@ async function handleGET() {
   const text = await upstream.text();
   try {
     const backendResponse = JSON.parse(text);
-    
+
     // Backend format: { success, message, data: OrgEnrollmentResponse[], pageInfo: { page, size, totalElements, ... }, timestamp }
-    const enrollments = Array.isArray(backendResponse.data) ? backendResponse.data : [];
+    const enrollments = Array.isArray(backendResponse.data)
+      ? backendResponse.data
+      : [];
     const pageInfo = backendResponse.pageInfo || {};
-    
+
     // Transform to FE format - OrgEnrollmentResponse contains organizationId, organizationName, and respondedAt
     const transformed = {
       items: enrollments.map((enrollment: any) => ({
@@ -56,7 +61,7 @@ async function handleGET() {
       })),
       total: pageInfo.totalElements ?? enrollments.length,
     };
-    
+
     return jsonResponse(transformed, {
       status: 200,
       headers: {

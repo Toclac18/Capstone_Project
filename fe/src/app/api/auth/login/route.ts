@@ -2,7 +2,7 @@
 import { cookies } from "next/headers";
 import { BE_BASE, COOKIE_NAME } from "@/server/config";
 import { jsonResponse, parseError, badRequest } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handlePOST(req: Request) {
   const body = await req.json().catch(() => null);
@@ -27,7 +27,7 @@ async function handlePOST(req: Request) {
     const text = await upstream.text();
     return jsonResponse(
       { error: parseError(text, "Login failed") },
-      { status: upstream.status }
+      { status: upstream.status },
     );
   }
 
@@ -39,18 +39,18 @@ async function handlePOST(req: Request) {
   } catch {
     return jsonResponse(
       { error: "Failed to parse backend response" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
   // Backend may return { data: AuthResponse } or AuthResponse directly
   const authResponse = responseJson?.data || responseJson;
   const token = authResponse?.accessToken;
-  
+
   if (!token) {
     return jsonResponse(
       { error: "No token received from backend" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 

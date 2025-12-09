@@ -42,11 +42,11 @@ public class DocTypeServiceImpl implements DocTypeService {
 
   @Override
   @Transactional(readOnly = true)
-  public Page<DocTypeDetailResponse> getAllDocTypesForAdmin(String name, Pageable pageable) {
-    log.info("Admin fetching document types - name: {}, page: {}, size: {}",
-        name, pageable.getPageNumber(), pageable.getPageSize());
+  public Page<DocTypeDetailResponse> getAllDocTypesForAdmin(String name, java.time.Instant dateFrom, java.time.Instant dateTo, Pageable pageable) {
+    log.info("Admin fetching document types - name: {}, dateFrom: {}, dateTo: {}, page: {}, size: {}",
+        name, dateFrom, dateTo, pageable.getPageNumber(), pageable.getPageSize());
 
-    Specification<DocType> spec = DocTypeSpecification.withFilters(name);
+    Specification<DocType> spec = DocTypeSpecification.withFilters(name, dateFrom, dateTo);
     Page<DocType> docTypePage = docTypeRepository.findAll(spec, pageable);
 
     log.info("Retrieved {} document types for admin", docTypePage.getTotalElements());

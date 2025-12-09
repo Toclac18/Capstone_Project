@@ -34,6 +34,7 @@ import com.capstone.be.repository.specification.DocumentLibrarySpecification;
 import com.capstone.be.repository.specification.DocumentSearchSpecification;
 import com.capstone.be.repository.specification.DocumentSpecification;
 import com.capstone.be.repository.specification.DocumentUploadHistorySpecification;
+import com.capstone.be.service.AiDocumentModerationAndSummarizationService;
 import com.capstone.be.service.DocumentAccessService;
 import com.capstone.be.service.DocumentService;
 import com.capstone.be.service.DocumentThumbnailService;
@@ -83,6 +84,7 @@ public class DocumentServiceImpl implements DocumentService {
   private final DocumentMapper documentMapper;
   private final DocumentAccessService documentAccessService;
   private final OrgEnrollmentRepository orgEnrollmentRepository;
+  private final AiDocumentModerationAndSummarizationService aiModerationService;
 
   @Value("${app.document.defaultPremiumPrice:120}")
   private Integer premiumDocPrice;
@@ -138,6 +140,18 @@ public class DocumentServiceImpl implements DocumentService {
     // Save document-tag relationships
     saveDocumentTagLinks(document, allTags);
     log.info("Saved {} document-tag relationships", allTags.size());
+
+    // Trigger async AI processing (will update document status and summaries after completion)
+    UUID documentId = document.getId();
+    aiModerationService.processDocumentAsync(documentId, file)
+        .thenAccept(aiResponse -> {
+          log.info("AI processing completed for document ID: {} with status: {}",
+              documentId, aiResponse.getStatus());
+        })
+        .exceptionally(ex -> {
+          log.error("AI processing failed for document ID: {}", documentId, ex);
+          return null;
+        });
 
     // Build and return response using mapper
     return documentMapper.toUploadResponse(document, allTags);
@@ -1061,8 +1075,12 @@ public class DocumentServiceImpl implements DocumentService {
 
       boolean hasRedeemed = false;
       if (Boolean.TRUE.equals(document.getIsPremium())) {
-        hasRedeemed = documentRedemptionRepository
-                .existsByReader_IdAndDocument_Id(userId, document.getId());
+        // Find ReaderProfile from User ID first, then check redemption
+        ReaderProfile readerProfile = readerProfileRepository.findByUserId(userId).orElse(null);
+        if (readerProfile != null) {
+          hasRedeemed = documentRedemptionRepository
+                  .existsByReader_IdAndDocument_Id(readerProfile.getId(), document.getId());
+        }
       }
 
       boolean isMemberOfOrganization = false;

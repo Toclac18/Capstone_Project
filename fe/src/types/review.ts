@@ -19,6 +19,7 @@ export interface ReviewDocument {
   tagIds?: string[];
   status: "PENDING"; // Only PENDING for Todo
   reviewRequestDate?: string;
+  reviewDeadline?: string; // Due date for completing the review
   specializationId?: string;
   specialization?: string; // Specialization name
 }
@@ -37,6 +38,7 @@ export interface ReviewRequest {
   tags?: string[];
   tagIds?: string[];
   inviteDate: string;
+  responseDeadline?: string; // Due date for responding to the request
   specializationId?: string;
   specialization?: string; // Specialization name
 }
@@ -76,7 +78,7 @@ export interface ReviewHistoryQueryParams {
   type?: string;
   domain?: string;
   specialization?: string;
-  active?: boolean; // Approved documents
+  approved?: boolean; // Approved documents
   rejected?: boolean; // Rejected documents
 }
 

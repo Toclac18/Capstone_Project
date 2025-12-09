@@ -1,7 +1,7 @@
 import { mockLibraryDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handleGET(request: Request) {
@@ -51,25 +51,25 @@ async function handleGET(request: Request) {
   // Build query params matching backend API
   // Backend uses: searchKeyword, isPremium, isOwned, isPurchased, page, size
   const queryParams = new URLSearchParams();
-  
+
   // Map frontend "search" to backend "searchKeyword"
   if (search) {
     queryParams.append("searchKeyword", search);
   }
-  
+
   // Map frontend "source" to backend "isOwned" or "isPurchased"
   if (source === "UPLOADED") {
     queryParams.append("isOwned", "true");
   } else if (source === "REDEEMED") {
     queryParams.append("isPurchased", "true");
   }
-  
+
   // Backend uses page (0-indexed) and size for pagination
   const pageParam = page ? page - 1 : 0; // Convert 1-indexed to 0-indexed
   const sizeParam = limit || 12;
   queryParams.append("page", String(pageParam));
   queryParams.append("size", String(sizeParam));
-  
+
   const url = `${BE_BASE}/api/documents/library${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
 
   const upstream = await fetch(url, {
@@ -86,11 +86,13 @@ async function handleGET(request: Request) {
   const text = await upstream.text();
   try {
     const backendResponse = JSON.parse(text);
-    
+
     // Backend format: { success, message, data: DocumentLibraryResponse[], pageInfo: { page, size, totalElements, ... }, timestamp }
-    const documents = Array.isArray(backendResponse.data) ? backendResponse.data : [];
+    const documents = Array.isArray(backendResponse.data)
+      ? backendResponse.data
+      : [];
     const pageInfo = backendResponse.pageInfo || {};
-    
+
     // Fetch tags to map tagNames to tagIds
     let tagsMap: Map<string, string> = new Map();
     try {
@@ -105,7 +107,7 @@ async function handleGET(request: Request) {
       });
       if (tagsResponse.ok) {
         const tagsData = await tagsResponse.json();
-        const tags = Array.isArray(tagsData) ? tagsData : (tagsData?.data || []);
+        const tags = Array.isArray(tagsData) ? tagsData : tagsData?.data || [];
         // Create map: tagName -> tagId
         tags.forEach((tag: any) => {
           if (tag.name && tag.id) {
@@ -116,11 +118,13 @@ async function handleGET(request: Request) {
     } catch (error) {
       console.error("Failed to fetch tags for mapping:", error);
     }
-    
+
     // Fetch domains and specializations to map specializationName to specializationId
     let specializationsMap: Map<string, string> = new Map();
     try {
-      const domainsHeaders = new Headers({ "Content-Type": "application/json" });
+      const domainsHeaders = new Headers({
+        "Content-Type": "application/json",
+      });
       const domainsResponse = await fetch(`${BE_BASE}/api/public/domains`, {
         method: "GET",
         headers: domainsHeaders,
@@ -128,20 +132,27 @@ async function handleGET(request: Request) {
       });
       if (domainsResponse.ok) {
         const domainsData = await domainsResponse.json();
-        const domains = Array.isArray(domainsData) ? domainsData : (domainsData?.data || []);
-        
+        const domains = Array.isArray(domainsData)
+          ? domainsData
+          : domainsData?.data || [];
+
         // For each domain, fetch specializations
         for (const domain of domains) {
           if (domain.id) {
             try {
-              const specsResponse = await fetch(`${BE_BASE}/api/public/domains/${domain.id}/specializations`, {
-                method: "GET",
-                headers: domainsHeaders,
-                cache: "no-store",
-              });
+              const specsResponse = await fetch(
+                `${BE_BASE}/api/public/domains/${domain.id}/specializations`,
+                {
+                  method: "GET",
+                  headers: domainsHeaders,
+                  cache: "no-store",
+                },
+              );
               if (specsResponse.ok) {
                 const specsData = await specsResponse.json();
-                const specs = Array.isArray(specsData) ? specsData : (specsData?.data || []);
+                const specs = Array.isArray(specsData)
+                  ? specsData
+                  : specsData?.data || [];
                 // Create map: specializationName -> specializationId
                 specs.forEach((spec: any) => {
                   if (spec.name && spec.id) {
@@ -150,37 +161,52 @@ async function handleGET(request: Request) {
                 });
               }
             } catch (error) {
-              console.error(`Failed to fetch specializations for domain ${domain.id}:`, error);
+              console.error(
+                `Failed to fetch specializations for domain ${domain.id}:`,
+                error,
+              );
             }
           }
         }
       }
     } catch (error) {
-      console.error("Failed to fetch domains/specializations for mapping:", error);
+      console.error(
+        "Failed to fetch domains/specializations for mapping:",
+        error,
+      );
     }
-    
+
     // Filter out documents with DELETED status
-    const activeDocuments = documents.filter((doc: any) => doc.status !== "DELETED");
-    
+    const activeDocuments = documents.filter(
+      (doc: any) => doc.status !== "DELETED",
+    );
+
     // Transform to FE format - map backend fields to frontend format
     const transformed = {
       documents: activeDocuments.map((doc: any) => {
         // Map tagNames to tagIds
         let tagIds: string[] = [];
-        if (doc.tagNames && Array.isArray(doc.tagNames) && doc.tagNames.length > 0) {
+        if (
+          doc.tagNames &&
+          Array.isArray(doc.tagNames) &&
+          doc.tagNames.length > 0
+        ) {
           tagIds = doc.tagNames
             .map((tagName: string) => tagsMap.get(tagName))
-            .filter((tagId: string | undefined): tagId is string => tagId !== undefined);
+            .filter(
+              (tagId: string | undefined): tagId is string =>
+                tagId !== undefined,
+            );
         } else if (doc.tagIds && Array.isArray(doc.tagIds)) {
           tagIds = doc.tagIds;
         }
-        
+
         // Map specializationName to specializationId
         let specializationId: string | undefined = doc.specializationId;
         if (!specializationId && doc.specializationName) {
           specializationId = specializationsMap.get(doc.specializationName);
         }
-        
+
         return {
           id: doc.id,
           documentName: doc.title,
@@ -195,7 +221,12 @@ async function handleGET(request: Request) {
           reads: doc.viewCount || doc.reads || 0,
           visibility: doc.visibility,
           interest: doc.interest,
-          status: doc.status === "APPROVED" ? "SUCCESS" : doc.status === "PENDING" ? "PENDING" : "FAILED",
+          status:
+            doc.status === "APPROVED"
+              ? "SUCCESS"
+              : doc.status === "PENDING"
+                ? "PENDING"
+                : "FAILED",
           thumbnailUrl: doc.thumbnailUrl,
           tagIds: tagIds,
           organizationId: doc.organizationId,
@@ -207,7 +238,7 @@ async function handleGET(request: Request) {
       page: (pageInfo.page ?? 0) + 1, // Backend uses 0-indexed, FE uses 1-indexed
       limit: pageInfo.size ?? 12,
     };
-    
+
     return jsonResponse(transformed, {
       status: 200,
       headers: {

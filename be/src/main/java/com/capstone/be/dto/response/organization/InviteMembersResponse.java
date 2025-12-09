@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class InviteMembersResponse {
 
-  private UUID batch;
+  private UUID importBatchId;
 
   /**
    * Total emails processed

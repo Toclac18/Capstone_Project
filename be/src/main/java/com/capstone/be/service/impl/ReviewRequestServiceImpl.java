@@ -2,7 +2,9 @@ package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.Document;
 import com.capstone.be.domain.entity.DocumentReview;
+import com.capstone.be.domain.entity.DocumentTagLink;
 import com.capstone.be.domain.entity.ReviewRequest;
+import com.capstone.be.domain.entity.Tag;
 import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.ReviewDecision;
@@ -10,6 +12,7 @@ import com.capstone.be.domain.enums.ReviewRequestStatus;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
 import com.capstone.be.dto.request.review.RespondReviewRequestRequest;
+import com.capstone.be.dto.request.review.ReviewHistoryFilterRequest;
 import com.capstone.be.dto.request.review.SubmitReviewRequest;
 import com.capstone.be.dto.response.review.DocumentReviewResponse;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
@@ -19,8 +22,11 @@ import com.capstone.be.mapper.DocumentReviewMapper;
 import com.capstone.be.mapper.ReviewRequestMapper;
 import com.capstone.be.repository.DocumentRepository;
 import com.capstone.be.repository.DocumentReviewRepository;
+import com.capstone.be.repository.DocumentTagLinkRepository;
 import com.capstone.be.repository.ReviewRequestRepository;
 import com.capstone.be.repository.UserRepository;
+import com.capstone.be.repository.spec.DocumentReviewSpecification;
+import com.capstone.be.service.FileStorageService;
 import com.capstone.be.service.ReviewRequestService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,12 +34,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -46,6 +54,8 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
   private final DocumentReviewRepository documentReviewRepository;
   private final ReviewRequestMapper reviewRequestMapper;
   private final DocumentReviewMapper documentReviewMapper;
+  private final FileStorageService fileStorageService;
+  private final DocumentTagLinkRepository documentTagLinkRepository;
 
   private static final int RESPONSE_DEADLINE_DAYS = 1;
   private static final int REVIEW_DEADLINE_DAYS = 3;
@@ -108,7 +118,12 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     log.info("Successfully assigned reviewer {} to document {}", request.getReviewerId(), documentId);
 
-    return reviewRequestMapper.toResponse(reviewRequest);
+    // Load tags for the document
+    List<Tag> tags = documentTagLinkRepository.findByDocument_Id(reviewRequest.getDocument().getId())
+        .stream()
+        .map(DocumentTagLink::getTag)
+        .collect(Collectors.toList());
+    return reviewRequestMapper.toResponse(reviewRequest, tags);
   }
 
   @Override
@@ -130,7 +145,14 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
         pageable
     );
 
-    return requests.map(reviewRequestMapper::toResponse);
+    return requests.map(request -> {
+      // Load tags for the document
+      List<Tag> tags = documentTagLinkRepository.findByDocument_Id(request.getDocument().getId())
+          .stream()
+          .map(DocumentTagLink::getTag)
+          .collect(Collectors.toList());
+      return reviewRequestMapper.toResponse(request, tags);
+    });
   }
 
   @Override
@@ -148,7 +170,14 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     Page<ReviewRequest> requests = reviewRequestRepository.findByReviewer_Id(reviewerId, pageable);
 
-    return requests.map(reviewRequestMapper::toResponse);
+    return requests.map(request -> {
+      // Load tags for the document
+      List<Tag> tags = documentTagLinkRepository.findByDocument_Id(request.getDocument().getId())
+          .stream()
+          .map(DocumentTagLink::getTag)
+          .collect(Collectors.toList());
+      return reviewRequestMapper.toResponse(request, tags);
+    });
   }
 
   @Override
@@ -205,7 +234,12 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     reviewRequest = reviewRequestRepository.save(reviewRequest);
 
-    return reviewRequestMapper.toResponse(reviewRequest);
+    // Load tags for the document
+    List<Tag> tags = documentTagLinkRepository.findByDocument_Id(reviewRequest.getDocument().getId())
+        .stream()
+        .map(DocumentTagLink::getTag)
+        .collect(Collectors.toList());
+    return reviewRequestMapper.toResponse(reviewRequest, tags);
   }
 
   @Override
@@ -228,7 +262,14 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
         pageable
     );
 
-    return requests.map(reviewRequestMapper::toResponse);
+    return requests.map(request -> {
+      // Load tags for the document
+      List<Tag> tags = documentTagLinkRepository.findByDocument_Id(request.getDocument().getId())
+          .stream()
+          .map(DocumentTagLink::getTag)
+          .collect(Collectors.toList());
+      return reviewRequestMapper.toResponse(request, tags);
+    });
   }
 
   @Override
@@ -243,7 +284,14 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     Page<ReviewRequest> requests = reviewRequestRepository.findByDocument_Id(documentId, pageable);
 
-    return requests.map(reviewRequestMapper::toResponse);
+    return requests.map(request -> {
+      // Load tags for the document
+      List<Tag> tags = documentTagLinkRepository.findByDocument_Id(request.getDocument().getId())
+          .stream()
+          .map(DocumentTagLink::getTag)
+          .collect(Collectors.toList());
+      return reviewRequestMapper.toResponse(request, tags);
+    });
   }
 
   @Override
@@ -253,13 +301,21 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     Page<ReviewRequest> requests = reviewRequestRepository.findAll(pageable);
 
-    return requests.map(reviewRequestMapper::toResponse);
+    return requests.map(request -> {
+      // Load tags for the document
+      List<Tag> tags = documentTagLinkRepository.findByDocument_Id(request.getDocument().getId())
+          .stream()
+          .map(DocumentTagLink::getTag)
+          .collect(Collectors.toList());
+      return reviewRequestMapper.toResponse(request, tags);
+    });
   }
 
   @Override
   @Transactional
-  public DocumentReviewResponse submitReview(UUID reviewerId, UUID reviewRequestId, SubmitReviewRequest request) {
-    log.info("Reviewer {} submitting review for review request {}: decision={}", reviewerId, reviewRequestId, request.getDecision());
+  public DocumentReviewResponse submitReview(UUID reviewerId, UUID reviewRequestId, SubmitReviewRequest request, MultipartFile reportFile) {
+    log.info("Reviewer {} submitting review for review request {}: decision={}, file={}",
+        reviewerId, reviewRequestId, request.getDecision(), reportFile != null ? reportFile.getOriginalFilename() : "null");
 
     // Validate Reviewer
     User reviewer = userRepository.findById(reviewerId)
@@ -288,6 +344,17 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
       throw new InvalidRequestException("Review has already been submitted for this review request");
     }
 
+    // Validate report file
+    if (reportFile == null || reportFile.isEmpty()) {
+      throw new InvalidRequestException("Review report file is required");
+    }
+
+    // Validate file type (accept .doc, .docx)
+    String originalFilename = reportFile.getOriginalFilename();
+    if (originalFilename == null || (!originalFilename.endsWith(".doc") && !originalFilename.endsWith(".docx"))) {
+      throw new InvalidRequestException("Review report file must be a Word document (.doc or .docx)");
+    }
+
     // Check if review deadline has passed
     Instant now = Instant.now();
     if (reviewRequest.getReviewDeadline() != null && now.isAfter(reviewRequest.getReviewDeadline())) {
@@ -298,12 +365,22 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
     // Get document
     Document document = reviewRequest.getDocument();
 
+    // Upload review report file to S3
+    String customFilename = String.format("review_%s_%s", reviewRequestId, originalFilename);
+    String reportFilePath = fileStorageService.uploadFile(
+        reportFile,
+        com.capstone.be.config.constant.FileStorage.REVIEW_REPORT_FOLDER,
+        customFilename
+    );
+    log.info("Uploaded review report file to S3: {}", reportFilePath);
+
     // Create DocumentReview
     DocumentReview documentReview = DocumentReview.builder()
         .reviewRequest(reviewRequest)
         .document(document)
         .reviewer(reviewer)
-        .report(request.getReport())
+        .comment(request.getReport())
+        .reportFilePath(reportFilePath)
         .decision(request.getDecision())
         .submittedAt(now)
         .build();
@@ -327,13 +404,19 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     log.info("Successfully submitted review for document {}", document.getId());
 
-    return documentReviewMapper.toResponse(documentReview);
+    // Load tags for the document
+    List<Tag> tags = documentTagLinkRepository.findByDocument_Id(document.getId())
+        .stream()
+        .map(DocumentTagLink::getTag)
+        .collect(Collectors.toList());
+
+    return documentReviewMapper.toResponse(documentReview, tags);
   }
 
   @Override
   @Transactional(readOnly = true)
-  public Page<DocumentReviewResponse> getReviewerHistory(UUID reviewerId, Pageable pageable) {
-    log.info("Getting review history for reviewer {}", reviewerId);
+  public Page<DocumentReviewResponse> getReviewerHistory(UUID reviewerId, ReviewHistoryFilterRequest filter, Pageable pageable) {
+    log.info("Getting review history for reviewer {} with filters: {}", reviewerId, filter);
 
     // Validate Reviewer
     User reviewer = userRepository.findById(reviewerId)
@@ -343,9 +426,20 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
       throw new InvalidRequestException("User is not a reviewer");
     }
 
-    Page<DocumentReview> reviews = documentReviewRepository.findByReviewer_Id(reviewerId, pageable);
+    // Use Specification to filter
+    Page<DocumentReview> reviews = documentReviewRepository.findAll(
+        DocumentReviewSpecification.filterReviewHistory(reviewerId, filter),
+        pageable
+    );
 
-    return reviews.map(documentReviewMapper::toResponse);
+    return reviews.map(review -> {
+      // Load tags for each document
+      List<Tag> tags = documentTagLinkRepository.findByDocument_Id(review.getDocument().getId())
+          .stream()
+          .map(DocumentTagLink::getTag)
+          .collect(Collectors.toList());
+      return documentReviewMapper.toResponse(review, tags);
+    });
   }
 
   /**

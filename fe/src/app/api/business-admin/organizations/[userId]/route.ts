@@ -1,6 +1,6 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handleGET(
@@ -22,7 +22,7 @@ async function handleGET(
           "content-type": "application/json",
           "x-mode": "mock",
         },
-      }
+      },
     );
   }
 
@@ -63,7 +63,8 @@ async function handleGET(
     hotline: org.orgHotline || org.hotline || "",
     logo: org.orgLogo || org.logo,
     address: org.orgAddress || org.address || "",
-    registrationNumber: org.orgRegistrationNumber || org.registrationNumber || "",
+    registrationNumber:
+      org.orgRegistrationNumber || org.registrationNumber || "",
     status: org.status || "ACTIVE",
     adminName: org.fullName || org.adminName,
     adminEmail: org.email || org.adminEmail || "",
@@ -90,4 +91,3 @@ export async function GET(
     context: "api/business-admin/organizations/[userId]/route.ts/GET",
   });
 }
-

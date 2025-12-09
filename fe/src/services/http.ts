@@ -123,14 +123,8 @@ apiClient.interceptors.response.use(
         console.error("[apiClient] error handler failed:", e);
       }
     }
-    
-    const msg =
-      err?.response?.data?.error ||
-      err?.response?.data?.message ||
-      err?.message ||
-      "Request error";
-    
-    return Promise.reject(new Error(msg));
+
+    return Promise.reject(apiError);
   },
 );
 

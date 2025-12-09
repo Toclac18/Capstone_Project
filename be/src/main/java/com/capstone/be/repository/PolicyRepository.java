@@ -1,8 +1,6 @@
 package com.capstone.be.repository;
 
 import com.capstone.be.domain.entity.Policy;
-import com.capstone.be.domain.enums.PolicyStatus;
-import com.capstone.be.domain.enums.PolicyType;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,12 +10,15 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PolicyRepository extends JpaRepository<Policy, UUID> {
 
-  Optional<Policy> findByType(PolicyType type);
+  Optional<Policy> findByVersion(String version);
 
-  Optional<Policy> findByTypeAndStatus(PolicyType type, PolicyStatus status);
+  Optional<Policy> findByIsActive(boolean isActive);
 
-  List<Policy> findAllByStatus(PolicyStatus status);
+  List<Policy> findAllByIsActive(boolean isActive);
 
-  boolean existsByType(PolicyType type);
+  boolean existsByVersion(String version);
+
+  // Get all policies ordered by creation date (newest first)
+  List<Policy> findAllByOrderByCreatedAtDesc();
 }
 

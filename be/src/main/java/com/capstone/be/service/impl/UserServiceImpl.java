@@ -542,7 +542,13 @@ public class UserServiceImpl implements UserService {
       UserStatus status, String search, Pageable pageable) {
     log.info("Admin getting all readers - status: {}, search: {}", status, search);
 
-    Specification<User> spec = UserSpecification.withFilters(UserRole.READER, status, search);
+    // If status is null (not filtered), exclude DELETED by default
+    Specification<User> spec = Specification
+        .where(UserSpecification.hasRole(UserRole.READER))
+        .and(status != null 
+            ? UserSpecification.hasStatus(status) 
+            : UserSpecification.hasStatusNot(UserStatus.DELETED))
+        .and(UserSpecification.searchByKeyword(search));
     Page<User> users = userRepository.findAll(spec, pageable);
 
     return users.map(this::buildAdminReaderResponse);
@@ -610,7 +616,13 @@ public class UserServiceImpl implements UserService {
       UserStatus status, String search, Pageable pageable) {
     log.info("Admin getting all reviewers - status: {}, search: {}", status, search);
 
-    Specification<User> spec = UserSpecification.withFilters(UserRole.REVIEWER, status, search);
+    // If status is null (not filtered), exclude DELETED by default
+    Specification<User> spec = Specification
+        .where(UserSpecification.hasRole(UserRole.REVIEWER))
+        .and(status != null 
+            ? UserSpecification.hasStatus(status) 
+            : UserSpecification.hasStatusNot(UserStatus.DELETED))
+        .and(UserSpecification.searchByKeyword(search));
     Page<User> users = userRepository.findAll(spec, pageable);
 
     return users.map(this::buildAdminReviewerResponse);
@@ -678,8 +690,15 @@ public class UserServiceImpl implements UserService {
       UserStatus status, String search, Pageable pageable) {
     log.info("Admin getting all organizations - status: {}, search: {}", status, search);
 
-    Specification<User> spec = UserSpecification.withFilters(UserRole.ORGANIZATION_ADMIN, status,
-        search);
+    // Use searchOrganizationsByKeyword for organizations to search in multiple fields
+    // If status is null (not filtered), exclude DELETED by default
+    Specification<User> spec = Specification
+        .where(UserSpecification.hasRole(UserRole.ORGANIZATION_ADMIN))
+        .and(status != null 
+            ? UserSpecification.hasStatus(status) 
+            : UserSpecification.hasStatusNot(UserStatus.DELETED))
+        .and(UserSpecification.searchOrganizationsByKeyword(search));
+    
     Page<User> users = userRepository.findAll(spec, pageable);
 
     return users.map(this::buildAdminOrganizationResponse);

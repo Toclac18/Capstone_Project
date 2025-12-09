@@ -100,14 +100,10 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
    */
   const toggleAccess = useCallback(
     async (enrollmentId: string, enable: boolean) => {
-      // enable = true  => JOINED
-      // enable = false => REMOVED
       const nextStatus: OrgEnrollStatus = enable ? "JOINED" : "REMOVED";
 
-      // Lưu lại state cũ để rollback nếu lỗi
       const prevReaders = readers;
 
-      // 1. Optimistic update
       setReaders((prev) =>
         prev.map((r) =>
           r.enrollmentId === enrollmentId ? { ...r, status: nextStatus } : r,
@@ -115,7 +111,6 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
       );
 
       try {
-        // 2. Gọi API thật qua service
         await changeEnrollmentStatus({
           enrollmentId,
           status: nextStatus,
@@ -124,11 +119,10 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
         const msg = err?.message ?? "Failed to change reader access";
         setError(msg);
         showToast(toast.error("Update failed", msg));
-        // 3. Rollback state nếu lỗi
         setReaders(prevReaders);
       }
     },
-    [readers, showToast],
+    [readers, showToast, changeEnrollmentStatus], // nên thêm changeEnrollmentStatus vào deps
   );
 
   useEffect(() => {

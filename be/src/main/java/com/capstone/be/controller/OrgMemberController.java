@@ -3,6 +3,7 @@ package com.capstone.be.controller;
 import com.capstone.be.domain.enums.OrgEnrollStatus;
 import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.organization.InviteMembersRequest;
+import com.capstone.be.dto.request.organization.UpdateEnrollStatusRequest;
 import com.capstone.be.dto.response.organization.InviteMembersResponse;
 import com.capstone.be.dto.response.organization.MemberImportBatchResponse;
 import com.capstone.be.dto.response.organization.OrgEnrollmentResponse;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -193,5 +195,30 @@ public class OrgMemberController {
         adminId, importBatchId, pageable);
 
     return ResponseEntity.ok(PagedResponse.of(enrollments));
+  }
+
+  /**
+   * Update enrollment status
+   * PUT /api/v1/organization/members/{enrollmentId}/status
+   *
+   * @param userPrincipal Organization admin
+   * @param enrollmentId  Enrollment ID
+   * @param request       Update status request
+   * @return Updated enrollment detail
+   */
+  @PutMapping("/{enrollmentId}/status")
+  @PreAuthorize("hasRole('ORGANIZATION_ADMIN')")
+  public ResponseEntity<OrgEnrollmentResponse> updateEnrollmentStatus(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "enrollmentId") UUID enrollmentId,
+      @Valid @RequestBody UpdateEnrollStatusRequest request) {
+    UUID adminId = userPrincipal.getId();
+    log.info("Organization admin {} updating enrollment {} status to {}",
+        adminId, enrollmentId, request.getStatus());
+
+    OrgEnrollmentResponse response = orgEnrollmentService.updateEnrollmentStatus(
+        adminId, enrollmentId, request.getStatus());
+
+    return ResponseEntity.ok(response);
   }
 }

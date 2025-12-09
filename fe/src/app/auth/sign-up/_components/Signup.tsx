@@ -373,7 +373,7 @@ export default function Signup() {
       // Submit based on user type
       if (userType === "reader") {
         const payload: RegisterReaderPayload = {
-          email: data.email!,
+          email: data.email!.toLowerCase().trim(),
           password: data.password!,
           fullName: data.name!.trim(),
           dateOfBirth: data.date_of_birth!,
@@ -381,26 +381,26 @@ export default function Signup() {
         await registerReader(payload);
       } else if (userType === "reviewer") {
         const payload: RegisterReviewerPayload = {
-          email: data.email!,
+          email: data.email!.toLowerCase().trim(),
           password: data.password!,
           fullName: data.name!.trim(),
           dateOfBirth: data.date_of_birth!,
           orcid: data.orcid,
           educationLevel: data.educationLevel! as "COLLEGE" | "UNIVERSITY" | "MASTER" | "DOCTORATE",
           organizationName: data.organizationName!,
-          organizationEmail: data.organizationEmail!,
+          organizationEmail: data.organizationEmail!.toLowerCase().trim(),
           domainIds: data.domainIds!,
           specializationIds: data.specializationIds!,
         };
         await registerReviewer(payload, backgroundFiles);
       } else if (userType === "org-admin") {
         const payload: RegisterOrgAdminPayload = {
-          adminEmail: data.email!,
+          adminEmail: data.email!.toLowerCase().trim(),
           password: data.password!,
           adminFullName: data.name!.trim(),
           organizationName: data.organizationName!,
           organizationType: data.organizationType! as "SCHOOL" | "COLLEGE" | "UNIVERSITY" | "TRAINING_CENTER",
-          organizationEmail: data.organizationEmail!,
+          organizationEmail: data.organizationEmail!.toLowerCase().trim(),
           hotline: data.hotline!,
           address: data.address!,
           registrationNumber: data.registrationNumber!,

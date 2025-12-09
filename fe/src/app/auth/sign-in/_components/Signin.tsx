@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/toast";
 import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
 import styles from "../styles.module.css";
+import { useAuthContext } from "@/lib/auth/provider";
 
 type FormValues = {
   email: string;
@@ -26,6 +27,7 @@ type FormValues = {
 export default function Signin() {
   const { showToast } = useToast();
   const router = useRouter();
+  const { setAuthInfo } = useAuthContext();
 
   const {
     register,
@@ -49,8 +51,11 @@ export default function Signin() {
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setLoading(true);
 
+    // Normalize email to lowercase
+    const normalizedEmail = data.email.toLowerCase().trim();
+
     const payload: LoginPayload = {
-      email: data.email,
+      email: normalizedEmail,
       password: data.password,
       role: data.role,
       remember: data.remember,
@@ -63,6 +68,15 @@ export default function Signin() {
       if (response.fullName) {
         localStorage.setItem("userName", response.fullName);
       }
+
+      // Update auth context immediately so header/sidebar reflect new state
+      setAuthInfo({
+        isAuthenticated: true,
+        readerId: response.userId ?? null,
+        email: response.email ?? null,
+        role: response.role ?? data.role,
+        payload: null,
+      });
 
       showToast({ type: "success", title: "Login Successful" });
 
@@ -341,7 +355,9 @@ export default function Signin() {
 
                         setResendLoading(true);
                         try {
-                          await resendVerificationEmail({ email: resendEmail.trim() });
+                          // Normalize email to lowercase
+                          const normalizedEmail = resendEmail.trim().toLowerCase();
+                          await resendVerificationEmail({ email: normalizedEmail });
                           showToast({
                             type: "success",
                             title: "Email Sent",

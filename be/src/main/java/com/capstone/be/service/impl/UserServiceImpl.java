@@ -215,8 +215,11 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional
   public void requestEmailChange(UUID userId, ChangeEmailRequest request) {
+    // Normalize new email to lowercase
+    String normalizedNewEmail = request.getNewEmail().toLowerCase().trim();
+    
     log.info("Request email change for user ID: {} to new email: {}", userId,
-        request.getNewEmail());
+        normalizedNewEmail);
 
     // Find user
     User user = userRepository.findById(userId)
@@ -231,19 +234,22 @@ public class UserServiceImpl implements UserService {
       throw UnauthorizedException.invalidPassword();
     }
 
+    // Normalize current email for comparison
+    String normalizedCurrentEmail = user.getEmail().toLowerCase().trim();
+    
     // Check if new email is same as current email
-    if (user.getEmail().equalsIgnoreCase(request.getNewEmail())) {
+    if (normalizedCurrentEmail.equals(normalizedNewEmail)) {
       throw new InvalidRequestException("New email must be different from current email");
     }
 
     // Check if new email already exists
-    if (userRepository.existsByEmail(request.getNewEmail())) {
-      throw DuplicateResourceException.email(request.getNewEmail());
+    if (userRepository.existsByEmail(normalizedNewEmail)) {
+      throw DuplicateResourceException.email(normalizedNewEmail);
     }
 
     // Check if there's already a pending request for this new email
     emailChangeRequestRepository.findByNewEmailAndStatus(
-        request.getNewEmail(),
+        normalizedNewEmail,
         EmailChangeStatus.PENDING
     ).ifPresent(existing -> {
       throw new InvalidRequestException(
@@ -264,11 +270,11 @@ public class UserServiceImpl implements UserService {
     String otpHash = passwordEncoder.encode(otp);
     LocalDateTime otpExpiry = LocalDateTime.now().plusMinutes(10);
 
-    // Create new email change request
+    // Create new email change request with normalized email
     EmailChangeRequest emailChangeRequest = EmailChangeRequest.builder()
         .user(user)
         .currentEmail(user.getEmail())
-        .newEmail(request.getNewEmail())
+        .newEmail(normalizedNewEmail)
         .otpHash(otpHash)
         .expiryTime(otpExpiry)
         .status(EmailChangeStatus.PENDING)
@@ -278,7 +284,7 @@ public class UserServiceImpl implements UserService {
     emailChangeRequestRepository.save(emailChangeRequest);
 
     // Send OTP to new email (not current email)
-    emailService.sendEmailChangeOtp(userId, request.getNewEmail(), request.getNewEmail(), otp);
+    emailService.sendEmailChangeOtp(userId, normalizedNewEmail, normalizedNewEmail, otp);
 
     log.info("Created email change request and sent OTP to new email for user: {}", userId);
   }
@@ -353,6 +359,8 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional(noRollbackFor = InvalidRequestException.class)
   public void sendPasswordResetOtp(String email) {
+    // Normalize email to lowercase
+    email = email.toLowerCase().trim();
     log.info("Send password reset OTP for email: {}", email);
 
     // Rate limiting: check recent requests (max 3 requests per 15 minutes)
@@ -369,18 +377,18 @@ public class UserServiceImpl implements UserService {
     // Find user by email
     Optional<User> userOptional = userRepository.findByEmail(email);
 
-    // Always return success to prevent email enumeration
+    // Throw exception if email not found (better UX)
     if (userOptional.isEmpty()) {
-      log.info("User not found for email: {}, returning generic success", email);
-      return;
+      log.info("User not found for email: {}", email);
+      throw new InvalidRequestException("No account found with this email address");
     }
 
     User user = userOptional.get();
 
     // Check if user is active
     if (user.getStatus() != UserStatus.ACTIVE) {
-      log.info("User account not active for: {}, returning generic success", email);
-      return;
+      log.info("User account not active for: {}", email);
+      throw new InvalidRequestException("This account is not active. Please contact support");
     }
 
     // Cancel any existing pending request for this user
@@ -418,6 +426,8 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional(noRollbackFor = InvalidRequestException.class)
   public String verifyOtpAndGenerateResetToken(String email, String otp) {
+    // Normalize email to lowercase
+    email = email.toLowerCase().trim();
     log.info("Verify OTP for email: {}", email);
 
     // Find user by email

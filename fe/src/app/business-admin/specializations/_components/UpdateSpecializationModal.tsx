@@ -38,7 +38,25 @@ export function UpdateSpecializationModal({
       setError(null);
 
       if (!name.trim()) {
-        setError("Specialization name cannot be empty.");
+        const msg = "Specialization name cannot be empty.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
+        return;
+      }
+
+      if (name.trim().length < 3 || name.trim().length > 100) {
+        const msg = "Specialization name must be between 3 and 100 characters.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
+        return;
+      }
+
+      // Validate special characters
+      const validPattern = /^[\p{L}\p{N}\s-]+$/u;
+      if (!validPattern.test(name.trim())) {
+        const msg = "Specialization name can only contain letters, numbers, spaces, and hyphens.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
         return;
       }
 
@@ -119,12 +137,18 @@ export function UpdateSpecializationModal({
                 id="updateSpecializationName"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 100) {
+                    setName(e.target.value);
+                  }
+                }}
                 className={styles["form-input"]}
-                placeholder="Enter specialization name"
+                placeholder="Enter specialization name (3-100 characters)"
                 disabled={isLoading}
+                maxLength={100}
                 autoFocus
               />
+              <p className={styles["form-hint"]}>{name.length}/100 characters</p>
             </div>
 
             {error && <p className={styles["form-error"]}>{error}</p>}

@@ -24,18 +24,40 @@ export function AddDomainModal({ isOpen, onClose, onAdd }: AddDomainModalProps) 
       setError(null);
 
       if (!code.trim()) {
-        setError("Domain code cannot be empty.");
+        const msg = "Domain code cannot be empty.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
         return;
       }
 
       const codeNum = parseInt(code.trim(), 10);
       if (isNaN(codeNum) || codeNum < 1) {
-        setError("Domain code must be a positive number.");
+        const msg = "Domain code must be a positive number.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
         return;
       }
 
       if (!name.trim()) {
-        setError("Domain name cannot be empty.");
+        const msg = "Domain name cannot be empty.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
+        return;
+      }
+
+      if (name.trim().length < 3 || name.trim().length > 100) {
+        const msg = "Domain name must be between 3 and 100 characters.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
+        return;
+      }
+
+      // Validate special characters
+      const validPattern = /^[\p{L}\p{N}\s-]+$/u;
+      if (!validPattern.test(name.trim())) {
+        const msg = "Domain name can only contain letters, numbers, spaces, and hyphens.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
         return;
       }
 
@@ -127,11 +149,17 @@ export function AddDomainModal({ isOpen, onClose, onAdd }: AddDomainModalProps) 
                 id="domainName"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 100) {
+                    setName(e.target.value);
+                  }
+                }}
                 className={styles["form-input"]}
-                placeholder="Enter domain name"
+                placeholder="Enter domain name (3-100 characters)"
                 disabled={isLoading}
+                maxLength={100}
               />
+              <p className={styles["form-hint"]}>{name.length}/100 characters</p>
             </div>
 
             {error && <p className={styles["form-error"]}>{error}</p>}

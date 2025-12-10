@@ -204,11 +204,34 @@ export default function EditDocumentModal({
     onClose();
   };
 
+  // Validate tag name: only letters, numbers, spaces, and hyphens (max 50 chars)
+  const validateTagName = (value: string): string | null => {
+    if (!value.trim()) {
+      return "Tag name cannot be empty.";
+    }
+    if (value.length > 50) {
+      return "Tag name must not exceed 50 characters.";
+    }
+    // Allow letters (including Vietnamese), numbers, spaces, and hyphens
+    const validPattern = /^[\p{L}\p{N}\s-]+$/u;
+    if (!validPattern.test(value)) {
+      return "Tag name can only contain letters, numbers, spaces, and hyphens.";
+    }
+    return null;
+  };
+
   const handleAddNewTag = () => {
     const tag = newTagInput.trim();
     if (!tag) return;
 
     setTagError(null);
+
+    // Validate tag name
+    const validationError = validateTagName(tag);
+    if (validationError) {
+      setTagError(validationError);
+      return;
+    }
 
     // Check if tag already exists in tags list
     const existingTag = tags.find(
@@ -642,9 +665,11 @@ export default function EditDocumentModal({
                     type="text"
                     value={newTagInput}
                     onChange={(e) => {
-                      setNewTagInput(e.target.value);
-                      if (tagError) {
-                        setTagError(null);
+                      if (e.target.value.length <= 50) {
+                        setNewTagInput(e.target.value);
+                        if (tagError) {
+                          setTagError(null);
+                        }
                       }
                     }}
                     onKeyDown={(e) => {
@@ -654,8 +679,9 @@ export default function EditDocumentModal({
                       }
                     }}
                     className={`${styles["edit-form-input"]} ${tagError ? styles["edit-input-error"] : ""}`}
-                    placeholder="Add new tag"
+                    placeholder="Add new tag (max 50 chars)"
                     disabled={isLoading}
+                    maxLength={50}
                   />
                   {tagError && (
                     <span className={styles["edit-error-message"]}>

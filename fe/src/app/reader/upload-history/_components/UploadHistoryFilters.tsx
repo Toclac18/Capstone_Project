@@ -8,8 +8,8 @@ import styles from "../styles.module.css";
 
 const STATUS_OPTIONS = [
   { value: "", label: "All Status" },
-  { value: "VERIFYING", label: "Pending" },
-  { value: "VERIFIED", label: "Approved" },
+  { value: "REVIEWING", label: "Pending" },
+  { value: "ACTIVE", label: "Approved" },
   { value: "REJECTED", label: "Rejected" },
 ] as const;
 

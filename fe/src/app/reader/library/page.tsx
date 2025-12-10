@@ -2,6 +2,7 @@
 
 import Breadcrumb from "@/components/(template)/Breadcrumbs/Breadcrumb";
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import {
   fetchLibrary,
   updateLibraryDocument,
@@ -27,6 +28,7 @@ import {
   FileText,
   Edit,
   Trash2,
+  Eye,
   Calendar,
   FileType,
   FolderOpen,
@@ -270,7 +272,7 @@ export default function LibraryPage() {
             {documents.map((doc) => (
               <div key={doc.id} className={styles["document-card"]}>
                 {/* Card Header - Thumbnail */}
-                <div className={styles["card-thumbnail-container"]}>
+                <Link href={`/docs-view/${doc.id}`} className={styles["card-thumbnail-container"]}>
                   <div className={styles["card-thumbnail"]}>
                     {(() => {
                       const sanitizedThumbnailUrl = sanitizeImageUrl(
@@ -319,31 +321,40 @@ export default function LibraryPage() {
                   >
                     {doc.source === "UPLOADED" ? "Uploaded" : "Redeemed"}
                   </span>
-                </div>
+                </Link>
 
                 {/* Card Body */}
                 <div className={styles["card-body"]}>
                   {/* Title and Action Icons */}
                   <div className={styles["card-header"]}>
                     <h3 className={styles["card-title"]}>{doc.documentName}</h3>
-                    {doc.source === "UPLOADED" && (
-                      <div className={styles["card-actions"]}>
-                        <button
-                          onClick={() => handleEdit(doc)}
-                          className={styles["card-action-btn"]}
-                          title="Edit"
-                        >
-                          <Edit className={styles["card-action-icon"]} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(doc)}
-                          className={styles["card-action-btn"]}
-                          title="Delete"
-                        >
-                          <Trash2 className={styles["card-action-icon"]} />
-                        </button>
-                      </div>
-                    )}
+                    <div className={styles["card-actions"]}>
+                      <Link
+                        href={`/docs-view/${doc.id}`}
+                        className={styles["card-action-btn"]}
+                        title="View Details"
+                      >
+                        <Eye className={styles["card-action-icon"]} />
+                      </Link>
+                      {doc.source === "UPLOADED" && (
+                        <>
+                          <button
+                            onClick={() => handleEdit(doc)}
+                            className={styles["card-action-btn"]}
+                            title="Edit"
+                          >
+                            <Edit className={styles["card-action-icon"]} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(doc)}
+                            className={styles["card-action-btn"]}
+                            title="Delete"
+                          >
+                            <Trash2 className={styles["card-action-icon"]} />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   {/* Metadata */}

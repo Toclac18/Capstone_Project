@@ -133,7 +133,7 @@ export default function Signup() {
 
   // File uploads
   const [backgroundFiles, setBackgroundFiles] = useState<File[]>([]);
-  const [certificateFiles, setCertificateFiles] = useState<File[]>([]);
+  const [logoFile, setLogoFile] = useState<File[]>([]); // Organization logo (optional)
 
   // Terms of Use
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -328,11 +328,11 @@ export default function Signup() {
           return newErrors;
         });
       } else {
-        setCertificateFiles(files);
-        // Clear error when file is uploaded
+        setLogoFile(files);
+        // Clear error when file is uploaded (logo is optional, but clear any existing error)
         setErrors((prev) => {
           const newErrors = { ...prev };
-          delete newErrors.certificateFiles;
+          delete newErrors.logoFile;
           return newErrors;
         });
       }
@@ -346,11 +346,11 @@ export default function Signup() {
     try {
       const errs = validateAll(data);
 
-      // Validate file uploads for reviewer and org-admin
+      // Validate file uploads for reviewer (logo is optional for org-admin)
       const fileErrors = validateFileUploadRequired(
         userType,
         backgroundFiles,
-        certificateFiles,
+        logoFile,
       );
       Object.assign(errs, fileErrors);
 
@@ -406,7 +406,7 @@ export default function Signup() {
           registrationNumber: data.registrationNumber!,
         };
         // Only send first file as logoFile (optional)
-        await registerOrgAdmin(payload, certificateFiles.length > 0 ? certificateFiles[0] : undefined);
+        await registerOrgAdmin(payload, logoFile.length > 0 ? logoFile[0] : undefined);
       }
 
       // Success: inform user to check email for verification
@@ -468,7 +468,7 @@ export default function Signup() {
     }
     setErrors({});
     setBackgroundFiles([]);
-    setCertificateFiles([]);
+    setLogoFile([]);
   }, []);
 
   return (
@@ -986,20 +986,14 @@ export default function Signup() {
                   className={`${styles["file-upload"]} ${errors.certificateFiles ? "border-red-500" : ""}`}
                   disabled={loading}
                 />
-                {certificateFiles.length > 0 ? (
+                {logoFile.length > 0 && (
                   <div className={styles["file-list"]}>
-                    {certificateFiles.map((file, idx) => (
+                    {logoFile.map((file, idx) => (
                       <p key={idx} className={styles["file-item"]}>
                         • {file.name} ({(file.size / 1024).toFixed(1)} KB)
                       </p>
                     ))}
                   </div>
-                ) : (
-                  errors.certificateFiles && (
-                    <p className={styles["form-error"]}>
-                      {errors.certificateFiles}
-                    </p>
-                  )
                 )}
               </div>
             </div>

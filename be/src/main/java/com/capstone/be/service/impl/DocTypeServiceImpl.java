@@ -4,6 +4,7 @@ import com.capstone.be.domain.entity.DocType;
 import com.capstone.be.dto.request.doctype.CreateDocTypeRequest;
 import com.capstone.be.dto.request.doctype.UpdateDocTypeRequest;
 import com.capstone.be.dto.response.doctype.DocTypeDetailResponse;
+import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.mapper.DocTypeMapper;
 import com.capstone.be.repository.DocTypeRepository;
@@ -70,10 +71,26 @@ public class DocTypeServiceImpl implements DocTypeService {
   public DocTypeDetailResponse createDocType(CreateDocTypeRequest request) {
     log.info("Admin creating new document type: {}", request.getName());
 
+    // Check duplicate code
+    if (docTypeRepository.existsByCode(request.getCode())) {
+      throw new InvalidRequestException(
+          "Document type with code '" + request.getCode() + "' already exists",
+          "DUPLICATE_DOCTYPE_CODE"
+      );
+    }
+
+    // Check duplicate name (case-insensitive)
+    if (docTypeRepository.existsByNameIgnoreCase(request.getName().trim())) {
+      throw new InvalidRequestException(
+          "Document type with name '" + request.getName() + "' already exists",
+          "DUPLICATE_DOCTYPE_NAME"
+      );
+    }
+
     // Create new document type
     DocType docType = DocType.builder()
         .code(request.getCode())
-        .name(request.getName())
+        .name(request.getName().trim())
         .description(request.getDescription())
         .build();
 
@@ -92,9 +109,25 @@ public class DocTypeServiceImpl implements DocTypeService {
     DocType docType = docTypeRepository.findById(docTypeId)
         .orElseThrow(() -> new ResourceNotFoundException("DocType", docTypeId));
 
+    // Check duplicate code (exclude current)
+    if (docTypeRepository.existsByCodeAndIdNot(request.getCode(), docTypeId)) {
+      throw new InvalidRequestException(
+          "Document type with code '" + request.getCode() + "' already exists",
+          "DUPLICATE_DOCTYPE_CODE"
+      );
+    }
+
+    // Check duplicate name (case-insensitive, exclude current)
+    if (docTypeRepository.existsByNameIgnoreCaseAndIdNot(request.getName().trim(), docTypeId)) {
+      throw new InvalidRequestException(
+          "Document type with name '" + request.getName() + "' already exists",
+          "DUPLICATE_DOCTYPE_NAME"
+      );
+    }
+
     // Update fields
     docType.setCode(request.getCode());
-    docType.setName(request.getName());
+    docType.setName(request.getName().trim());
     docType.setDescription(request.getDescription());
 
     docType = docTypeRepository.save(docType);

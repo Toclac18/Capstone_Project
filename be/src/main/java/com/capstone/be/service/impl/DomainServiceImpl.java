@@ -8,6 +8,7 @@ import com.capstone.be.dto.response.domain.DomainDetailResponse;
 import com.capstone.be.dto.response.resource.DomainResponse;
 import com.capstone.be.dto.response.resource.DomainWithSpecializationsResponse;
 import com.capstone.be.dto.response.resource.DomainWithSpecializationsResponse.SpecializationInfo;
+import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.mapper.DomainMapper;
 import com.capstone.be.repository.DomainRepository;
@@ -146,10 +147,26 @@ public class DomainServiceImpl implements DomainService {
   public DomainDetailResponse createDomain(CreateDomainRequest request) {
     log.info("Admin creating new domain: {}", request.getName());
 
+    // Check duplicate code
+    if (domainRepository.existsByCode(request.getCode())) {
+      throw new InvalidRequestException(
+          "Domain with code '" + request.getCode() + "' already exists",
+          "DUPLICATE_DOMAIN_CODE"
+      );
+    }
+
+    // Check duplicate name (case-insensitive)
+    if (domainRepository.existsByNameIgnoreCase(request.getName().trim())) {
+      throw new InvalidRequestException(
+          "Domain with name '" + request.getName() + "' already exists",
+          "DUPLICATE_DOMAIN_NAME"
+      );
+    }
+
     // Create new domain
     Domain domain = Domain.builder()
         .code(request.getCode())
-        .name(request.getName())
+        .name(request.getName().trim())
         .build();
 
     domain = domainRepository.save(domain);
@@ -167,12 +184,26 @@ public class DomainServiceImpl implements DomainService {
     Domain domain = domainRepository.findById(domainId)
         .orElseThrow(() -> new ResourceNotFoundException("Domain", domainId));
 
-    // Update fields
+    // Check duplicate code (exclude current domain)
     if (request.getCode() != null && request.getCode() > 0) {
+      if (domainRepository.existsByCodeAndIdNot(request.getCode(), domainId)) {
+        throw new InvalidRequestException(
+            "Domain with code '" + request.getCode() + "' already exists",
+            "DUPLICATE_DOMAIN_CODE"
+        );
+      }
       domain.setCode(request.getCode());
     }
+
+    // Check duplicate name (case-insensitive, exclude current domain)
     if (request.getName() != null && !request.getName().isBlank()) {
-      domain.setName(request.getName());
+      if (domainRepository.existsByNameIgnoreCaseAndIdNot(request.getName().trim(), domainId)) {
+        throw new InvalidRequestException(
+            "Domain with name '" + request.getName() + "' already exists",
+            "DUPLICATE_DOMAIN_NAME"
+        );
+      }
+      domain.setName(request.getName().trim());
     }
 
     domain = domainRepository.save(domain);

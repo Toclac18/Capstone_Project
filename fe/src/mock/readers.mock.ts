@@ -184,7 +184,7 @@ export async function mockFetchReaders(
   };
 }
 
-export function mockChangeReaderAccess(enrollmentId: string, enable: boolean) {
+export function mockChangeReaderAccess(enrollmentId: string, enable: string) {
   const r = mockReaders.find((x) => x.enrollmentId === enrollmentId);
   if (!r) {
     return {

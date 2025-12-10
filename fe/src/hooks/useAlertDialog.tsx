@@ -90,7 +90,7 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
       // Cấu hình Dialog cơ bản (Fallback)
       const baseConfig: ShowAlertOptions = {
         variant: serverDialog?.variant ?? "error",
-        title: serverDialog?.title ?? "Request Error",
+        title: serverDialog?.title ?? "ERROR OCCURRED",
         description: serverDialog?.description ?? error.message,
         primaryActionLabel: serverDialog?.primaryActionLabel ?? "OK",
         onPrimaryAction: hideAlert, // Mặc định là đóng dialog
@@ -103,8 +103,7 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
           if (currentPath?.includes("/auth/sign-in")) return;
 
           showAlert({
-            ...baseConfig,
-            title: "Session Expired",
+            title: "SESSION EXPIRED",
             description: "Your session has expired. Please sign in again.",
             primaryActionLabel: "Sign In",
             onPrimaryAction: () => {
@@ -117,8 +116,9 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
         // Bad Request -> Đóng dialog
         case 400:
           showAlert({
-            ...baseConfig,
-            title: serverDialog?.title ?? "Invalid Request",
+            title: "ERROR REQUEST",
+            description: "There was an error with your request.",
+            primaryActionLabel: "OK",
             onPrimaryAction: hideAlert, // Chỉ đóng dialog
           });
           break;
@@ -126,11 +126,9 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
         // Forbidden -> Đóng dialog
         case 403:
           showAlert({
-            ...baseConfig,
-            title: serverDialog?.title ?? "Access Denied",
-            description:
-              serverDialog?.description ??
-              "You do not have permission to perform this action.",
+            title: "ACCESS DENIED",
+            description: "You do not have permission to perform this action.",
+            primaryActionLabel: "OK",
             onPrimaryAction: hideAlert, // Chỉ đóng dialog
           });
           break;
@@ -138,11 +136,8 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
         // Not Found -> Homepage
         case 404:
           showAlert({
-            ...baseConfig,
-            title: serverDialog?.title ?? "Page Not Found",
-            description:
-              serverDialog?.description ??
-              "The resource you are looking for does not exist.",
+            title: "NOT FOUND",
+            description: "The resource you are looking for does not exist.",
             primaryActionLabel: "Go Home",
             onPrimaryAction: () => {
               hideAlert();
@@ -151,12 +146,24 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
           });
           break;
 
+        // Conflict Error -> Đóng dialog
+        case 409:
+          showAlert({
+            title: "CONFLICT ERROR",
+            description:
+              "The request could not be completed due to a conflict. Please try again.",
+            primaryActionLabel: "OK",
+            onPrimaryAction: hideAlert, // Chỉ đóng dialog
+          });
+          break;
+
         // Server Error -> Error Page
         case 500:
           showAlert({
-            ...baseConfig,
-            title: serverDialog?.title ?? "Internal Server Error",
-            primaryActionLabel: "View Details",
+            title: "INTERNAL SERVER ERROR",
+            description:
+              "An unexpected error occurred on the server. Please try again later.",
+            primaryActionLabel: "OK",
             onPrimaryAction: () => {
               hideAlert();
               currentRouter.push("/error-page");

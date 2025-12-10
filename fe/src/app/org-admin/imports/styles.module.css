@@ -45,7 +45,7 @@
 }
 
 /* support dark mode wrapper .dark (global) */
-.dark .wrapper {
+:global(.dark) .wrapper {
   --bg: #020617;
   --surface: #020617;
   --surface-soft: #020617;

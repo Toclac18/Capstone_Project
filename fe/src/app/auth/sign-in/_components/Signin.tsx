@@ -17,10 +17,7 @@ import { useAuthContext } from "@/lib/auth/provider";
 type FormValues = {
   email: string;
   password: string;
-  role:
-    | "READER"
-    | "REVIEWER"
-    | "ORGANIZATION_ADMIN";
+  role: "READER" | "REVIEWER" | "ORGANIZATION_ADMIN";
   remember: boolean;
 };
 
@@ -83,15 +80,15 @@ export default function Signin() {
       // Redirect based on role
       const roleRoutes: Record<typeof data.role, string> = {
         READER: "/homepage",
-        REVIEWER: "/homepage",
-        ORGANIZATION_ADMIN: "/homepage",
+        REVIEWER: "/review-list",
+        ORGANIZATION_ADMIN: "/org-admin/readers",
       };
 
       const targetRoute = roleRoutes[data.role] || "/";
 
       // Refresh router to update server-side auth state
       router.refresh();
-      
+
       // Navigate to target route - this will trigger server-side re-render
       // and AuthProvider will receive updated initialAuth
       setTimeout(() => {
@@ -150,7 +147,6 @@ export default function Signin() {
           className="hidden dark:block"
         />
       </div>
-
 
       <div>
         <form onSubmit={handleSubmit(onSubmit)}>

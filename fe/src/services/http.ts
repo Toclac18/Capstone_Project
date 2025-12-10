@@ -98,33 +98,46 @@ const getErrorMessage = (error: AxiosError): string => {
 };
 
 apiClient.interceptors.response.use(
-  (res: AxiosResponse) => {
-    if (res.status === 204 && (res.data == null || res.data === "")) {
-      return { ...res, data: { message: "Success" } };
+    (res) => {
+    // Handle 204 NO_CONTENT responses (no body)
+    if (res.status === 204) {
+      // Return response with empty data object for consistency
+      res.data = res.data || { message: "Success" };
     }
     return res;
   },
-  (error: AxiosError) => {
-    const data = error.response?.data as any;
-    const dialog = data?.dialog as ErrorDialogPayload | undefined;
-
-    const apiError = new ApiError({
-      status: error.response?.status ?? null,
-      message: getErrorMessage(error),
-      data,
-      dialog,
-    });
-
-    if (apiClientErrorHandler) {
-      try {
-        apiClientErrorHandler(apiError);
-        apiError.isHandledGlobally = true;
-      } catch (e) {
-        console.error("[apiClient] error handler failed:", e);
+  (err) => {
+    // If error is 204, treat it as success (some servers return 204 differently)
+    if (err?.response?.status === 204) {
+      return { status: 204, data: { message: "Success" } };
+    }
+    
+    // Try to extract error message from various response formats
+    let msg = "Request error";
+    
+    if (err?.response?.data) {
+      const data = err.response.data;
+      // Backend format: { success: false, message: "...", data: {...} }
+      msg = data.message || data.error || msg;
+      
+      // If message is still default, try to get from nested data
+      if (msg === "Request error" && data.data) {
+        if (typeof data.data === "string") {
+          msg = data.data;
+        } else if (data.data.message) {
+          msg = data.data.message;
+        } else if (data.data.error) {
+          msg = data.data.error;
+        }
       }
     }
-
-    return Promise.reject(apiError);
+    
+    // Fallback to axios error message if available
+    if (msg === "Request error" && err?.message) {
+      msg = err.message;
+    }
+    
+    return Promise.reject(new Error(msg));
   },
 );
 

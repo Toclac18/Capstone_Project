@@ -142,21 +142,29 @@
 
 /* Document Name */
 .document-name {
-  @apply flex items-center gap-3;
+  @apply flex items-center gap-3 transition-colors;
+}
+
+.document-name:hover .document-name-text {
+  @apply text-primary;
+}
+
+.document-name:hover .document-icon {
+  @apply text-primary;
 }
 
 .document-icon {
-  @apply h-5 w-5 text-gray-400 flex-shrink-0;
+  @apply h-5 w-5 text-primary/70 flex-shrink-0 transition-colors;
 }
 :global(html.dark) .document-icon {
-  @apply text-gray-600;
+  @apply text-primary/80;
 }
 
 .document-name-text {
-  @apply font-medium text-dark;
+  @apply font-medium text-primary hover:underline transition-colors;
 }
 :global(html.dark) .document-name-text {
-  @apply text-white;
+  @apply text-primary;
 }
 
 .table-text {

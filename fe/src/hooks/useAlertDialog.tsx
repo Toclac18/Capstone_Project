@@ -146,6 +146,17 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
           });
           break;
 
+        // Conflict Error -> Đóng dialog
+        case 409:
+          showAlert({
+            title: "CONFLICT ERROR",
+            description:
+              "The request could not be completed due to a conflict. Please try again.",
+            primaryActionLabel: "OK",
+            onPrimaryAction: hideAlert, // Chỉ đóng dialog
+          });
+          break;
+
         // Server Error -> Error Page
         case 500:
           showAlert({

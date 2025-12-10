@@ -92,6 +92,7 @@ const getErrorMessage = (error: AxiosError): string => {
   if (status === 401) return error.message || "SESSION EXPIRED.";
   if (status === 403) return error.message || "PERMISSION DENIED.";
   if (status === 404) return error.message || "RESOURCE NOT FOUND.";
+  if (status === 409) return error.message || "CONFLICT ERROR.";
   if (status === 500) return error.message || "SERVER ERROR";
 
   return error.message || "REQUEST ERROR.";

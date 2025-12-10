@@ -120,15 +120,15 @@ export function Sidebar({
           "overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-200 ease-linear dark:border-gray-800 dark:bg-gray-dark",
           isMobile
             ? "fixed bottom-0 top-0 z-50 max-w-[290px]"
-            : "sticky top-0 h-screen",
-          isMobile ? (isOpen ? "w-full" : "w-0") : isOpen ? "w-[290px]" : "w-0",
+            : "fixed top-0 bottom-0 h-screen max-h-screen z-40",
+          isMobile ? (isOpen ? "w-full" : "w-0") : isOpen ? "w-[290px] min-w-[290px]" : "w-0",
         )}
         aria-label="Main navigation"
         aria-hidden={!isOpen}
         inert={!isOpen}
       >
-        <div className="flex h-full flex-col py-10 pl-[25px] pr-[7px]">
-          <div className="relative pr-4.5">
+        <div className="flex h-full flex-col py-10 pl-[25px] pr-[7px] overflow-hidden">
+          <div className="relative pr-4.5 shrink-0">
             <Link
               href="/"
               onClick={() => isMobile && toggleSidebar()}
@@ -147,7 +147,7 @@ export function Sidebar({
             )}
           </div>
 
-          <div className="custom-scrollbar mt-6 flex-1 overflow-y-auto pr-3 min-[850px]:mt-10">
+          <div className="custom-scrollbar mt-6 flex-1 overflow-y-auto overflow-x-hidden pr-3 min-[850px]:mt-10 min-h-0">
             {sections.map((section) => (
               <div key={section.label} className="mb-6">
                 <h2 className="mb-5 text-sm font-medium text-dark-4 dark:text-dark-6">

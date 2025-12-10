@@ -44,6 +44,9 @@ public interface ReviewRequestRepository extends JpaRepository<ReviewRequest, UU
 
   // Đếm số review request đang pending của reviewer
   long countByReviewer_IdAndStatus(UUID reviewerId, ReviewRequestStatus status);
+  
+  // Đếm số review request của document theo status
+  long countByDocument_IdAndStatus(UUID documentId, ReviewRequestStatus status);
 
   // Kiểm tra document đã được assign cho reviewer chưa
   boolean existsByDocument_IdAndReviewer_Id(UUID documentId, UUID reviewerId);

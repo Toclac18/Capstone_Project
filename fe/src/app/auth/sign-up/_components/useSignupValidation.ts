@@ -67,8 +67,8 @@ export function validateField(
         // Check if contains spaces
         if (/\s/.test(val)) return "Password cannot contain spaces";
         // Check length - must be more than 8 characters
-        if (val.length <= 8) {
-          return "Please input more than 8 characters";
+        if (val.length < 8) {
+          return "Please input at least 8 characters";
         }
         // Check if contains at least one letter and one number
         const hasLetter = /[A-Za-z]/.test(val);

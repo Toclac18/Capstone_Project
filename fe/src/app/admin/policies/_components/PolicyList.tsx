@@ -1,8 +1,7 @@
 "use client";
 
-import { Eye, Edit } from "lucide-react";
+import { Eye, Edit, CheckCircle, XCircle } from "lucide-react";
 import type { Policy } from "@/types/policy";
-import { PolicyType, PolicyStatus } from "@/types/policy";
 import styles from "./styles.module.css";
 
 interface PolicyListProps {
@@ -10,30 +9,16 @@ interface PolicyListProps {
   loading: boolean;
   onView: (policy: Policy) => void;
   onEdit: (policy: Policy) => void;
-  onStatusChange: (policy: Policy, newStatus: PolicyStatus) => void;
+  onActivate: (policy: Policy) => void;
 }
-
-const TYPE_LABELS: Record<string, string> = {
-  TERMS_OF_SERVICE: "Terms of Service",
-  PRIVACY_POLICY: "Privacy Policy",
-  COOKIE_POLICY: "Cookie Policy",
-  ACCEPTABLE_USE: "Acceptable Use",
-  REFUND_POLICY: "Refund Policy",
-  COPYRIGHT_POLICY: "Copyright Policy",
-  COMMUNITY_GUIDELINES: "Community Guidelines",
-};
 
 export function PolicyList({
   policies,
   loading,
   onView,
   onEdit,
-  onStatusChange,
+  onActivate,
 }: PolicyListProps) {
-  const getTypeLabel = (type: PolicyType | string) => {
-    return TYPE_LABELS[type] || type;
-  };
-
   if (loading) {
     return (
       <div className={styles.tableContainer}>
@@ -49,7 +34,7 @@ export function PolicyList({
     return (
       <div className={styles.tableContainer}>
         <div className={styles.empty}>
-          <p>No policies found</p>
+          <p>No policy versions found. Create your first version to get started.</p>
         </div>
       </div>
     );
@@ -60,18 +45,18 @@ export function PolicyList({
       <table className={styles.table}>
         <thead>
           <tr>
-            <th>Type</th>
+            <th>Version</th>
             <th>Title</th>
             <th>Status</th>
-            <th>Required</th>
-            <th>Actions</th>
+            <th>Created At</th>
+            <th className={styles.actionHeader}>Actions</th>
           </tr>
         </thead>
         <tbody>
           {policies.map((policy) => (
-            <tr key={policy.id}>
+            <tr key={policy.id} className={policy.isActive ? styles.activeRow : ""}>
               <td>
-                <span className={styles.type}>{getTypeLabel(policy.type)}</span>
+                <span className={styles.version}>{policy.version}</span>
               </td>
               <td>
                 <div className={styles.titleCell}>
@@ -79,24 +64,24 @@ export function PolicyList({
                 </div>
               </td>
               <td>
-                <select
-                  value={policy.status}
-                  onChange={(e) => onStatusChange(policy, e.target.value as PolicyStatus)}
-                  className={styles.statusSelect}
-                  title="Change policy status"
-                >
-                  <option value={PolicyStatus.ACTIVE}>Active</option>
-                  <option value={PolicyStatus.INACTIVE}>Inactive</option>
-                </select>
-              </td>
-              <td>
-                {policy.isRequired ? (
-                  <span className={styles.required}>Yes</span>
+                {policy.isActive ? (
+                  <span className={styles.statusActive}>
+                    <CheckCircle className={styles.statusIcon} />
+                    Active
+                  </span>
                 ) : (
-                  <span className={styles.optional}>No</span>
+                  <span className={styles.statusInactive}>
+                    <XCircle className={styles.statusIcon} />
+                    Inactive
+                  </span>
                 )}
               </td>
               <td>
+                <span className={styles.date}>
+                  {new Date(policy.createdAt).toLocaleDateString()}
+                </span>
+              </td>
+              <td className={styles.actionCellWrapper}>
                 <div className={styles.actionCell}>
                   <button
                     type="button"
@@ -114,6 +99,20 @@ export function PolicyList({
                   >
                     <Edit className={styles.actionIcon} />
                   </button>
+                  {policy.isActive ? (
+                    <div className={styles.actionIconBtn} style={{ visibility: 'hidden', pointerEvents: 'none' }} aria-hidden="true">
+                      <CheckCircle className={styles.actionIcon} />
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className={styles.actionIconBtn}
+                      onClick={() => onActivate(policy)}
+                      title="Activate Policy"
+                    >
+                      <CheckCircle className={styles.actionIcon} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>

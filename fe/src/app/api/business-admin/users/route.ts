@@ -45,8 +45,8 @@ async function handleGET(request: Request) {
   queryParams.append("size", limit);
   queryParams.append("sort", sort);
   queryParams.append("order", order);
-  if (search) {
-    queryParams.append("search", search);
+  if (search && search.trim()) {
+    queryParams.append("search", search.trim());
   }
   if (status) {
     // Backend enum values: PENDING_EMAIL_VERIFY, PENDING_APPROVE, ACTIVE, INACTIVE, REJECTED, DELETED

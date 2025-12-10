@@ -49,147 +49,133 @@ public class DocumentReviewSeeder {
 
     // Lấy users và documents từ DB
     User businessAdmin = userRepository.findByEmail("business1@capstone.com").orElse(null);
-    User reviewer1 = userRepository.findByEmail("reviewer1@gmail.com").orElse(null);
+    List<User> allReviewers = userRepository.findAll().stream()
+        .filter(u -> u.getRole() == com.capstone.be.domain.enums.UserRole.REVIEWER
+            && u.getStatus() == com.capstone.be.domain.enums.UserStatus.ACTIVE)
+        .toList();
     List<Document> documents = documentRepository.findAll();
 
-    if (businessAdmin == null || reviewer1 == null || documents.isEmpty()) {
-      log.warn("⚠️ Missing required data (admin, reviewer, or documents). Skipping review seeding.");
+    if (businessAdmin == null || allReviewers.isEmpty() || documents.isEmpty()) {
+      log.warn("⚠️ Missing required data (admin, reviewers, or documents). Skipping review seeding.");
       return;
     }
 
     Instant now = Instant.now();
+    
+    // Get at least 5 reviewers (or all available if less than 5)
+    List<User> reviewers = allReviewers.size() >= 5 
+        ? allReviewers.subList(0, 5) 
+        : allReviewers;
+    
+    log.info("Using {} reviewers for seeding", reviewers.size());
 
-    // Scenario 1: PENDING - Reviewer chưa phản hồi
-    if (documents.size() > 0) {
-      ReviewRequest pendingRequest = createReviewRequest(
-          documents.get(0),
-          reviewer1,
-          businessAdmin,
-          ReviewRequestStatus.PENDING,
-          now.plus(1, ChronoUnit.DAYS), // response deadline: 1 ngày sau
-          null, // chưa có review deadline
-          null, // chưa responded
-          null, // không có rejection reason
-          "Vui lòng review tài liệu này trong vòng 1 ngày. Cảm ơn!",
-          0
-      );
-      reviewRequestRepository.save(pendingRequest);
-      log.info("✅ Created PENDING ReviewRequest for: {}", documents.get(0).getTitle());
+    int seedIndex = 0;
+    int docIndex = 0;
+    
+    // Create reviews from last 7 days (for trending reviewers)
+    // Each reviewer gets multiple reviews to ensure they appear in trending
+    for (int reviewerIdx = 0; reviewerIdx < reviewers.size(); reviewerIdx++) {
+      User reviewer = reviewers.get(reviewerIdx);
+      
+      // Create 3-5 reviews per reviewer in the last 7 days
+      int reviewsPerReviewer = 3 + (reviewerIdx % 3); // 3, 4, or 5 reviews
+      
+      for (int i = 0; i < reviewsPerReviewer && docIndex < documents.size(); i++) {
+        Document doc = documents.get(docIndex % documents.size());
+        
+        // Reviews submitted within last 7 days (distributed across days)
+        Instant submittedAt = now.minus(i, ChronoUnit.DAYS).minus(reviewerIdx * 2, ChronoUnit.HOURS);
+        Instant respondedAt = submittedAt.minus(1, ChronoUnit.DAYS);
+        
+        ReviewRequest completedRequest = createReviewRequest(
+            doc,
+            reviewer,
+            businessAdmin,
+            ReviewRequestStatus.COMPLETED,
+            submittedAt.minus(2, ChronoUnit.DAYS),
+            submittedAt.minus(1, ChronoUnit.DAYS),
+            respondedAt,
+            null,
+            "Review request for trending test #" + (seedIndex + 1),
+            seedIndex
+        );
+        ReviewRequest savedRequest = reviewRequestRepository.save(completedRequest);
+        
+        // Alternate between APPROVED and REJECTED
+        ReviewDecision decision = (i % 2 == 0) ? ReviewDecision.APPROVED : ReviewDecision.REJECTED;
+        String comment = decision == ReviewDecision.APPROVED
+            ? "This document has been thoroughly reviewed. The content is accurate and well-structured. I recommend approval."
+            : "The document has some issues that need to be addressed before approval.";
+        
+        DocumentReview review = createDocumentReview(
+            savedRequest,
+            doc,
+            reviewer,
+            comment,
+            "s3://bucket/reviews/review-report-" + seedIndex + ".docx",
+            decision,
+            submittedAt,
+            seedIndex
+        );
+        documentReviewRepository.save(review);
+        
+        log.info("✅ Created review #{}: Reviewer '{}' → Document '{}' (submitted {} days ago)", 
+            seedIndex + 1, reviewer.getEmail(), doc.getTitle(), i);
+        
+        seedIndex++;
+        docIndex++;
+      }
     }
-
-    // Scenario 2: ACCEPTED - Reviewer đã chấp nhận, đang trong quá trình review
-    if (documents.size() > 1) {
-      Instant respondedAt = now.minus(1, ChronoUnit.DAYS);
-      ReviewRequest acceptedRequest = createReviewRequest(
-          documents.get(1),
-          reviewer1,
-          businessAdmin,
-          ReviewRequestStatus.ACCEPTED,
-          now.minus(2, ChronoUnit.DAYS), // response deadline đã qua
-          now.plus(2, ChronoUnit.DAYS), // review deadline: 2 ngày sau
-          respondedAt,
-          null,
-          "Đây là tài liệu quan trọng, cần review kỹ lưỡng.",
-          1
-      );
-      reviewRequestRepository.save(acceptedRequest);
-      log.info("✅ Created ACCEPTED ReviewRequest for: {}", documents.get(1).getTitle());
-    }
-
-    // Scenario 3: COMPLETED - Reviewer đã submit review
-    if (documents.size() > 2) {
-      Instant respondedAt = now.minus(4, ChronoUnit.DAYS);
-      Instant submittedAt = now.minus(1, ChronoUnit.DAYS);
-
+    
+    // Create additional reviews from all-time (older than 7 days) for fallback testing
+    // These will be used if we don't have enough reviewers from last 7 days
+    int allTimeReviewCount = Math.min(10, documents.size() - docIndex);
+    for (int i = 0; i < allTimeReviewCount; i++) {
+      Document doc = documents.get(docIndex % documents.size());
+      User reviewer = reviewers.get(i % reviewers.size());
+      
+      // Reviews submitted 8-30 days ago
+      Instant submittedAt = now.minus(8 + (i % 22), ChronoUnit.DAYS);
+      Instant respondedAt = submittedAt.minus(1, ChronoUnit.DAYS);
+      
       ReviewRequest completedRequest = createReviewRequest(
-          documents.get(2),
-          reviewer1,
+          doc,
+          reviewer,
           businessAdmin,
           ReviewRequestStatus.COMPLETED,
-          now.minus(5, ChronoUnit.DAYS), // response deadline đã qua
-          now.minus(2, ChronoUnit.DAYS), // review deadline đã qua
+          submittedAt.minus(2, ChronoUnit.DAYS),
+          submittedAt.minus(1, ChronoUnit.DAYS),
           respondedAt,
           null,
-          "Cần review tài liệu này ASAP.",
-          2
+          "All-time review for fallback test #" + (seedIndex + 1),
+          seedIndex
       );
       ReviewRequest savedRequest = reviewRequestRepository.save(completedRequest);
-      log.info("✅ Created COMPLETED ReviewRequest for: {}", documents.get(2).getTitle());
-
-      // Tạo DocumentReview tương ứng
+      
+      ReviewDecision decision = (i % 3 == 0) ? ReviewDecision.REJECTED : ReviewDecision.APPROVED;
+      String comment = "This is an older review from all-time period.";
+      
       DocumentReview review = createDocumentReview(
           savedRequest,
-          documents.get(2),
-          reviewer1,
-          "Tài liệu này có chất lượng tốt, nội dung chính xác và phù hợp với chuyên ngành. "
-              + "Tuy nhiên, cần bổ sung thêm tài liệu tham khảo ở phần cuối. "
-              + "Nhìn chung, tôi đề xuất phê duyệt tài liệu này.",
-          "s3://bucket/reviews/review-report-1.docx",
-          ReviewDecision.APPROVED,
+          doc,
+          reviewer,
+          comment,
+          "s3://bucket/reviews/review-report-alltime-" + seedIndex + ".docx",
+          decision,
           submittedAt,
-          0
+          seedIndex
       );
       documentReviewRepository.save(review);
-      log.info("✅ Created DocumentReview (APPROVED) for: {}", documents.get(2).getTitle());
+      
+      log.info("✅ Created all-time review #{}: Reviewer '{}' → Document '{}' (submitted {} days ago)", 
+          seedIndex + 1, reviewer.getEmail(), doc.getTitle(), 8 + (i % 22));
+      
+      seedIndex++;
+      docIndex++;
     }
 
-    // Scenario 4: REJECTED request - Reviewer từ chối review
-    if (documents.size() > 0) {
-      Instant respondedAt = now.minus(2, ChronoUnit.DAYS);
-
-      ReviewRequest rejectedRequest = createReviewRequest(
-          documents.get(0), // Reuse first document for another scenario
-          reviewer1,
-          businessAdmin,
-          ReviewRequestStatus.REJECTED,
-          now.minus(3, ChronoUnit.DAYS),
-          null, // không có review deadline vì đã reject
-          respondedAt,
-          "Tôi không có chuyên môn về lĩnh vực này, xin lỗi không thể nhận review.",
-          "Đây là tài liệu về Toán học, cần reviewer có chuyên môn phù hợp.",
-          3
-      );
-      reviewRequestRepository.save(rejectedRequest);
-      log.info("✅ Created REJECTED ReviewRequest");
-    }
-
-    // Scenario 5: Another COMPLETED with REJECTED decision
-    if (documents.size() > 1) {
-      Instant respondedAt = now.minus(3, ChronoUnit.DAYS);
-      Instant submittedAt = now.minus(1, ChronoUnit.HOURS);
-
-      ReviewRequest completedRequest2 = createReviewRequest(
-          documents.get(1), // Reuse second document
-          reviewer1,
-          businessAdmin,
-          ReviewRequestStatus.COMPLETED,
-          now.minus(4, ChronoUnit.DAYS),
-          now.minus(1, ChronoUnit.DAYS),
-          respondedAt,
-          null,
-          "Review tài liệu Java này giúp tôi.",
-          4
-      );
-      ReviewRequest savedRequest2 = reviewRequestRepository.save(completedRequest2);
-      log.info("✅ Created second COMPLETED ReviewRequest");
-
-      DocumentReview review2 = createDocumentReview(
-          savedRequest2,
-          documents.get(1),
-          reviewer1,
-          "Tài liệu này có nhiều sai sót về mặt kỹ thuật. "
-              + "Các ví dụ code không chạy được và thiếu giải thích rõ ràng. "
-              + "Cần chỉnh sửa lại trước khi publish. Tôi không thể phê duyệt tài liệu này.",
-          "s3://bucket/reviews/review-report-2.docx",
-          ReviewDecision.REJECTED,
-          submittedAt,
-          1
-      );
-      documentReviewRepository.save(review2);
-      log.info("✅ Created DocumentReview (REJECTED)");
-    }
-
-    log.info("Seeded ReviewRequests and DocumentReviews (5 requests, 2 reviews)");
+    log.info("✅ Seeded {} ReviewRequests and DocumentReviews (from {} reviewers)", 
+        seedIndex, reviewers.size());
   }
 
   private ReviewRequest createReviewRequest(

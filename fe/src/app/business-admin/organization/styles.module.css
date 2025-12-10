@@ -176,11 +176,32 @@
   @apply bg-green-900 text-green-200;
 }
 
+.status-pending {
+  @apply bg-yellow-100 text-yellow-800;
+}
+:global(html.dark) .status-pending {
+  @apply bg-yellow-900 text-yellow-200;
+}
+
 .status-inactive {
-  @apply bg-red-100 text-red-800;
+  @apply bg-gray-100 text-gray-800;
 }
 :global(html.dark) .status-inactive {
+  @apply bg-gray-700 text-gray-200;
+}
+
+.status-rejected {
+  @apply bg-red-100 text-red-800;
+}
+:global(html.dark) .status-rejected {
   @apply bg-red-900 text-red-200;
+}
+
+.status-deleted {
+  @apply bg-gray-200 text-gray-600;
+}
+:global(html.dark) .status-deleted {
+  @apply bg-gray-800 text-gray-400;
 }
 
 /* Action Cell */

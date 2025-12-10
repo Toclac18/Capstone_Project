@@ -1,6 +1,7 @@
 package com.capstone.be.dto.response.review;
 
 import com.capstone.be.domain.enums.ReviewRequestStatus;
+import com.capstone.be.domain.enums.DocStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -39,6 +40,7 @@ public class ReviewRequestResponse {
     private String thumbnailUrl;
     private Integer pageCount;
     private Integer price;
+    private DocStatus status;
     private DocTypeInfo docType;
     private DomainInfo domain;
     private SpecializationInfo specialization;

@@ -10,13 +10,13 @@ export const dynamic = "force-dynamic";
 async function handlePOST(req: Request) {
   const body = await req.json().catch(() => null);
 
-  if (!body || !body.newEmail) {
-    return badRequest("Missing required field: newEmail");
+  if (!body || !body.password || !body.newEmail) {
+    return badRequest("Missing required fields: password, newEmail");
   }
 
   if (USE_MOCK) {
     return jsonResponse(
-      { message: "OTP has been sent to your current email address" },
+      { message: "OTP has been sent to your new email address" },
       { status: 200, mode: "mock" },
     );
   }
@@ -29,20 +29,34 @@ async function handlePOST(req: Request) {
   const upstream = await fetch(`${BE_BASE}/api/user/change-email`, {
     method: "POST",
     headers: fh,
-    body: JSON.stringify({ newEmail: body.newEmail }),
+    body: JSON.stringify({ password: body.password, newEmail: body.newEmail }),
     cache: "no-store",
   });
 
+  if (upstream.status === 200) {
+    const text = await upstream.text();
+    let data;
+    try {
+      const json = JSON.parse(text);
+      data = json.data || json;
+    } catch {
+      // Backend returns plain text message
+      data = {
+        message: text || "OTP has been sent to your new email address",
+      };
+    }
+    return jsonResponse(data, { status: 200, mode: "real" });
+  }
+
+  // Handle error response
   const text = await upstream.text();
   let data;
   try {
     const json = JSON.parse(text);
-    data = json.data || json;
+    // Backend returns { success: false, message: "...", data: {...} }
+    data = { message: json.message || json.error || text || "Failed to change email" };
   } catch {
-    // Backend returns plain text message
-    data = {
-      message: text || "OTP has been sent to your current email address",
-    };
+    data = { message: text || "Failed to change email" };
   }
 
   return jsonResponse(data, { status: upstream.status, mode: "real" });

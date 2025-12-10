@@ -33,7 +33,19 @@ export function OrganizationCharts({ statistics }: OrganizationChartsProps) {
       },
       tickAmount: Math.min(12, statistics.memberGrowth.length),
     },
-    yaxis: { title: { text: "New Members" } },
+    yaxis: { 
+      title: { text: "New Members" },
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+    },
     fill: { type: "gradient" as const, gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.9 } },
     colors: ["#3C50E0"],
     title: { text: "Member Growth", style: { fontSize: "16px", fontWeight: 600 } },
@@ -68,7 +80,19 @@ export function OrganizationCharts({ statistics }: OrganizationChartsProps) {
       },
       tickAmount: Math.min(12, statistics.documentUploads.length),
     },
-    yaxis: { title: { text: "Documents" } },
+    yaxis: { 
+      title: { text: "Documents" },
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+    },
     colors: ["#10B981"],
     title: { text: "Document Uploads", style: { fontSize: "16px", fontWeight: 600 } },
   };
@@ -102,7 +126,19 @@ export function OrganizationCharts({ statistics }: OrganizationChartsProps) {
       },
       tickAmount: Math.min(12, statistics.documentViews.length),
     },
-    yaxis: { title: { text: "Views" } },
+    yaxis: { 
+      title: { text: "Views" },
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+    },
     fill: { type: "gradient" as const, gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.9 } },
     colors: ["#F59E0B"],
     title: { text: "Document Views", style: { fontSize: "16px", fontWeight: 600 } },
@@ -137,7 +173,19 @@ export function OrganizationCharts({ statistics }: OrganizationChartsProps) {
       },
       tickAmount: Math.min(12, statistics.votesReceived.length),
     },
-    yaxis: { title: { text: "Votes" } },
+    yaxis: { 
+      title: { text: "Votes" },
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+    },
     colors: ["#8B5CF6"],
     title: { text: "Votes Received", style: { fontSize: "16px", fontWeight: 600 } },
   };
@@ -171,7 +219,19 @@ export function OrganizationCharts({ statistics }: OrganizationChartsProps) {
       },
       tickAmount: Math.min(12, statistics.commentsReceived.length),
     },
-    yaxis: { title: { text: "Comments" } },
+    yaxis: { 
+      title: { text: "Comments" },
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+    },
     fill: { type: "gradient" as const, gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.9 } },
     colors: ["#EF4444"],
     title: { text: "Comments Received", style: { fontSize: "16px", fontWeight: 600 } },

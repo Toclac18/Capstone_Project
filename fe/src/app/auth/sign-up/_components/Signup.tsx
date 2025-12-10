@@ -7,6 +7,7 @@ import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
 import Image from "next/image";
 import { useToast } from "@/components/ui/toast";
+import PolicyViewer from "@/components/PolicyViewer/PolicyViewer";
 import {
   registerReader,
   registerReviewer,
@@ -133,6 +134,10 @@ export default function Signup() {
   // File uploads
   const [backgroundFiles, setBackgroundFiles] = useState<File[]>([]);
   const [certificateFiles, setCertificateFiles] = useState<File[]>([]);
+
+  // Terms of Use
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isPolicyViewerOpen, setIsPolicyViewerOpen] = useState(false);
 
   // Options for reviewer
   const [domainOptions, setDomainOptions] = useState<
@@ -368,7 +373,7 @@ export default function Signup() {
       // Submit based on user type
       if (userType === "reader") {
         const payload: RegisterReaderPayload = {
-          email: data.email!,
+          email: data.email!.toLowerCase().trim(),
           password: data.password!,
           fullName: data.name!.trim(),
           dateOfBirth: data.date_of_birth!,
@@ -376,26 +381,26 @@ export default function Signup() {
         await registerReader(payload);
       } else if (userType === "reviewer") {
         const payload: RegisterReviewerPayload = {
-          email: data.email!,
+          email: data.email!.toLowerCase().trim(),
           password: data.password!,
           fullName: data.name!.trim(),
           dateOfBirth: data.date_of_birth!,
           orcid: data.orcid,
           educationLevel: data.educationLevel! as "COLLEGE" | "UNIVERSITY" | "MASTER" | "DOCTORATE",
           organizationName: data.organizationName!,
-          organizationEmail: data.organizationEmail!,
+          organizationEmail: data.organizationEmail!.toLowerCase().trim(),
           domainIds: data.domainIds!,
           specializationIds: data.specializationIds!,
         };
         await registerReviewer(payload, backgroundFiles);
       } else if (userType === "org-admin") {
         const payload: RegisterOrgAdminPayload = {
-          adminEmail: data.email!,
+          adminEmail: data.email!.toLowerCase().trim(),
           password: data.password!,
           adminFullName: data.name!.trim(),
           organizationName: data.organizationName!,
           organizationType: data.organizationType! as "SCHOOL" | "COLLEGE" | "UNIVERSITY" | "TRAINING_CENTER",
-          organizationEmail: data.organizationEmail!,
+          organizationEmail: data.organizationEmail!.toLowerCase().trim(),
           hotline: data.hotline!,
           address: data.address!,
           registrationNumber: data.registrationNumber!,
@@ -1001,19 +1006,33 @@ export default function Signup() {
           )}
 
           <div className="mb-4.5 mt-6">
-            <p className={styles["terms-text"]}>
-              By clicking Create Account, you agree to our{" "}
-              <Link
-                href="/terms-of-use"
-                className="text-primary hover:underline"
-              >
-                Terms Of Use
-              </Link>
-            </p>
+            <div className={styles["terms-checkbox-container"]}>
+              <label className={styles["terms-checkbox-label"]}>
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className={styles["terms-checkbox"]}
+                />
+                <span className={styles["terms-checkbox-text"]}>
+                  I agree to the{" "}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsPolicyViewerOpen(true);
+                    }}
+                    className={styles["terms-link"]}
+                  >
+                    Terms of Use
+                  </button>
+                </span>
+              </label>
+            </div>
             <button
               type="submit"
               className={styles["submit-btn"]}
-              disabled={loading}
+              disabled={loading || !agreedToTerms}
             >
               {loading ? (
                 <>
@@ -1036,6 +1055,12 @@ export default function Signup() {
           </Link>
         </p>
       </div>
+
+      {/* Policy Viewer Modal */}
+      <PolicyViewer
+        isOpen={isPolicyViewerOpen}
+        onClose={() => setIsPolicyViewerOpen(false)}
+      />
     </>
   );
 }

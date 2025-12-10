@@ -2,7 +2,9 @@ package com.capstone.be.controller;
 
 import com.capstone.be.dto.request.user.ChangeEmailRequest;
 import com.capstone.be.dto.request.user.ChangePasswordRequest;
+import com.capstone.be.dto.request.user.DeleteAccountRequest;
 import com.capstone.be.dto.request.user.VerifyEmailChangeOtpRequest;
+import com.capstone.be.dto.request.user.VerifyPasswordRequest;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.UserService;
 import jakarta.validation.Valid;
@@ -53,26 +55,49 @@ public class UserController {
 
   /**
    * Delete account for the authenticated user (soft delete)
+   * Requires password verification
    * DELETE /api/v1/user/account
    *
+   * @param request Delete account request (contains password)
    * @return 204 No Content on success
    */
   @DeleteMapping("/account")
   public ResponseEntity<Void> deleteAccount(
-      @AuthenticationPrincipal UserPrincipal userPrincipal) {
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @Valid @RequestBody DeleteAccountRequest request) {
     UUID userId = userPrincipal.getId();
     log.info("Delete account request for user: {}", userId);
 
-    userService.deleteAccount(userId);
+    userService.deleteAccount(userId, request.getPassword());
 
     return ResponseEntity.noContent().build();
   }
 
   /**
-   * Request email change - sends OTP to current email
+   * Verify password for email change
+   * POST /api/v1/user/verify-password-for-email-change
+   *
+   * @param request        Verify password request
+   * @return 200 OK with message
+   */
+  @PostMapping("/verify-password-for-email-change")
+  public ResponseEntity<String> verifyPasswordForEmailChange(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @Valid @RequestBody VerifyPasswordRequest request) {
+    UUID userId = userPrincipal.getId();
+    log.info("Verify password for email change for user: {}", userId);
+
+    userService.verifyPasswordForEmailChange(userId, request.getPassword());
+
+    return ResponseEntity.ok("Password verified");
+  }
+
+  /**
+   * Request email change - sends OTP to new email
+   * Requires password verification first
    * POST /api/v1/user/change-email
    *
-   * @param request        Change email request (new email)
+   * @param request        Change email request (password and new email)
    * @return 200 OK with message
    */
   @PostMapping("/change-email")
@@ -84,7 +109,7 @@ public class UserController {
 
     userService.requestEmailChange(userId, request);
 
-    return ResponseEntity.ok("OTP has been sent to your current email address");
+    return ResponseEntity.ok("OTP has been sent to your new email address");
   }
 
   /**

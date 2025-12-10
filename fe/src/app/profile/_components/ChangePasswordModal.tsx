@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Lock, X, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
 import styles from "@/app/profile/styles.module.css";
 
 interface ChangePasswordModalProps {
@@ -19,6 +20,7 @@ export default function ChangePasswordModal({
   onClose,
   onChangePassword,
 }: ChangePasswordModalProps) {
+  const { showToast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
@@ -87,7 +89,43 @@ export default function ChangePasswordModal({
       );
       onClose();
     } catch (error: any) {
-      setErrors({ submit: error?.message || "Failed to change password" });
+      // Extract error message from various possible locations
+      const errorMessage = 
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Failed to change password";
+      
+      console.log("Change password error:", { error, errorMessage }); // Debug log
+      
+      // Check if error is related to incorrect current password
+      const lowerMessage = errorMessage.toLowerCase();
+      const isInvalidCurrentPassword =
+        lowerMessage.includes("current password is incorrect") ||
+        lowerMessage.includes("invalid_current_password") ||
+        (lowerMessage.includes("incorrect") && lowerMessage.includes("current")) ||
+        lowerMessage.includes("incorrect password");
+      
+      if (isInvalidCurrentPassword) {
+        // Set error on currentPassword field
+        setErrors({ currentPassword: "Incorrect for current Password" });
+        // Show toast error
+        showToast({
+          type: "error",
+          title: "Change Password Failed",
+          message: "Incorrect for current Password",
+          duration: 5000,
+        });
+      } else {
+        // Other errors
+        setErrors({ submit: errorMessage });
+        showToast({
+          type: "error",
+          title: "Change Password Failed",
+          message: errorMessage,
+          duration: 5000,
+        });
+      }
     } finally {
       setIsLoading(false);
     }

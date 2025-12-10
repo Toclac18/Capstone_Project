@@ -43,8 +43,8 @@ async function handleGET(request: Request) {
   const order = searchParams.get("order") || "desc";
   queryParams.append("sort", sort);
   queryParams.append("order", order);
-  if (search) {
-    queryParams.append("search", search);
+  if (search && search.trim()) {
+    queryParams.append("search", search.trim());
   }
   const status = searchParams.get("status");
   if (status) {
@@ -62,6 +62,7 @@ async function handleGET(request: Request) {
     const backendStatus = statusMap[status.toUpperCase()] || status;
     queryParams.append("status", backendStatus);
   }
+  // Note: Backend will exclude DELETED by default when status is not provided
 
   const url = `${BE_BASE}/api/admin/organizations?${queryParams.toString()}`;
 

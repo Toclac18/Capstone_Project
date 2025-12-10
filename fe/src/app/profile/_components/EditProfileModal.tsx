@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, X, AlertCircle, Calendar, Hash, Mail } from "lucide-react";
+import { User, X, AlertCircle } from "lucide-react";
 import type { 
   ProfileResponse,
   ReaderProfileResponse,
@@ -111,8 +111,56 @@ export default function EditProfileModal({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
+    // Full Name is required
     if (!formData.fullName || formData.fullName.trim() === "") {
       newErrors.fullName = "Full name is required";
+    }
+
+    // Date of Birth is required
+    if (!formData.dateOfBirth || formData.dateOfBirth.trim() === "") {
+      newErrors.dateOfBirth = "Date of birth is required";
+    } else {
+      // Validate date of birth: age must be between 18 and 80 years old
+      const birthDate = new Date(formData.dateOfBirth);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      
+      // Adjust age if birthday hasn't occurred this year
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+
+      if (age < 18) {
+        newErrors.dateOfBirth = "You must be at least 18 years old";
+      } else if (age > 80) {
+        newErrors.dateOfBirth = "You must be at most 80 years old";
+      }
+    }
+
+    // Reviewer specific fields validation
+    if (profile?.role === "REVIEWER") {
+      if (!formData.ordid || formData.ordid.trim() === "") {
+        newErrors.ordid = "ORCID is required";
+      }
+
+      if (!formData.educationLevel || formData.educationLevel.trim() === "") {
+        newErrors.educationLevel = "Education level is required";
+      }
+
+      if (!formData.organizationName || formData.organizationName.trim() === "") {
+        newErrors.organizationName = "Organization name is required";
+      }
+
+      if (!formData.organizationEmail || formData.organizationEmail.trim() === "") {
+        newErrors.organizationEmail = "Organization email is required";
+      } else {
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.organizationEmail.trim())) {
+          newErrors.organizationEmail = "Invalid email format";
+        }
+      }
     }
 
     setErrors(newErrors);
@@ -188,7 +236,7 @@ export default function EditProfileModal({
                 />
               </div>
               <div>
-                <h3 className={styles["modal-title"]}>Edit Profile</h3>
+                <h3 className={styles["modal-title"]}>Change Profile</h3>
                 <p className={styles["modal-subtitle"]}>
                   Update your profile information
                 </p>
@@ -231,23 +279,22 @@ export default function EditProfileModal({
 
             {(profile.role === "READER" || profile.role === "REVIEWER") && (
               <div className={styles["field-group"]}>
-                <label className={styles["field-label"]}>Date of Birth</label>
-                <div className={styles["field-icon-wrapper"]}>
-                  <div className={styles["field-icon"]}>
-                    <Calendar className="h-5 w-5 text-dark-6 dark:text-dark-7" />
-                  </div>
-                  <input
-                    type="date"
-                    name="dateOfBirth"
-                    value={formData.dateOfBirth}
-                    onChange={(e) => {
-                      setFormData({ ...formData, dateOfBirth: e.target.value });
-                      if (errors.dateOfBirth)
-                        setErrors({ ...errors, dateOfBirth: "" });
-                    }}
-                    className={`${styles["field-input"]} ${styles["date-input"]} ${errors.dateOfBirth ? styles.error : ""}`}
-                  />
-                </div>
+                <label className={styles["field-label"]}>
+                  Date of Birth{" "}
+                  <span className={styles["field-label-required"]}>*</span>
+                </label>
+                <input
+                  type="date"
+                  name="dateOfBirth"
+                  value={formData.dateOfBirth}
+                  onChange={(e) => {
+                    setFormData({ ...formData, dateOfBirth: e.target.value });
+                    if (errors.dateOfBirth)
+                      setErrors({ ...errors, dateOfBirth: "" });
+                  }}
+                  className={`${styles["field-input"]} ${errors.dateOfBirth ? styles.error : ""}`}
+                  required
+                />
                 {errors.dateOfBirth && (
                   <p className={styles["field-error"]}>{errors.dateOfBirth}</p>
                 )}
@@ -258,30 +305,32 @@ export default function EditProfileModal({
             {profile.role === "REVIEWER" && (
               <>
                 <div className={styles["field-group"]}>
-                  <label className={styles["field-label"]}>ORCID</label>
-                  <div className={styles["field-icon-wrapper"]}>
-                    <div className={styles["field-icon"]}>
-                      <Hash className="h-5 w-5 text-dark-6 dark:text-dark-7" />
-                    </div>
-                    <input
-                      type="text"
-                      name="ordid"
-                      placeholder="0000-0000-0000-0000"
-                      value={formData.ordid}
-                      onChange={(e) => {
-                        setFormData({ ...formData, ordid: e.target.value });
-                        if (errors.ordid) setErrors({ ...errors, ordid: "" });
-                      }}
-                      className={`${styles["field-input"]} ${errors.ordid ? styles.error : ""}`}
-                    />
-                  </div>
+                  <label className={styles["field-label"]}>
+                    ORCID{" "}
+                    <span className={styles["field-label-required"]}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="ordid"
+                    placeholder="0000-0000-0000-0000"
+                    value={formData.ordid}
+                    onChange={(e) => {
+                      setFormData({ ...formData, ordid: e.target.value });
+                      if (errors.ordid) setErrors({ ...errors, ordid: "" });
+                    }}
+                    className={`${styles["field-input"]} ${errors.ordid ? styles.error : ""}`}
+                    required
+                  />
                   {errors.ordid && (
                     <p className={styles["field-error"]}>{errors.ordid}</p>
                   )}
                 </div>
 
                 <div className={styles["field-group"]}>
-                  <label className={styles["field-label"]}>Education Level</label>
+                  <label className={styles["field-label"]}>
+                    Education Level{" "}
+                    <span className={styles["field-label-required"]}>*</span>
+                  </label>
                   <select
                     name="educationLevel"
                     value={formData.educationLevel}
@@ -290,6 +339,7 @@ export default function EditProfileModal({
                       if (errors.educationLevel) setErrors({ ...errors, educationLevel: "" });
                     }}
                     className={`${styles["field-input"]} ${errors.educationLevel ? styles.error : ""}`}
+                    required
                   >
                     <option value="">Select education level</option>
                     <option value="BACHELOR">Bachelor</option>
@@ -302,7 +352,10 @@ export default function EditProfileModal({
                 </div>
 
                 <div className={styles["field-group"]}>
-                  <label className={styles["field-label"]}>Organization Name</label>
+                  <label className={styles["field-label"]}>
+                    Organization Name{" "}
+                    <span className={styles["field-label-required"]}>*</span>
+                  </label>
                   <input
                     type="text"
                     name="organizationName"
@@ -313,6 +366,7 @@ export default function EditProfileModal({
                       if (errors.organizationName) setErrors({ ...errors, organizationName: "" });
                     }}
                     className={`${styles["field-input"]} ${errors.organizationName ? styles.error : ""}`}
+                    required
                   />
                   {errors.organizationName && (
                     <p className={styles["field-error"]}>{errors.organizationName}</p>
@@ -320,23 +374,22 @@ export default function EditProfileModal({
                 </div>
 
                 <div className={styles["field-group"]}>
-                  <label className={styles["field-label"]}>Organization Email</label>
-                  <div className={styles["field-icon-wrapper"]}>
-                    <div className={styles["field-icon"]}>
-                      <Mail className="h-5 w-5 text-dark-6 dark:text-dark-7" />
-                    </div>
-                    <input
-                      type="email"
-                      name="organizationEmail"
-                      placeholder="org@example.com"
-                      value={formData.organizationEmail}
-                      onChange={(e) => {
-                        setFormData({ ...formData, organizationEmail: e.target.value });
-                        if (errors.organizationEmail) setErrors({ ...errors, organizationEmail: "" });
-                      }}
-                      className={`${styles["field-input"]} ${errors.organizationEmail ? styles.error : ""}`}
-                    />
-                  </div>
+                  <label className={styles["field-label"]}>
+                    Organization Email{" "}
+                    <span className={styles["field-label-required"]}>*</span>
+                  </label>
+                  <input
+                    type="email"
+                    name="organizationEmail"
+                    placeholder="org@example.com"
+                    value={formData.organizationEmail}
+                    onChange={(e) => {
+                      setFormData({ ...formData, organizationEmail: e.target.value });
+                      if (errors.organizationEmail) setErrors({ ...errors, organizationEmail: "" });
+                    }}
+                    className={`${styles["field-input"]} ${errors.organizationEmail ? styles.error : ""}`}
+                    required
+                  />
                   {errors.organizationEmail && (
                     <p className={styles["field-error"]}>{errors.organizationEmail}</p>
                   )}

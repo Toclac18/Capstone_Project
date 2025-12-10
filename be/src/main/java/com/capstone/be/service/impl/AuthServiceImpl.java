@@ -79,11 +79,17 @@ public class AuthServiceImpl implements AuthService {
   @Override
   @Transactional
   public AuthResponse registerReader(RegisterReaderRequest request) {
+    // Normalize email to lowercase
+    String normalizedEmail = request.getEmail().toLowerCase().trim();
+    
     // Check if email already exists
-    if (userRepository.existsByEmail(request.getEmail())) {
-      throw DuplicateResourceException.email(request.getEmail());
+    if (userRepository.existsByEmail(normalizedEmail)) {
+      throw DuplicateResourceException.email(normalizedEmail);
     }
 
+    // Set normalized email before mapping
+    request.setEmail(normalizedEmail);
+    
     // Map request to User entity
     User user = authMapper.toUserEntity(request);
     user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
@@ -191,11 +197,14 @@ public class AuthServiceImpl implements AuthService {
     String ipAddress = HttpRequestUtil.extractIpAddress(httpRequest);
     String userAgent = HttpRequestUtil.extractUserAgent(httpRequest);
     
+    // Normalize email to lowercase
+    String normalizedEmail = request.getEmail().toLowerCase().trim();
+    
     try {
       // Authenticate user (will throw BadCredentialsException if wrong credentials)
       Authentication authentication = authenticationManager.authenticate(
           new UsernamePasswordAuthenticationToken(
-              request.getEmail(),
+              normalizedEmail,
               request.getPassword()
           )
       );
@@ -285,9 +294,13 @@ public class AuthServiceImpl implements AuthService {
   @Transactional
   public AuthResponse registerOrganization(RegisterOrganizationRequest request,
       MultipartFile logoFile) {
+    // Normalize emails to lowercase
+    String normalizedAdminEmail = request.getAdminEmail().toLowerCase().trim();
+    String normalizedOrgEmail = request.getOrganizationEmail().toLowerCase().trim();
+    
     // Check if admin email already exists
-    if (userRepository.existsByEmail(request.getAdminEmail())) {
-      throw DuplicateResourceException.email(request.getAdminEmail());
+    if (userRepository.existsByEmail(normalizedAdminEmail)) {
+      throw DuplicateResourceException.email(normalizedAdminEmail);
     }
 
     // Check if organization name already exists
@@ -297,10 +310,14 @@ public class AuthServiceImpl implements AuthService {
     }
 
     // Check if organization email already exists
-    if (organizationProfileRepository.existsByEmail(request.getOrganizationEmail())) {
+    if (organizationProfileRepository.existsByEmail(normalizedOrgEmail)) {
       throw new DuplicateResourceException(
-          "Organization email already exists: " + request.getOrganizationEmail());
+          "Organization email already exists: " + normalizedOrgEmail);
     }
+    
+    // Set normalized emails before mapping
+    request.setAdminEmail(normalizedAdminEmail);
+    request.setOrganizationEmail(normalizedOrgEmail);
 
     // Check if registration number already exists
     if (organizationProfileRepository.existsByRegistrationNumber(
@@ -351,10 +368,18 @@ public class AuthServiceImpl implements AuthService {
   @Transactional
   public AuthResponse registerReviewer(RegisterReviewerRequest request,
       List<MultipartFile> credentialFiles) {
+    // Normalize emails to lowercase
+    String normalizedEmail = request.getEmail().toLowerCase().trim();
+    String normalizedOrgEmail = request.getOrganizationEmail().toLowerCase().trim();
+    
     // Check if email already exists
-    if (userRepository.existsByEmail(request.getEmail())) {
-      throw DuplicateResourceException.email(request.getEmail());
+    if (userRepository.existsByEmail(normalizedEmail)) {
+      throw DuplicateResourceException.email(normalizedEmail);
     }
+    
+    // Set normalized emails before mapping
+    request.setEmail(normalizedEmail);
+    request.setOrganizationEmail(normalizedOrgEmail);
 
     // Validate credential files
     if (credentialFiles == null || credentialFiles.isEmpty()) {
@@ -446,9 +471,12 @@ public class AuthServiceImpl implements AuthService {
   @Override
   @Transactional
   public void resendVerificationEmail(String email) {
+    // Normalize email to lowercase
+    String normalizedEmail = email.toLowerCase().trim();
+    
     // Find user by email
-    User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> ResourceNotFoundException.userByEmail(email));
+    User user = userRepository.findByEmail(normalizedEmail)
+        .orElseThrow(() -> ResourceNotFoundException.userByEmail(normalizedEmail));
 
     // Check if user is in PENDING_EMAIL_VERIFY status
     if (user.getStatus() != UserStatus.PENDING_EMAIL_VERIFY) {

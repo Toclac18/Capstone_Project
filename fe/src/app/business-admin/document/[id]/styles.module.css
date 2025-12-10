@@ -202,3 +202,7 @@
   @apply bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600;
 }
 
+.action-button-warning {
+  @apply bg-orange-600 text-white hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800;
+}
+

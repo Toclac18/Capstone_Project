@@ -18,3 +18,4 @@ public interface SystemAdminStatisticsService {
   SystemAdminDashboardResponse getDashboardStatistics(Instant startDate, Instant endDate);
 }
 
+

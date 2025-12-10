@@ -40,6 +40,7 @@ export function UploadHistoryFilters({
     reset,
     formState: { errors },
     control,
+    getValues,
   } = useForm<FilterValues>({
     defaultValues: {
       search: "",
@@ -52,6 +53,8 @@ export function UploadHistoryFilters({
   });
 
   const watchedFilters = useWatch({ control });
+  const dateFromValue = useWatch({ control, name: "dateFrom" });
+  const dateToValue = useWatch({ control, name: "dateTo" });
 
   // Fetch document types and domains on mount
   useEffect(() => {
@@ -195,8 +198,24 @@ export function UploadHistoryFilters({
             type="date"
             className={`${styles["input"]} ${errors.dateFrom ? styles.error : ""}`}
             disabled={loading}
-            {...register("dateFrom")}
+            max={dateToValue || undefined}
+            {...register("dateFrom", {
+              validate: (value) => {
+                const dateToValue = getValues("dateTo");
+                if (value && dateToValue) {
+                  const fromDate = new Date(value);
+                  const toDate = new Date(dateToValue);
+                  if (fromDate > toDate) {
+                    return "Date From must be less than or equal to Date To";
+                  }
+                }
+                return true;
+              },
+            })}
           />
+          {errors.dateFrom && (
+            <p className="mt-1 text-sm text-red-500">{errors.dateFrom.message}</p>
+          )}
         </div>
 
         <div>
@@ -208,8 +227,24 @@ export function UploadHistoryFilters({
             type="date"
             className={`${styles["input"]} ${errors.dateTo ? styles.error : ""}`}
             disabled={loading}
-            {...register("dateTo")}
+            min={dateFromValue || undefined}
+            {...register("dateTo", {
+              validate: (value) => {
+                const dateFromValue = getValues("dateFrom");
+                if (value && dateFromValue) {
+                  const fromDate = new Date(dateFromValue);
+                  const toDate = new Date(value);
+                  if (fromDate > toDate) {
+                    return "Date To must be greater than or equal to Date From";
+                  }
+                }
+                return true;
+              },
+            })}
           />
+          {errors.dateTo && (
+            <p className="mt-1 text-sm text-red-500">{errors.dateTo.message}</p>
+          )}
         </div>
 
         <div>

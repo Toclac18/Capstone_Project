@@ -2,6 +2,9 @@ package com.capstone.be.dto.response.document;
 
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.DocVisibility;
+import com.capstone.be.domain.enums.ReportReason;
+import com.capstone.be.domain.enums.ReportStatus;
+import com.capstone.be.domain.enums.ReviewRequestStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -57,6 +60,9 @@ public class DocumentDetailResponse {
 
   // User-specific information
   private UserDocumentInfo userInfo;
+  
+  // Admin-specific information (only populated for admin requests)
+  private AdminInfo adminInfo;
 
   // --- Inner Classes ---
 
@@ -146,5 +152,93 @@ public class DocumentDetailResponse {
     private Boolean hasRedeemed;
     private Boolean isMemberOfOrganization;
     private Boolean isReviewer;  // True if user is assigned as reviewer for this document
+  }
+  
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class AdminInfo {
+    private Long commentCount;
+    private Long saveCount;
+    private Long reportCount;
+    private Long purchaseCount;  // Only for premium documents
+    private ReviewRequestSummary reviewRequestSummary;  // Only for premium documents
+    private List<ReviewRequestInfo> reviewRequests;  // Only for premium documents
+    private List<ReportInfo> reports;  // Recent reports
+  }
+  
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class ReviewRequestSummary {
+    private Integer pendingCount;
+    private Integer acceptedCount;
+    private Integer completedCount;
+    private Integer rejectedCount;
+    private Integer expiredCount;
+    private Boolean hasActiveReview;
+  }
+  
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class ReviewRequestInfo {
+    private UUID id;
+    private ReviewerInfo reviewer;
+    private AssignedByInfo assignedBy;
+    private ReviewRequestStatus status;
+    private Instant responseDeadline;
+    private Instant reviewDeadline;
+    private Instant respondedAt;
+    private String rejectionReason;
+    private String note;
+    private Instant createdAt;
+  }
+  
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class ReviewerInfo {
+    private UUID id;
+    private String email;
+    private String fullName;
+  }
+  
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class AssignedByInfo {
+    private UUID id;
+    private String email;
+    private String fullName;
+  }
+  
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class ReportInfo {
+    private UUID id;
+    private ReporterInfo reporter;
+    private ReportReason reason;
+    private String description;
+    private ReportStatus status;
+    private String adminNotes;
+    private Instant createdAt;
+  }
+  
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class ReporterInfo {
+    private UUID id;
+    private String email;
+    private String fullName;
   }
 }

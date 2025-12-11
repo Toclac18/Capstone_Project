@@ -259,15 +259,17 @@ export function OrganizationManagement() {
                           className={styles["logo"]}
                           crossOrigin="anonymous"
                           onError={(e) => {
-                            // If crossOrigin fails, try without it
                             const img = e.currentTarget as HTMLImageElement;
+                            if (img.dataset.retried === 'true') {
+                              setImageErrors(prev => new Set(prev).add(org.id));
+                              return;
+                            }
+                            
                             if (img.crossOrigin === 'anonymous') {
-                              // Try without crossOrigin
+                              img.dataset.retried = 'true';
                               img.crossOrigin = '';
                               img.src = org.logo!.trim();
                             } else {
-                              // Both attempts failed, show placeholder
-                              console.error(`Failed to load image for org ${org.id}:`, org.logo);
                               setImageErrors(prev => new Set(prev).add(org.id));
                             }
                           }}

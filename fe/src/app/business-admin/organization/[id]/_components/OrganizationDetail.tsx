@@ -305,15 +305,17 @@ export function OrganizationDetail({ organizationId }: OrganizationDetailProps) 
               className={styles["logo"]}
               crossOrigin="anonymous"
               onError={(e) => {
-                // If crossOrigin fails, try without it
                 const img = e.currentTarget as HTMLImageElement;
+                if (img.dataset.retried === 'true') {
+                  setImageError(true);
+                  return;
+                }
+                
                 if (img.crossOrigin === 'anonymous') {
-                  // Try without crossOrigin
+                  img.dataset.retried = 'true';
                   img.crossOrigin = '';
                   img.src = organization.logo!.trim();
                 } else {
-                  // Both attempts failed, show placeholder
-                  console.error("Failed to load organization logo:", organization.logo);
                   setImageError(true);
                 }
               }}

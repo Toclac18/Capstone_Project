@@ -40,6 +40,15 @@ class TextModerationService:
             )
             self.model.to(self.device)
             self.model.eval()
+            
+            # Tối ưu: Dùng FP16 (half precision) nếu GPU available để tăng tốc ~2x
+            if self.device.type == "cuda":
+                try:
+                    self.model = self.model.half()  # FP16
+                    logger.info("Text model converted to FP16 for faster inference")
+                except Exception as e:
+                    logger.warning(f"Could not convert text model to FP16: {e}")
+            
             logger.info("Text model loaded successfully")
         except Exception as e:
             logger.error(f"Error loading text model: {e}", exc_info=True)
@@ -56,10 +65,16 @@ class TextModerationService:
                 max_length=512,
             )
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            
+            # Convert to FP16 nếu model đang dùng FP16
+            if next(self.model.parameters()).dtype == torch.float16:
+                inputs = {k: v.half() if v.dtype == torch.float32 else v for k, v in inputs.items()}
 
             with torch.no_grad():
                 outputs = self.model(**inputs)
-                predictions = torch.nn.functional.softmax(outputs.logits, dim=-1)
+                # Convert về float để tính toán
+                logits = outputs.logits.float() if outputs.logits.dtype == torch.float16 else outputs.logits
+                predictions = torch.nn.functional.softmax(logits, dim=-1)
 
             probabilities = predictions.cpu().numpy()[0]
             predicted_class = int(
@@ -97,10 +112,16 @@ class TextModerationService:
                 max_length=512,
             )
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            
+            # Convert to FP16 nếu model đang dùng FP16
+            if next(self.model.parameters()).dtype == torch.float16:
+                inputs = {k: v.half() if v.dtype == torch.float32 else v for k, v in inputs.items()}
 
             with torch.no_grad():
                 outputs = self.model(**inputs)
-                predictions = torch.nn.functional.softmax(outputs.logits, dim=-1)
+                # Convert về float để tính toán
+                logits = outputs.logits.float() if outputs.logits.dtype == torch.float16 else outputs.logits
+                predictions = torch.nn.functional.softmax(logits, dim=-1)
 
             results: List[Dict[str, Any]] = []
             probabilities = predictions.cpu().numpy()

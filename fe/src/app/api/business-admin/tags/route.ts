@@ -58,7 +58,7 @@ export async function GET(request: Request) {
   const searchParams = new URL(request.url).searchParams;
   const queryParams = new URLSearchParams();
   
-  // Backend uses: status, name, page, size
+  // Backend uses: status, name, page, size, dateFrom, dateTo
   // Map frontend "search" param to backend "name" param
   if (searchParams.get("status")) {
     queryParams.append("status", searchParams.get("status")!);
@@ -67,6 +67,17 @@ export async function GET(request: Request) {
   if (nameParam) {
     queryParams.append("name", nameParam);
   }
+  
+  // Forward dateFrom and dateTo parameters
+  const dateFrom = searchParams.get("dateFrom");
+  if (dateFrom) {
+    queryParams.append("dateFrom", dateFrom);
+  }
+  const dateTo = searchParams.get("dateTo");
+  if (dateTo) {
+    queryParams.append("dateTo", dateTo);
+  }
+  
   // Backend uses page (0-indexed) and size for pagination
   // If no page/limit params, fetch first page with reasonable size
   const pageParam = searchParams.get("page");

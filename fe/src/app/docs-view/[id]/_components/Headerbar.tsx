@@ -2,15 +2,18 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Eye, ThumbsUp, ThumbsDown, Flag } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/utils/utils";
 
 import { useDocsView } from "../DocsViewProvider";
 import styles from "../styles.module.css";
 import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
 import SaveListModal from "@/components/SaveListModal/SaveListModal";
+import { useRouter } from "next/navigation";
 
 export default function HeaderBar() {
+  const router = useRouter();
   const {
     detail,
     zoomIn,
@@ -26,6 +29,7 @@ export default function HeaderBar() {
     openRedeemModal,
     closeRedeemModal,
     redeem,
+    userVote,
     voteLoading,
     handleUpvote,
     handleDownvote,
@@ -50,6 +54,12 @@ export default function HeaderBar() {
     setIsSaveModalOpen(false);
   };
 
+  // 4. Hàm xử lý chuyển hướng Report
+  const handleReport = () => {
+    // detail.id chính là ID của document hiện tại
+    router.push(`/document-report/${detail.id}`);
+  };
+
   return (
     <>
       <div className={styles.headerBar}>
@@ -61,18 +71,28 @@ export default function HeaderBar() {
           </div>
           <button
             type="button"
-            className={styles.statButton}
+            className={cn(
+              styles.statButton,
+              userVote === 1 && styles.statButtonActive,
+            )}
             disabled={voteLoading}
             onClick={handleUpvote}
+            title={userVote === 1 ? "Remove upvote" : "Upvote"}
+            data-vote={userVote}
           >
             <ThumbsUp size={18} className={styles.statIcon} />
             <span>{detail.upvote_counts}</span>
           </button>
           <button
             type="button"
-            className={styles.statButton}
+            className={cn(
+              styles.statButton,
+              userVote === -1 && styles.statButtonActive,
+            )}
             disabled={voteLoading}
             onClick={handleDownvote}
+            title={userVote === -1 ? "Remove downvote" : "Downvote"}
+            data-vote={userVote}
           >
             <ThumbsDown size={18} className={styles.statIcon} />
             <span>{detail.downvote_counts}</span>
@@ -123,9 +143,21 @@ export default function HeaderBar() {
           </div>
         </div>
 
-        {/* RIGHT: Save + Redeem / Download */}
+        {/* RIGHT: Report + Save + Redeem / Download */}
         <div className={styles.headerRight}>
-          {/* Save – disable khi premium chưa redeem */}
+          {/* 5. Nút Report */}
+          <button
+            type="button"
+            className={styles.btnGhost}
+            onClick={handleReport}
+            title="Report this document"
+          >
+            {/* Bỏ className="mr-1" vì đã có gap trong CSS */}
+            <Flag size={16} />
+            <span>Report</span>
+          </button>
+
+          {/* Save */}
           <button
             type="button"
             className={`${styles.btnGhost} ${
@@ -145,7 +177,7 @@ export default function HeaderBar() {
             >
               Redeem
             </button>
-          ) : canDownload ? (
+          ) : canDownload && detail.fileUrl ? (
             <Link href={detail.fileUrl} className={styles.btnPrimary} download>
               Download
             </Link>

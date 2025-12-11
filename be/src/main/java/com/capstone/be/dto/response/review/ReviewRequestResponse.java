@@ -1,6 +1,7 @@
 package com.capstone.be.dto.response.review;
 
 import com.capstone.be.domain.enums.ReviewRequestStatus;
+import com.capstone.be.domain.enums.DocStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -39,6 +40,51 @@ public class ReviewRequestResponse {
     private String thumbnailUrl;
     private Integer pageCount;
     private Integer price;
+    private DocStatus status;
+    private DocTypeInfo docType;
+    private DomainInfo domain;
+    private SpecializationInfo specialization;
+    private java.util.List<TagInfo> tags;
+  }
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class DocTypeInfo {
+    private UUID id;
+    private Integer code;
+    private String name;
+  }
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class DomainInfo {
+    private UUID id;
+    private Integer code;
+    private String name;
+  }
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class SpecializationInfo {
+    private UUID id;
+    private Integer code;
+    private String name;
+  }
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class TagInfo {
+    private UUID id;
+    private Long code;
+    private String name;
   }
 
   @Data

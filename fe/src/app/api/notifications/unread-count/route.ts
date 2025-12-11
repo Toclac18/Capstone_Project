@@ -4,15 +4,12 @@ import { mockNotificationDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse, proxyJsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handleGET(): Promise<Response> {
   if (USE_MOCK) {
     const unreadCount = mockNotificationDB.getUnreadCount();
-    return jsonResponse(
-      { count: unreadCount },
-      { status: 200, mode: "mock" },
-    );
+    return jsonResponse({ count: unreadCount }, { status: 200, mode: "mock" });
   }
 
   const authHeader = await getAuthHeader("notifications");
@@ -32,7 +29,7 @@ async function handleGET(): Promise<Response> {
 
   // Parse backend response - may be wrapped in { success, data, timestamp } or direct { count }
   const backendResponse = await upstream.json();
-  
+
   // Extract count from response
   const count = backendResponse?.data?.count ?? backendResponse?.count ?? 0;
 
@@ -43,4 +40,3 @@ export const GET = (...args: Parameters<typeof handleGET>) =>
   withErrorBoundary(() => handleGET(...args), {
     context: "api/notifications/unread-count/route.ts/GET",
   });
-

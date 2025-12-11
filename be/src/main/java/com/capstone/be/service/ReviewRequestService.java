@@ -2,6 +2,7 @@ package com.capstone.be.service;
 
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
 import com.capstone.be.dto.request.review.RespondReviewRequestRequest;
+import com.capstone.be.dto.request.review.ReviewHistoryFilterRequest;
 import com.capstone.be.dto.request.review.SubmitReviewRequest;
 import com.capstone.be.dto.response.review.DocumentReviewResponse;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
@@ -82,22 +83,33 @@ public interface ReviewRequestService {
   Page<ReviewRequestResponse> getAllReviewRequests(Pageable pageable);
 
   /**
-   * Submit a review for a document (reviewer submits report and decision)
+   * Submit a review for a document (reviewer submits comment, decision, and report file)
    * Updates document status to ACTIVE or REJECTED based on decision
    *
    * @param reviewerId       Reviewer ID
    * @param reviewRequestId  Review request ID
-   * @param request          Review submission with report and decision
+   * @param request          Review submission with comment and decision
+   * @param reportFile       Review report file (docx)
    * @return Document review response
    */
-  DocumentReviewResponse submitReview(UUID reviewerId, UUID reviewRequestId, SubmitReviewRequest request);
+  DocumentReviewResponse submitReview(UUID reviewerId, UUID reviewRequestId, SubmitReviewRequest request, org.springframework.web.multipart.MultipartFile reportFile);
 
   /**
    * View review history for a reviewer (all reviews submitted by the reviewer)
+   * with optional filters
    *
    * @param reviewerId Reviewer ID
+   * @param filter     Filter criteria (optional)
    * @param pageable   Pagination parameters
    * @return Page of document review responses
    */
-  Page<DocumentReviewResponse> getReviewerHistory(UUID reviewerId, Pageable pageable);
+  Page<DocumentReviewResponse> getReviewerHistory(UUID reviewerId, ReviewHistoryFilterRequest filter, Pageable pageable);
+
+  /**
+   * Business Admin - Get document review by review request ID
+   *
+   * @param reviewRequestId Review request ID
+   * @return Document review response
+   */
+  DocumentReviewResponse getDocumentReviewByReviewRequestId(UUID reviewRequestId);
 }

@@ -1,8 +1,7 @@
 import { apiClient } from "./http";
 import type {
   Policy,
-  PolicyType,
-  PolicyViewResponse,
+  CreatePolicyRequest,
   UpdatePolicyRequest,
 } from "@/types/policy";
 
@@ -13,7 +12,7 @@ interface SuccessResponse<T> {
 }
 
 /**
- * Get all policies (one per type)
+ * Get all policies (ordered by creation date, newest first)
  */
 export async function getAllPolicies(): Promise<Policy[]> {
   const res = await apiClient.get<SuccessResponse<Policy[]>>("/policies");
@@ -26,40 +25,15 @@ export async function getAllPolicies(): Promise<Policy[]> {
 }
 
 /**
- * Get active policy by type (for users to view)
+ * Get active policy (PUBLIC - for users during registration)
  */
-export async function getActivePolicyByType(
-  type: PolicyType
-): Promise<Policy> {
-  const res = await apiClient.get<SuccessResponse<Policy>>(
-    `/policies?type=${type}&active=true`
-  );
+export async function getActivePolicy(): Promise<Policy> {
+  const res = await apiClient.get<SuccessResponse<Policy>>("/policies/active");
   
   if (res.data && typeof res.data === 'object' && 'data' in res.data) {
     return (res.data as SuccessResponse<Policy>).data;
   }
   return res.data as Policy;
-}
-
-/**
- * Get policy by ID with acceptance status (for users)
- */
-export async function getPolicyView(
-  id: string,
-  userId?: string
-): Promise<PolicyViewResponse> {
-  const queryParams = new URLSearchParams();
-  queryParams.append("view", "true");
-  if (userId) queryParams.append("userId", userId);
-
-  const res = await apiClient.get<SuccessResponse<PolicyViewResponse>>(
-    `/policies/${id}?${queryParams.toString()}`
-  );
-  
-  if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-    return (res.data as SuccessResponse<PolicyViewResponse>).data;
-  }
-  return res.data as PolicyViewResponse;
 }
 
 /**
@@ -75,14 +49,11 @@ export async function getPolicyById(id: string): Promise<Policy> {
 }
 
 /**
- * Update policy by type
+ * Create a new policy version
  */
-export async function updatePolicyByType(
-  type: PolicyType,
-  data: UpdatePolicyRequest
-): Promise<Policy> {
-  const res = await apiClient.patch<SuccessResponse<Policy>>(
-    `/policies?type=${type}`,
+export async function createPolicy(data: CreatePolicyRequest): Promise<Policy> {
+  const res = await apiClient.post<SuccessResponse<Policy>>(
+    "/policies",
     data
   );
   
@@ -93,28 +64,54 @@ export async function updatePolicyByType(
 }
 
 /**
- * Accept policy (for users)
+ * Update policy (title and content only, version is immutable)
  */
-export async function acceptPolicy(id: string): Promise<{ message: string }> {
-  try {
-    const res = await apiClient.post<SuccessResponse<{ message: string }>>(
-      `/policies/${id}/accept`
-    );
-    
-    // Backend returns 204 NO_CONTENT, axios may not parse body
-    if (res.status === 204 || !res.data) {
-      return { message: "Policy accepted successfully" };
-    }
-    
-    if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-      return (res.data as SuccessResponse<{ message: string }>).data;
-    }
-    return res.data as { message: string };
-  } catch (error: any) {
-    // If axios throws error but status is 204, it's actually success
-    if (error?.response?.status === 204) {
-      return { message: "Policy accepted successfully" };
-    }
-    throw error;
+export async function updatePolicy(
+  id: string,
+  data: UpdatePolicyRequest
+): Promise<Policy> {
+  const res = await apiClient.put<SuccessResponse<Policy>>(
+    `/policies/${id}`,
+    data
+  );
+  
+  if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+    return (res.data as SuccessResponse<Policy>).data;
   }
+  return res.data as Policy;
+}
+
+/**
+ * Activate a policy (deactivates all others)
+ */
+export async function activatePolicy(id: string): Promise<Policy> {
+  const res = await apiClient.patch<SuccessResponse<Policy>>(
+    `/policies/${id}/activate`
+  );
+  
+  if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+    return (res.data as SuccessResponse<Policy>).data;
+  }
+  return res.data as Policy;
+}
+
+/**
+ * Deactivate a policy
+ */
+export async function deactivatePolicy(id: string): Promise<Policy> {
+  const res = await apiClient.patch<SuccessResponse<Policy>>(
+    `/policies/${id}/deactivate`
+  );
+  
+  if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+    return (res.data as SuccessResponse<Policy>).data;
+  }
+  return res.data as Policy;
+}
+
+/**
+ * Delete a policy (cannot delete if active)
+ */
+export async function deletePolicy(id: string): Promise<void> {
+  await apiClient.delete(`/policies/${id}`);
 }

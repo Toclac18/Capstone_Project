@@ -10,7 +10,7 @@ import {
   createSaveListAndAddDoc,
   fetchSaveLists,
 } from "@/services/save-list.service";
-import { decodeJwtPayload, extractReaderId } from "@/utils/jwt";
+import { useReader } from "@/hooks/useReader";
 
 type SaveListModalProps = {
   isOpen: boolean;
@@ -25,9 +25,7 @@ export default function SaveListModal({
 }: SaveListModalProps) {
   const { showToast } = useToast();
 
-  const READER_ID =
-    extractReaderId(decodeJwtPayload(localStorage.getItem("token") || "")) ??
-    "";
+  const { readerId } = useReader();
 
   const [saveLists, setSaveLists] = useState<SaveList[]>([]);
   const [loadingList, setLoadingList] = useState(false);
@@ -40,13 +38,13 @@ export default function SaveListModal({
 
   // Load danh sách khi mở modal
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !readerId) return;
 
     setError(null);
     setLoadingList(true);
     setSelectedId(null);
 
-    fetchSaveLists(READER_ID)
+    fetchSaveLists(readerId)
       .then((lists) => {
         setSaveLists(lists);
         if (lists.length > 0) {
@@ -57,7 +55,7 @@ export default function SaveListModal({
         setError("Cannot load save lists. Please try again later.");
       })
       .finally(() => setLoadingList(false));
-  }, [isOpen]);
+  }, [isOpen, readerId]);
 
   const handleClose = () => {
     if (submitting) return;
@@ -72,6 +70,12 @@ export default function SaveListModal({
     setSubmitting(true);
     setError(null);
 
+    if (!readerId) {
+      setError("User not authenticated.");
+      setSubmitting(false);
+      return;
+    }
+
     try {
       if (mode === "existing") {
         if (!selectedId) {
@@ -80,7 +84,7 @@ export default function SaveListModal({
           return;
         }
 
-        await addDocToSaveList(selectedId, docId, READER_ID);
+        await addDocToSaveList(selectedId, docId, readerId);
       } else {
         const trimmed = newName.trim();
         if (!trimmed) {
@@ -89,7 +93,7 @@ export default function SaveListModal({
           return;
         }
 
-        await createSaveListAndAddDoc(READER_ID, trimmed, docId);
+        await createSaveListAndAddDoc(readerId, trimmed, docId);
       }
 
       showToast(toast.success("Document Saved"));
@@ -112,8 +116,9 @@ export default function SaveListModal({
   return (
     <div className={styles.backdrop}>
       <div className={styles.card}>
+        {/* HEADER */}
         <div className={styles.header}>
-          <h2 className={styles.title}>Save documents to your list</h2>
+          <h2 className={styles.title}>Save to list</h2>
           <button
             type="button"
             className={styles.closeBtn}
@@ -124,82 +129,133 @@ export default function SaveListModal({
           </button>
         </div>
 
-        <p className={styles.muted}>
-          Please choose an existing Save List or create a new one to save this
-          document.
-        </p>
+        {/* BODY */}
+        <div className={styles.body}>
+          <p className={styles.muted}>
+            Please choose an existing Save List or create a new one to save this
+            document.
+          </p>
 
-        <div className={styles.modeSwitch}>
-          <button
-            type="button"
-            className={
-              mode === "existing" ? styles.modeBtnActive : styles.modeBtn
-            }
-            onClick={() => setMode("existing")}
-          >
-            Choose Save List
-          </button>
-          <button
-            type="button"
-            className={mode === "new" ? styles.modeBtnActive : styles.modeBtn}
-            onClick={() => setMode("new")}
-          >
-            Create New Save List
-          </button>
-        </div>
+          {/* TABS SWITCHER */}
+          <div className={styles.modeSwitch}>
+            <button
+              type="button"
+              className={
+                mode === "existing" ? styles.modeBtnActive : styles.modeBtn
+              }
+              onClick={() => setMode("existing")}
+            >
+              Choose Save List
+            </button>
+            <button
+              type="button"
+              className={mode === "new" ? styles.modeBtnActive : styles.modeBtn}
+              onClick={() => setMode("new")}
+            >
+              Create New Save List
+            </button>
+          </div>
 
-        {mode === "existing" && (
-          <div className={styles.block}>
-            {loadingList ? (
-              <div className={styles.muted}>Loading Saved lists...</div>
-            ) : saveLists.length === 0 ? (
-              <div className={styles.muted}>
-                You have no Save Lists. Please create a new one.
+          {/* CASE 1: EXISTING LIST */}
+          {mode === "existing" && (
+            <div className={styles.block}>
+              {loadingList ? (
+                // Loading State: Skeleton hoặc text đơn giản
+                <div className={`${styles.muted} ${styles.helper}`}>
+                  Loading your lists...
+                </div>
+              ) : saveLists.length === 0 ? (
+                // Empty State
+                <div
+                  className={styles.muted}
+                  style={{ textAlign: "center", padding: "1rem 0" }}
+                >
+                  You have no Save Lists yet. <br />
+                  <span
+                    style={{
+                      color: "#0ea5e9",
+                      cursor: "pointer",
+                      fontWeight: 500,
+                    }}
+                    onClick={() => setMode("new")}
+                  >
+                    Create one now?
+                  </span>
+                </div>
+              ) : (
+                // List Items
+                <ul className={styles.list}>
+                  {saveLists.map((list) => {
+                    const isSelected = selectedId === list.id;
+                    return (
+                      <li
+                        key={list.id}
+                        // Logic style: Nếu đang chọn thì dùng class .itemActive, ngược lại dùng .item
+                        className={isSelected ? styles.itemActive : styles.item}
+                        onClick={() => setSelectedId(list.id)}
+                      >
+                        <input
+                          type="radio"
+                          name="saveList"
+                          value={list.id}
+                          checked={isSelected}
+                          onChange={() => setSelectedId(list.id)}
+                          style={{ display: "none" }}
+                        />
+
+                        <div className={styles.radioVisual} />
+
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className={styles.folderIcon}
+                        >
+                          <path d="M19.5 21a3 3 0 0 0 3-3v-4.5a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3V18a3 3 0 0 0 3 3h15ZM1.5 10.146V6a3 3 0 0 1 3-3h5.379a2.25 2.25 0 0 1 1.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 0 1 3 3v1.146A4.483 4.483 0 0 0 19.5 9h-15a4.483 4.483 0 0 0-3 1.146Z" />
+                        </svg>
+
+                        {/* Content */}
+                        <div className={styles.itemInfo}>
+                          <span className={styles.itemName}>{list.name}</span>
+                          <span className={styles.itemMeta}>
+                            {list.docCount != null && (
+                              <>
+                                {list.docCount}{" "}
+                                {list.docCount > 1 ? "documents" : "document"}
+                              </>
+                            )}
+                          </span>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {mode === "new" && (
+            <div className={styles.block}>
+              <label className={styles.label} htmlFor="new-save-list-name">
+                List Name
+              </label>
+              <input
+                id="new-save-list-name"
+                className={styles.input}
+                placeholder="e.g., Thesis References, Holiday Reading..."
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                disabled={submitting}
+                autoFocus
+              />
+              <div className={styles.helper}>
+                Give your list a descriptive name.
               </div>
-            ) : (
-              <ul className={styles.list}>
-                {saveLists.map((list) => (
-                  <li key={list.id} className={styles.listItem}>
-                    <label className={styles.listLabel}>
-                      <input
-                        type="radio"
-                        name="saveList"
-                        value={list.id}
-                        checked={selectedId === list.id}
-                        onChange={() => setSelectedId(list.id)}
-                        className={styles.radio}
-                      />
-                      <span className={styles.name}>{list.name}</span>
-                      {typeof list.docCount === "number" && (
-                        <span className={styles.counter}>
-                          {list.docCount} document
-                        </span>
-                      )}
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
+            </div>
+          )}
 
-        {mode === "new" && (
-          <div className={styles.block}>
-            <label className={styles.label} htmlFor="new-save-list-name">
-              New Save List Name
-            </label>
-            <input
-              id="new-save-list-name"
-              className={styles.input}
-              placeholder="Enter save list name"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              disabled={submitting}
-            />
-          </div>
-        )}
-
-        {error && <div className={styles.error}>{error}</div>}
+          {error && <div className={styles.error}>⚠️ {error}</div>}
+        </div>
 
         <div className={styles.footer}>
           <button
@@ -214,9 +270,13 @@ export default function SaveListModal({
             type="button"
             className={styles.primary}
             onClick={handleSave}
-            disabled={submitting || (mode === "existing" && !selectedId)}
+            disabled={
+              submitting ||
+              (mode === "existing" && !selectedId) ||
+              (mode === "new" && !newName.trim())
+            }
           >
-            {submitting ? "Saving..." : "Saved"}
+            {submitting ? "Saving..." : "Save"}{" "}
           </button>
         </div>
       </div>

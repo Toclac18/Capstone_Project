@@ -297,7 +297,7 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
     }
 
     return InviteMembersResponse.builder()
-        .batch(batch.getId())
+        .importBatchId(batch.getId())
         .totalEmails(emails.size())
         .successCount(successEmails.size())
         .successEmails(successEmails)
@@ -516,6 +516,68 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
 
     OrgEnrollment enrollment = getEnrollmentById(enrollmentId);
     return buildEnrollmentResponse(enrollment);
+  }
+
+  @Override
+  @Transactional
+  public OrgEnrollmentResponse updateEnrollmentStatus(
+      UUID organizationAdminId,
+      UUID enrollmentId,
+      OrgEnrollStatus newStatus) {
+    log.info("Organization admin {} updating enrollment {} status to {}",
+        organizationAdminId, enrollmentId, newStatus);
+
+    OrganizationProfile organization = getOrganizationByAdminId(organizationAdminId);
+    OrgEnrollment enrollment = getEnrollmentById(enrollmentId);
+
+    // Validate enrollment belongs to organization
+    if (!enrollment.getOrganization().getId().equals(organization.getId())) {
+      throw new BusinessException(
+          "Enrollment does not belong to this organization",
+          HttpStatus.FORBIDDEN,
+          "ENROLLMENT_FORBIDDEN"
+      );
+    }
+
+    OrgEnrollStatus currentStatus = enrollment.getStatus();
+
+    // Validate status transition
+    if (!isValidStatusTransition(currentStatus, newStatus)) {
+      throw new InvalidRequestException(
+          String.format("Cannot transition from %s to %s", currentStatus, newStatus)
+      );
+    }
+
+    // Update status based on transition
+    if (newStatus == OrgEnrollStatus.JOINED) {
+      enrollment.acceptInvitation();
+    } else if (newStatus == OrgEnrollStatus.REMOVED) {
+      enrollment.removeMember();
+    } else if (newStatus == OrgEnrollStatus.PENDING_INVITE) {
+      enrollment.setStatus(OrgEnrollStatus.PENDING_INVITE);
+    }
+
+    enrollment = orgEnrollmentRepository.save(enrollment);
+    log.info("Successfully updated enrollment {} status to {}", enrollmentId, newStatus);
+
+    return buildEnrollmentResponse(enrollment);
+  }
+
+  private boolean isValidStatusTransition(OrgEnrollStatus currentStatus, OrgEnrollStatus newStatus) {
+    // Same status is not allowed
+    if (currentStatus == newStatus) {
+      return false;
+    }
+
+    // Valid transitions:
+    // PENDING_INVITE -> JOINED or REMOVED
+    // JOINED -> REMOVED or PENDING_INVITE
+    // REMOVED -> JOINED (reactivate member)
+    if (currentStatus == OrgEnrollStatus.REMOVED) {
+      return newStatus == OrgEnrollStatus.JOINED;
+    }
+
+    return true;
   }
 
   // Helper methods

@@ -28,7 +28,7 @@ export function LibraryFilters({
   documentTypes,
   domains,
 }: LibraryFiltersProps) {
-  const { register, handleSubmit, reset, control } = useForm<FilterValues>({
+  const { register, handleSubmit, reset, control, getValues, formState: { errors } } = useForm<FilterValues>({
     defaultValues: {
       search: "",
       uploaded: false,
@@ -41,6 +41,8 @@ export function LibraryFilters({
   });
 
   const watchedFilters = useWatch({ control });
+  const dateFromValue = useWatch({ control, name: "dateFrom" });
+  const dateToValue = useWatch({ control, name: "dateTo" });
 
   const onSubmit: SubmitHandler<FilterValues> = (data: FilterValues) => {
     // Determine source: if both checked, no filter (show all). If only one checked, use that.
@@ -177,10 +179,26 @@ export function LibraryFilters({
             <label className={styles["filter-label"]}>Date From</label>
             <input
               type="date"
-              {...register("dateFrom")}
-              className={styles["filter-input"]}
+              {...register("dateFrom", {
+                validate: (value) => {
+                  const dateToValue = getValues("dateTo");
+                  if (value && dateToValue) {
+                    const fromDate = new Date(value);
+                    const toDate = new Date(dateToValue);
+                    if (fromDate > toDate) {
+                      return "Date From must be less than or equal to Date To";
+                    }
+                  }
+                  return true;
+                },
+              })}
+              max={dateToValue || undefined}
+              className={`${styles["filter-input"]} ${errors.dateFrom ? "border-red-500" : ""}`}
               disabled={loading}
             />
+            {errors.dateFrom && (
+              <p className="mt-1 text-xs text-red-500">{errors.dateFrom.message}</p>
+            )}
           </div>
 
           {/* Date To */}
@@ -188,10 +206,26 @@ export function LibraryFilters({
             <label className={styles["filter-label"]}>Date To</label>
             <input
               type="date"
-              {...register("dateTo")}
-              className={styles["filter-input"]}
+              {...register("dateTo", {
+                validate: (value) => {
+                  const dateFromValue = getValues("dateFrom");
+                  if (value && dateFromValue) {
+                    const fromDate = new Date(dateFromValue);
+                    const toDate = new Date(value);
+                    if (fromDate > toDate) {
+                      return "Date To must be greater than or equal to Date From";
+                    }
+                  }
+                  return true;
+                },
+              })}
+              min={dateFromValue || undefined}
+              className={`${styles["filter-input"]} ${errors.dateTo ? "border-red-500" : ""}`}
               disabled={loading}
             />
+            {errors.dateTo && (
+              <p className="mt-1 text-xs text-red-500">{errors.dateTo.message}</p>
+            )}
           </div>
 
           {/* Type Filter */}

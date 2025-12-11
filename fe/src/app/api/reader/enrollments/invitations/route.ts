@@ -1,5 +1,5 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 import { getAuthHeader } from "@/server/auth";
 
@@ -55,11 +55,13 @@ async function handleGET(req: Request) {
   const text = await upstream.text();
   try {
     const backendResponse = JSON.parse(text);
-    
+
     // Backend format: { success, data: OrgEnrollmentResponse[], pageInfo: {...}, timestamp }
-    const invitations = Array.isArray(backendResponse.data) ? backendResponse.data : [];
+    const invitations = Array.isArray(backendResponse.data)
+      ? backendResponse.data
+      : [];
     const pageInfo = backendResponse.pageInfo || {};
-    
+
     // Transform to PagedResponse format
     const response = {
       content: invitations,
@@ -70,7 +72,7 @@ async function handleGET(req: Request) {
       first: pageInfo.first ?? true,
       last: pageInfo.last ?? true,
     };
-    
+
     return jsonResponse(response, {
       status: 200,
       headers: {
@@ -88,4 +90,3 @@ export const GET = (...args: Parameters<typeof handleGET>) =>
   withErrorBoundary(() => handleGET(...args), {
     context: "api/reader/enrollments/invitations/route.ts/GET",
   });
-

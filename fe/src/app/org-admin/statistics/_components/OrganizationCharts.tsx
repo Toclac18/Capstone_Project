@@ -36,6 +36,18 @@ export function OrganizationCharts({ statistics }: OrganizationChartsProps) {
       },
       tickAmount: Math.min(12, statistics.memberGrowth.length), // Show more ticks evenly
     },
+    yaxis: {
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+    },
     title: {
       text: "Member Growth",
       style: { fontSize: "16px", fontWeight: 600 },
@@ -82,6 +94,18 @@ export function OrganizationCharts({ statistics }: OrganizationChartsProps) {
         },
       },
       tickAmount: Math.min(12, statistics.documentUploads.length), // Show more ticks evenly
+    },
+    yaxis: {
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
     },
     title: {
       text: "Document Uploads",
@@ -133,6 +157,18 @@ export function OrganizationCharts({ statistics }: OrganizationChartsProps) {
     title: {
       text: "Organization Activity",
       style: { fontSize: "16px", fontWeight: 600 },
+    },
+    yaxis: {
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
     },
     colors: ["#f59e0b", "#10b981", "#3b82f6", "#ef4444"],
     legend: {

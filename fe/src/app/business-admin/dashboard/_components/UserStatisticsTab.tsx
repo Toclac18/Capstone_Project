@@ -146,6 +146,18 @@ export function UserStatisticsTab({ state, statistics, error }: UserStatisticsTa
       title: {
         text: "Number of Users",
       },
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      shared: true,
+      intersect: false,
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
     },
     legend: {
       position: "top",
@@ -157,10 +169,6 @@ export function UserStatisticsTab({ state, statistics, error }: UserStatisticsTa
         fontSize: "16px",
         fontWeight: 600,
       },
-    },
-    tooltip: {
-      shared: true,
-      intersect: false,
     },
   };
 
@@ -203,6 +211,16 @@ export function UserStatisticsTab({ state, statistics, error }: UserStatisticsTa
     yaxis: {
       title: {
         text: "Users",
+      },
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
       },
     },
     legend: {

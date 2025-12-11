@@ -11,7 +11,7 @@ interface RejectModalProps {
   isOpen: boolean;
   onClose: () => void;
   request: ReviewRequest | null;
-  onReject: (requestId: string) => Promise<void>;
+  onReject: (requestId: string, rejectionReason?: string) => Promise<void>;
 }
 
 export function RejectModal({
@@ -21,20 +21,22 @@ export function RejectModal({
   onReject,
 }: RejectModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const handleReject = useCallback(async () => {
     if (!request) return;
     try {
       setIsLoading(true);
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      await onReject(request.id);
+      await onReject(request.id, rejectionReason.trim() || undefined);
+      setRejectionReason("");
       onClose();
     } catch (error) {
       console.error("Failed to reject request:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [request?.id, onReject, onClose]);
+  }, [request?.id, rejectionReason, onReject, onClose]);
 
   if (!isOpen || !request) return null;
 
@@ -90,6 +92,25 @@ export function RejectModal({
                 <span className={styles["modal-info-value"]}>
                   {formatDate(request.uploadedDate)}
                 </span>
+              </div>
+            </div>
+
+            {/* Rejection Reason Input */}
+            <div className={styles["modal-form-section"]}>
+              <label className={styles["modal-form-label"]}>
+                Rejection Reason (Optional)
+              </label>
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Please provide a reason for rejecting this review request..."
+                className={styles["modal-textarea"]}
+                rows={4}
+                maxLength={1000}
+                disabled={isLoading}
+              />
+              <div className={styles["modal-form-hint"]}>
+                {rejectionReason.length}/1000 characters
               </div>
             </div>
           </div>

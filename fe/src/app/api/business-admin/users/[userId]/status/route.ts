@@ -1,6 +1,6 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handlePUT(
@@ -19,7 +19,7 @@ async function handlePUT(
         headers: {
           "content-type": "application/json",
         },
-      }
+      },
     );
   }
 
@@ -37,7 +37,7 @@ async function handlePUT(
           "content-type": "application/json",
           "x-mode": "mock",
         },
-      }
+      },
     );
   }
 
@@ -99,4 +99,3 @@ export async function PUT(
     context: "api/business-admin/users/[userId]/status/route.ts/PUT",
   });
 }
-

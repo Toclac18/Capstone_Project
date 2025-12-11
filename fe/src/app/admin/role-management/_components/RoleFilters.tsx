@@ -3,6 +3,7 @@
 
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import type { UserQueryParams } from "@/types/user";
+import { useToast, toast } from "@/components/ui/toast";
 import styles from "../styles.module.css";
 
 const ROLE_OPTIONS = [
@@ -56,6 +57,7 @@ export function RoleFilters({
   onFiltersChange,
   loading = false,
 }: RoleFiltersProps) {
+  const { showToast } = useToast();
   const {
     register,
     handleSubmit,
@@ -76,8 +78,19 @@ export function RoleFilters({
   });
 
   const onSubmit: SubmitHandler<FilterValues> = (data: FilterValues) => {
+    // Validate date range
+    if (data.dateFrom && data.dateTo) {
+      const fromDate = new Date(data.dateFrom);
+      const toDate = new Date(data.dateTo);
+      if (fromDate > toDate) {
+        showToast(toast.error("Validation Error", "Date From must be before or equal to Date To"));
+        return;
+      }
+    }
+    
     const filters: UserQueryParams = {
       ...data,
+      search: data.search?.trim() || "",
       page: 1,
     };
     onFiltersChange(filters);

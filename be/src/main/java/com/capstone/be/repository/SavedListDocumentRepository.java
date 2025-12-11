@@ -14,4 +14,6 @@ public interface SavedListDocumentRepository extends JpaRepository<SavedListDocu
   Optional<SavedListDocument> findBySavedListIdAndDocumentId(UUID savedListId, UUID documentId);
 
   boolean existsBySavedListIdAndDocumentId(UUID savedListId, UUID documentId);
+  
+  long countByDocument_Id(UUID documentId);
 }

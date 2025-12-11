@@ -14,10 +14,10 @@ import { getAuthHeader } from "@/server/auth";
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const readerId = url.searchParams.get("readerId");
+  const readerId = url.searchParams.get("id");
 
   if (!readerId) {
-    return badRequest('Missing query param "readerId"');
+    return badRequest("Missing query param");
   }
 
   // ---- MOCK MODE ----
@@ -45,7 +45,7 @@ export async function GET(req: Request) {
   }
 
   const upstream = await fetch(
-    `${BE_BASE}/api/save-lists?readerId=${encodeURIComponent(readerId)}`,
+    `${BE_BASE}/api/save-lists?id=${encodeURIComponent(readerId)}`,
     {
       method: "GET",
       headers: fh,

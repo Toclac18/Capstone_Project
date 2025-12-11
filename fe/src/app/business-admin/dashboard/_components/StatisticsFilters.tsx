@@ -2,16 +2,28 @@
 
 import { useState } from "react";
 import type { StatisticsQueryParams } from "@/types/statistics";
+import { useToast, toast } from "@/components/ui/toast";
 
 interface StatisticsFiltersProps {
   onFilterChange: (filters: StatisticsQueryParams) => void;
 }
 
 export function StatisticsFilters({ onFilterChange }: StatisticsFiltersProps) {
+  const { showToast } = useToast();
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
   const handleApply = () => {
+    // Validate date range
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (start > end) {
+        showToast(toast.error("Validation Error", "Start Date must be before or equal to End Date"));
+        return;
+      }
+    }
+    
     onFilterChange({
       startDate: startDate || undefined,
       endDate: endDate || undefined,

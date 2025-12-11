@@ -1,7 +1,7 @@
 import { mockLibraryDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handlePUT(
@@ -9,7 +9,7 @@ async function handlePUT(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: documentId } = await params;
-  
+
   // Read request body once
   let body: any;
   try {
@@ -51,7 +51,7 @@ async function handlePUT(
     fh.set("Authorization", authHeader);
   }
   fh.set("Content-Type", "application/json");
-  
+
   // First, fetch document detail to get current isPremium value
   const detailUrl = `${BE_BASE}/api/documents/${documentId}`;
   let currentIsPremium = false;
@@ -81,7 +81,7 @@ async function handlePUT(
       });
       if (tagsResponse.ok) {
         const tagsData = await tagsResponse.json();
-        const tags = Array.isArray(tagsData) ? tagsData : (tagsData?.data || []);
+        const tags = Array.isArray(tagsData) ? tagsData : tagsData?.data || [];
         // Map tag IDs to tag codes - only include tags that exist and have ACTIVE status
         tagCodes = body.tagIds
           .map((tagId: string) => {
@@ -94,7 +94,9 @@ async function handlePUT(
               console.warn(`Tag ${tagId} found but missing code property`);
             }
             if (tag && tag.status !== "ACTIVE") {
-              console.warn(`Tag ${tagId} is not ACTIVE (status: ${tag.status}), skipping`);
+              console.warn(
+                `Tag ${tagId} is not ACTIVE (status: ${tag.status}), skipping`,
+              );
             }
             if (!tag) {
               console.warn(`Tag ${tagId} not found in tags list`);

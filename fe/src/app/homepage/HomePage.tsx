@@ -12,7 +12,6 @@ import OrgHighlights from "./_components/OrgHighlights";
 import Section from "./_components/Section";
 import SpecializationsBlock from "./_components/SpecializationsBlock";
 import StatsStrip from "./_components/StatsStrip";
-import HomepageFooter from "./_components/Footer";
 import HomepageSkeleton from "./_components/HomepageSkeleton";
 
 // Guest versions
@@ -30,7 +29,7 @@ export default function Homepage() {
     return <HomepageSkeleton />;
   }
 
-  const isLoggedIn = isAuthenticated;
+  const isLoggedIn = isAuthenticated.isAuthenticated;
 
   return (
     <div className={styles.pageShell}>
@@ -105,8 +104,6 @@ export default function Homepage() {
 
         <RecentRail />
       </main>
-
-      <HomepageFooter />
     </div>
   );
 }

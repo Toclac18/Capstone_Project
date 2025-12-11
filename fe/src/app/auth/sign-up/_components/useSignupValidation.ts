@@ -27,7 +27,12 @@ export function validateField(
   userType: UserType,
   ctx?: Record<string, string | string[] | undefined>
 ): string {
-  const val = typeof value === "string" ? value?.trim() ?? value : value;
+  // For password fields, don't trim - compare exactly as entered
+  // For other fields, trim whitespace
+  const shouldTrim = name !== "password" && name !== "repassword";
+  const val = typeof value === "string" 
+    ? (shouldTrim ? (value?.trim() ?? value) : value)
+    : value;
 
   // Base fields validation
   switch (name) {
@@ -42,28 +47,48 @@ export function validateField(
       if (isNaN(dobDate.getTime())) return "Invalid date";
       if (dobDate > new Date()) return "Date of birth must be in the past";
       const age = calculateAge(dobDate);
-      if (age < 13) return "You must be at least 13 years old";
+      if (age < 18) return "You must be at least 18 years old";
+      if (age > 80) return "You must be at most 80 years old";
       return "";
     }
 
 
     case "email":
       if (!val) return "Email is required";
-      if (typeof val === "string" && !EMAIL_REGEX.test(val)) return "Email is invalid";
+      if (typeof val === "string") {
+        if (/\s/.test(val)) return "Email cannot contain spaces";
+        if (!EMAIL_REGEX.test(val)) return "Email is invalid";
+      }
       return "";
 
     case "password":
       if (!val) return "Password is required";
-      if (typeof val === "string" && val.length < 8) return "Password must be at least 8 characters";
-      if (typeof val === "string" && (!/[A-Za-z]/.test(val) || !/[0-9]/.test(val))) {
-        return "Password must include letters and numbers";
+      if (typeof val === "string") {
+        // Check if contains spaces
+        if (/\s/.test(val)) return "Password cannot contain spaces";
+        // Check length - must be more than 8 characters
+        if (val.length < 8) {
+          return "Please input at least 8 characters";
+        }
+        // Check if contains at least one letter and one number
+        const hasLetter = /[A-Za-z]/.test(val);
+        const hasNumber = /[0-9]/.test(val);
+        if (!hasLetter || !hasNumber) {
+          return "Password must include letters and numbers";
+        }
       }
       return "";
 
-    case "repassword":
-      if (!val) return "Please confirm your password";
-      if (val !== (ctx?.password ?? "")) return "Passwords do not match";
-      return "";
+      case "repassword": {
+        if (!val) return "Please confirm your password";
+        // Compare passwords exactly as entered (including spaces, no trimming)
+        const passwordValue = typeof ctx?.password === "string" ? ctx.password : "";
+        const repasswordValue = typeof val === "string" ? val : "";
+        if (repasswordValue !== passwordValue) {
+          return "Passwords do not match";
+        }
+        return "";
+      }
   }
 
   // Reviewer fields validation
@@ -174,21 +199,20 @@ export function validateFileSize(files: File[]): string {
 
 /**
  * Validate file upload requirement for reviewer and org-admin
+ * Note: Organization logo is optional for org-admin
  */
 export function validateFileUploadRequired(
   userType: UserType,
   backgroundFiles: File[],
-  certificateFiles: File[]
-): { backgroundFiles?: string; certificateFiles?: string } {
-  const errors: { backgroundFiles?: string; certificateFiles?: string } = {};
+  _logoFile: File[] // Logo is optional for org-admin, renamed for clarity
+): { backgroundFiles?: string; logoFile?: string } {
+  const errors: { backgroundFiles?: string; logoFile?: string } = {};
 
   if (userType === "reviewer" && backgroundFiles.length === 0) {
     errors.backgroundFiles = "Verified background upload is required";
   }
 
-  if (userType === "org-admin" && certificateFiles.length === 0) {
-    errors.certificateFiles = "Organization certificate upload is required";
-  }
+  // Organization logo is optional for org-admin - no validation needed
 
   return errors;
 }

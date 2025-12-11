@@ -3,16 +3,16 @@ import { apiClient } from "./http";
 
 export type OrgEnrollStatus = "PENDING_INVITE" | "JOINED" | "REMOVED";
 
-export interface ChangeEnrollmentStatusPayload {
+export type ChangeEnrollmentStatusPayload = {
   enrollmentId: string;
-  status: OrgEnrollStatus; // "JOINED" hoặc "REMOVED"
-}
+  status: OrgEnrollStatus;
+};
 
 export async function changeEnrollmentStatus(
   payload: ChangeEnrollmentStatusPayload,
 ): Promise<OrgEnrollment> {
-  const res = await apiClient.patch<OrgEnrollment>(
-    "org-admin/readers/status", // => /api/org-admin/readers/status
+  const res = await apiClient.post<OrgEnrollment>(
+    "org-admin/reader-change-access",
     payload,
   );
   return res.data;

@@ -4,19 +4,29 @@ import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.DocVisibility;
 import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.dto.common.PagedResponse;
+import com.capstone.be.dto.request.admin.UpdateDocumentStatusRequest;
 import com.capstone.be.dto.response.document.AdminDocumentListResponse;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
 import com.capstone.be.service.DocumentService;
+import jakarta.validation.Valid;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminDocumentController {
 
   private final DocumentService documentService;
+  private final JdbcTemplate jdbcTemplate;
 
   @GetMapping
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
@@ -40,17 +51,21 @@ public class AdminDocumentController {
       @RequestParam(name = "status", required = false) DocStatus status,
       @RequestParam(name = "visibility", required = false) DocVisibility visibility,
       @RequestParam(name = "isPremium", required = false) Boolean isPremium,
-      Pageable pageable) {
+      @RequestParam(name = "dateFrom", required = false) 
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant dateFrom,
+      @RequestParam(name = "dateTo", required = false) 
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant dateTo,
+      @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
     log.info(
         "Admin requesting all documents - title: {}, uploaderId: {}, organizationId: {}, "
             + "docTypeId: {}, specializationId: {}, status: {}, visibility: {}, isPremium: {}, "
-            + "page: {}, size: {}",
+            + "dateFrom: {}, dateTo: {}, page: {}, size: {}",
         title, uploaderId, organizationId, docTypeId, specializationId, status, visibility,
-        isPremium, pageable.getPageNumber(), pageable.getPageSize());
+        isPremium, dateFrom, dateTo, pageable.getPageNumber(), pageable.getPageSize());
 
     Page<AdminDocumentListResponse> page = documentService.getAllDocumentsForAdmin(
         title, uploaderId, organizationId, docTypeId, specializationId, status, visibility,
-        isPremium, pageable);
+        isPremium, dateFrom, dateTo, pageable);
 
     PagedResponse<AdminDocumentListResponse> response = PagedResponse.of(page,
         "Documents retrieved successfully");
@@ -106,5 +121,92 @@ public class AdminDocumentController {
         .build();
 
     return ResponseEntity.ok(response);
+  }
+
+  @PatchMapping("/{documentId}/status")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  public ResponseEntity<ApiResponse<Void>> updateDocumentStatus(
+      @PathVariable(name = "documentId") UUID documentId,
+      @Valid @RequestBody UpdateDocumentStatusRequest request) {
+    log.info("Admin updating document {} status to {}", documentId, request.getStatus());
+
+    documentService.updateDocumentStatus(documentId, request.getStatus());
+
+    ApiResponse<Void> response = ApiResponse.<Void>builder()
+        .success(true)
+        .message("Document status updated successfully")
+        .build();
+
+    return ResponseEntity.ok(response);
+  }
+  
+  @GetMapping("/statistics")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  public ResponseEntity<ApiResponse<com.capstone.be.dto.response.document.DocumentStatisticsResponse>> getDocumentStatistics() {
+    log.info("Admin requesting document statistics");
+    
+    com.capstone.be.dto.response.document.DocumentStatisticsResponse statistics = 
+        documentService.getDocumentStatistics();
+    
+    ApiResponse<com.capstone.be.dto.response.document.DocumentStatisticsResponse> response = 
+        ApiResponse.<com.capstone.be.dto.response.document.DocumentStatisticsResponse>builder()
+            .success(true)
+            .message("Document statistics retrieved successfully")
+            .data(statistics)
+            .build();
+    
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Fix documents with old status 'VERIFIED' to 'AI_VERIFIED'
+   * POST /api/admin/documents/fix-status
+   * 
+   * This is a one-time migration endpoint to fix data inconsistency
+   */
+  @PostMapping("/fix-status")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  @Transactional
+  public ResponseEntity<ApiResponse<String>> fixDocumentStatus() {
+    log.info("Admin manually triggering document status fix");
+    
+    try {
+      // Check if there are any documents with status 'VERIFIED'
+      Integer count = jdbcTemplate.queryForObject(
+          "SELECT COUNT(*) FROM document WHERE status = 'VERIFIED'",
+          Integer.class
+      );
+
+      if (count != null && count > 0) {
+        log.warn("Found {} documents with old status 'VERIFIED'. Fixing to 'AI_VERIFIED'...", count);
+        
+        // Update all documents with status 'VERIFIED' to 'AI_VERIFIED'
+        int updated = jdbcTemplate.update(
+            "UPDATE document SET status = 'AI_VERIFIED' WHERE status = 'VERIFIED'"
+        );
+        
+        log.info("Successfully updated {} documents from 'VERIFIED' to 'AI_VERIFIED'", updated);
+        
+        return ResponseEntity.ok(ApiResponse.<String>builder()
+            .success(true)
+            .message("Successfully updated " + updated + " documents from 'VERIFIED' to 'AI_VERIFIED'")
+            .data("Updated " + updated + " documents")
+            .build());
+      } else {
+        log.info("No documents with old status 'VERIFIED' found. Migration not needed.");
+        return ResponseEntity.ok(ApiResponse.<String>builder()
+            .success(true)
+            .message("No documents with status 'VERIFIED' found. Migration not needed.")
+            .data("No documents to update")
+            .build());
+      }
+    } catch (Exception e) {
+      log.error("Error fixing document status from 'VERIFIED' to 'AI_VERIFIED': {}", e.getMessage(), e);
+      return ResponseEntity.ok(ApiResponse.<String>builder()
+          .success(false)
+          .message("Error fixing document status: " + e.getMessage())
+          .data(null)
+          .build());
+    }
   }
 }

@@ -4,7 +4,7 @@ import type { SystemLog, SystemLogQueryParams } from "@/types/system-log";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse } from "@/server/response";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 function filterLogs(
   logs: SystemLog[],
@@ -147,9 +147,29 @@ async function handleGET(req: NextRequest): Promise<Response> {
     if (sp.get("userRole")) backendParams.set("userRole", sp.get("userRole")!);
     if (sp.get("ipAddress"))
       backendParams.set("ipAddress", sp.get("ipAddress")!);
-    if (sp.get("startDate"))
-      backendParams.set("startDate", sp.get("startDate")!);
-    if (sp.get("endDate")) backendParams.set("endDate", sp.get("endDate")!);
+    // Convert datetime-local format (YYYY-MM-DDTHH:mm) to ISO datetime format
+    if (sp.get("startDate")) {
+      const startDateValue = sp.get("startDate")!;
+      // If format is YYYY-MM-DDTHH:mm, convert to ISO format
+      if (startDateValue.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
+        // Parse as local time, then convert to ISO
+        const date = new Date(startDateValue);
+        backendParams.set("startDate", date.toISOString());
+      } else {
+        backendParams.set("startDate", startDateValue);
+      }
+    }
+    if (sp.get("endDate")) {
+      const endDateValue = sp.get("endDate")!;
+      // If format is YYYY-MM-DDTHH:mm, convert to ISO format
+      if (endDateValue.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
+        // Parse as local time, then convert to ISO
+        const date = new Date(endDateValue);
+        backendParams.set("endDate", date.toISOString());
+      } else {
+        backendParams.set("endDate", endDateValue);
+      }
+    }
     if (sp.get("search")) backendParams.set("search", sp.get("search")!);
     // Spring Data uses "sort" parameter, not "sortBy" and "sortOrder"
     if (sp.get("sortBy")) {

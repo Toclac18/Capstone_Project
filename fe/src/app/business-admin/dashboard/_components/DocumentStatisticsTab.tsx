@@ -73,6 +73,18 @@ export function DocumentStatisticsTab({
       },
       tickAmount: Math.min(12, statistics.documentUploads.length),
     },
+    yaxis: {
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+    },
     title: {
       text: "Document Uploads Over Time",
       style: { fontSize: "16px", fontWeight: 600 },

@@ -1,28 +1,36 @@
 // src/app/api/org-admin/reader-change-access/route.ts
 import { mockChangeReaderAccess } from "@/mock/readers.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { badRequest, proxyJsonResponse, jsonResponse } from "@/server/response";
 import { getAuthHeader } from "@/server/auth";
 
+type ChangeEnrollmentStatusBody = {
+  enrollmentId?: string;
+  status?: string;
+};
+
 async function handlePOST(req: Request) {
-  // validate body
-  let body: { userId?: string; enable?: boolean };
+  let body: ChangeEnrollmentStatusBody;
+
+  // 1. Parse JSON
   try {
     body = await req.json();
   } catch {
-    return badRequest("Invalid JSON");
+    return badRequest("Invalid JSON body");
   }
-  if (!body.userId || String(body.userId).trim() === "") {
-    return badRequest(`Field "userId" is required`);
+
+  // 2. Validate input
+  if (!body.enrollmentId) {
+    return badRequest("Missing enrollmentId");
   }
-  if (typeof body.enable !== "boolean") {
-    return badRequest(`Field "enable" (boolean) is required`);
+  if (!body.status) {
+    return badRequest("Missing status");
   }
 
   // MOCK path
   if (USE_MOCK) {
-    const result = mockChangeReaderAccess(body.userId, body.enable);
+    const result = mockChangeReaderAccess(body.enrollmentId, body.status);
     return jsonResponse(result, {
       status: result.success ? 200 : 404,
       headers: { "content-type": "application/json", "x-mode": "mock" },
@@ -30,7 +38,6 @@ async function handlePOST(req: Request) {
   }
 
   const authHeader = await getAuthHeader("org-admin-imports-upload");
-
   const fh = new Headers();
   if (authHeader) fh.set("Authorization", authHeader);
 
@@ -39,11 +46,11 @@ async function handlePOST(req: Request) {
   if (ip) fh.set("X-Forwarded-For", ip);
 
   const upstream = await fetch(
-    `${BE_BASE}/api/organization/change-reader-access`,
+    `${BE_BASE}/api/org-enrollments/${body.enrollmentId}/status`,
     {
-      method: "POST",
+      method: "PUT",
       headers: fh,
-      body: JSON.stringify({ userId: body.userId, enable: body.enable }),
+      body: JSON.stringify({ status: body.status }),
       cache: "no-store",
     },
   );

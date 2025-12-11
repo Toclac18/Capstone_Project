@@ -4,29 +4,27 @@ import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, type SubmitHandler } from "react-hook-form";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Mail } from "lucide-react";
 import { login, type LoginPayload } from "../api";
-import { EmailIcon, GoogleIcon } from "@/assets/icons";
+import { resendVerificationEmail } from "@/services/auth.service";
+import { EmailIcon } from "@/assets/icons";
 import { useToast } from "@/components/ui/toast";
 import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
 import styles from "../styles.module.css";
+import { useAuthContext } from "@/lib/auth/provider";
 
 type FormValues = {
   email: string;
   password: string;
-  role:
-    | "READER"
-    | "REVIEWER"
-    | "ORGANIZATION_ADMIN"
-    | "SYSTEM_ADMIN"
-    | "BUSINESS_ADMIN";
+  role: "READER" | "REVIEWER" | "ORGANIZATION_ADMIN";
   remember: boolean;
 };
 
 export default function Signin() {
   const { showToast } = useToast();
   const router = useRouter();
+  const { setAuthInfo } = useAuthContext();
 
   const {
     register,
@@ -43,12 +41,18 @@ export default function Signin() {
 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showResendEmail, setShowResendEmail] = useState(false);
+  const [resendEmail, setResendEmail] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setLoading(true);
 
+    // Normalize email to lowercase
+    const normalizedEmail = data.email.toLowerCase().trim();
+
     const payload: LoginPayload = {
-      email: data.email,
+      email: normalizedEmail,
       password: data.password,
       role: data.role,
       remember: data.remember,
@@ -62,22 +66,29 @@ export default function Signin() {
         localStorage.setItem("userName", response.fullName);
       }
 
+      // Update auth context immediately so header/sidebar reflect new state
+      setAuthInfo({
+        isAuthenticated: true,
+        readerId: response.userId ?? null,
+        email: response.email ?? null,
+        role: response.role ?? data.role,
+        payload: null,
+      });
+
       showToast({ type: "success", title: "Login Successful" });
 
       // Redirect based on role
       const roleRoutes: Record<typeof data.role, string> = {
         READER: "/homepage",
-        REVIEWER: "/reviewer",
+        REVIEWER: "/review-list",
         ORGANIZATION_ADMIN: "/org-admin/readers",
-        SYSTEM_ADMIN: "/admin",
-        BUSINESS_ADMIN: "/business-admin",
       };
 
       const targetRoute = roleRoutes[data.role] || "/";
 
       // Refresh router to update server-side auth state
       router.refresh();
-      
+
       // Navigate to target route - this will trigger server-side re-render
       // and AuthProvider will receive updated initialAuth
       setTimeout(() => {
@@ -85,6 +96,29 @@ export default function Signin() {
       }, 100);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Invalid email or password";
+      
+      // Check if error is about email not verified or account disabled
+      // Note: Backend returns "Your account has been disabled" or "User is disabled" 
+      // when user status is PENDING_EMAIL_VERIFY (because isEnabled() returns false)
+      const lowerMsg = msg.toLowerCase();
+      const isEmailNotVerified = 
+        lowerMsg.includes("verify your email") ||
+        lowerMsg.includes("email not verified") ||
+        lowerMsg.includes("email address first") ||
+        (lowerMsg.includes("email") && (lowerMsg.includes("not verified") || lowerMsg.includes("unverified") || lowerMsg.includes("verify")));
+      
+      const isAccountDisabled = 
+        lowerMsg.includes("user is disabled") ||
+        lowerMsg.includes("account has been disabled") ||
+        lowerMsg.includes("account is disabled");
+      
+      // Show resend email UI for both email not verified and account disabled errors
+      // (account disabled might be due to unverified email)
+      if (isEmailNotVerified || isAccountDisabled) {
+        setShowResendEmail(true);
+        setResendEmail(data.email); // Pre-fill with the email from form
+      }
+      
       showToast({
         type: "error",
         title: "Login Failed",
@@ -101,28 +135,17 @@ export default function Signin() {
         <Image
           src={Logo}
           alt="Logo"
-          width={100}
-          height={100}
+          width={150}
+          height={150}
           className="dark:hidden"
         />
         <Image
           src={LogoDark}
           alt="Logo"
-          width={100}
-          height={100}
+          width={150}
+          height={150}
           className="hidden dark:block"
         />
-      </div>
-
-      <button className={styles["oauth-btn"]}>
-        <GoogleIcon />
-        Sign in with Google
-      </button>
-
-      <div className={styles.divider}>
-        <span className={styles["divider-line"]}></span>
-        <div className={styles["divider-text"]}>Or sign in with email</div>
-        <span className={styles["divider-line"]}></span>
       </div>
 
       <div>
@@ -145,8 +168,6 @@ export default function Signin() {
                 <option value="READER">Reader</option>
                 <option value="REVIEWER">Reviewer</option>
                 <option value="ORGANIZATION_ADMIN">Organization Admin</option>
-                <option value="SYSTEM_ADMIN">System Admin</option>
-                <option value="BUSINESS_ADMIN">Business Admin</option>
               </select>
               <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">
                 <svg width={20} height={20} fill="none" viewBox="0 0 20 20">
@@ -285,6 +306,96 @@ export default function Signin() {
             </button>
           </div>
         </form>
+
+        {/* Resend Verification Email Section */}
+        {showResendEmail && (
+          <div className="mt-6 rounded-lg border border-orange-500 bg-orange-50 p-4 dark:border-orange-600 dark:bg-orange-900/20">
+            <div className="mb-3 flex items-start gap-3">
+              <Mail className="mt-0.5 h-5 w-5 text-orange-600 dark:text-orange-400" />
+              <div className="flex-1">
+                <h3 className="mb-1 text-sm font-semibold text-orange-800 dark:text-orange-200">
+                  Account Not Activated
+                </h3>
+                <p className="mb-3 text-sm text-orange-700 dark:text-orange-300">
+                  Your account may not be activated yet. This could be because your email address has not been verified. Please check your inbox for the verification link or request a new one below.
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <label
+                      htmlFor="resend-email"
+                      className="mb-2 block text-xs font-medium text-orange-800 dark:text-orange-200"
+                    >
+                      Email Address
+                    </label>
+                    <input
+                      id="resend-email"
+                      type="email"
+                      value={resendEmail}
+                      onChange={(e) => setResendEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      className="w-full rounded-lg border border-orange-300 bg-white px-4 py-2.5 text-sm text-dark outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:border-orange-600 dark:bg-dark-2 dark:text-white dark:focus:border-orange-500 dark:focus:ring-orange-800"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!resendEmail.trim()) {
+                          showToast({
+                            type: "error",
+                            title: "Email Required",
+                            message: "Please enter your email address",
+                          });
+                          return;
+                        }
+
+                        setResendLoading(true);
+                        try {
+                          // Normalize email to lowercase
+                          const normalizedEmail = resendEmail.trim().toLowerCase();
+                          await resendVerificationEmail({ email: normalizedEmail });
+                          showToast({
+                            type: "success",
+                            title: "Email Sent",
+                            message: "A verification link has been sent to your email. Please check your inbox.",
+                          });
+                          setShowResendEmail(false);
+                          setResendEmail("");
+                        } catch (error) {
+                          const msg =
+                            error instanceof Error
+                              ? error.message
+                              : "Failed to resend verification email";
+                          showToast({
+                            type: "error",
+                            title: "Error",
+                            message: msg,
+                          });
+                        } finally {
+                          setResendLoading(false);
+                        }
+                      }}
+                      disabled={resendLoading}
+                      className="flex-1 rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-orange-500 dark:hover:bg-orange-600"
+                    >
+                      {resendLoading ? "Sending..." : "Resend Verification Email"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowResendEmail(false);
+                        setResendEmail("");
+                      }}
+                      className="rounded-lg border border-orange-300 bg-white px-4 py-2.5 text-sm font-medium text-orange-700 transition hover:bg-orange-50 dark:border-orange-600 dark:bg-dark-2 dark:text-orange-300 dark:hover:bg-orange-900/30"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className={styles.footer}>

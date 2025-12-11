@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { mockOrganizationAdminDB } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { withErrorBoundary } from "@/hooks/withErrorBoundary";
+import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { getAuthHeader } from "@/server/auth";
 import { jsonResponse } from "@/server/response";
 
@@ -25,7 +25,6 @@ async function createForwardHeaders(): Promise<Headers> {
 
   return forwardHeaders;
 }
-
 
 async function handleGET() {
   if (USE_MOCK) {

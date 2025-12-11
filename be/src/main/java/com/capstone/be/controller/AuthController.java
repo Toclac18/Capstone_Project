@@ -93,14 +93,14 @@ public class AuthController {
    * POST /api/v1/auth/forgot-password/otp
    *
    * @param request Forgot password OTP request (email)
-   * @return 200 OK with generic message
+   * @return 200 OK with success message
    */
   @PostMapping("/forgot-password/otp")
   public ResponseEntity<String> sendPasswordResetOtp(
       @Valid @RequestBody ForgotPasswordOtpRequest request) {
     log.info("Send password reset OTP for email: {}", request.getEmail());
     userService.sendPasswordResetOtp(request.getEmail());
-    return ResponseEntity.ok("If an account exists with this email, an OTP has been sent");
+    return ResponseEntity.ok("OTP has been sent to your email. Please check your inbox");
   }
 
   /**

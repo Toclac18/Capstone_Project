@@ -1,6 +1,7 @@
 "use client";
 
 import Breadcrumb from "@/components/(template)/Breadcrumbs/Breadcrumb";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -148,14 +149,33 @@ export default function UploadHistoryPage() {
 
   const getStatusBadgeClass = (status: string): string => {
     switch (status) {
-      case "VERIFIED":
+      case "ACTIVE":
+      case "AI_VERIFIED":
         return styles["status-approved"];
-      case "VERIFYING":
+      case "AI_VERIFYING":
+      case "REVIEWING":
         return styles["status-pending"];
       case "REJECTED":
+      case "AI_REJECTED":
         return styles["status-rejected"];
       default:
         return "";
+    }
+  };
+
+  const getStatusLabel = (status: string): string => {
+    switch (status) {
+      case "AI_VERIFYING":
+      case "REVIEWING":
+        return "Pending";
+      case "AI_VERIFIED":
+      case "ACTIVE":
+        return "Approved";
+      case "AI_REJECTED":
+      case "REJECTED":
+        return "Rejected";
+      default:
+        return status;
     }
   };
 
@@ -274,17 +294,16 @@ export default function UploadHistoryPage() {
                 <TableHead>Specialization</TableHead>
                 <TableHead>Size</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right xl:pr-10">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedDocuments.map((doc) => (
                 <TableRow key={doc.id} className="border-b border-stroke last:border-b-0 dark:border-stroke-dark">
                   <TableCell className="xl:pl-7.5">
-                    <div className={styles["document-name"]}>
+                    <Link href={`/docs-view/${doc.id}`} className={styles["document-name"]}>
                       <FileText className={styles["document-icon"]} />
                       <span className={styles["document-name-text"]}>{doc.documentName}</span>
-                    </div>
+                    </Link>
                   </TableCell>
                   <TableCell className={styles["table-text"]}>
                     {formatDate(doc.uploadDate)}
@@ -296,20 +315,20 @@ export default function UploadHistoryPage() {
                     {formatFileSize(doc.fileSize)}
                   </TableCell>
                   <TableCell>
-                    <span className={`${styles["status-badge"]} ${getStatusBadgeClass(doc.status)}`}>
-                      {doc.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className={`text-right xl:pr-7.5 ${styles["actions-cell"]}`}>
-                    {doc.status === "REJECTED" && doc.canRequestReview && (
-                      <button
-                        onClick={() => handleReReviewClick(doc)}
-                        disabled={reReviewingId === doc.id || isReReviewModalOpen}
-                        className={styles["btn-request-review"]}
-                      >
-                        Re-review
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <span className={`${styles["status-badge"]} ${getStatusBadgeClass(doc.status)}`}>
+                        {getStatusLabel(doc.status)}
+                      </span>
+                      {doc.status === "REJECTED" && doc.canRequestReview && (
+                        <button
+                          onClick={() => handleReReviewClick(doc)}
+                          disabled={reReviewingId === doc.id || isReReviewModalOpen}
+                          className={styles["btn-request-review"]}
+                        >
+                          Re-review
+                        </button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

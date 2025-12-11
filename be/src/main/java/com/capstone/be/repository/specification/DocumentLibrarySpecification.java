@@ -2,6 +2,7 @@ package com.capstone.be.repository.specification;
 
 import com.capstone.be.domain.entity.Document;
 import com.capstone.be.domain.entity.DocumentRedemption;
+import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -42,6 +43,9 @@ public class DocumentLibrarySpecification {
       if (libraryPredicate != null) {
         predicates.add(libraryPredicate);
       }
+
+      // Only show ACTIVE documents in library (approved and published)
+      predicates.add(cb.equal(root.get("status"), DocStatus.ACTIVE));
 
       // Apply additional filters
       if (filter != null) {

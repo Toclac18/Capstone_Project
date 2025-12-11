@@ -86,15 +86,16 @@ const getErrorMessage = (error: AxiosError): string => {
 
   if (payload?.message) return String(payload.message);
 
-  if (error.code === "ECONNABORTED") return "Request timeout.";
-  if (!error.response) return "Cannot connect to server.";
+  if (error.code === "ECONNABORTED") return "REQUEST TIMEOUT.";
+  if (!error.response) return "CANNOT CONNECT TO SERVER.";
 
-  if (status === 401) return "Session expired.";
-  if (status === 403) return "Permission denied.";
-  if (status === 404) return "Resource not found.";
-  if (status && status >= 500) return "Server error.";
+  if (status === 401) return error.message || "SESSION EXPIRED.";
+  if (status === 403) return error.message || "PERMISSION DENIED.";
+  if (status === 404) return error.message || "RESOURCE NOT FOUND.";
+  if (status === 409) return error.message || "CONFLICT ERROR.";
+  if (status === 500) return error.message || "SERVER ERROR";
 
-  return error.message || "Request error.";
+  return error.message || "REQUEST ERROR.";
 };
 
 apiClient.interceptors.response.use(

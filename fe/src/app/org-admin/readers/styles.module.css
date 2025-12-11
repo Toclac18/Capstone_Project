@@ -132,7 +132,10 @@
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--surface);
-  overflow: hidden;
+  /* Allow overlays (modals) rendered inside to escape clipping.
+     Previously `overflow: hidden` could clip fixed/absolute children
+     when an ancestor had transform/stacking context. */
+  overflow: visible;
 }
 
 /* TABLE */
@@ -172,7 +175,10 @@
 
 :global(.dark) .table-row:hover {
   background: rgba(255, 255, 255, 0.04); /* dark */
-  transform: translateY(-1px);
+  /* Avoid applying transform on hover — transforms may create a new
+     containing block which can cause `position: fixed` children to be
+     positioned relative to the row and get clipped. Keep subtle
+     elevation via box-shadow only. */
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
 }
 

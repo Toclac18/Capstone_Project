@@ -65,8 +65,13 @@ export default function ChangeEmailModal({
       newErrors.newEmail = "New email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.newEmail)) {
       newErrors.newEmail = "Invalid email format";
-    } else if (formData.newEmail === currentEmail) {
-      newErrors.newEmail = "New email must be different from current email";
+    } else {
+      // Normalize both emails to lowercase for comparison
+      const normalizedNewEmail = formData.newEmail.toLowerCase().trim();
+      const normalizedCurrentEmail = currentEmail.toLowerCase().trim();
+      if (normalizedNewEmail === normalizedCurrentEmail) {
+        newErrors.newEmail = "New email must be different from current email";
+      }
     }
 
     setErrors(newErrors);
@@ -126,9 +131,11 @@ export default function ChangeEmailModal({
 
     try {
       setIsLoading(true);
-      const result = await onRequestEmailChange(password, formData.newEmail, "");
+      // Normalize email to lowercase before sending
+      const normalizedEmail = formData.newEmail.toLowerCase().trim();
+      const result = await onRequestEmailChange(password, normalizedEmail, "");
       if (result.step === "verify") {
-        setNewEmail(formData.newEmail);
+        setNewEmail(normalizedEmail);
         setStep("verify");
         setFormData({ ...formData, newEmail: "", otp: "" });
       }

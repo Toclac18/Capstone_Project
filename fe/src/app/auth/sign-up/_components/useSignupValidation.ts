@@ -67,8 +67,8 @@ export function validateField(
         // Check if contains spaces
         if (/\s/.test(val)) return "Password cannot contain spaces";
         // Check length - must be more than 8 characters
-        if (val.length <= 8) {
-          return "Please input more than 8 characters";
+        if (val.length < 8) {
+          return "Please input at least 8 characters";
         }
         // Check if contains at least one letter and one number
         const hasLetter = /[A-Za-z]/.test(val);
@@ -199,21 +199,20 @@ export function validateFileSize(files: File[]): string {
 
 /**
  * Validate file upload requirement for reviewer and org-admin
+ * Note: Organization logo is optional for org-admin
  */
 export function validateFileUploadRequired(
   userType: UserType,
   backgroundFiles: File[],
-  certificateFiles: File[]
-): { backgroundFiles?: string; certificateFiles?: string } {
-  const errors: { backgroundFiles?: string; certificateFiles?: string } = {};
+  _logoFile: File[] // Logo is optional for org-admin, renamed for clarity
+): { backgroundFiles?: string; logoFile?: string } {
+  const errors: { backgroundFiles?: string; logoFile?: string } = {};
 
   if (userType === "reviewer" && backgroundFiles.length === 0) {
     errors.backgroundFiles = "Verified background upload is required";
   }
 
-  if (userType === "org-admin" && certificateFiles.length === 0) {
-    errors.certificateFiles = "Organization certificate upload is required";
-  }
+  // Organization logo is optional for org-admin - no validation needed
 
   return errors;
 }

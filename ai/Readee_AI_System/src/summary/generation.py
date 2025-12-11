@@ -123,13 +123,18 @@ def generate_with_budget(
 
     start = time.perf_counter()
     with torch.inference_mode():
+        # Tạo attention_mask để tránh warning
+        attention_mask = torch.ones_like(input_ids)
+        
         outputs = model.generate(
             input_ids=input_ids,
+            attention_mask=attention_mask,
             max_new_tokens=max_new_tokens,
-            do_sample=False,
-            temperature=0.0,
+            do_sample=False,  # Greedy decoding (nhanh nhất)
             pad_token_id=tokenizer.eos_token_id,
+            eos_token_id=tokenizer.eos_token_id,
             use_cache=True,
+            # Không set temperature và top_p khi do_sample=False để tránh warning
         )
     elapsed_ms = int((time.perf_counter() - start) * 1000)
 
@@ -156,13 +161,18 @@ def generate_triple_one_shot(
 
     start = time.perf_counter()
     with torch.inference_mode():
+        # Tạo attention_mask để tránh warning
+        attention_mask = torch.ones_like(input_ids)
+        
         outputs = model.generate(
             input_ids=input_ids,
+            attention_mask=attention_mask,
             max_new_tokens=max_new_tokens,
-            do_sample=False,
-            temperature=0.0,
+            do_sample=False,  # Greedy decoding (nhanh nhất)
             pad_token_id=tokenizer.eos_token_id,
+            eos_token_id=tokenizer.eos_token_id,
             use_cache=True,
+            # Không set temperature và top_p khi do_sample=False để tránh warning
         )
     elapsed_ms = int((time.perf_counter() - start) * 1000)
 

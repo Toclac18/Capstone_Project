@@ -52,6 +52,7 @@ export default function UploadDocumentPage() {
   const [description, setDescription] = useState("");
   const [visibility, setVisibility] = useState<"PUBLIC" | "INTERNAL">("PUBLIC");
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>("");
+  const [isPremium, setIsPremium] = useState(false);
   const [typeId, setTypeId] = useState("");
   const [selectedDomainId, setSelectedDomainId] = useState<string>("");
   const [selectedSpecializationId, setSelectedSpecializationId] = useState<string>("");
@@ -539,6 +540,7 @@ export default function UploadDocumentPage() {
     setTitle("");
     setDescription("");
     setVisibility("PUBLIC");
+    setIsPremium(false);
     setTypeId("");
     setSelectedDomainId("");
     setSelectedSpecializationId("");
@@ -568,6 +570,7 @@ export default function UploadDocumentPage() {
     setFileSelected(false);
     setDescription("");
     setVisibility("PUBLIC");
+    setIsPremium(false);
     setTypeId("");
     setSelectedDomainId("");
     setSelectedSpecializationId("");
@@ -626,6 +629,7 @@ export default function UploadDocumentPage() {
         title: title.trim(),
         description: description.trim(),
         visibility,
+        isPremium,
         typeId,
         domainIds: [selectedDomainId],
         specializationIds: selectedSpecializationId ? [selectedSpecializationId] : [],
@@ -1096,6 +1100,26 @@ export default function UploadDocumentPage() {
                     )}
                   </div>
                 )}
+
+                {/* Premium Toggle */}
+                <div className={styles["field-group"]}>
+                  <label className={styles["field-label"]}>Premium Document</label>
+                  <div className={styles["toggle-wrapper"]}>
+                    <button
+                      type="button"
+                      onClick={() => setIsPremium(!isPremium)}
+                      className={`${styles["toggle-btn"]} ${isPremium ? styles["toggle-active"] : ""}`}
+                    >
+                      <span className={styles["toggle-slider"]} />
+                    </button>
+                    <span className={styles["toggle-label"]}>
+                      {isPremium ? "Premium" : "Free"}
+                    </span>
+                  </div>
+                  <p className={styles["help-text"]}>
+                    Premium documents require readers to redeem before viewing.
+                  </p>
+                </div>
 
                 {/* Tags Multi-select with Combobox */}
                 <div className={styles["field-group"]}>

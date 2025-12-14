@@ -6,31 +6,29 @@ import { proxyJsonResponse, jsonResponse } from "@/server/response";
 
 async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const search = searchParams.get("search") || undefined;
-  const source = searchParams.get("source") as
-    | "UPLOADED"
-    | "REDEEMED"
-    | undefined;
-  const type = searchParams.get("type") || undefined;
-  const domain = searchParams.get("domain") || undefined;
+  
+  // Read all possible filter params from request
+  const search = searchParams.get("search") || searchParams.get("searchKeyword") || undefined;
+  const source = searchParams.get("source") as "UPLOADED" | "REDEEMED" | undefined;
+  const isOwned = searchParams.get("isOwned");
+  const isPurchased = searchParams.get("isPurchased");
+  const docTypeId = searchParams.get("docTypeId") || undefined;
+  const domainId = searchParams.get("domainId") || undefined;
   const dateFrom = searchParams.get("dateFrom") || undefined;
   const dateTo = searchParams.get("dateTo") || undefined;
-  const page = searchParams.get("page")
-    ? parseInt(searchParams.get("page")!)
-    : 1;
-  const limit = searchParams.get("limit")
-    ? parseInt(searchParams.get("limit")!)
-    : 12;
+  const page = searchParams.get("page") ? parseInt(searchParams.get("page")!) : 0;
+  const size = searchParams.get("size") || searchParams.get("limit");
+  const limit = size ? parseInt(size) : 12;
 
   if (USE_MOCK) {
     const result = mockLibraryDB.getLibrary({
       search,
       source,
-      type,
-      domain,
+      type: undefined,
+      domain: undefined,
       dateFrom,
       dateTo,
-      page,
+      page: page + 1,
       limit,
     });
     return jsonResponse(result, {
@@ -48,27 +46,45 @@ async function handleGET(request: Request) {
   if (authHeader) {
     fh.set("Authorization", authHeader);
   }
+  
   // Build query params matching backend API
-  // Backend uses: searchKeyword, isPremium, isOwned, isPurchased, page, size
   const queryParams = new URLSearchParams();
 
-  // Map frontend "search" to backend "searchKeyword"
+  // Search keyword
   if (search) {
     queryParams.append("searchKeyword", search);
   }
 
-  // Map frontend "source" to backend "isOwned" or "isPurchased"
-  if (source === "UPLOADED") {
+  // Source filter - handle both formats
+  if (isOwned === "true") {
+    queryParams.append("isOwned", "true");
+  } else if (isPurchased === "true") {
+    queryParams.append("isPurchased", "true");
+  } else if (source === "UPLOADED") {
     queryParams.append("isOwned", "true");
   } else if (source === "REDEEMED") {
     queryParams.append("isPurchased", "true");
   }
 
-  // Backend uses page (0-indexed) and size for pagination
-  const pageParam = page ? page - 1 : 0; // Convert 1-indexed to 0-indexed
-  const sizeParam = limit || 12;
-  queryParams.append("page", String(pageParam));
-  queryParams.append("size", String(sizeParam));
+  // Type and Domain filters (UUID)
+  if (docTypeId) {
+    queryParams.append("docTypeId", docTypeId);
+  }
+  if (domainId) {
+    queryParams.append("domainId", domainId);
+  }
+
+  // Date range
+  if (dateFrom) {
+    queryParams.append("dateFrom", dateFrom);
+  }
+  if (dateTo) {
+    queryParams.append("dateTo", dateTo);
+  }
+
+  // Pagination - backend uses 0-indexed page
+  queryParams.append("page", String(page));
+  queryParams.append("size", String(limit));
 
   const url = `${BE_BASE}/api/documents/library${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
 
@@ -176,9 +192,9 @@ async function handleGET(request: Request) {
       );
     }
 
-    // Filter out documents with DELETED status
+    // Filter to only show ACTIVE documents (approved and published)
     const activeDocuments = documents.filter(
-      (doc: any) => doc.status !== "DELETED",
+      (doc: any) => doc.status === "ACTIVE",
     );
 
     // Transform to FE format - map backend fields to frontend format
@@ -222,7 +238,7 @@ async function handleGET(request: Request) {
           visibility: doc.visibility,
           interest: doc.interest,
           status:
-            doc.status === "APPROVED"
+            doc.status === "ACTIVE"
               ? "SUCCESS"
               : doc.status === "PENDING"
                 ? "PENDING"

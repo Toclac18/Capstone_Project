@@ -567,13 +567,18 @@ public class DocumentServiceImpl implements DocumentService {
       throw ResourceNotFoundException.userById(userId);
     }
 
-    // Build specification based on filter
-    var spec = DocumentLibrarySpecification.buildLibrarySpec(userId, filter);
+    // Get reader profile ID for redemption queries
+    ReaderProfile readerProfile = readerProfileRepository.findByUserId(userId).orElse(null);
+    UUID readerProfileId = readerProfile != null ? readerProfile.getId() : null;
+
+    // Build specification based on filter - use userId for owned docs, readerProfileId for purchased
+    var spec = DocumentLibrarySpecification.buildLibrarySpec(userId, readerProfileId, filter);
 
     // Fetch documents with specification
     Page<Document> documentsPage = documentRepository.findAll(spec, pageable);
 
     // Map to response DTO
+    final UUID finalReaderProfileId = readerProfileId;
     Page<DocumentLibraryResponse> responsePage = documentsPage.map(document -> {
       DocumentLibraryResponse response = documentMapper.toLibraryResponse(document);
 
@@ -587,9 +592,9 @@ public class DocumentServiceImpl implements DocumentService {
 
       // Build user relation info
       boolean isOwned = document.getUploader().getId().equals(userId);
-      DocumentRedemption redemption = documentRedemptionRepository
-          .findByReader_IdAndDocument_Id(userId, document.getId())
-          .orElse(null);
+      DocumentRedemption redemption = finalReaderProfileId != null 
+          ? documentRedemptionRepository.findByReader_IdAndDocument_Id(finalReaderProfileId, document.getId()).orElse(null)
+          : null;
       boolean isPurchased = redemption != null;
 
       DocumentLibraryResponse.UserRelationInfo userRelation = DocumentLibraryResponse.UserRelationInfo.builder()

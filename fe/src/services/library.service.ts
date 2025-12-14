@@ -1,5 +1,4 @@
 import { apiClient } from "./http";
-
 export type LibraryDocument = {
   id: string;
   documentName: string;
@@ -34,6 +33,8 @@ export type LibraryQueryParams = {
   source?: "UPLOADED" | "REDEEMED";
   type?: string;
   domain?: string;
+  typeId?: string;
+  domainId?: string;
   dateFrom?: string;
   dateTo?: string;
 };
@@ -65,18 +66,33 @@ export async function getLibrary(
   params?: LibraryQueryParams
 ): Promise<LibraryResponse> {
   const queryParams = new URLSearchParams();
-  if (params?.page) queryParams.append("page", params.page.toString());
-  if (params?.limit) queryParams.append("limit", params.limit.toString());
-  if (params?.search) queryParams.append("search", params.search);
-  if (params?.source) queryParams.append("source", params.source);
-  if (params?.type) queryParams.append("type", params.type);
-  if (params?.domain) queryParams.append("domain", params.domain);
+
+  // Pagination - API route handles 0-based conversion
+  if (params?.page) queryParams.append("page", (params.page - 1).toString());
+  if (params?.limit) queryParams.append("size", params.limit.toString());
+
+  // Search keyword
+  if (params?.search) queryParams.append("searchKeyword", params.search);
+
+  // Source filter
+  if (params?.source === "UPLOADED") {
+    queryParams.append("isOwned", "true");
+  } else if (params?.source === "REDEEMED") {
+    queryParams.append("isPurchased", "true");
+  }
+
+  // Type and Domain - use UUID
+  if (params?.typeId) queryParams.append("docTypeId", params.typeId);
+  if (params?.domainId) queryParams.append("domainId", params.domainId);
+
+  // Date range
   if (params?.dateFrom) queryParams.append("dateFrom", params.dateFrom);
   if (params?.dateTo) queryParams.append("dateTo", params.dateTo);
 
   const queryString = queryParams.toString();
   const url = `/reader/library${queryString ? `?${queryString}` : ""}`;
 
+  // API route transforms response to frontend format
   const res = await apiClient.get<LibraryResponse>(url);
   return res.data;
 }

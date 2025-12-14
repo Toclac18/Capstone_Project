@@ -1,0 +1,38 @@
+# Render Blueprint for Capstone Project
+# https://render.com/docs/blueprint-spec
+
+services:
+  # Frontend - Next.js
+  - type: web
+    name: capstone-fe
+    runtime: node
+    rootDir: fe
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: COOKIE_NAME
+        value: access_token
+      - key: USE_MOCK
+        value: false
+      - key: NEXT_PUBLIC_API_URL
+        value: /api
+      - key: NEXT_PUBLIC_API_TIMEOUT
+        value: 10000
+      # These need to be set manually in Render Dashboard:
+      # - JWT_SECRET (sync with BE)
+      # - NEXT_PUBLIC_FE_DOMAIN
+      # - NEXT_PUBLIC_API_BASE_URL
+    healthCheckPath: /
+
+  # Backend - Spring Boot (already deployed)
+  # Uncomment if you want to manage both services via render.yaml
+  # - type: web
+  #   name: capstone-be
+  #   runtime: docker
+  #   rootDir: be
+  #   dockerfilePath: ./Dockerfile
+  #   envVars:
+  #     - key: SPRING_PROFILES_ACTIVE
+  #       value: prod

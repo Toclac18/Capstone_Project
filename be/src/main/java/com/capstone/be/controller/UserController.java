@@ -1,0 +1,145 @@
+package com.capstone.be.controller;
+
+import com.capstone.be.dto.request.user.ChangeEmailRequest;
+import com.capstone.be.dto.request.user.ChangePasswordRequest;
+import com.capstone.be.dto.request.user.DeleteAccountRequest;
+import com.capstone.be.dto.request.user.VerifyEmailChangeOtpRequest;
+import com.capstone.be.dto.request.user.VerifyPasswordRequest;
+import com.capstone.be.security.model.UserPrincipal;
+import com.capstone.be.service.UserService;
+import jakarta.validation.Valid;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+/**
+ * Controller for user-related operations (profile, password management, etc.)
+ */
+@Slf4j
+@RestController
+@RequestMapping("/user")
+@RequiredArgsConstructor
+public class UserController {
+
+  private final UserService userService;
+
+  /**
+   * Change password for the authenticated user
+   * PUT /api/v1/user/change-password
+   *
+   * @param request        Change password request
+   * @return 204 No Content on success
+   */
+  @PutMapping("/change-password")
+  public ResponseEntity<Void> changePassword(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @Valid @RequestBody ChangePasswordRequest request) {
+
+    UUID userId = userPrincipal.getId();
+    log.info("Change password request for user: {}", userId);
+
+    userService.changePassword(userId, request);
+
+    return ResponseEntity.noContent().build();
+  }
+
+  /**
+   * Delete account for the authenticated user (soft delete)
+   * Requires password verification
+   * DELETE /api/v1/user/account
+   *
+   * @param request Delete account request (contains password)
+   * @return 204 No Content on success
+   */
+  @DeleteMapping("/account")
+  public ResponseEntity<Void> deleteAccount(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @Valid @RequestBody DeleteAccountRequest request) {
+    UUID userId = userPrincipal.getId();
+    log.info("Delete account request for user: {}", userId);
+
+    userService.deleteAccount(userId, request.getPassword());
+
+    return ResponseEntity.noContent().build();
+  }
+
+  /**
+   * Verify password for email change
+   * POST /api/v1/user/verify-password-for-email-change
+   *
+   * @param request        Verify password request
+   * @return 200 OK with message
+   */
+  @PostMapping("/verify-password-for-email-change")
+  public ResponseEntity<String> verifyPasswordForEmailChange(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @Valid @RequestBody VerifyPasswordRequest request) {
+    UUID userId = userPrincipal.getId();
+    log.info("Verify password for email change for user: {}", userId);
+
+    userService.verifyPasswordForEmailChange(userId, request.getPassword());
+
+    return ResponseEntity.ok("Password verified");
+  }
+
+  /**
+   * Request email change - sends OTP to new email
+   * Requires password verification first
+   * POST /api/v1/user/change-email
+   *
+   * @param request        Change email request (password and new email)
+   * @return 200 OK with message
+   */
+  @PostMapping("/change-email")
+  public ResponseEntity<String> requestEmailChange(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @Valid @RequestBody ChangeEmailRequest request) {
+    UUID userId = userPrincipal.getId();
+    log.info("Request email change for user: {} to new email: {}", userId, request.getNewEmail());
+
+    userService.requestEmailChange(userId, request);
+
+    return ResponseEntity.ok("OTP has been sent to your new email address");
+  }
+
+  /**
+   * Verify OTP and change email
+   * POST /api/v1/user/verify-email-change
+   *
+   * @param request        Verify OTP request
+   * @return 200 OK with message
+   */
+  @PostMapping("/verify-email-change")
+  public ResponseEntity<String> verifyEmailChangeOtp(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @Valid @RequestBody VerifyEmailChangeOtpRequest request) {
+    UUID userId = userPrincipal.getId();
+    log.info("Verify email change OTP for user: {}", userId);
+
+    userService.verifyEmailChangeOtp(userId, request.getOtp());
+
+    return ResponseEntity.ok("Email changed successfully. Please login again with your new email");
+  }
+
+  @PostMapping("/upload-avatar")
+  public ResponseEntity<Void> uploadAvatar(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @RequestPart("file") MultipartFile file) {
+    UUID userId = userPrincipal.getId();
+    log.info("Upload avatar for user: {}", userId);
+
+    userService.uploadAvatar(userId, file);
+
+    return ResponseEntity.noContent().build();
+  }
+}

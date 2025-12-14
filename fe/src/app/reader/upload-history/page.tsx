@@ -1,0 +1,363 @@
+"use client";
+
+import Breadcrumb from "@/components/(template)/Breadcrumbs/Breadcrumb";
+import Link from "next/link";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useCallback, useEffect, useState, useMemo } from "react";
+import { fetchUploadHistory, requestReReview, type DocumentHistory, type UploadHistoryQueryParams } from "./api";
+import { Pagination } from "@/components/ui/pagination";
+import { UploadHistoryFilters } from "./_components/UploadHistoryFilters";
+import ReReviewModal from "./_components/ReReviewModal";
+import { useToast } from "@/components/ui/toast";
+import styles from "./styles.module.css";
+import { AlertCircle, FileText, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+
+type LoadState = "loading" | "success" | "empty" | "error";
+type SortColumn = "documentName" | "uploadDate";
+type SortOrder = "asc" | "desc";
+
+const ITEMS_PER_PAGE = 10;
+
+export default function UploadHistoryPage() {
+  const { showToast } = useToast();
+  const [state, setState] = useState<LoadState>("loading");
+  const [documents, setDocuments] = useState<DocumentHistory[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [total, setTotal] = useState<number>(0);
+  const [filters, setFilters] = useState<UploadHistoryQueryParams>({
+    page: 1,
+    limit: ITEMS_PER_PAGE,
+  });
+  const [sortBy, setSortBy] = useState<SortColumn | undefined>(undefined);
+  const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined);
+  const [reReviewingId, setReReviewingId] = useState<string | null>(null);
+  const [isReReviewModalOpen, setIsReReviewModalOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<DocumentHistory | null>(null);
+  const isLoading = state === "loading";
+
+  const fetchData = useCallback(
+    async (params: UploadHistoryQueryParams) => {
+      setState("loading");
+      setError(null);
+      try {
+        const result = await fetchUploadHistory({
+          ...params,
+          page: params.page || 1,
+          limit: params.limit || ITEMS_PER_PAGE,
+        });
+        setDocuments(result.documents);
+        setTotal(result.total);
+        setTotalPages(result.totalPages);
+        setCurrentPage(result.page);
+        setState(result.documents.length ? "success" : "empty");
+      } catch (e: unknown) {
+        const msg =
+          e instanceof Error ? e.message : "Unable to load upload history. Please try again later.";
+        setError(msg);
+        setState("error");
+        showToast({
+          type: "error",
+          title: "Error",
+          message: msg,
+          duration: 5000,
+        });
+      }
+    },
+    [showToast]
+  );
+
+  useEffect(() => {
+    fetchData(filters);
+  }, [filters, fetchData]);
+
+  const handleFiltersChange = (newFilters: UploadHistoryQueryParams) => {
+    setFilters({
+      ...newFilters,
+      page: 1,
+      limit: ITEMS_PER_PAGE,
+    });
+  };
+
+  const handlePageChange = (page: number) => {
+    setFilters((prev) => ({
+      ...prev,
+      page,
+    }));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleReReviewClick = (document: DocumentHistory) => {
+    setSelectedDocument(document);
+    setIsReReviewModalOpen(true);
+  };
+
+  const handleReReviewSubmit = async (reason: string) => {
+    if (!selectedDocument) return;
+
+    setReReviewingId(selectedDocument.id);
+    try {
+      await requestReReview(selectedDocument.id, reason);
+
+      showToast({
+        type: "success",
+        title: "Re-review Requested",
+        message: "Your request has been submitted and is under review.",
+        duration: 5000,
+      });
+
+      await fetchData(filters);
+      setIsReReviewModalOpen(false);
+      setSelectedDocument(null);
+    } finally {
+      setReReviewingId(null);
+    }
+  };
+
+  const handleReReviewModalClose = () => {
+    if (reReviewingId) return;
+    setIsReReviewModalOpen(false);
+    setSelectedDocument(null);
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
+  };
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getStatusBadgeClass = (status: string): string => {
+    switch (status) {
+      case "ACTIVE":
+      case "AI_VERIFIED":
+        return styles["status-approved"];
+      case "AI_VERIFYING":
+      case "REVIEWING":
+        return styles["status-pending"];
+      case "REJECTED":
+      case "AI_REJECTED":
+        return styles["status-rejected"];
+      default:
+        return "";
+    }
+  };
+
+  const getStatusLabel = (status: string): string => {
+    switch (status) {
+      case "AI_VERIFYING":
+      case "REVIEWING":
+        return "Pending";
+      case "AI_VERIFIED":
+      case "ACTIVE":
+        return "Approved";
+      case "AI_REJECTED":
+      case "REJECTED":
+        return "Rejected";
+      default:
+        return status;
+    }
+  };
+
+  // Handle column sort - cycles through: undefined -> asc -> desc -> undefined
+  const handleSort = useCallback((column: SortColumn) => {
+    if (sortBy === column) {
+      if (sortOrder === "asc") {
+        setSortOrder("desc");
+      } else {
+        // desc or undefined -> reset
+        setSortBy(undefined);
+        setSortOrder(undefined);
+      }
+    } else {
+      // New column -> start with asc
+      setSortBy(column);
+      setSortOrder("asc");
+    }
+  }, [sortBy, sortOrder]);
+
+  // Get sort icon for a column
+  const getSortIcon = (column: SortColumn) => {
+    if (sortBy !== column) {
+      return <ArrowUpDown className="w-4 h-4 ml-1 text-gray-400" />;
+    }
+    return sortOrder === "asc" ? (
+      <ArrowUp className="w-4 h-4 ml-1 text-primary" />
+    ) : (
+      <ArrowDown className="w-4 h-4 ml-1 text-primary" />
+    );
+  };
+
+  // Sort documents in FE
+  const sortedDocuments = useMemo(() => {
+    if (!sortBy || !sortOrder) {
+      return documents;
+    }
+
+    return [...documents].sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
+
+      if (sortBy === "documentName") {
+        aValue = a.documentName.toLowerCase();
+        bValue = b.documentName.toLowerCase();
+      } else {
+        aValue = new Date(a.uploadDate).getTime();
+        bValue = new Date(b.uploadDate).getTime();
+      }
+
+      const comparison = aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+  }, [documents, sortBy, sortOrder]);
+
+
+  return (
+    <main className={styles["page-container"]}>
+      <Breadcrumb pageName="Upload History" />
+
+      <div className={styles["filters-section"]}>
+        <UploadHistoryFilters
+          onFiltersChange={handleFiltersChange}
+          loading={isLoading}
+        />
+      </div>
+
+      {isLoading && (
+        <div className={styles["loading-container"]}>
+          <div className={styles["loading-skeleton"]} />
+          <div className={styles["loading-skeleton-large"]} />
+        </div>
+      )}
+
+      {state === "error" && (
+        <div className={styles["error-container"]}>
+          <AlertCircle className={styles["error-icon"]} />
+          <p>{error || "Unable to load upload history. Please try again later."}</p>
+        </div>
+      )}
+
+      {state === "empty" && (
+        <div className={styles["empty-container"]}>
+          <FileText className={styles["empty-icon"]} />
+          <p className={styles["empty-text"]}>
+            You haven&apos;t uploaded any documents yet.
+          </p>
+        </div>
+      )}
+
+      {state === "success" && (
+        <div className={styles["table-container"]}>
+          <Table>
+            <TableHeader>
+              <TableRow className="border-none bg-[#F7F9FC] dark:bg-dark-3 [&>th]:py-4 [&>th]:text-base [&>th]:text-dark [&>th]:dark:text-white">
+                <TableHead 
+                  className={`xl:pl-7.5 ${styles["sortable-header"]}`}
+                  onClick={() => handleSort("documentName")}
+                >
+                  <div className="flex items-center cursor-pointer select-none">
+                    Document Name
+                    {getSortIcon("documentName")}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className={styles["sortable-header"]}
+                  onClick={() => handleSort("uploadDate")}
+                >
+                  <div className="flex items-center cursor-pointer select-none">
+                    Upload Date
+                    {getSortIcon("uploadDate")}
+                  </div>
+                </TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Domain</TableHead>
+                <TableHead>Specialization</TableHead>
+                <TableHead>Size</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedDocuments.map((doc) => (
+                <TableRow key={doc.id} className="border-b border-stroke last:border-b-0 dark:border-stroke-dark">
+                  <TableCell className="xl:pl-7.5">
+                    <Link href={`/docs-view/${doc.id}`} className={styles["document-name"]}>
+                      <FileText className={styles["document-icon"]} />
+                      <span className={styles["document-name-text"]}>{doc.documentName}</span>
+                    </Link>
+                  </TableCell>
+                  <TableCell className={styles["table-text"]}>
+                    {formatDate(doc.uploadDate)}
+                  </TableCell>
+                  <TableCell className={styles["table-text"]}>{doc.type}</TableCell>
+                  <TableCell className={styles["table-text"]}>{doc.domain}</TableCell>
+                  <TableCell className={styles["table-text"]}>{doc.specialization}</TableCell>
+                  <TableCell className={styles["table-text"]}>
+                    {formatFileSize(doc.fileSize)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span className={`${styles["status-badge"]} ${getStatusBadgeClass(doc.status)}`}>
+                        {getStatusLabel(doc.status)}
+                      </span>
+                      {doc.status === "REJECTED" && doc.canRequestReview && (
+                        <button
+                          onClick={() => handleReReviewClick(doc)}
+                          disabled={reReviewingId === doc.id || isReReviewModalOpen}
+                          className={styles["btn-request-review"]}
+                        >
+                          Re-review
+                        </button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={total}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={handlePageChange}
+              loading={isLoading}
+            />
+          )}
+        </div>
+      )}
+
+      {selectedDocument && (
+        <ReReviewModal
+          key={selectedDocument.id}
+          isOpen={isReReviewModalOpen}
+          onClose={handleReReviewModalClose}
+          onSubmit={handleReReviewSubmit}
+          documentName={selectedDocument.documentName}
+        />
+      )}
+    </main>
+  );
+}
+

@@ -1,0 +1,291 @@
+/* Sign Up Styles – CSS module with dark-mode via :global(html.dark) */
+
+/* Page container */
+.page-container {
+  @apply flex min-h-screen items-center justify-center;
+}
+
+/* Card wrapper */
+.card {
+  @apply rounded-[10px] bg-white shadow-1 xl:w-1/2;
+}
+:global(html.dark) .card {
+  @apply bg-gray-dark shadow-card;
+}
+
+.card-row {
+  @apply flex flex-wrap items-center;
+}
+
+.card-body {
+  @apply w-full p-4 sm:p-12.5 xl:p-10;
+}
+
+/* Header / logo */
+.logo-row {
+  @apply flex items-center justify-center mb-8;
+}
+
+/* OAuth button */
+.oauth-btn {
+  @apply mt-6 flex w-full items-center justify-center gap-3.5 rounded-lg border p-[15px] font-medium hover:bg-opacity-50;
+  @apply border-stroke bg-gray-2;
+}
+:global(html.dark) .oauth-btn {
+  @apply border-dark-3 bg-dark-2 hover:bg-opacity-50;
+}
+
+/* Divider */
+.divider {
+  @apply my-6 flex items-center justify-center;
+}
+.divider-line {
+  @apply block h-px w-full bg-stroke;
+}
+:global(html.dark) .divider-line {
+  @apply bg-dark-3;
+}
+.divider-text {
+  @apply block w-full min-w-fit bg-white px-3 text-center font-medium;
+}
+:global(html.dark) .divider-text {
+  @apply bg-gray-dark;
+}
+
+/* Input groups */
+.input-group {
+  @apply mb-5;
+}
+.input-group :global(input) {
+  @apply py-[15px];
+}
+.input-group-tight {
+  @apply mb-4;
+}
+.input-group-tight :global(input) {
+  @apply py-[15px];
+}
+
+/* Error text lines (reserve space with consistent layout) */
+.error-text {
+  @apply -mt-4 mb-4 text-sm text-red-500;
+}
+.error-text-slight {
+  @apply -mt-3 mb-4 text-sm text-red-500;
+}
+
+/* Submit button */
+.submit-btn {
+  @apply flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary p-4 font-medium text-white transition hover:bg-opacity-90;
+}
+.submit-btn:disabled {
+  @apply opacity-50 cursor-not-allowed hover:bg-opacity-50;
+}
+.spinner {
+  @apply inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-t-transparent;
+}
+:global(html.dark) .spinner {
+  @apply border-primary border-t-transparent;
+}
+
+/* Footer */
+.footer {
+  @apply mt-6 text-center;
+}
+
+/* User Type Selection */
+.user-type-container {
+  @apply mb-6 mt-6 p-4 border border-gray-300 rounded-lg bg-gray-50;
+}
+:global(html.dark) .user-type-container {
+  @apply border-gray-600 bg-gray-800/50;
+}
+
+.user-type-label {
+  @apply block text-sm font-medium text-gray-700 mb-3;
+}
+:global(html.dark) .user-type-label {
+  @apply text-gray-300;
+}
+
+.user-type-options {
+  @apply flex flex-col space-y-3;
+}
+
+.user-type-option {
+  @apply flex items-center cursor-pointer;
+}
+
+.user-type-radio {
+  @apply h-4 w-4 text-primary border-gray-300;
+}
+:global(html.dark) .user-type-radio {
+  @apply border-gray-600;
+}
+
+.user-type-text {
+  @apply ml-3 text-sm text-gray-700;
+}
+:global(html.dark) .user-type-text {
+  @apply text-gray-300;
+}
+
+.user-type-option:hover .user-type-text {
+  @apply text-gray-900;
+}
+:global(html.dark) .user-type-option:hover .user-type-text {
+  @apply text-gray-100;
+}
+
+/* Role-specific Sections */
+.role-section {
+  @apply mb-6 p-4 border border-gray-300 rounded-lg bg-white;
+}
+:global(html.dark) .role-section {
+  @apply border-gray-600 bg-gray-800;
+}
+
+.role-section-title {
+  @apply text-base font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2;
+}
+:global(html.dark) .role-section-title {
+  @apply text-gray-200 border-gray-700;
+}
+
+/* Form Controls */
+.form-label {
+  @apply block text-sm font-medium text-gray-700 mb-2;
+}
+:global(html.dark) .form-label {
+  @apply text-gray-300;
+}
+
+.form-label-required {
+  @apply text-red-500;
+}
+
+.form-label-hint {
+  @apply text-xs text-gray-500 ml-2 font-normal;
+}
+:global(html.dark) .form-label-hint {
+  @apply text-gray-400;
+}
+
+.form-select {
+  @apply w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+}
+:global(html.dark) .form-select {
+  @apply border-gray-600 bg-gray-900 text-gray-100;
+}
+
+.form-select-error {
+  @apply border-red-500;
+}
+
+.form-error {
+  @apply text-xs text-red-500 mt-1;
+}
+
+/* Checkbox List */
+.checkbox-list-container {
+  @apply max-h-40 overflow-y-auto border border-gray-300 rounded p-3 bg-gray-50;
+}
+:global(html.dark) .checkbox-list-container {
+  @apply border-gray-600 bg-gray-900;
+}
+
+.checkbox-list {
+  @apply space-y-2;
+}
+
+.checkbox-item {
+  @apply flex items-center cursor-pointer hover:bg-gray-100 p-1.5 rounded transition;
+}
+:global(html.dark) .checkbox-item {
+  @apply hover:bg-gray-700;
+}
+
+.checkbox-input {
+  @apply h-4 w-4 text-primary border-gray-300 rounded;
+}
+:global(html.dark) .checkbox-input {
+  @apply border-gray-600;
+}
+
+.checkbox-label {
+  @apply ml-2 text-sm text-gray-700;
+}
+:global(html.dark) .checkbox-label {
+  @apply text-gray-300;
+}
+
+.checkbox-list-empty {
+  @apply text-xs text-gray-500 text-center py-2;
+}
+:global(html.dark) .checkbox-list-empty {
+  @apply text-gray-400;
+}
+
+/* File Upload */
+.file-upload {
+  @apply block w-full text-sm text-gray-600;
+  @apply file:mr-4 file:py-2 file:px-4 file:rounded file:border file:border-gray-300;
+  @apply file:text-sm file:font-medium file:bg-white file:text-gray-700;
+  @apply hover:file:bg-gray-50 file:cursor-pointer cursor-pointer;
+}
+:global(html.dark) .file-upload {
+  @apply text-gray-400;
+  @apply file:border-gray-600 file:bg-gray-800 file:text-gray-300;
+  @apply hover:file:bg-gray-700;
+}
+
+.file-list {
+  @apply mt-2 space-y-1;
+}
+
+.file-item {
+  @apply text-xs text-gray-600;
+}
+:global(html.dark) .file-item {
+  @apply text-gray-400;
+}
+
+/* Terms of Use */
+.terms-text {
+  @apply text-xs text-center text-gray-600 mb-3;
+}
+:global(html.dark) .terms-text {
+  @apply text-gray-400;
+}
+
+.terms-checkbox-container {
+  @apply mb-4;
+}
+
+.terms-checkbox-label {
+  @apply flex items-start cursor-pointer;
+}
+
+.terms-checkbox {
+  @apply h-4 w-4 mt-0.5 rounded focus:ring-primary cursor-pointer;
+  @apply border-gray-300;
+  accent-color: #5750F1;
+}
+:global(html.dark) .terms-checkbox {
+  @apply border-gray-600;
+  accent-color: #5750F1;
+}
+
+.terms-checkbox-text {
+  @apply ml-2 text-sm text-gray-700;
+}
+:global(html.dark) .terms-checkbox-text {
+  @apply text-gray-300;
+}
+
+.terms-link {
+  @apply text-primary hover:underline font-medium;
+  @apply bg-transparent border-none p-0 cursor-pointer;
+}
+

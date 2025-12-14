@@ -1,0 +1,19 @@
+export enum ReaderStatus {
+  UNVERIFIED = 'UNVERIFIED',
+  VERIFIED = 'VERIFIED',
+  BANNED = 'BANNED',
+  DELETING = 'DELETING'
+}
+
+export enum DocumentStatus{
+
+}
+
+export enum UserRole{
+  READER = 'READER',
+  REVIEWER = 'REVIEWER',
+  ORGANIZATION_ADMIN = 'ORGANIZATION_ADMIN',
+  BUSINESS_ADMIN = 'BUSINESS_ADMIN',
+  SYSTEM_ADMIN = 'SYSTEM_ADMIN'
+}
+

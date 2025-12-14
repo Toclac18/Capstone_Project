@@ -1,0 +1,113 @@
+"use client";
+
+import { useState } from "react";
+import type { StatisticsQueryParams } from "@/types/statistics";
+import { Calendar } from "lucide-react";
+import { useToast, toast } from "@/components/ui/toast";
+
+interface StatisticsFiltersProps {
+  onFilterChange: (filters: StatisticsQueryParams) => void;
+}
+
+export function StatisticsFilters({ onFilterChange }: StatisticsFiltersProps) {
+  const { showToast } = useToast();
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+
+  const handleApply = () => {
+    // Validate date range
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (start > end) {
+        showToast(toast.error("Validation Error", "Start Date must be before or equal to End Date"));
+        return;
+      }
+    }
+    
+    onFilterChange({
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+    });
+  };
+
+  const handleReset = () => {
+    setStartDate("");
+    setEndDate("");
+    onFilterChange({});
+  };
+
+  // Set default to last 6 months
+  const setDefaultRange = () => {
+    const end = new Date();
+    const start = new Date();
+    start.setMonth(start.getMonth() - 6);
+    
+    const startStr = start.toISOString().split("T")[0];
+    const endStr = end.toISOString().split("T")[0];
+    
+    setStartDate(startStr);
+    setEndDate(endStr);
+    onFilterChange({
+      startDate: startStr,
+      endDate: endStr,
+    });
+  };
+
+  return (
+    <div className="col-span-full rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
+      <div className="mb-4 flex items-center gap-2">
+        <Calendar className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        <h3 className="text-lg font-semibold text-dark dark:text-white">Date Range Filter</h3>
+      </div>
+      
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+        <div className="flex-1">
+          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Start Date
+          </label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="w-full rounded-lg border border-stroke bg-white px-4 py-2 text-dark outline-none focus:border-primary dark:border-dark-3 dark:bg-gray-dark dark:text-white"
+          />
+        </div>
+        
+        <div className="flex-1">
+          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            End Date
+          </label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="w-full rounded-lg border border-stroke bg-white px-4 py-2 text-dark outline-none focus:border-primary dark:border-dark-3 dark:bg-gray-dark dark:text-white"
+          />
+        </div>
+        
+        <div className="flex gap-2">
+          <button
+            onClick={handleApply}
+            className="rounded-lg bg-primary px-6 py-2 text-white hover:bg-primary/90"
+          >
+            Apply
+          </button>
+          <button
+            onClick={handleReset}
+            className="rounded-lg border border-stroke bg-white px-6 py-2 text-dark hover:bg-gray-50 dark:border-dark-3 dark:bg-gray-dark dark:text-white dark:hover:bg-gray-800"
+          >
+            Reset
+          </button>
+          <button
+            onClick={setDefaultRange}
+            className="rounded-lg border border-stroke bg-white px-6 py-2 text-sm text-dark hover:bg-gray-50 dark:border-dark-3 dark:bg-gray-dark dark:text-white dark:hover:bg-gray-800"
+          >
+            Last 6 Months
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+

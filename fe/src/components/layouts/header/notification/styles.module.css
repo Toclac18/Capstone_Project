@@ -1,0 +1,140 @@
+/* Notification Header Styles - Dark/Light Mode Support */
+
+/* Dropdown Container */
+.dropdownContent {
+  @apply border border-stroke bg-white px-3 py-3 shadow-lg w-[350px];  
+  position: fixed !important;
+}
+:global(html.dark) .dropdownContent {
+  @apply border-dark-3 bg-gray-dark;
+}
+
+@media (min-width: 640px) {
+  .dropdownContent {
+    right: 1.25rem !important;
+  }
+}
+
+@media (min-width: 1536px) {
+  .dropdownContent {
+    right: 1rem !important;
+  }
+}
+
+/* Header Section */
+.dropdownHeader {
+  @apply mb-2 flex items-center justify-between px-1;
+}
+
+.dropdownTitle {
+  @apply text-lg font-bold text-dark;
+}
+:global(html.dark) .dropdownTitle {
+  @apply text-white;
+}
+
+/* Badge */
+.unreadBadge {
+  @apply rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-white;
+}
+
+/* List Container */
+.notificationsList {
+  @apply mb-2 max-h-[20rem] space-y-2 overflow-y-auto;
+}
+
+/* Notification Item */
+.notificationItem {
+  @apply w-full flex items-start gap-2.5 rounded-lg px-2.5 py-2.5 outline-none transition-colors;
+}
+
+.notificationItemRead {
+  @apply hover:bg-gray-2 focus-visible:bg-gray-2;
+}
+:global(html.dark) .notificationItemRead {
+  @apply hover:bg-dark-3 focus-visible:bg-dark-3;
+}
+
+.notificationItemUnread {
+  @apply bg-primary/5 hover:bg-primary/10;
+}
+:global(html.dark) .notificationItemUnread {
+  @apply bg-primary/10 hover:bg-primary/15;
+}
+
+/* Notification Content */
+.notificationContent {
+  @apply flex-1 min-w-0;
+}
+
+.notificationTitleRow {
+  @apply flex items-start justify-between gap-3;
+}
+
+.notificationTitle {
+  @apply block text-sm font-medium leading-tight;
+}
+
+.notificationTitleRead {
+  @apply text-dark-5;
+}
+:global(html.dark) .notificationTitleRead {
+  @apply text-dark-6;
+}
+
+.notificationTitleUnread {
+  @apply text-dark;
+}
+:global(html.dark) .notificationTitleUnread {
+  @apply text-white;
+}
+
+/* Timestamp */
+.notificationTimestamp {
+  @apply mt-2 block text-xs text-dark-6 text-left;
+}
+:global(html.dark) .notificationTimestamp {
+  @apply text-dark-7;
+}
+
+/* Unread Dot */
+.unreadDot {
+  @apply h-2 w-2 flex-shrink-0 rounded-full bg-primary mt-1;
+}
+
+/* Loading State */
+.loadingContainer {
+  @apply mb-3 flex items-center justify-center py-8;
+}
+
+.loadingSpinner {
+  @apply h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent;
+}
+
+/* Empty State */
+.emptyContainer {
+  @apply mb-3 flex flex-col items-center justify-center py-8;
+}
+
+.emptyIcon {
+  @apply h-12 w-12 text-gray-400;
+}
+:global(html.dark) .emptyIcon {
+  @apply text-gray-600;
+}
+
+.emptyText {
+  @apply mt-2 text-sm text-gray-600;
+}
+:global(html.dark) .emptyText {
+  @apply text-gray-400;
+}
+
+/* Footer Link */
+.seeAllLink {
+  @apply block rounded-lg border border-primary bg-primary/5 p-3 text-center text-sm font-medium text-primary outline-none transition-colors hover:bg-primary/10 focus:bg-primary/10;
+}
+:global(html.dark) .seeAllLink {
+  @apply border-primary bg-primary/10 hover:bg-primary/15;
+}
+

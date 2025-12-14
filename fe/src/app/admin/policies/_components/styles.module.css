@@ -1,0 +1,794 @@
+/* Policy Management Styles */
+
+/* Container */
+.container {
+  @apply mx-auto w-full gap-6;
+}
+
+/* Header */
+.header {
+  @apply mb-6 flex items-center justify-between;
+}
+
+.title {
+  @apply text-4xl font-bold text-dark tracking-tight;
+}
+:global(html.dark) .title {
+  @apply text-white;
+}
+
+.subtitle {
+  @apply mt-1 text-sm text-gray-600;
+}
+:global(html.dark) .subtitle {
+  @apply text-gray-400;
+}
+
+.btnPrimary {
+  @apply inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+}
+:global(html.dark) .btnPrimary {
+  @apply focus:ring-offset-dark-2;
+}
+
+.btnIconLeft {
+  @apply w-5 h-5;
+}
+
+/* Error/Success Messages */
+.error,
+.success {
+  @apply mb-4 rounded-lg border p-4;
+}
+
+.error {
+  @apply border-red-200 bg-red-50 text-red-800;
+}
+:global(html.dark) .error {
+  @apply border-red-800 bg-red-900/20 text-red-200;
+}
+
+.success {
+  @apply border-green-200 bg-green-50 text-green-800;
+}
+:global(html.dark) .success {
+  @apply border-green-800 bg-green-900/20 text-green-200;
+}
+
+/* Filters */
+.filters {
+  @apply mb-6 rounded-xl border p-6 shadow-lg;
+  @apply border-stroke bg-white text-dark;
+}
+:global(html.dark) .filters {
+  @apply border-stroke-dark bg-dark-2 text-dark-8;
+}
+
+.filtersGrid {
+  @apply grid grid-cols-1 gap-4 md:grid-cols-4;
+}
+
+.filterGroup:first-child {
+  @apply md:col-span-2;
+}
+
+.filterGroup {
+  @apply flex flex-col gap-1;
+}
+
+.label {
+  @apply text-sm font-semibold text-dark-4;
+}
+:global(html.dark) .label {
+  @apply text-dark-6;
+}
+
+.input,
+.select {
+  @apply h-10 rounded-lg border px-3 text-sm shadow-sm transition-all;
+  @apply border-stroke bg-white text-dark placeholder-gray-6;
+  @apply focus:border-primary focus:ring-2 focus:ring-primary/20;
+}
+:global(html.dark) .input,
+:global(html.dark) .select {
+  @apply border-stroke-dark bg-dark-3 text-dark-8 placeholder-dark-6;
+}
+
+.searchWrapper {
+  @apply relative flex items-center;
+}
+
+.searchIcon {
+  @apply absolute left-3 w-4 h-4 text-gray-400 pointer-events-none;
+}
+:global(html.dark) .searchIcon {
+  @apply text-gray-500;
+}
+
+.searchWrapper .input {
+  @apply pl-10;
+}
+
+
+.btnSecondary {
+  @apply rounded-lg border border-stroke bg-white px-4 py-2 text-sm font-semibold text-dark transition-all hover:bg-gray-50;
+}
+:global(html.dark) .btnSecondary {
+  @apply border-stroke-dark bg-dark-3 text-dark-8 hover:bg-dark-4;
+}
+
+/* Table Container */
+.tableContainer {
+  @apply mb-6 rounded-xl border shadow-lg overflow-hidden;
+  @apply border-stroke bg-white text-dark;
+}
+:global(html.dark) .tableContainer {
+  @apply border-stroke-dark bg-dark-2 text-dark-8;
+}
+
+.table {
+  @apply min-w-full divide-y divide-gray-200;
+}
+:global(html.dark) .table {
+  @apply divide-gray-700;
+}
+
+.table thead {
+  @apply bg-gray-50;
+}
+:global(html.dark) .table thead {
+  @apply bg-gray-800;
+}
+
+.table th {
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+:global(html.dark) .table th {
+  @apply text-gray-400;
+}
+
+.actionHeader {
+  text-align: center !important;
+}
+
+.actionCellWrapper {
+  text-align: center !important;
+}
+
+.table tbody {
+  @apply bg-white divide-y divide-gray-200;
+}
+:global(html.dark) .table tbody {
+  @apply bg-gray-900 divide-gray-700;
+}
+
+.table tr {
+  @apply hover:bg-gray-50 transition;
+}
+:global(html.dark) .table tr {
+  @apply hover:bg-gray-800;
+}
+
+.table td {
+  @apply px-6 py-4 text-sm text-gray-700;
+}
+:global(html.dark) .table td {
+  @apply text-gray-300;
+}
+
+.table td:first-child {
+  @apply whitespace-normal;
+}
+
+.titleCell {
+  @apply flex flex-col;
+}
+
+.titleCell .title {
+  @apply font-semibold text-dark text-base;
+}
+:global(html.dark) .titleCell .title {
+  @apply text-white;
+}
+
+.type {
+  @apply text-gray-600;
+}
+:global(html.dark) .type {
+  @apply text-gray-400;
+}
+
+.version {
+  @apply inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary;
+}
+:global(html.dark) .version {
+  @apply bg-primary/20 text-primary;
+}
+
+.badge {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+}
+
+.badgeDraft {
+  @apply bg-yellow-100 text-yellow-800;
+}
+:global(html.dark) .badgeDraft {
+  @apply bg-yellow-900/30 text-yellow-300;
+}
+
+.badgeActive {
+  @apply bg-green-100 text-green-800;
+}
+:global(html.dark) .badgeActive {
+  @apply bg-green-900/30 text-green-300;
+}
+
+.badgeInactive {
+  @apply bg-gray-100 text-gray-800;
+}
+:global(html.dark) .badgeInactive {
+  @apply bg-gray-800 text-gray-300;
+}
+
+.badgeArchived {
+  @apply bg-red-100 text-red-800;
+}
+:global(html.dark) .badgeArchived {
+  @apply bg-red-900/30 text-red-300;
+}
+
+.badgeDefault {
+  @apply bg-gray-100 text-gray-800;
+}
+:global(html.dark) .badgeDefault {
+  @apply bg-gray-800 text-gray-300;
+}
+
+.required {
+  @apply inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800;
+}
+:global(html.dark) .required {
+  @apply bg-green-900/30 text-green-300;
+}
+
+.optional {
+  @apply inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600;
+}
+:global(html.dark) .optional {
+  @apply bg-gray-800 text-gray-400;
+}
+
+.actions {
+  @apply flex items-center gap-3;
+}
+
+.btnIcon {
+  @apply p-2.5 rounded-lg text-gray-500 hover:text-primary hover:bg-gray-100 transition-all;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1;
+}
+:global(html.dark) .btnIcon {
+  @apply text-gray-400 hover:text-primary hover:bg-gray-800;
+}
+
+.statusSelect {
+  @apply rounded-lg border border-stroke bg-white px-3 py-1.5 text-sm font-medium;
+  @apply text-dark transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1;
+  @apply cursor-pointer min-w-[120px];
+  @apply hover:border-primary;
+}
+:global(html.dark) .statusSelect {
+  @apply border-stroke-dark bg-dark-3 text-dark-8;
+  @apply hover:border-primary;
+}
+
+.statusSelect option {
+  @apply bg-white text-dark;
+}
+:global(html.dark) .statusSelect option {
+  @apply bg-dark-3 text-dark-8;
+}
+
+/* Status select colors based on value */
+.statusSelect[value="DRAFT"] {
+  @apply bg-yellow-50 border-yellow-200 text-yellow-800;
+}
+:global(html.dark) .statusSelect[value="DRAFT"] {
+  @apply bg-yellow-900/30 border-yellow-800 text-yellow-300;
+}
+
+.statusSelect[value="ACTIVE"] {
+  @apply bg-green-50 border-green-200 text-green-800;
+}
+:global(html.dark) .statusSelect[value="ACTIVE"] {
+  @apply bg-green-900/30 border-green-800 text-green-300;
+}
+
+.statusSelect[value="INACTIVE"] {
+  @apply bg-gray-50 border-gray-200 text-gray-800;
+}
+:global(html.dark) .statusSelect[value="INACTIVE"] {
+  @apply bg-gray-800 border-gray-700 text-gray-300;
+}
+
+.statusSelect[value="ARCHIVED"] {
+  @apply bg-red-50 border-red-200 text-red-800;
+}
+:global(html.dark) .statusSelect[value="ARCHIVED"] {
+  @apply bg-red-900/30 border-red-800 text-red-300;
+}
+
+.icon {
+  @apply w-4 h-4;
+}
+
+/* Action Cell */
+.actionCell {
+  @apply flex items-center justify-center gap-3;
+}
+
+.actionIconBtn {
+  @apply h-9 w-9 rounded-lg transition-all duration-200;
+  @apply flex items-center justify-center;
+  @apply border border-gray-300 bg-white;
+  @apply text-gray-600 hover:text-primary hover:border-primary hover:bg-gray-50;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:bg-white;
+  @apply shadow-sm hover:shadow-md;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1;
+}
+:global(html.dark) .actionIconBtn {
+  @apply border-gray-600 bg-gray-800;
+  @apply text-gray-400 hover:text-primary hover:border-primary hover:bg-gray-700;
+  @apply disabled:hover:border-gray-600 disabled:hover:bg-gray-800;
+}
+
+.actionIcon {
+  @apply w-4 h-4;
+}
+
+/* Loading & Empty States */
+.loading,
+.empty {
+  @apply flex flex-col items-center justify-center py-12;
+}
+
+.loading {
+  @apply text-gray-500;
+}
+:global(html.dark) .loading {
+  @apply text-gray-400;
+}
+
+.spinner {
+  @apply mb-4 h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-primary;
+}
+
+.empty {
+  @apply text-gray-500;
+}
+:global(html.dark) .empty {
+  @apply text-gray-400;
+}
+
+/* Editor Styles */
+.editorWrapper {
+  @apply mb-4;
+}
+
+.editorToolbar {
+  @apply flex items-center gap-2 p-2 border border-stroke rounded-t-lg bg-gray-50;
+  @apply flex-wrap;
+}
+:global(html.dark) .editorToolbar {
+  @apply border-stroke-dark bg-dark-3;
+}
+
+.toolbarGroup {
+  @apply flex items-center gap-1;
+  @apply after:content-[''] after:w-px after:h-6 after:bg-gray-300 after:ml-1;
+}
+:global(html.dark) .toolbarGroup::after {
+  @apply bg-gray-600;
+}
+
+.toolbarGroup:last-child::after {
+  @apply hidden;
+}
+
+.toolbarButton {
+  @apply p-2 rounded hover:bg-gray-200 transition-colors;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply text-sm font-medium text-gray-700;
+}
+:global(html.dark) .toolbarButton {
+  @apply hover:bg-gray-700 text-gray-300;
+}
+
+.toolbarButtonActive {
+  @apply bg-primary text-white;
+}
+:global(html.dark) .toolbarButtonActive {
+  @apply bg-primary;
+}
+
+.toolbarIcon {
+  @apply w-4 h-4;
+}
+
+.editorContainer {
+  @apply border border-t-0 border-stroke rounded-b-lg overflow-hidden;
+}
+:global(html.dark) .editorContainer {
+  @apply border-stroke-dark;
+}
+
+.editorTextarea {
+  @apply w-full p-4 text-sm font-mono;
+  @apply bg-white text-dark;
+  @apply border-0 outline-none resize-none;
+  @apply min-h-[300px];
+}
+:global(html.dark) .editorTextarea {
+  @apply bg-dark-3 text-white;
+}
+
+.editorTextarea:focus {
+  @apply outline-none;
+}
+
+.editorPreview {
+  @apply w-full p-4 text-sm;
+  @apply bg-white text-dark;
+  @apply min-h-[300px] max-h-[600px] overflow-y-auto;
+}
+:global(html.dark) .editorPreview {
+  @apply bg-dark-3 text-white;
+}
+
+.editorPreview h2 {
+  @apply text-xl font-bold mt-4 mb-2;
+}
+
+.editorPreview h3 {
+  @apply text-lg font-semibold mt-3 mb-2;
+}
+
+.editorPreview p {
+  @apply mb-2;
+}
+
+.editorPreview ul,
+.editorPreview ol {
+  @apply ml-6 mb-2;
+}
+
+.editorPreview li {
+  @apply mb-1;
+}
+
+.editorPreview a {
+  @apply text-primary underline;
+}
+
+.editorError {
+  @apply border-red-500;
+}
+
+.editorErrorMessage {
+  @apply mt-1 text-sm text-red-600;
+}
+:global(html.dark) .editorErrorMessage {
+  @apply text-red-400;
+}
+
+.editorHint {
+  @apply mt-2 flex items-center gap-2 text-xs text-gray-500;
+}
+:global(html.dark) .editorHint {
+  @apply text-gray-400;
+}
+
+.hintIcon {
+  @apply w-3 h-3;
+}
+
+/* Modal Styles */
+.modalBackdrop {
+  @apply fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4;
+}
+
+.modalContent {
+  @apply w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl;
+  @apply border border-stroke;
+}
+:global(html.dark) .modalContent {
+  @apply bg-dark-2 border-stroke-dark;
+}
+
+.modalHeader {
+  @apply flex items-center justify-between border-b border-stroke p-6;
+}
+:global(html.dark) .modalHeader {
+  @apply border-stroke-dark;
+}
+
+.modalTitle {
+  @apply text-2xl font-bold text-dark;
+}
+:global(html.dark) .modalTitle {
+  @apply text-white;
+}
+
+.modalSubtitle {
+  @apply mt-1 text-sm text-gray-600;
+}
+:global(html.dark) .modalSubtitle {
+  @apply text-gray-400;
+}
+
+.modalCloseButton {
+  @apply p-2 text-gray-400 hover:text-gray-600 transition-colors;
+}
+:global(html.dark) .modalCloseButton {
+  @apply hover:text-gray-300;
+}
+
+.modalCloseIcon {
+  @apply w-5 h-5;
+}
+
+.modalForm {
+  @apply p-6 space-y-4;
+}
+
+.formGroup {
+  @apply flex flex-col gap-2;
+}
+
+.formRow {
+  @apply grid grid-cols-2 gap-4;
+}
+
+@media (max-width: 768px) {
+  .formRow {
+    @apply grid-cols-1;
+  }
+}
+
+.required {
+  @apply text-red-500;
+}
+
+.checkboxLabel {
+  @apply flex items-center gap-2 cursor-pointer text-sm;
+}
+
+.checkbox {
+  @apply w-4 h-4;
+}
+
+.inputError {
+  @apply border-red-500 focus:ring-red-500;
+}
+
+.errorMessage {
+  @apply text-sm text-red-600;
+}
+:global(html.dark) .errorMessage {
+  @apply text-red-400;
+}
+
+.helpText {
+  @apply mt-1 text-xs text-gray-500;
+}
+:global(html.dark) .helpText {
+  @apply text-gray-400;
+}
+
+.helperText {
+  @apply mt-1 text-xs text-gray-500;
+}
+:global(html.dark) .helperText {
+  @apply text-gray-400;
+}
+
+.warningText {
+  @apply mt-2 text-sm text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-lg p-3;
+}
+:global(html.dark) .warningText {
+  @apply text-yellow-400 bg-yellow-900/20 border-yellow-800;
+}
+
+.createButton {
+  @apply inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+}
+:global(html.dark) .createButton {
+  @apply focus:ring-offset-dark-2;
+}
+
+.createButtonIcon {
+  @apply w-5 h-5;
+}
+
+.statusActive {
+  @apply inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800;
+}
+:global(html.dark) .statusActive {
+  @apply bg-green-900/30 text-green-300;
+}
+
+.statusInactive {
+  @apply inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600;
+}
+:global(html.dark) .statusInactive {
+  @apply bg-gray-800 text-gray-400;
+}
+
+.statusIcon {
+  @apply w-3 h-3;
+}
+
+.activeRow {
+  @apply bg-green-50;
+}
+:global(html.dark) .activeRow {
+  @apply bg-green-900/10;
+}
+
+.date {
+  @apply text-gray-600;
+}
+:global(html.dark) .date {
+  @apply text-gray-400;
+}
+
+.deleteBtn {
+  @apply text-red-600 hover:text-red-700 hover:border-red-500;
+}
+:global(html.dark) .deleteBtn {
+  @apply text-red-400 hover:text-red-300 hover:border-red-600;
+}
+
+.viewerContent {
+  @apply w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl border border-stroke p-6;
+}
+:global(html.dark) .viewerContent {
+  @apply bg-dark-2 border-stroke-dark;
+}
+
+.viewerHeader {
+  @apply flex items-center justify-between border-b border-stroke pb-4 mb-4;
+}
+:global(html.dark) .viewerHeader {
+  @apply border-stroke-dark;
+}
+
+.viewerBody {
+  @apply max-w-none text-sm leading-relaxed;
+}
+
+.viewerBody :global(h1),
+.viewerBody :global(h2),
+.viewerBody :global(h3),
+.viewerBody :global(h4),
+.viewerBody :global(h5),
+.viewerBody :global(h6) {
+  @apply font-bold mt-6 mb-4 text-dark;
+}
+:global(html.dark) .viewerBody :global(h1),
+:global(html.dark) .viewerBody :global(h2),
+:global(html.dark) .viewerBody :global(h3),
+:global(html.dark) .viewerBody :global(h4),
+:global(html.dark) .viewerBody :global(h5),
+:global(html.dark) .viewerBody :global(h6) {
+  @apply text-white;
+}
+
+.viewerBody :global(h2) {
+  @apply text-2xl;
+}
+
+.viewerBody :global(h3) {
+  @apply text-xl;
+}
+
+.viewerBody :global(p) {
+  @apply mb-4 text-gray-700;
+}
+:global(html.dark) .viewerBody :global(p) {
+  @apply text-gray-300;
+}
+
+.viewerBody :global(ul),
+.viewerBody :global(ol) {
+  @apply mb-4 ml-6 list-disc;
+}
+:global(html.dark) .viewerBody :global(ul),
+:global(html.dark) .viewerBody :global(ol) {
+  @apply text-gray-300;
+}
+
+.viewerBody :global(ol) {
+  @apply list-decimal;
+}
+
+.viewerBody :global(li) {
+  @apply mb-2;
+}
+
+.viewerBody :global(a) {
+  @apply text-primary underline hover:opacity-80;
+}
+
+.viewerBody :global(strong) {
+  @apply font-semibold;
+}
+
+.viewerBody :global(em) {
+  @apply italic;
+}
+
+.modalFooter {
+  @apply flex justify-end gap-3 pt-4 border-t border-stroke;
+}
+:global(html.dark) .modalFooter {
+  @apply border-stroke-dark;
+}
+
+/* Quill Editor Custom Styles */
+:global(.ql-container) {
+  @apply border-stroke rounded-b-lg;
+  min-height: 300px;
+  font-family: inherit;
+}
+:global(html.dark) :global(.ql-container) {
+  @apply border-stroke-dark bg-dark-3;
+}
+
+:global(.ql-editor) {
+  @apply text-dark min-h-[300px];
+  font-size: 14px;
+  line-height: 1.6;
+}
+:global(html.dark) :global(.ql-editor) {
+  @apply text-white;
+}
+
+:global(.ql-editor.ql-blank::before) {
+  @apply text-gray-400;
+  font-style: normal;
+}
+:global(html.dark) :global(.ql-editor.ql-blank::before) {
+  @apply text-gray-500;
+}
+
+:global(.ql-toolbar) {
+  @apply border-stroke rounded-t-lg bg-gray-50;
+  border-bottom: none;
+}
+:global(html.dark) :global(.ql-toolbar) {
+  @apply border-stroke-dark bg-dark-3;
+}
+
+:global(.ql-toolbar .ql-stroke) {
+  @apply stroke-gray-600;
+}
+:global(html.dark) :global(.ql-toolbar .ql-stroke) {
+  @apply stroke-gray-400;
+}
+
+:global(.ql-toolbar .ql-fill) {
+  @apply fill-gray-600;
+}
+:global(html.dark) :global(.ql-toolbar .ql-fill) {
+  @apply fill-gray-400;
+}
+
+:global(.ql-toolbar button:hover),
+:global(.ql-toolbar button.ql-active) {
+  @apply bg-gray-200;
+}
+:global(html.dark) :global(.ql-toolbar button:hover),
+:global(html.dark) :global(.ql-toolbar button.ql-active) {
+  @apply bg-gray-700;
+}
+

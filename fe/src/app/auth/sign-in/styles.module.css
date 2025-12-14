@@ -1,0 +1,75 @@
+/* Sign In – CSS module with dark mode via :global(html.dark) */
+
+/* Page container */
+.page-container {
+  @apply flex min-h-screen items-center justify-center;
+}
+
+/* Card */
+.card {
+  @apply flex flex-col items-center rounded-[10px] bg-white shadow-1 xl:w-1/2;
+}
+:global(html.dark) .card {
+  @apply bg-gray-dark shadow-card;
+}
+
+.card-body {
+  @apply w-full p-4 sm:p-12.5 xl:p-10;
+}
+
+/* Header / logo */
+.logo-row {
+  @apply flex items-center justify-center mb-8;
+}
+
+/* OAuth button */
+.oauth-btn {
+  @apply mt-6 flex w-full items-center justify-center gap-3.5 rounded-lg border p-[15px] font-medium hover:bg-opacity-50;
+  @apply border-stroke bg-gray-2;
+}
+:global(html.dark) .oauth-btn {
+  @apply border-dark-3 bg-dark-2 hover:bg-opacity-50;
+}
+
+/* Divider */
+.divider {
+  @apply my-6 flex items-center justify-center;
+}
+.divider-line {
+  @apply block h-px w-full bg-stroke;
+}
+:global(html.dark) .divider-line {
+  @apply bg-dark-3;
+}
+.divider-text {
+  @apply block w-full min-w-fit bg-white px-3 text-center font-medium;
+}
+:global(html.dark) .divider-text {
+  @apply bg-gray-dark;
+}
+
+/* Error alert */
+.alert-error {
+  @apply mb-4 rounded-lg border-l-4 p-4 text-sm font-medium;
+  @apply border-red bg-red-light-6 text-red-dark;
+}
+:global(html.dark) .alert-error {
+  @apply border-red bg-dark-2 text-red;
+}
+
+/* Submit */
+.submit-btn {
+  @apply flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary p-4 font-medium text-white transition hover:bg-opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
+}
+.spinner {
+  @apply inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-t-transparent;
+}
+:global(html.dark) .spinner {
+  @apply border-primary border-t-transparent;
+}
+
+/* Footer */
+.footer {
+  @apply mt-6 text-center;
+}
+

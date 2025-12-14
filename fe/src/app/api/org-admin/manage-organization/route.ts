@@ -143,8 +143,23 @@ async function handlePUT(request: Request) {
   });
 }
 
-async function handleDELETE() {
+async function handleDELETE(request: Request) {
+  // Parse password from request body
+  let password = "";
+  try {
+    const body = await request.json();
+    password = body.password || "";
+  } catch {
+    // No body or invalid JSON
+  }
+
   if (USE_MOCK) {
+    if (!password) {
+      return jsonResponse(
+        { error: "Password is required" },
+        { status: 400, mode: "mock" },
+      );
+    }
     mockOrganizationAdminDB.delete();
     return jsonResponse(
       { message: "Organization deleted successfully" },
@@ -156,10 +171,12 @@ async function handleDELETE() {
 
   const fh = new Headers();
   if (authHeader) fh.set("Authorization", authHeader);
+  fh.set("Content-Type", "application/json");
 
   const upstream = await fetch(`${BE_BASE}/api/user/account`, {
     method: "DELETE",
     headers: fh,
+    body: JSON.stringify({ password }),
     cache: "no-store",
   });
 

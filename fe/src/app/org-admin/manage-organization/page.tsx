@@ -117,9 +117,9 @@ export default function ManageOrganizationPage() {
     });
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (password: string) => {
     try {
-      await deleteOrganization();
+      await deleteOrganization(password);
       showToast({
         type: "success",
         title: "Organization Deleted",

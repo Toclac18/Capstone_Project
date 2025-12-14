@@ -1,6 +1,8 @@
-import { BE_BASE, USE_MOCK } from "@/server/config";
+import { BE_BASE, USE_MOCK, COOKIE_NAME } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
-async function handleGET(req: Request) {
+import { cookies } from "next/headers";
+
+async function handlePOST(req: Request) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");
 
@@ -9,7 +11,6 @@ async function handleGET(req: Request) {
   }
 
   if (USE_MOCK) {
-    // Mock join organization - always success
     return Response.json(
       {
         message: "You have successfully joined the organization (mock)",
@@ -20,52 +21,45 @@ async function handleGET(req: Request) {
     );
   }
 
-  // Proxy to BE
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get(COOKIE_NAME)?.value;
+
+  // Proxy to new BE endpoint: POST /api/organization/members/accept-invitation
   const upstream = await fetch(
-    `${BE_BASE}/api/organizations/join?token=${encodeURIComponent(token)}`,
+    `${BE_BASE}/api/organization/members/accept-invitation?token=${encodeURIComponent(token)}`,
     {
-      method: "GET",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
       cache: "no-store",
     },
   );
 
-  const text = await upstream.text();
-
-  if (!upstream.ok) {
-    let errorMsg = "Failed to join organization";
-    try {
-      const json = JSON.parse(text);
-      errorMsg = json?.detail || json?.message || errorMsg;
-    } catch {
-      errorMsg = text || errorMsg;
-    }
-    return Response.json({ error: errorMsg }, { status: upstream.status });
+  // Handle 204 No Content or 200 OK (success)
+  if (upstream.status === 204 || upstream.ok) {
+    return Response.json(
+      {
+        message: "You have successfully joined the organization",
+        success: true,
+      },
+      { status: 200 },
+    );
   }
 
-  // Parse response
+  const text = await upstream.text();
+  let errorMsg = "Failed to join organization";
   try {
     const json = JSON.parse(text);
-    return Response.json(
-      {
-        message:
-          json?.message || "You have successfully joined the organization",
-        organizationName: json?.organizationName,
-        success: true,
-      },
-      { status: 200 },
-    );
+    errorMsg = json?.detail || json?.message || errorMsg;
   } catch {
-    return Response.json(
-      {
-        message: text || "You have successfully joined the organization",
-        success: true,
-      },
-      { status: 200 },
-    );
+    errorMsg = text || errorMsg;
   }
+  return Response.json({ error: errorMsg }, { status: upstream.status });
 }
 
-export const GET = (...args: Parameters<typeof handleGET>) =>
-  withErrorBoundary(() => handleGET(...args), {
-    context: "api/organizations/join/route.ts/GET",
+export const POST = (...args: Parameters<typeof handlePOST>) =>
+  withErrorBoundary(() => handlePOST(...args), {
+    context: "api/organizations/join/route.ts/POST",
   });

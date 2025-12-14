@@ -26,6 +26,9 @@ public class EmailServiceImpl implements EmailService {
   @Value("${app.mail.verificationBaseUrl}")
   private String verificationBaseUrl;
 
+  @Value("${app.mail.joinOrganizationBaseUrl}")
+  private String joinOrganizationBaseUrl;
+
   @Override
   @Async
   public void sendEmailVerification(UUID userId, String email, String token) {
@@ -116,7 +119,7 @@ public class EmailServiceImpl implements EmailService {
                     <p>Thank you for registering with email: <strong>%s</strong></p>
                     <p>Please click the button below to verify your email address and activate your account:</p>
                     <p style="text-align: center;">
-                        <a href="%s" class="button">Verify Email</a>
+                        <a href="%s" class="button" style="color: #f8f8f9ff;">Verify Email</a>
                     </p>
                     <p>Or copy and paste this link into your browser:</p>
                     <p style="word-break: break-all; color: #4CAF50;">%s</p>
@@ -503,10 +506,9 @@ public class EmailServiceImpl implements EmailService {
 
   private String buildOrganizationInvitationHtml(String fullName, String organizationName,
       UUID enrollmentId) {
-    // Note: In production, this should link to frontend acceptance page
     String acceptanceUrl = String.format(
-        "https://capstone-platform.com/accept-invitation?enrollmentId=%s",
-        enrollmentId);
+        "%s?enrollmentId=%s",
+        joinOrganizationBaseUrl, enrollmentId);
 
     return """
         <!DOCTYPE html>
@@ -538,7 +540,7 @@ public class EmailServiceImpl implements EmailService {
                     </div>
                     <p>By accepting this invitation, you will become a member of <strong>%s</strong> and gain access to exclusive resources and collaboration opportunities.</p>
                     <p style="text-align: center;">
-                        <a href="%s" class="button">Accept Invitation</a>
+                        <a href="%s" class="button" style="color: #f8f8f9ff;">Accept Invitation</a>
                     </p>
                     <p>Or copy and paste this link into your browser:</p>
                     <p style="word-break: break-all; color: #673AB7;">%s</p>
@@ -555,10 +557,9 @@ public class EmailServiceImpl implements EmailService {
 
   private String buildOrganizationInvitationWithTokenHtml(String fullName, String organizationName,
       String invitationToken) {
-    // JWT token in URL for secure invitation
     String acceptanceUrl = String.format(
-        "https://capstone-platform.com/accept-invitation?token=%s",
-        invitationToken);
+        "%s?token=%s",
+        joinOrganizationBaseUrl, invitationToken);
 
     return """
         <!DOCTYPE html>
@@ -592,7 +593,7 @@ public class EmailServiceImpl implements EmailService {
                     </div>
                     <p>By accepting this invitation, you will become a member of <strong>%s</strong> and gain access to exclusive resources and collaboration opportunities.</p>
                     <p style="text-align: center;">
-                        <a href="%s" class="button">Accept Invitation</a>
+                        <a href="%s" class="button" style="color: #f8f8f9ff;">Accept Invitation</a>
                     </p>
                     <div class="warning-box">
                         <p style="margin: 0;"><strong>Important:</strong> This invitation link will expire in 7 days for security reasons.</p>
@@ -708,7 +709,7 @@ public class EmailServiceImpl implements EmailService {
   }
 
   private String buildAccountCreationInvitationHtml(String email, String organizationName) {
-    String registerUrl = verificationBaseUrl.replace("/verify-email", "/register");
+    String registerUrl = verificationBaseUrl.replace("/verify-email", "/sign-up");
 
     return """
         <!DOCTYPE html>
@@ -751,7 +752,7 @@ public class EmailServiceImpl implements EmailService {
                         </ol>
                     </div>
                     <p style="text-align: center;">
-                        <a href="%s" class="button">Create Account</a>
+                        <a href="%s" class="button" style="color: #f8f8f9ff;">Create Account</a>
                     </p>
                     <p>Or copy and paste this link into your browser:</p>
                     <p style="word-break: break-all; color: #673AB7;">%s</p>

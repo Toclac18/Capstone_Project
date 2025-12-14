@@ -86,58 +86,46 @@ const getErrorMessage = (error: AxiosError): string => {
 
   if (payload?.message) return String(payload.message);
 
-  if (error.code === "ECONNABORTED") return "Request timeout.";
-  if (!error.response) return "Cannot connect to server.";
+  if (error.code === "ECONNABORTED") return "REQUEST TIMEOUT.";
+  if (!error.response) return "CANNOT CONNECT TO SERVER.";
 
-  if (status === 401) return "Session expired.";
-  if (status === 403) return "Permission denied.";
-  if (status === 404) return "Resource not found.";
-  if (status && status >= 500) return "Server error.";
+  if (status === 401) return error.message || "SESSION EXPIRED.";
+  if (status === 403) return error.message || "PERMISSION DENIED.";
+  if (status === 404) return error.message || "RESOURCE NOT FOUND.";
+  if (status === 409) return error.message || "CONFLICT ERROR.";
+  if (status === 500) return error.message || "SERVER ERROR";
 
-  return error.message || "Request error.";
+  return error.message || "REQUEST ERROR.";
 };
 
 apiClient.interceptors.response.use(
-    (res) => {
-    // Handle 204 NO_CONTENT responses (no body)
-    if (res.status === 204) {
-      // Return response with empty data object for consistency
-      res.data = res.data || { message: "Success" };
+  (res: AxiosResponse) => {
+    if (res.status === 204 && (res.data == null || res.data === "")) {
+      return { ...res, data: { message: "Success" } };
     }
     return res;
   },
-  (err) => {
-    // If error is 204, treat it as success (some servers return 204 differently)
-    if (err?.response?.status === 204) {
-      return { status: 204, data: { message: "Success" } };
-    }
-    
-    // Try to extract error message from various response formats
-    let msg = "Request error";
-    
-    if (err?.response?.data) {
-      const data = err.response.data;
-      // Backend format: { success: false, message: "...", data: {...} }
-      msg = data.message || data.error || msg;
-      
-      // If message is still default, try to get from nested data
-      if (msg === "Request error" && data.data) {
-        if (typeof data.data === "string") {
-          msg = data.data;
-        } else if (data.data.message) {
-          msg = data.data.message;
-        } else if (data.data.error) {
-          msg = data.data.error;
-        }
+  (error: AxiosError) => {
+    const data = error.response?.data as any;
+    const dialog = data?.dialog as ErrorDialogPayload | undefined;
+
+    const apiError = new ApiError({
+      status: error.response?.status ?? null,
+      message: getErrorMessage(error),
+      data,
+      dialog,
+    });
+
+    if (apiClientErrorHandler) {
+      try {
+        apiClientErrorHandler(apiError);
+        apiError.isHandledGlobally = true;
+      } catch (e) {
+        console.error("[apiClient] error handler failed:", e);
       }
     }
-    
-    // Fallback to axios error message if available
-    if (msg === "Request error" && err?.message) {
-      msg = err.message;
-    }
-    
-    return Promise.reject(new Error(msg));
+
+    return Promise.reject(apiError);
   },
 );
 

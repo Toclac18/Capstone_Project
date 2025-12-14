@@ -132,7 +132,38 @@ async function handlePOST(req: NextRequest): Promise<Response> {
           if ((key === "role" || key === "status") && value === "") {
             continue;
           }
-          // Skip empty strings for other fields too
+          
+          // Convert date strings to ISO datetime format
+          if (key === "dateFrom" && value && typeof value === "string" && value.trim() !== "") {
+            // Convert YYYY-MM-DD to ISO datetime format (start of day)
+            // Use local timezone start of day, then convert to ISO
+            const dateStr = value.trim();
+            if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              // YYYY-MM-DD format - set to start of day in local timezone, then convert to ISO
+              const date = new Date(dateStr + "T00:00:00");
+              body[key] = date.toISOString();
+            } else {
+              // Already in a different format, try to parse as-is
+              body[key] = value;
+            }
+            continue;
+          }
+          if (key === "dateTo" && value && typeof value === "string" && value.trim() !== "") {
+            // Convert YYYY-MM-DD to ISO datetime format (end of day)
+            // Use local timezone end of day, then convert to ISO
+            const dateStr = value.trim();
+            if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              // YYYY-MM-DD format - set to end of day in local timezone, then convert to ISO
+              const date = new Date(dateStr + "T23:59:59.999");
+              body[key] = date.toISOString();
+            } else {
+              // Already in a different format, try to parse as-is
+              body[key] = value;
+            }
+            continue;
+          }
+          
+          // Skip empty strings for other fields
           if (value === "") {
             continue;
           }
@@ -152,10 +183,13 @@ async function handlePOST(req: NextRequest): Promise<Response> {
     const fh = new Headers({ "Content-Type": "application/json" });
     if (authHeader) fh.set("Authorization", authHeader);
 
+    // Ensure body is always a valid object (not empty string)
+    const requestBody = Object.keys(body).length > 0 ? body : {};
+
     const upstream = await fetch(url, {
       method: "POST",
       headers: fh,
-      body: JSON.stringify(body),
+      body: JSON.stringify(requestBody),
       cache: "no-store",
     });
 

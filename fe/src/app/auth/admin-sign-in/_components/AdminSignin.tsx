@@ -42,8 +42,11 @@ export default function AdminSignin() {
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setLoading(true);
 
+    // Normalize email to lowercase
+    const normalizedEmail = data.email.toLowerCase().trim();
+
     const payload: LoginPayload = {
-      email: data.email,
+      email: normalizedEmail,
       password: data.password,
       role: data.role,
       remember: data.remember,

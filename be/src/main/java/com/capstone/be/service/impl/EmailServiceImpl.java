@@ -273,17 +273,18 @@ public class EmailServiceImpl implements EmailService {
 
   @Override
   @Async
-  public void sendEmailChangeOtp(UUID userId, String currentEmail, String newEmail, String otp) {
+  public void sendEmailChangeOtp(UUID userId, String targetEmail, String newEmail, String otp) {
     try {
       String subject = "Email Change Verification - Capstone Platform";
       String htmlContent = buildEmailChangeOtpHtml(newEmail, otp);
 
-      sendHtmlEmail(currentEmail, subject, htmlContent);
-      log.info("Sent email change OTP to: {} [{}]", currentEmail, otp);
+      // Send OTP to target email (now it's the new email)
+      sendHtmlEmail(targetEmail, subject, htmlContent);
+      log.info("Sent email change OTP to: {} [{}]", targetEmail, otp);
 
     } catch (Exception e) {
-      log.error("Failed to send email change OTP to: {}", currentEmail, e);
-      throw EmailException.sendFailed(currentEmail, e);
+      log.error("Failed to send email change OTP to: {}", targetEmail, e);
+      throw EmailException.sendFailed(targetEmail, e);
     }
   }
 
@@ -766,3 +767,4 @@ public class EmailServiceImpl implements EmailService {
         """.formatted(organizationName, organizationName, email, registerUrl, registerUrl, email);
   }
 }
+

@@ -40,6 +40,7 @@ public interface ReviewRequestMapper {
   @Mapping(source = "thumbnailKey", target = "thumbnailUrl")
   @Mapping(source = "pageCount", target = "pageCount")
   @Mapping(source = "price", target = "price")
+  @Mapping(source = "status", target = "status")
   @Mapping(source = "docType", target = "docType")
   @Mapping(source = "specialization.domain", target = "domain")
   @Mapping(source = "specialization", target = "specialization")

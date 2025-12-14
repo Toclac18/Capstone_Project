@@ -54,7 +54,7 @@
 
 /* Cover Photo */
 .profile-cover {
-  @apply relative z-20 h-35 md:h-65 overflow-hidden;
+  @apply relative z-10 h-35 md:h-65 overflow-hidden;
 }
 
 .profile-cover-image {
@@ -72,7 +72,7 @@
 
 /* Profile Photo */
 .profile-photo-wrapper {
-  @apply relative z-30 mx-auto -mt-22 h-36 w-full max-w-36 rounded-full bg-white/20 p-1 backdrop-blur sm:h-52 sm:max-w-[208px] sm:p-3;
+  @apply relative z-10 mx-auto -mt-22 h-36 w-full max-w-36 rounded-full bg-white/20 p-1 backdrop-blur sm:h-52 sm:max-w-[208px] sm:p-3;
 }
 
 .profile-photo-container {
@@ -750,6 +750,13 @@
   @apply pl-13 pr-5;
 }
 
+/* Password input with toggle button on the right - override padding */
+/* Only apply to password inputs that have a toggle button (not all text inputs) */
+.field-icon-wrapper > .field-input[type="password"] {
+  @apply pl-3;
+  padding-right: 2.75rem; /* pr-11 equivalent for toggle button space */
+}
+
 .field-input.with-toggle {
   @apply pr-10;
 }
@@ -779,7 +786,7 @@
 }
 
 .field-toggle-btn {
-  @apply absolute right-3 top-1/2 -translate-y-1/2;
+  @apply absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center;
   @apply text-gray-400;
 }
 .field-toggle-btn:hover {

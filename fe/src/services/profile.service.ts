@@ -89,13 +89,28 @@ export async function updateProfile(
 }
 
 /**
- * Request email change - sends OTP to current email
+ * Verify password for email change
+ * POST /api/profile/verify-password-for-email-change
+ */
+export async function verifyPasswordForEmailChange(
+  password: string
+): Promise<{ message: string }> {
+  const res = await apiClient.post<{ message: string }>("/profile/verify-password-for-email-change", {
+    password,
+  });
+  return res.data;
+}
+
+/**
+ * Request email change - sends OTP to new email
  * POST /api/profile/change-email
  */
 export async function requestEmailChange(
+  password: string,
   newEmail: string
 ): Promise<{ message: string }> {
   const res = await apiClient.post<{ message: string }>("/profile/change-email", {
+    password,
     newEmail,
   });
   return res.data;
@@ -155,7 +170,9 @@ export async function uploadAvatar(file: File): Promise<void> {
  * Delete user account
  * DELETE /api/profile/delete-account
  */
-export async function deleteAccount(): Promise<void> {
-  await apiClient.delete("/profile/delete-account");
+export async function deleteAccount(password: string): Promise<void> {
+  await apiClient.delete("/profile/delete-account", {
+    data: { password },
+  });
 }
 

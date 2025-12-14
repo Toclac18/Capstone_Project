@@ -1,9 +1,8 @@
 package com.capstone.be.service;
 
-import com.capstone.be.domain.enums.PolicyType;
+import com.capstone.be.dto.request.policy.CreatePolicyRequest;
 import com.capstone.be.dto.request.policy.UpdatePolicyRequest;
 import com.capstone.be.dto.response.policy.PolicyResponse;
-import com.capstone.be.dto.response.policy.PolicyViewResponse;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,19 +12,18 @@ import java.util.UUID;
 public interface PolicyService {
 
   /**
-   * Get all policies
+   * Get all policies (ordered by creation date, newest first)
    *
    * @return List of all policies
    */
   List<PolicyResponse> getAllPolicies();
 
   /**
-   * Get active policy by type (for users to view)
+   * Get active policy (for users to view during registration)
    *
-   * @param type Policy type
    * @return Active policy
    */
-  PolicyResponse getActivePolicyByType(PolicyType type);
+  PolicyResponse getActivePolicy();
 
   /**
    * Get policy by ID
@@ -36,29 +34,43 @@ public interface PolicyService {
   PolicyResponse getPolicyById(UUID id);
 
   /**
-   * Get policy view with acceptance status (for users)
+   * Create a new policy version
    *
-   * @param id     Policy ID
-   * @param userId User ID (optional)
-   * @return Policy view with acceptance status
+   * @param request Create request
+   * @return Created policy
    */
-  PolicyViewResponse getPolicyView(UUID id, UUID userId);
+  PolicyResponse createPolicy(CreatePolicyRequest request);
 
   /**
-   * Update policy by type
+   * Update policy (title and content only, version is immutable)
    *
-   * @param type    Policy type
+   * @param id      Policy ID
    * @param request Update request
    * @return Updated policy
    */
-  PolicyResponse updatePolicyByType(PolicyType type, UpdatePolicyRequest request);
+  PolicyResponse updatePolicy(UUID id, UpdatePolicyRequest request);
 
   /**
-   * Accept policy (for users)
+   * Activate a policy (deactivates all others)
    *
-   * @param policyId Policy ID
-   * @param userId   User ID
+   * @param id Policy ID
+   * @return Activated policy
    */
-  void acceptPolicy(UUID policyId, UUID userId);
+  PolicyResponse activatePolicy(UUID id);
+
+  /**
+   * Deactivate a policy
+   *
+   * @param id Policy ID
+   * @return Deactivated policy
+   */
+  PolicyResponse deactivatePolicy(UUID id);
+
+  /**
+   * Delete a policy (cannot delete if active)
+   *
+   * @param id Policy ID
+   */
+  void deletePolicy(UUID id);
 }
 

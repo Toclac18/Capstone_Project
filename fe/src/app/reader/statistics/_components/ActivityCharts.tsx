@@ -71,6 +71,16 @@ export function ActivityCharts({ statistics }: ActivityChartsProps) {
       title: {
         text: "Count",
       },
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
     },
     grid: {
       strokeDashArray: 5,
@@ -87,12 +97,7 @@ export function ActivityCharts({ statistics }: ActivityChartsProps) {
     },
     dataLabels: {
       enabled: false,
-    },
-    tooltip: {
-      x: {
-        format: "dd MMM yyyy",
-      },
-    },
+    }
   };
 
   return (

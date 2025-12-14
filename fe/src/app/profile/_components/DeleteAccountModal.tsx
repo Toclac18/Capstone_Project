@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, X, AlertCircle } from "lucide-react";
+import { Trash2, X, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
 import styles from "@/app/profile/styles.module.css";
 
 interface DeleteAccountModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onDelete: () => Promise<void>;
+  onDelete: (password: string) => Promise<void>;
   email: string;
 }
 
@@ -17,14 +18,14 @@ export default function DeleteAccountModal({
   onDelete,
   email,
 }: DeleteAccountModalProps) {
+  const { showToast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    confirmText: "",
+    password: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const CONFIRM_TEXT = "DELETE";
 
   useEffect(() => {
     setMounted(true);
@@ -32,16 +33,17 @@ export default function DeleteAccountModal({
 
   useEffect(() => {
     if (isOpen) {
-      setFormData({ confirmText: "" });
+      setFormData({ password: "" });
       setErrors({});
+      setShowPassword(false);
     }
   }, [isOpen]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (formData.confirmText !== CONFIRM_TEXT) {
-      newErrors.confirmText = `Please type "${CONFIRM_TEXT}" to confirm`;
+    if (!formData.password || formData.password.trim() === "") {
+      newErrors.password = "Password is required";
     }
 
     setErrors(newErrors);
@@ -54,10 +56,18 @@ export default function DeleteAccountModal({
 
     try {
       setIsLoading(true);
-      await onDelete();
+      await onDelete(formData.password);
       onClose();
     } catch (error: any) {
-      setErrors({ submit: error?.message || "Failed to delete account" });
+      const errorMessage = error?.message || "Failed to delete account";
+      setErrors({ submit: errorMessage });
+      // Show toast error
+      showToast({
+        type: "error",
+        title: "Delete Account Failed",
+        message: errorMessage,
+        duration: 5000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -122,24 +132,37 @@ export default function DeleteAccountModal({
 
               <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
                 <label className={`${styles["field-label"]} ${styles["field-label-sm"]}`}>
-                  Type <span className={styles["field-label-confirm"]}>{CONFIRM_TEXT}</span>{" "}
-                  to confirm <span className={`${styles["field-label-required"]} ${styles["field-label-required-sm"]}`}>*</span>
+                  Enter your password to confirm <span className={`${styles["field-label-required"]} ${styles["field-label-required-sm"]}`}>*</span>
                 </label>
-                <input
-                  type="text"
-                  value={formData.confirmText}
-                  onChange={(e) => {
-                    setFormData({ ...formData, confirmText: e.target.value });
-                    if (errors.confirmText)
-                      setErrors({ ...errors, confirmText: "" });
-                  }}
-                  placeholder={CONFIRM_TEXT}
-                  className={`${styles["field-input"]} ${styles["field-input-sm"]} ${styles["field-input-mono"]} ${errors.confirmText ? styles.error : ""}`}
-                />
-                {errors.confirmText && (
+                <div className={styles["field-icon-wrapper"]}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => {
+                      setFormData({ ...formData, password: e.target.value });
+                      if (errors.password)
+                        setErrors({ ...errors, password: "" });
+                    }}
+                    placeholder="Enter your password"
+                    className={`${styles["field-input"]} ${styles["field-input-sm"]} ${errors.password ? styles.error : ""}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className={styles["field-toggle-btn"]}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOff className={styles["field-toggle-icon"]} />
+                    ) : (
+                      <Eye className={styles["field-toggle-icon"]} />
+                    )}
+                  </button>
+                </div>
+                {errors.password && (
                   <div className={`${styles["field-error"]} ${styles["field-error-inline"]}`}>
                     <AlertCircle className={styles["error-icon"]} />
-                    {errors.confirmText}
+                    {errors.password}
                   </div>
                 )}
               </div>

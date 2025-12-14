@@ -45,6 +45,16 @@ export function DocumentUploadsChart({ data }: DocumentUploadsChartProps) {
       title: {
         text: "Documents",
       },
+      labels: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
+      forceNiceScale: true,
+      decimalsInFloat: 0,
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => Math.round(val).toString(),
+      },
     },
     grid: {
       strokeDashArray: 5,
@@ -56,11 +66,6 @@ export function DocumentUploadsChart({ data }: DocumentUploadsChartProps) {
     },
     dataLabels: {
       enabled: false,
-    },
-    tooltip: {
-      x: {
-        format: "dd MMM yyyy",
-      },
     },
     fill: {
       type: "gradient",

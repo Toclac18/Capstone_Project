@@ -54,18 +54,19 @@ public class DocumentSeeder {
       return;
     }
 
-    // 1. Tạo 3 document
-    for (int i = 0; i < 3; i++) {
+    // 1. Tạo 20 documents (nhiều data để test trending feature)
+    for (int i = 0; i < 20; i++) {
       createDocument(i);
     }
 
     // 2. Sau khi tạo xong Document thì tạo luôn History
     seedReadHistory();
 
-
-
-    //3. Tạo luôn comment cho docs theo id hiện có
+    // 3. Tạo comment cho docs
     genCommentForDocument();
+
+    // 4. Tạo engagement data (views, votes)
+    seedEngagementData();
 
     eventPublisher.publishEvent(new DocumentSeededEvent());
 
@@ -75,13 +76,19 @@ public class DocumentSeeder {
     OrganizationProfile orgProfile =
             organizationProfileRepository.findByEmail("contact@hust.edu.vn").orElse(null);
 
-    User user = userRepository.findByEmail("reader1@gmail.com").orElse(null);
+    // Xoay vòng giữa các user để phân bổ documents
+    List<User> users = userRepository.findAll();
+    if (users.isEmpty()) {
+      log.warn("⚠️ No users found. Skipping document seed " + seed);
+      return;
+    }
+    User user = users.get(seed % users.size());
 
     List<DocType> docTypes = docTypeRepository.findAll();
-    DocType docType = docTypes.isEmpty() ? null : docTypes.get(0);
+    DocType docType = docTypes.isEmpty() ? null : docTypes.get(seed % docTypes.size());
 
     List<Specialization> specs = specializationRepository.findAll();
-    Specialization spec = specs.isEmpty() ? null : specs.get(0);
+    Specialization spec = specs.isEmpty() ? null : specs.get(seed % specs.size());
 
     if (docType == null || spec == null) {
       log.warn("⚠️ DocType or Specialization missing. Skipping document seed " + seed);
@@ -94,42 +101,78 @@ public class DocumentSeeder {
             .detailedSummary("Tóm tắt chi tiết: Đây là bản phân tích đầy đủ, kết nối các phương pháp cổ điển với các phát triển hiện đại. Tài liệu làm rõ các giả định, điều kiện biên và tính hợp lệ thống kê của các phát hiện được báo cáo, đồng thời đề xuất các tiêu chuẩn có thể tái lập cho tài liệu số " + (seed + 1) + ".")
             .build();
 
-    String[] titles = {"Sách giáo khoa Toán 11", "Nhập môn Lập trình Java", "Kinh tế vĩ mô căn bản"};
+    String[] titles = {
+            "Sách giáo khoa Toán 11",
+            "Nhập môn Lập trình Java",
+            "Kinh tế vĩ mô căn bản",
+            "Machine Learning cơ bản",
+            "Thiết kế Database hiệu quả",
+            "Hệ điều hành Linux",
+            "Web Development với Spring Boot",
+            "Xử lý tín hiệu số",
+            "Mạng máy tính TCP/IP",
+            "Thuật toán và Cấu trúc dữ liệu",
+            "Lập trình song song",
+            "Bảo mật thông tin",
+            "AI và Deep Learning",
+            "Phân tích dữ liệu với Python",
+            "Cloud Computing AWS",
+            "Docker và Kubernetes",
+            "Microservices Architecture",
+            "Reactive Programming",
+            "GraphQL API Development",
+            "Blockchain và Smart Contracts"
+    };
     String title = seed < titles.length ? titles[seed] : "Tài liệu tham khảo " + seed;
+
+    // Tạo engagement data để test trending (các documents gần đây sẽ có views/votes cao)
+    int daysAgo = Math.max(0, 7 - (seed % 8)); // Docs mới nhất (daysAgo = 0) sẽ có views cao nhất
+    int viewCount = (20 - seed) * 50; // Docs đầu tiên có views cao, giảm dần
+    int upvoteCount = Math.max(0, (15 - seed) * 3);
+    int downvoteCount = Math.max(0, (seed - 10) * 2);
+    int voteScore = upvoteCount - downvoteCount;
 
     Document document = Document.builder()
             .id(SeedUtil.generateUUID("doc-" + seed))
             .title(title)
-            .description("Mô tả chi tiết cho " + title + ". Quyển sách này rất hữu ích cho sinh viên.")
+            .description("Mô tả chi tiết cho " + title + ". Quyển sách này rất hữu ích cho sinh viên và những người muốn học tập. Đây là tài liệu chất lượng cao được biên soạn bởi các chuyên gia trong ngành.")
             .uploader(user)
             .organization(orgProfile)
             .visibility(DocVisibility.PUBLIC)
             .docType(docType)
-            .isPremium(true)
-            .price(100 + (seed * 50))
-            .thumbnailKey("/thumbnail-3.jpg")
+            .isPremium(seed % 3 != 0) // Một số là premium
+            .price(seed % 3 != 0 ? 100 + (seed * 25) : 0)
+            .thumbnailKey("/thumbnail-" + (seed % 5 + 1) + ".jpg")
             .fileKey("file-" + (seed + 1) + ".pdf")
-            .pageCount(20 + (seed * 10))
+            .pageCount(20 + (seed * 5))
             .status(DocStatus.ACTIVE)
             .specialization(spec)
             .summarizations(summarization)
+            .viewCount(viewCount)
+            .upvoteCount(upvoteCount)
+            .voteScore(voteScore)
+            .createdAt(Instant.now().minusSeconds(daysAgo * 24 * 60 * 60L))
             .build();
 
     Document savedDoc = documentRepository.save(document);
 
     // Gán tags
-    Tag tag1 = tagRepository.findByCode(1L).orElse(null);
-    Tag tag2 = tagRepository.findByCode(2L).orElse(null);
+    List<Tag> allTags = tagRepository.findAll();
+    if (allTags.size() >= 2) {
+      Tag tag1 = allTags.get(seed % allTags.size());
+      Tag tag2 = allTags.get((seed + 1) % allTags.size());
 
-    if (tag1 != null && tag2 != null) {
-      var link1 = DocumentTagLink.builder().tag(tag1).document(savedDoc).build();
-      var link2 = DocumentTagLink.builder().tag(tag2).document(savedDoc).build();
+      if (!tag1.getId().equals(tag2.getId())) {
+        var link1 = DocumentTagLink.builder().tag(tag1).document(savedDoc).build();
+        var link2 = DocumentTagLink.builder().tag(tag2).document(savedDoc).build();
 
-      documentTagLinkRepository.save(link1);
-      documentTagLinkRepository.save(link2);
+        documentTagLinkRepository.save(link1);
+        documentTagLinkRepository.save(link2);
+      }
     }
 
-    log.info("✅ Created document: " + savedDoc.getTitle());
+    log.info("✅ Created document #{}: {} (Views: {}, Upvotes: {}, DaysAgo: {})",
+            seed + 1, savedDoc.getTitle(), viewCount, upvoteCount, daysAgo);
   }
 
   /**
@@ -174,10 +217,8 @@ public class DocumentSeeder {
     );
 
     // 2. Tìm User entity từ Email
-    // Chúng ta lọc qua danh sách email và tìm trong DB.
-    // Nếu email nào không có trong DB thì sẽ bị bỏ qua (filter nonNull).
     List<User> users = targetEmails.stream()
-            .map(email -> userRepository.findByEmail(email).orElse(null)) // findByEmail được dùng ở createDocument
+            .map(email -> userRepository.findByEmail(email).orElse(null))
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
 
@@ -188,50 +229,67 @@ public class DocumentSeeder {
 
     log.info("Found {} users for commenting.", users.size());
 
-    // 3. Cấu hình số lượng comment cho từng Document ID
-    Map<String, Integer> docsConfig = new LinkedHashMap<>();
-    docsConfig.put("1d2eb26d-a92d-3183-ae10-2448113ec466", 40);
-    docsConfig.put("cabcf898-23b3-37a8-a036-b70c2e50c0c6", 5);
-    docsConfig.put("0b4756cb-b920-38f6-b05e-6ddcd50b289b", 0);
-
+    // 3. Tạo comment cho tất cả documents
+    List<Document> allDocs = documentRepository.findAll();
     List<Comment> commentsToSave = new ArrayList<>();
+    int userCursor = 0;
 
-    // Biến con trỏ để xoay vòng user
-    int[] userCursor = {0};
+    for (Document doc : allDocs) {
+      // Mỗi document có 2-10 comments tùy theo index
+      int commentCount = 2 + (int) (Math.random() * 9);
+      for (int i = 0; i < commentCount; i++) {
+        User currentUser = users.get(userCursor % users.size());
+        userCursor++;
 
-    // 4. Duyệt qua config và tạo comment
-    docsConfig.forEach((docIdStr, count) -> {
-      if (count > 0) {
-        UUID docId = UUID.fromString(docIdStr);
+        Comment comment = Comment.builder()
+                .document(doc)
+                .user(currentUser)
+                .content("Bình luận tuyệt vời về: " + doc.getTitle() + ". Tài liệu này thực sự hữu ích và chuyên sâu. Cảm ơn tác giả đã chia sẻ kiến thức quý báu.")
+                .isDeleted(false)
+                .build();
 
-        // Kiểm tra Document có tồn tại không trước khi tạo comment
-        documentRepository.findById(docId).ifPresentOrElse(
-                document -> {
-                  for (int i = 1; i <= count; i++) {
-                    // Lấy user theo vòng tròn: user 1 -> user 2 -> ... -> user N -> user 1
-                    User currentUser = users.get(userCursor[0] % users.size());
-                    userCursor[0]++;
-
-                    Comment comment = Comment.builder()
-                            .document(document)
-                            .user(currentUser) // Gán user
-                            .content("Đây là bình luận mẫu số " + i + ". Người dùng " + currentUser.getEmail() + " thấy tài liệu này rất hữu ích.")
-                            .isDeleted(false)
-                            // ID, CreatedAt, UpdatedAt được BaseEntity tự động xử lý
-                            .build();
-
-                    commentsToSave.add(comment);
-                  }
-                },
-                () -> log.warn("⚠️ Document ID {} không tồn tại, bỏ qua tạo comment.", docIdStr)
-        );
+        commentsToSave.add(comment);
       }
-    });
+    }
 
-    // 5. Lưu vào Database
+    // 4. Lưu vào Database
     if (!commentsToSave.isEmpty()) {
       commentRepository.saveAll(commentsToSave);
-      log.info("✅ Đã tạo thành công {} comments phân bổ cho {} users.", commentsToSave.size(), users.size());
+      log.info("✅ Đã tạo thành công {} comments cho {} documents", commentsToSave.size(), allDocs.size());
     }
+  }
+
+  /**
+   * Seed engagement data: views, votes cho documents để test trending feature
+   */
+  private void seedEngagementData() {
+    List<Document> allDocs = documentRepository.findAll();
+    log.info("📊 Seeding engagement data for {} documents", allDocs.size());
+
+    for (int i = 0; i < allDocs.size(); i++) {
+      Document doc = allDocs.get(i);
+
+      // Tính toán engagement based on position
+      // Documents đầu tiên có engagement cao, documents sau có ít hơn
+      int position = i;
+      int views = (20 - position) * 100 + (int) (Math.random() * 500);
+      int upvotes = Math.max(0, (15 - position) * 5 + (int) (Math.random() * 20));
+      int downvotes = Math.max(0, (position - 8) * 2);
+      int voteScore = upvotes - downvotes;
+
+      doc.setViewCount(Math.max(0, views));
+      doc.setUpvoteCount(Math.max(0, upvotes));
+      doc.setVoteScore(voteScore);
+
+      // Set createdAt để mô phỏng các documents gần đây
+      int daysAgo = i % 8; // Xoay vòng giữa 0-7 ngày
+      doc.setCreatedAt(Instant.now().minusSeconds(daysAgo * 24 * 60 * 60L));
+
+      documentRepository.save(doc);
+      log.debug("  ✓ Doc #{}: {} - Views: {}, Upvotes: {}, VoteScore: {}",
+              i + 1, doc.getTitle(), views, upvotes, voteScore);
+    }
+
+    log.info("✅ Engagement data seeding completed!");
   }
 }

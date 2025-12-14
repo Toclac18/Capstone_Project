@@ -4,6 +4,7 @@ import com.capstone.be.config.annotation.NoResponseWrapping;
 import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.dto.common.PagedResponse;
 import org.springframework.core.MethodParameter;
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -48,6 +49,11 @@ public class ResponseWrapperAdvice implements ResponseBodyAdvice<Object> {
 
     // Skip if already wrapped
     if (body instanceof ApiResponse<?> || body instanceof PagedResponse<?>) {
+      return body;
+    }
+
+    // Skip Spring Data Page<T> - it already has its own pagination format
+    if (body instanceof Page<?>) {
       return body;
     }
 

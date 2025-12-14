@@ -3,16 +3,28 @@
 import { useState } from "react";
 import type { StatisticsQueryParams } from "@/types/statistics";
 import { Calendar } from "lucide-react";
+import { useToast, toast } from "@/components/ui/toast";
 
 interface StatisticsFiltersProps {
   onFilterChange: (filters: StatisticsQueryParams) => void;
 }
 
 export function StatisticsFilters({ onFilterChange }: StatisticsFiltersProps) {
+  const { showToast } = useToast();
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
   const handleApply = () => {
+    // Validate date range
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (start > end) {
+        showToast(toast.error("Validation Error", "Start Date must be before or equal to End Date"));
+        return;
+      }
+    }
+    
     onFilterChange({
       startDate: startDate || undefined,
       endDate: endDate || undefined,
@@ -31,11 +43,14 @@ export function StatisticsFilters({ onFilterChange }: StatisticsFiltersProps) {
     const start = new Date();
     start.setMonth(start.getMonth() - 6);
     
-    setStartDate(start.toISOString().split("T")[0]);
-    setEndDate(end.toISOString().split("T")[0]);
+    const startStr = start.toISOString().split("T")[0];
+    const endStr = end.toISOString().split("T")[0];
+    
+    setStartDate(startStr);
+    setEndDate(endStr);
     onFilterChange({
-      startDate: start.toISOString().split("T")[0],
-      endDate: end.toISOString().split("T")[0],
+      startDate: startStr,
+      endDate: endStr,
     });
   };
 

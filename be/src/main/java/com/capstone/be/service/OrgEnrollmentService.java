@@ -137,4 +137,18 @@ public interface OrgEnrollmentService {
       UUID importBatchId,
       Pageable pageable
   );
+
+  /**
+   * Update enrollment status by organization admin
+   *
+   * @param organizationAdminId Organization admin user ID
+   * @param enrollmentId        Enrollment ID
+   * @param newStatus           New enrollment status
+   * @return Updated enrollment detail
+   */
+  OrgEnrollmentResponse updateEnrollmentStatus(
+      UUID organizationAdminId,
+      UUID enrollmentId,
+      OrgEnrollStatus newStatus
+  );
 }

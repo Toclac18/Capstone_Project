@@ -62,6 +62,14 @@ class ImageModerationService:
 
             self.model.to(self.device)
             self.model.eval()
+            
+            # Tối ưu: Dùng FP16 (half precision) nếu GPU available để tăng tốc ~2x
+            if self.device.type == "cuda":
+                try:
+                    self.model = self.model.half()  # FP16
+                    logger.info("Image model converted to FP16 for faster inference")
+                except Exception as e:
+                    logger.warning(f"Could not convert image model to FP16: {e}")
 
             self.transform = transforms.Compose(
                 [
@@ -90,10 +98,14 @@ class ImageModerationService:
         """Dự đoán 1 ảnh có toxic hay không."""
         try:
             input_tensor = self.preprocess_image(image).to(self.device)
+            
+            # Convert to FP16 nếu model đang dùng FP16
+            if next(self.model.parameters()).dtype == torch.float16:
+                input_tensor = input_tensor.half()
 
             with torch.no_grad():
                 outputs = self.model(input_tensor)
-                predictions = torch.nn.functional.softmax(outputs, dim=-1)
+                predictions = torch.nn.functional.softmax(outputs.float(), dim=-1)  # Convert về float để tính toán
 
             probabilities = predictions.cpu().numpy()[0]
             predicted_class = int(
@@ -131,9 +143,15 @@ class ImageModerationService:
                 batch_tensors.append(tensor)
 
             batch_tensor = torch.stack(batch_tensors).to(self.device)
+            
+            # Convert to FP16 nếu model đang dùng FP16
+            if next(self.model.parameters()).dtype == torch.float16:
+                batch_tensor = batch_tensor.half()
 
             with torch.no_grad():
                 predictions = self.model(batch_tensor)
+                # Convert về float để tính toán
+                predictions = predictions.float()
 
             results: List[Dict[str, Any]] = []
             probabilities = predictions.cpu().numpy()

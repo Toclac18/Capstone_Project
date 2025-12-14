@@ -47,14 +47,41 @@ public class AdminReviewerController {
       @RequestParam(name = "sort", defaultValue = "createdAt") String sort,
       @RequestParam(name = "order", defaultValue = "desc") String order) {
 
-    log.info("Admin get all reviewers - status: {}, search: {}, page: {}, size: {}", status, search,
-        page, size);
+    // Trim search string
+    String trimmedSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
+
+    // Map frontend field names to entity field names
+    // Frontend uses "name" but entity has "fullName"
+    if ("name".equalsIgnoreCase(sort)) {
+      sort = "fullName";
+    }
+
+    // Validate sortBy - only allow valid User entity fields
+    // Valid fields: email, fullName, role, status, createdAt, updatedAt
+    String[] validSortFields = {"email", "fullName", "role", "status", "createdAt", "updatedAt"};
+    boolean isValidField = false;
+    for (String validField : validSortFields) {
+      if (validField.equalsIgnoreCase(sort)) {
+        isValidField = true;
+        sort = validField; // Normalize case
+        break;
+      }
+    }
+    
+    // If invalid field, default to createdAt
+    if (!isValidField) {
+      log.warn("Invalid sort field: {}. Defaulting to createdAt", sort);
+      sort = "createdAt";
+    }
+
+    log.info("Admin get all reviewers - status: {}, search: {}, page: {}, size: {}, sort: {}, order: {}",
+        status, trimmedSearch, page, size, sort, order);
 
     Sort.Direction direction =
         order.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sort));
 
-    Page<AdminReviewerResponse> reviewers = userService.getAllReviewers(status, search, pageable);
+    Page<AdminReviewerResponse> reviewers = userService.getAllReviewers(status, trimmedSearch, pageable);
 
     return ResponseEntity.ok(reviewers);
   }

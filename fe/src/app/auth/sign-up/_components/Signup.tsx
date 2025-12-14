@@ -7,6 +7,7 @@ import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
 import Image from "next/image";
 import { useToast } from "@/components/ui/toast";
+import PolicyViewer from "@/components/PolicyViewer/PolicyViewer";
 import {
   registerReader,
   registerReviewer,
@@ -132,7 +133,11 @@ export default function Signup() {
 
   // File uploads
   const [backgroundFiles, setBackgroundFiles] = useState<File[]>([]);
-  const [certificateFiles, setCertificateFiles] = useState<File[]>([]);
+  const [logoFile, setLogoFile] = useState<File[]>([]); // Organization logo (optional)
+
+  // Terms of Use
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isPolicyViewerOpen, setIsPolicyViewerOpen] = useState(false);
 
   // Options for reviewer
   const [domainOptions, setDomainOptions] = useState<
@@ -323,11 +328,11 @@ export default function Signup() {
           return newErrors;
         });
       } else {
-        setCertificateFiles(files);
-        // Clear error when file is uploaded
+        setLogoFile(files);
+        // Clear error when file is uploaded (logo is optional, but clear any existing error)
         setErrors((prev) => {
           const newErrors = { ...prev };
-          delete newErrors.certificateFiles;
+          delete newErrors.logoFile;
           return newErrors;
         });
       }
@@ -341,11 +346,11 @@ export default function Signup() {
     try {
       const errs = validateAll(data);
 
-      // Validate file uploads for reviewer and org-admin
+      // Validate file uploads for reviewer (logo is optional for org-admin)
       const fileErrors = validateFileUploadRequired(
         userType,
         backgroundFiles,
-        certificateFiles,
+        logoFile,
       );
       Object.assign(errs, fileErrors);
 
@@ -368,7 +373,7 @@ export default function Signup() {
       // Submit based on user type
       if (userType === "reader") {
         const payload: RegisterReaderPayload = {
-          email: data.email!,
+          email: data.email!.toLowerCase().trim(),
           password: data.password!,
           fullName: data.name!.trim(),
           dateOfBirth: data.date_of_birth!,
@@ -376,32 +381,32 @@ export default function Signup() {
         await registerReader(payload);
       } else if (userType === "reviewer") {
         const payload: RegisterReviewerPayload = {
-          email: data.email!,
+          email: data.email!.toLowerCase().trim(),
           password: data.password!,
           fullName: data.name!.trim(),
           dateOfBirth: data.date_of_birth!,
           orcid: data.orcid,
           educationLevel: data.educationLevel! as "COLLEGE" | "UNIVERSITY" | "MASTER" | "DOCTORATE",
           organizationName: data.organizationName!,
-          organizationEmail: data.organizationEmail!,
+          organizationEmail: data.organizationEmail!.toLowerCase().trim(),
           domainIds: data.domainIds!,
           specializationIds: data.specializationIds!,
         };
         await registerReviewer(payload, backgroundFiles);
       } else if (userType === "org-admin") {
         const payload: RegisterOrgAdminPayload = {
-          adminEmail: data.email!,
+          adminEmail: data.email!.toLowerCase().trim(),
           password: data.password!,
           adminFullName: data.name!.trim(),
           organizationName: data.organizationName!,
           organizationType: data.organizationType! as "SCHOOL" | "COLLEGE" | "UNIVERSITY" | "TRAINING_CENTER",
-          organizationEmail: data.organizationEmail!,
+          organizationEmail: data.organizationEmail!.toLowerCase().trim(),
           hotline: data.hotline!,
           address: data.address!,
           registrationNumber: data.registrationNumber!,
         };
         // Only send first file as logoFile (optional)
-        await registerOrgAdmin(payload, certificateFiles.length > 0 ? certificateFiles[0] : undefined);
+        await registerOrgAdmin(payload, logoFile.length > 0 ? logoFile[0] : undefined);
       }
 
       // Success: inform user to check email for verification
@@ -463,7 +468,7 @@ export default function Signup() {
     }
     setErrors({});
     setBackgroundFiles([]);
-    setCertificateFiles([]);
+    setLogoFile([]);
   }, []);
 
   return (
@@ -981,39 +986,47 @@ export default function Signup() {
                   className={`${styles["file-upload"]} ${errors.certificateFiles ? "border-red-500" : ""}`}
                   disabled={loading}
                 />
-                {certificateFiles.length > 0 ? (
+                {logoFile.length > 0 && (
                   <div className={styles["file-list"]}>
-                    {certificateFiles.map((file, idx) => (
+                    {logoFile.map((file, idx) => (
                       <p key={idx} className={styles["file-item"]}>
                         • {file.name} ({(file.size / 1024).toFixed(1)} KB)
                       </p>
                     ))}
                   </div>
-                ) : (
-                  errors.certificateFiles && (
-                    <p className={styles["form-error"]}>
-                      {errors.certificateFiles}
-                    </p>
-                  )
                 )}
               </div>
             </div>
           )}
 
           <div className="mb-4.5 mt-6">
-            <p className={styles["terms-text"]}>
-              By clicking Create Account, you agree to our{" "}
-              <Link
-                href="/terms-of-use"
-                className="text-primary hover:underline"
-              >
-                Terms Of Use
-              </Link>
-            </p>
+            <div className={styles["terms-checkbox-container"]}>
+              <label className={styles["terms-checkbox-label"]}>
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className={styles["terms-checkbox"]}
+                />
+                <span className={styles["terms-checkbox-text"]}>
+                  I agree to the{" "}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsPolicyViewerOpen(true);
+                    }}
+                    className={styles["terms-link"]}
+                  >
+                    Terms of Use
+                  </button>
+                </span>
+              </label>
+            </div>
             <button
               type="submit"
               className={styles["submit-btn"]}
-              disabled={loading}
+              disabled={loading || !agreedToTerms}
             >
               {loading ? (
                 <>
@@ -1036,6 +1049,12 @@ export default function Signup() {
           </Link>
         </p>
       </div>
+
+      {/* Policy Viewer Modal */}
+      <PolicyViewer
+        isOpen={isPolicyViewerOpen}
+        onClose={() => setIsPolicyViewerOpen(false)}
+      />
     </>
   );
 }

@@ -1,6 +1,5 @@
 package com.capstone.be.dto.request.policy;
 
-import com.capstone.be.domain.enums.PolicyStatus;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,11 +15,10 @@ public class UpdatePolicyRequest {
   @Size(max = 255, message = "Title must not exceed 255 characters")
   private String title;
 
-  @Size(max = 10000, message = "Content must not exceed 10000 characters")
+  @Size(max = 100000, message = "Content must not exceed 100000 characters")
   private String content;
 
-  private PolicyStatus status;
-
-  private Boolean isRequired;
+  // Note: version is immutable and cannot be updated
+  // Note: isActive should be changed via activate/deactivate endpoints
 }
 

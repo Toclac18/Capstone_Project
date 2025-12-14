@@ -19,6 +19,22 @@
   color: var(--text);
 }
 
+/* DARK MODE */
+:global(.dark) .wrapper {
+  --bg: #020617;
+  --surface: #0f172a;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --border: #334155;
+  --thead-bg: #0b1220;
+  /* subtle row hover for dark */
+  --row-hover: rgba(255, 255, 255, 0.03);
+  --shadow: 0 6px 24px rgba(2, 6, 23, 0.6);
+
+  background: var(--bg);
+  color: var(--text);
+}
+
 .inner {
   width: 100%;
   max-width: 1120px;

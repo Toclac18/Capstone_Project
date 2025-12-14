@@ -10,12 +10,14 @@ import type {
 import {
   getOrganizations,
   deleteOrganization,
+  updateOrganizationStatus,
 } from "../api";
 import { OrganizationFilters } from "./OrganizationFilters";
 import { Pagination } from "@/app/business-admin/users/_components/Pagination";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
 import { useToast, toast } from "@/components/ui/toast";
-import { Eye } from "lucide-react";
+import { Eye, Power } from "lucide-react";
+import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
 import styles from "../styles.module.css";
 
 // Helper function to check if logo is a valid URL
@@ -46,6 +48,12 @@ export function OrganizationManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+  const [activateModal, setActivateModal] = useState<{
+    open: boolean;
+    userId: string;
+    orgName: string;
+  } | null>(null);
+  const [isActivating, setIsActivating] = useState(false);
 
   const [filters, setFilters] = useState<OrganizationQueryParams>({
     page: 1,
@@ -112,7 +120,14 @@ export function OrganizationManagement() {
     setSuccess(null);
 
     try {
-      await deleteOrganization(String(orgId));
+      // Find the organization to get userId (admin ID)
+      const org = organizations.find(o => o.id === orgId || o.userId === orgId);
+      if (!org) {
+        throw new Error("Organization not found");
+      }
+      // Backend needs userId (admin ID), not organizationId
+      const userId = org.userId || org.id;
+      await deleteOrganization(String(userId));
       showToast(toast.success("Organization Deleted", "Organization deleted successfully"));
       await fetchOrganizations(filters);
     } catch (e: unknown) {
@@ -125,11 +140,52 @@ export function OrganizationManagement() {
     }
   };
 
+  const handleActivate = async () => {
+    if (!activateModal) return;
+
+    setIsActivating(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      // activateModal already contains userId
+      await updateOrganizationStatus(activateModal.userId, "ACTIVE");
+      showToast(toast.success("Organization Activated", "Organization activated successfully"));
+      setActivateModal(null);
+      await fetchOrganizations(filters);
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Failed to activate organization";
+      showToast(toast.error("Activate Failed", errorMessage));
+      setError(errorMessage);
+    } finally {
+      setIsActivating(false);
+    }
+  };
+
   const handleDetail = (orgId: string, org: Organization) => {
     // Backend API needs userId (admin ID), not organizationId
     // Use userId if available, otherwise fallback to id
     const userId = org.userId || orgId;
     window.location.href = `/business-admin/organization/${userId}`;
+  };
+
+  const getStatusBadgeClass = (status?: string) => {
+    switch (status) {
+      case "ACTIVE":
+        return styles["status-active"];
+      case "PENDING_EMAIL_VERIFY":
+      case "PENDING_APPROVE":
+        return styles["status-pending"];
+      case "INACTIVE":
+        return styles["status-inactive"];
+      case "REJECTED":
+        return styles["status-rejected"];
+      case "DELETED":
+        return styles["status-deleted"];
+      default:
+        return styles["status-inactive"];
+    }
   };
 
   return (
@@ -203,15 +259,17 @@ export function OrganizationManagement() {
                           className={styles["logo"]}
                           crossOrigin="anonymous"
                           onError={(e) => {
-                            // If crossOrigin fails, try without it
                             const img = e.currentTarget as HTMLImageElement;
+                            if (img.dataset.retried === 'true') {
+                              setImageErrors(prev => new Set(prev).add(org.id));
+                              return;
+                            }
+                            
                             if (img.crossOrigin === 'anonymous') {
-                              // Try without crossOrigin
+                              img.dataset.retried = 'true';
                               img.crossOrigin = '';
                               img.src = org.logo!.trim();
                             } else {
-                              // Both attempts failed, show placeholder
-                              console.error(`Failed to load image for org ${org.id}:`, org.logo);
                               setImageErrors(prev => new Set(prev).add(org.id));
                             }
                           }}
@@ -242,15 +300,7 @@ export function OrganizationManagement() {
                     <td className={styles["table-cell"]}>{org.adminEmail}</td>
                     <td className={styles["table-cell"]}>
                       <span
-                        className={`${styles["status-badge"]} ${
-                          org.status === "ACTIVE" || org.active
-                            ? styles["status-active"]
-                            : org.status === "PENDING_EMAIL_VERIFY" || org.status === "PENDING_APPROVE"
-                            ? styles["status-pending"]
-                            : org.status === "DELETED"
-                            ? styles["status-deleted"]
-                            : styles["status-inactive"]
-                        }`}
+                        className={`${styles["status-badge"]} ${getStatusBadgeClass(org.status)}`}
                       >
                         {org.status || (org.active ? "ACTIVE" : "INACTIVE")}
                       </span>
@@ -269,16 +319,36 @@ export function OrganizationManagement() {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <DeleteConfirmation
-                          onDelete={handleDelete}
-                          itemId={org.id}
-                          itemName={org.name || org.email}
-                          title="Delete Organization"
-                          description={`Are you sure you want to delete "${org.name || org.email}"?`}
-                          size="sm"
-                          variant="text"
-                          className={styles["delete-btn-wrapper"]}
-                        />
+                        {org.status === "DELETED" ? (
+                          <button
+                            onClick={() => {
+                              // Backend needs userId (admin ID), not organizationId
+                              const userId = org.userId || org.id;
+                              setActivateModal({
+                                open: true,
+                                userId: String(userId),
+                                orgName: org.name || org.email,
+                              });
+                            }}
+                            disabled={loading || isActivating}
+                            className="h-9 px-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 border border-green-300 bg-white text-green-600 hover:text-green-700 hover:border-green-400 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-green-300 disabled:hover:bg-white shadow-sm hover:shadow-md dark:border-green-700 dark:bg-gray-800 dark:text-green-400 dark:hover:text-green-300 dark:hover:border-green-600 dark:hover:bg-green-900/20 dark:disabled:hover:border-green-700 dark:disabled:hover:bg-gray-800"
+                            title="Activate Organization"
+                          >
+                            <Power className="w-4 h-4" />
+                            <span>Activate</span>
+                          </button>
+                        ) : (
+                          <DeleteConfirmation
+                            onDelete={handleDelete}
+                            itemId={org.id}
+                            itemName={org.name || org.email}
+                            title="Delete Organization"
+                            description={`Are you sure you want to delete "${org.name || org.email}"?`}
+                            size="sm"
+                            variant="text"
+                            className={styles["delete-btn-wrapper"]}
+                          />
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -297,6 +367,21 @@ export function OrganizationManagement() {
           onPageChange={handlePageChange}
           loading={loading}
         />
+
+        {/* Activate Confirmation Modal */}
+        {activateModal && (
+          <ConfirmModal
+            open={activateModal.open}
+            title="Activate Organization"
+            content={`Are you sure you want to activate "${activateModal.orgName}"?`}
+            subContent="This will change the organization status to ACTIVE and allow them to access the system."
+            confirmLabel="Activate"
+            cancelLabel="Cancel"
+            loading={isActivating}
+            onConfirm={handleActivate}
+            onCancel={() => setActivateModal(null)}
+          />
+        )}
       </div>
     </div>
   );

@@ -81,6 +81,17 @@ public interface EmailService {
       UUID enrollmentId);
 
   /**
+   * Send organization invitation with JWT token link
+   *
+   * @param email            Reader email address
+   * @param fullName         Reader full name
+   * @param organizationName Organization name
+   * @param invitationToken  JWT token for invitation
+   */
+  void sendOrganizationInvitationWithToken(String email, String fullName, String organizationName,
+      String invitationToken);
+
+  /**
    * Send ticket status update email to guest or user
    *
    * @param email      Recipient email address

@@ -11,11 +11,11 @@ import com.capstone.be.repository.OrgEnrollmentRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.UserRepository;
 import java.time.Instant;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
-import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,16 +35,30 @@ public class OrgEnrollmentSeeder {
 
   @Transactional
   @EventListener(UserSeededEvent.class)
-  public void run() throws NotFoundException {
+  public void run() {
     log.info("\uD83C\uDF31 start seeding Org Enrollment");
-    User reader1 = userRepository.findByEmail("reader1@gmail.com")
-        .orElseThrow(NotFoundException::new);
-    User reader2 = userRepository.findByEmail("reader2@gmail.com")
-        .orElseThrow(NotFoundException::new);
-    User orgAdmin = userRepository.findByEmail("org1.admin@hust.edu.vn")
-        .orElseThrow(NotFoundException::new);
-    OrganizationProfile orgProfile = organizationProfileRepository
-        .findByUserId(orgAdmin.getId()).orElseThrow(NotFoundException::new);
+
+    Optional<User> reader1Opt = userRepository.findByEmail("reader1@gmail.com");
+    Optional<User> reader2Opt = userRepository.findByEmail("reader2@gmail.com");
+    Optional<User> orgAdminOpt = userRepository.findByEmail("org1.admin@hust.edu.vn");
+
+    if (reader1Opt.isEmpty() || reader2Opt.isEmpty() || orgAdminOpt.isEmpty()) {
+      log.warn("Skipping OrgEnrollmentSeeder because required seed users are missing. " +
+          "reader1: {}, reader2: {}, orgAdmin: {}",
+          reader1Opt.isPresent(), reader2Opt.isPresent(), orgAdminOpt.isPresent());
+      return;
+    }
+
+    User reader1 = reader1Opt.get();
+    User reader2 = reader2Opt.get();
+    User orgAdmin = orgAdminOpt.get();
+
+    Optional<OrganizationProfile> orgProfileOpt = organizationProfileRepository.findByUserId(orgAdmin.getId());
+    if (orgProfileOpt.isEmpty()) {
+      log.warn("Skipping OrgEnrollmentSeeder because organization profile for {} is missing", orgAdmin.getEmail());
+      return;
+    }
+    OrganizationProfile orgProfile = orgProfileOpt.get();
 
     MemberImportBatch batch = new MemberImportBatch(
         orgProfile,

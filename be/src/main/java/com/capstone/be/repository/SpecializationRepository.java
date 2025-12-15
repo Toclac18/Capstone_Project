@@ -17,4 +17,12 @@ public interface SpecializationRepository extends JpaRepository<Specialization, 
    * Find specializations by domain ID
    */
   List<Specialization> findByDomain_Id(UUID domainId);
+
+  boolean existsByNameIgnoreCaseAndDomain_Id(String name, UUID domainId);
+
+  boolean existsByNameIgnoreCaseAndDomain_IdAndIdNot(String name, UUID domainId, UUID id);
+
+  boolean existsByCodeAndDomain_Id(Integer code, UUID domainId);
+
+  boolean existsByCodeAndDomain_IdAndIdNot(Integer code, UUID domainId, UUID id);
 }

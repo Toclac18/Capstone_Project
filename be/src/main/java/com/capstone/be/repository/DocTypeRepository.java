@@ -10,4 +10,11 @@ import org.springframework.stereotype.Repository;
 public interface DocTypeRepository extends JpaRepository<DocType, UUID>,
     JpaSpecificationExecutor<DocType> {
 
+  boolean existsByNameIgnoreCase(String name);
+
+  boolean existsByNameIgnoreCaseAndIdNot(String name, UUID id);
+
+  boolean existsByCode(Integer code);
+
+  boolean existsByCodeAndIdNot(Integer code, UUID id);
 }

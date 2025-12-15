@@ -26,6 +26,9 @@ public class EmailServiceImpl implements EmailService {
   @Value("${app.mail.verificationBaseUrl}")
   private String verificationBaseUrl;
 
+  @Value("${app.mail.joinOrganizationBaseUrl}")
+  private String joinOrganizationBaseUrl;
+
   @Override
   @Async
   public void sendEmailVerification(UUID userId, String email, String token) {
@@ -116,7 +119,7 @@ public class EmailServiceImpl implements EmailService {
                     <p>Thank you for registering with email: <strong>%s</strong></p>
                     <p>Please click the button below to verify your email address and activate your account:</p>
                     <p style="text-align: center;">
-                        <a href="%s" class="button">Verify Email</a>
+                        <a href="%s" class="button" style="color: #f8f8f9ff;">Verify Email</a>
                     </p>
                     <p>Or copy and paste this link into your browser:</p>
                     <p style="word-break: break-all; color: #4CAF50;">%s</p>
@@ -482,12 +485,30 @@ public class EmailServiceImpl implements EmailService {
     }
   }
 
+  @Override
+  @Async
+  public void sendOrganizationInvitationWithToken(String email, String fullName,
+      String organizationName, String invitationToken) {
+    try {
+      String subject = "Organization Invitation - " + organizationName;
+      String htmlContent = buildOrganizationInvitationWithTokenHtml(fullName, organizationName,
+          invitationToken);
+
+      sendHtmlEmail(email, subject, htmlContent);
+      log.info("Sent organization invitation with token to: {} for organization: {}", email,
+          organizationName);
+
+    } catch (Exception e) {
+      log.error("Failed to send organization invitation with token to: {}", email, e);
+      throw EmailException.sendFailed(email, e);
+    }
+  }
+
   private String buildOrganizationInvitationHtml(String fullName, String organizationName,
       UUID enrollmentId) {
-    // Note: In production, this should link to frontend acceptance page
     String acceptanceUrl = String.format(
-        "https://capstone-platform.com/accept-invitation?enrollmentId=%s",
-        enrollmentId);
+        "%s?enrollmentId=%s",
+        joinOrganizationBaseUrl, enrollmentId);
 
     return """
         <!DOCTYPE html>
@@ -519,7 +540,7 @@ public class EmailServiceImpl implements EmailService {
                     </div>
                     <p>By accepting this invitation, you will become a member of <strong>%s</strong> and gain access to exclusive resources and collaboration opportunities.</p>
                     <p style="text-align: center;">
-                        <a href="%s" class="button">Accept Invitation</a>
+                        <a href="%s" class="button" style="color: #f8f8f9ff;">Accept Invitation</a>
                     </p>
                     <p>Or copy and paste this link into your browser:</p>
                     <p style="word-break: break-all; color: #673AB7;">%s</p>
@@ -532,6 +553,60 @@ public class EmailServiceImpl implements EmailService {
         </body>
         </html>
         """.formatted(fullName, organizationName, organizationName, acceptanceUrl, acceptanceUrl);
+  }
+
+  private String buildOrganizationInvitationWithTokenHtml(String fullName, String organizationName,
+      String invitationToken) {
+    String acceptanceUrl = String.format(
+        "%s?token=%s",
+        joinOrganizationBaseUrl, invitationToken);
+
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #673AB7; color: white; padding: 20px; text-align: center; }
+                .content { padding: 20px; background-color: #f9f9f9; }
+                .invitation-box { background-color: #ede7f6; border-left: 4px solid #673AB7;
+                                 padding: 15px; margin: 20px 0; }
+                .button { display: inline-block; padding: 12px 30px; background-color: #673AB7;
+                         color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+                .warning-box { background-color: #fff3cd; border-left: 4px solid #ff9800;
+                              padding: 15px; margin: 20px 0; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Organization Invitation</h1>
+                </div>
+                <div class="content">
+                    <h2>Hello %s,</h2>
+                    <p>You have been invited to join an organization on the Capstone Platform!</p>
+                    <div class="invitation-box">
+                        <p style="margin: 0;"><strong>Organization:</strong> %s</p>
+                    </div>
+                    <p>By accepting this invitation, you will become a member of <strong>%s</strong> and gain access to exclusive resources and collaboration opportunities.</p>
+                    <p style="text-align: center;">
+                        <a href="%s" class="button" style="color: #f8f8f9ff;">Accept Invitation</a>
+                    </p>
+                    <div class="warning-box">
+                        <p style="margin: 0;"><strong>Important:</strong> This invitation link will expire in 7 days for security reasons.</p>
+                    </div>
+                    <p><strong>Note:</strong> If you did not expect this invitation, you can safely ignore this email.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; 2025 Capstone Platform. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(fullName, organizationName, organizationName, acceptanceUrl);
   }
 
   @Override
@@ -634,7 +709,7 @@ public class EmailServiceImpl implements EmailService {
   }
 
   private String buildAccountCreationInvitationHtml(String email, String organizationName) {
-    String registerUrl = verificationBaseUrl.replace("/verify-email", "/register");
+    String registerUrl = verificationBaseUrl.replace("/verify-email", "/sign-up");
 
     return """
         <!DOCTYPE html>
@@ -677,7 +752,7 @@ public class EmailServiceImpl implements EmailService {
                         </ol>
                     </div>
                     <p style="text-align: center;">
-                        <a href="%s" class="button">Create Account</a>
+                        <a href="%s" class="button" style="color: #f8f8f9ff;">Create Account</a>
                     </p>
                     <p>Or copy and paste this link into your browser:</p>
                     <p style="word-break: break-all; color: #673AB7;">%s</p>

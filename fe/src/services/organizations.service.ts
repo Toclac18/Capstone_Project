@@ -50,8 +50,9 @@ export type JoinOrganizationResponse = {
 };
 
 export async function joinOrganization(token: string): Promise<JoinOrganizationResponse> {
-  const res = await apiClient.get<JoinOrganizationResponse>(
-    `/organizations/join?token=${encodeURIComponent(token)}`
+  const res = await apiClient.post<JoinOrganizationResponse>(
+    `/organizations/join?token=${encodeURIComponent(token)}`,
+    {}
   );
   return res.data;
 }

@@ -17,13 +17,31 @@ export function AddTagModal({ isOpen, onClose, onAdd }: AddTagModalProps) {
   const [error, setError] = useState<string | null>(null);
   const { showToast } = useToast();
 
+  // Validate tag name: only letters, numbers, spaces, and Vietnamese characters
+  const validateTagName = (value: string): string | null => {
+    if (!value.trim()) {
+      return "Tag name cannot be empty.";
+    }
+    if (value.length > 50) {
+      return "Tag name must not exceed 50 characters.";
+    }
+    // Allow letters (including Vietnamese), numbers, spaces, and hyphens
+    const validPattern = /^[\p{L}\p{N}\s-]+$/u;
+    if (!validPattern.test(value)) {
+      return "Tag name can only contain letters, numbers, spaces, and hyphens.";
+    }
+    return null;
+  };
+
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       setError(null);
 
-      if (!name.trim()) {
-        setError("Tag name cannot be empty.");
+      const validationError = validateTagName(name);
+      if (validationError) {
+        setError(validationError);
+        showToast({ type: "error", title: "Validation Error", message: validationError, duration: 3000 });
         return;
       }
 
@@ -96,12 +114,20 @@ export function AddTagModal({ isOpen, onClose, onAdd }: AddTagModalProps) {
                 id="tagName"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value.length <= 50) {
+                    setName(value);
+                    setError(null);
+                  }
+                }}
                 className={styles["form-input"]}
                 placeholder="Enter tag name"
                 disabled={isLoading}
+                maxLength={50}
                 autoFocus
               />
+              <p className={styles["form-hint"]}>{name.length}/50 characters</p>
               {error && <p className={styles["form-error"]}>{error}</p>}
             </div>
           </form>

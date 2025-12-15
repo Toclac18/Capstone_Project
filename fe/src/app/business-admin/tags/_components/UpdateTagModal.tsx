@@ -38,7 +38,25 @@ export function UpdateTagModal({
       setError(null);
 
       if (!name.trim()) {
-        setError("Tag name cannot be empty.");
+        const msg = "Tag name cannot be empty.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
+        return;
+      }
+
+      if (name.trim().length < 2 || name.trim().length > 50) {
+        const msg = "Tag name must be between 2 and 50 characters.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
+        return;
+      }
+
+      // Validate special characters
+      const validPattern = /^[\p{L}\p{N}\s-]+$/u;
+      if (!validPattern.test(name.trim())) {
+        const msg = "Tag name can only contain letters, numbers, spaces, and hyphens.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
         return;
       }
 
@@ -112,12 +130,18 @@ export function UpdateTagModal({
                 id="updateTagName"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 50) {
+                    setName(e.target.value);
+                  }
+                }}
                 className={styles["form-input"]}
-                placeholder="Enter tag name"
+                placeholder="Enter tag name (2-50 characters)"
                 disabled={isLoading}
+                maxLength={50}
                 autoFocus
               />
+              <p className={styles["form-hint"]}>{name.length}/50 characters</p>
             </div>
 
             {error && <p className={styles["form-error"]}>{error}</p>}

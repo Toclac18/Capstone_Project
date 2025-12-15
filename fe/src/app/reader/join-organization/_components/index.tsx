@@ -15,20 +15,19 @@ export default function JoinOrganizationContent() {
   const [status, setStatus] = useState<"joining" | "success" | "error">("joining");
   const [message, setMessage] = useState("");
   const [organizationName, setOrganizationName] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(3);
 
   useEffect(() => {
     const token = searchParams.get("token");
     
-    // Validate token and handle join process
     const handleJoin = async () => {
-    if (!token) {
-      setStatus("error");
-      setMessage("Invitation token is missing");
-      return;
-    }
+      if (!token) {
+        setStatus("error");
+        setMessage("Invitation token is missing");
+        return;
+      }
 
       try {
-        // Show loading spinner for at least 1.5 seconds
         const [result] = await Promise.all([
           joinOrganization(token),
           new Promise(resolve => setTimeout(resolve, 1500)),
@@ -37,11 +36,6 @@ export default function JoinOrganizationContent() {
         setStatus("success");
         setMessage(result.message || "You have successfully joined the organization");
         setOrganizationName(result.organizationName || null);
-        
-        // Redirect to organizations list after 3 seconds
-        setTimeout(() => {
-          router.push("/reader/organizations");
-        }, 3000);
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : "Failed to join organization. Please try again.";
         setStatus("error");
@@ -50,7 +44,25 @@ export default function JoinOrganizationContent() {
     };
 
     handleJoin();
-  }, [searchParams, router]);
+  }, [searchParams]);
+
+  // Countdown and redirect effect
+  useEffect(() => {
+    if (status !== "success") return;
+
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          router.push("/reader/organizations");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [status, router]);
 
   return (
     <div className={styles["page-container"]}>
@@ -126,7 +138,7 @@ export default function JoinOrganizationContent() {
                 {message}
               </p>
               <p className="text-sm text-dark-5 mb-4">
-                Redirecting to organizations page in 3 seconds...
+                Redirecting to organizations page in {countdown} second{countdown !== 1 ? "s" : ""}...
               </p>
               <Link
                 href="/reader/organizations"

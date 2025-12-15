@@ -29,17 +29,18 @@ public class DocumentLibrarySpecification {
    * Build specification for user's library Includes documents uploaded by user OR purchased by
    * user
    *
-   * @param userId User ID
+   * @param userId User ID (for owned documents - uploader_id)
+   * @param readerProfileId Reader Profile ID (for purchased documents - document_redemption.reader_id)
    * @param filter Filter criteria (searchKeyword, isPremium, isOwned, isPurchased, dateFrom, dateTo, docTypeId, domainId)
    * @return Combined specification
    */
-  public static Specification<Document> buildLibrarySpec(UUID userId,
+  public static Specification<Document> buildLibrarySpec(UUID userId, UUID readerProfileId,
       DocumentLibraryFilter filter) {
     return (root, query, cb) -> {
       List<Predicate> predicates = new ArrayList<>();
 
       // Core library condition: owned OR purchased
-      Predicate libraryPredicate = buildLibraryPredicate(userId, filter, root, query, cb);
+      Predicate libraryPredicate = buildLibraryPredicate(userId, readerProfileId, filter, root, query, cb);
       if (libraryPredicate != null) {
         predicates.add(libraryPredicate);
       }
@@ -95,15 +96,19 @@ public class DocumentLibrarySpecification {
 
   /**
    * Builds the predicate to filter documents in the user's library.
+   * 
+   * @param userId User ID for owned documents (uploader_id in document table)
+   * @param readerProfileId Reader Profile ID for purchased documents (reader_id in document_redemption table)
    */
   private static Predicate buildLibraryPredicate(
       UUID userId,
+      UUID readerProfileId,
       DocumentLibraryFilter filter,
       Root<Document> root,
       CriteriaQuery<?> query,
       CriteriaBuilder cb) {
 
-    // Base predicate: documents uploaded by the user
+    // Base predicate: documents uploaded by the user (using userId = uploader_id)
     Predicate owned = cb.equal(root.get("uploader").get("id"), userId);
 
     // Check filter flags (mutually exclusive by design)
@@ -111,11 +116,20 @@ public class DocumentLibrarySpecification {
       return owned;
     }
 
-    // Subquery: documents purchased by the user
+    // If no readerProfileId, can only show owned documents
+    if (readerProfileId == null) {
+      if (filter != null && Boolean.TRUE.equals(filter.getIsPurchased())) {
+        // User wants purchased but has no reader profile - return impossible condition
+        return cb.disjunction(); // Always false
+      }
+      return owned;
+    }
+
+    // Subquery: documents purchased by the user (using readerProfileId = reader_id in redemption)
     Subquery<UUID> purchasedSubquery = query.subquery(UUID.class);
     Root<DocumentRedemption> r = purchasedSubquery.from(DocumentRedemption.class);
     purchasedSubquery.select(r.get("document").get("id"))
-        .where(cb.equal(r.get("reader").get("id"), userId));
+        .where(cb.equal(r.get("reader").get("id"), readerProfileId));
     Predicate purchased = root.get("id").in(purchasedSubquery);
 
     if (filter != null && Boolean.TRUE.equals(filter.getIsPurchased())) {

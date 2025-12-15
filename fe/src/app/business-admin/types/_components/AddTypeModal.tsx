@@ -25,18 +25,40 @@ export function AddTypeModal({ isOpen, onClose, onAdd }: AddTypeModalProps) {
       setError(null);
 
       if (!code.trim()) {
-        setError("Type code cannot be empty.");
+        const msg = "Type code cannot be empty.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
         return;
       }
 
       const codeNum = parseInt(code.trim(), 10);
       if (isNaN(codeNum) || codeNum < 1) {
-        setError("Type code must be a positive number.");
+        const msg = "Type code must be a positive number.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
         return;
       }
 
       if (!name.trim()) {
-        setError("Type name cannot be empty.");
+        const msg = "Type name cannot be empty.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
+        return;
+      }
+
+      if (name.trim().length < 3 || name.trim().length > 100) {
+        const msg = "Type name must be between 3 and 100 characters.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
+        return;
+      }
+
+      // Validate special characters
+      const validPattern = /^[\p{L}\p{N}\s-]+$/u;
+      if (!validPattern.test(name.trim())) {
+        const msg = "Type name can only contain letters, numbers, spaces, and hyphens.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
         return;
       }
 
@@ -130,11 +152,17 @@ export function AddTypeModal({ isOpen, onClose, onAdd }: AddTypeModalProps) {
                 id="typeName"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 100) {
+                    setName(e.target.value);
+                  }
+                }}
                 className={styles["form-input"]}
-                placeholder="Enter type name"
+                placeholder="Enter type name (3-100 characters)"
                 disabled={isLoading}
+                maxLength={100}
               />
+              <p className={styles["form-hint"]}>{name.length}/100 characters</p>
             </div>
 
             <div className={styles["form-group"]}>

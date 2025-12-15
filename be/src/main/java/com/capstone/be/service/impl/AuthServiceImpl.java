@@ -273,14 +273,14 @@ public class AuthServiceImpl implements AuthService {
     } catch (BadCredentialsException e) {
       Map<String, Object> details = new HashMap<>();
       details.put("email", request.getEmail());
-      details.put("reason", "Bad credentials");
+      details.put("reason", "Invaild email or password");
       log.debug("Calling auditLogService.logFailedAction for USER_LOGIN_FAILED, email: {}, IP: {}", 
           request.getEmail(), ipAddress);
       auditLogService.logFailedAction(
           LogAction.USER_LOGIN_FAILED,
           null,
           details,
-          "Bad credentials",
+          "Invaild email or password",
           ipAddress,
           userAgent,
           401 // HTTP 401 Unauthorized

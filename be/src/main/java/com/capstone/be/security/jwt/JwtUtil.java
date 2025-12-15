@@ -72,9 +72,53 @@ public class JwtUtil {
   }
 
   /**
+   * Generate JWT token for organization invitation (7 days expiration)
+   */
+  public String generateOrgInvitationToken(UUID enrollmentId, String email, UUID organizationId) {
+    Date now = new Date();
+    Date expiryDate = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000L)); // 7 days
+
+    return Jwts.builder()
+        .setSubject(enrollmentId.toString())
+        .claim("email", email)
+        .claim("organizationId", organizationId.toString())
+        .claim("type", "org_invitation")
+        .setIssuer(issuer)
+        .setIssuedAt(now)
+        .setExpiration(expiryDate)
+        .signWith(secretKey, SignatureAlgorithm.HS512)
+        .compact();
+  }
+
+  /**
    * Extract user ID from JWT token
    */
   public UUID getUserIdFromToken(String token) {
+    Claims claims = getClaimsFromToken(token);
+    return UUID.fromString(claims.getSubject());
+  }
+
+  /**
+   * Get token type from JWT token
+   */
+  public String getTokenType(String token) {
+    Claims claims = getClaimsFromToken(token);
+    return claims.get("type", String.class);
+  }
+
+  /**
+   * Get organization ID from token
+   */
+  public UUID getOrganizationIdFromToken(String token) {
+    Claims claims = getClaimsFromToken(token);
+    String orgIdStr = claims.get("organizationId", String.class);
+    return orgIdStr != null ? UUID.fromString(orgIdStr) : null;
+  }
+
+  /**
+   * Get enrollment ID from token (subject)
+   */
+  public UUID getEnrollmentIdFromToken(String token) {
     Claims claims = getClaimsFromToken(token);
     return UUID.fromString(claims.getSubject());
   }

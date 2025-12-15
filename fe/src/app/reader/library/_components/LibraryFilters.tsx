@@ -8,8 +8,8 @@ import type { LibraryQueryParams } from "../api";
 interface LibraryFiltersProps {
   onFiltersChange: (filters: LibraryQueryParams) => void;
   loading?: boolean;
-  documentTypes: string[];
-  domains: string[];
+  documentTypes: { id: string; name: string }[];
+  domains: { id: string; name: string }[];
 }
 
 type FilterValues = {
@@ -45,6 +45,15 @@ export function LibraryFilters({
   const dateToValue = useWatch({ control, name: "dateTo" });
 
   const onSubmit: SubmitHandler<FilterValues> = (data: FilterValues) => {
+    // Validate date range
+    if (data.dateFrom && data.dateTo) {
+      const fromDate = new Date(data.dateFrom);
+      const toDate = new Date(data.dateTo);
+      if (fromDate > toDate) {
+        return; // Don't submit if dates are invalid
+      }
+    }
+
     // Determine source: if both checked, no filter (show all). If only one checked, use that.
     let source: "UPLOADED" | "REDEEMED" | undefined = undefined;
     if (data.uploaded && !data.redeemed) {
@@ -59,8 +68,8 @@ export function LibraryFilters({
       source,
       dateFrom: data.dateFrom || undefined,
       dateTo: data.dateTo || undefined,
-      type: data.type || undefined,
-      domain: data.domain || undefined,
+      typeId: data.type || undefined, // Now using ID
+      domainId: data.domain || undefined, // Now using ID
       page: 1,
     };
     onFiltersChange(filters);
@@ -91,18 +100,18 @@ export function LibraryFilters({
 
   const typeOptions = [
     { value: "", label: "All Types" },
-    ...Array.from(new Set(documentTypes))
-      .filter(Boolean)
-      .sort()
-      .map((t) => ({ value: t, label: t })),
+    ...documentTypes
+      .filter((t) => t.id && t.name)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((t) => ({ value: t.id, label: t.name })),
   ];
 
   const domainOptions = [
     { value: "", label: "All Domains" },
-    ...Array.from(new Set(domains))
-      .filter(Boolean)
-      .sort()
-      .map((d) => ({ value: d, label: d })),
+    ...domains
+      .filter((d) => d.id && d.name)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((d) => ({ value: d.id, label: d.name })),
   ];
 
   return (
@@ -348,7 +357,7 @@ export function LibraryFilters({
                 <span
                   className={`${styles["filter-tag"]} ${styles["filter-tag-type"]}`}
                 >
-                  Type: {watchedFilters.type}
+                  Type: {documentTypes.find((t) => t.id === watchedFilters.type)?.name || watchedFilters.type}
                   <button
                     type="button"
                     onClick={() => {
@@ -373,7 +382,7 @@ export function LibraryFilters({
                 <span
                   className={`${styles["filter-tag"]} ${styles["filter-tag-domain"]}`}
                 >
-                  Domain: {watchedFilters.domain}
+                  Domain: {domains.find((d) => d.id === watchedFilters.domain)?.name || watchedFilters.domain}
                   <button
                     type="button"
                     onClick={() => {

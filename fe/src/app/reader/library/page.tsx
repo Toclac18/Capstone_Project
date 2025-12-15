@@ -37,7 +37,7 @@ import {
 
 type LoadState = "loading" | "success" | "empty" | "error";
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 10;
 const THUMBNAIL_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/thumb/";
 const DEFAULT_THUMBNAIL = "/images/document.jpg";
 
@@ -53,8 +53,8 @@ export default function LibraryPage() {
     page: 1,
     limit: ITEMS_PER_PAGE,
   });
-  const [allDocumentTypes, setAllDocumentTypes] = useState<string[]>([]);
-  const [allDomains, setAllDomains] = useState<string[]>([]);
+  const [allDocumentTypes, setAllDocumentTypes] = useState<{ id: string; name: string }[]>([]);
+  const [allDomains, setAllDomains] = useState<{ id: string; name: string }[]>([]);
   const [selectedDocument, setSelectedDocument] =
     useState<LibraryDocument | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -108,22 +108,16 @@ export default function LibraryPage() {
           getDocumentTypes(),
           getDomains(),
         ]);
-        setAllDocumentTypes(types.map((t) => t.name));
-        setAllDomains(domainsData.map((d) => d.name));
+        setAllDocumentTypes(types.map((t) => ({ id: t.id, name: t.name })));
+        setAllDomains(domainsData.map((d) => ({ id: d.id, name: d.name })));
       } catch {
-        // Fallback to documents if API fails
-        const types = new Set<string>();
-        const domainSet = new Set<string>();
-        documents.forEach((doc) => {
-          types.add(doc.type);
-          domainSet.add(doc.domain);
-        });
-        setAllDocumentTypes(Array.from(types).sort());
-        setAllDomains(Array.from(domainSet).sort());
+        // Cannot load filter options
+        setAllDocumentTypes([]);
+        setAllDomains([]);
       }
     };
     loadFilterOptions();
-  }, [documents]);
+  }, []);
 
   const handleFiltersChange = (newFilters: LibraryQueryParams) => {
     setFilters({

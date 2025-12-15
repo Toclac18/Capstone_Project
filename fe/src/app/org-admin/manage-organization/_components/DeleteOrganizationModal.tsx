@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, X, AlertCircle } from "lucide-react";
+import { Trash2, X, AlertCircle, Eye, EyeOff } from "lucide-react";
 import styles from "../styles.module.css";
 
 interface DeleteOrganizationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onDelete: () => Promise<void>;
+  onDelete: (password: string) => Promise<void>;
   organizationName: string;
   email?: string;
 }
@@ -21,12 +21,9 @@ export default function DeleteOrganizationModal({
 }: DeleteOrganizationModalProps) {
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    confirmText: "",
-  });
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const CONFIRM_TEXT = "DELETE";
 
   useEffect(() => {
     setMounted(true);
@@ -34,7 +31,8 @@ export default function DeleteOrganizationModal({
 
   useEffect(() => {
     if (isOpen) {
-      setFormData({ confirmText: "" });
+      setPassword("");
+      setShowPassword(false);
       setErrors({});
     }
   }, [isOpen]);
@@ -42,8 +40,8 @@ export default function DeleteOrganizationModal({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (formData.confirmText !== CONFIRM_TEXT) {
-      newErrors.confirmText = `Please type "${CONFIRM_TEXT}" to confirm`;
+    if (!password.trim()) {
+      newErrors.password = "Please enter your password to confirm";
     }
 
     setErrors(newErrors);
@@ -56,10 +54,10 @@ export default function DeleteOrganizationModal({
 
     try {
       setIsLoading(true);
-      await onDelete();
+      await onDelete(password);
       onClose();
     } catch (error: any) {
-      setErrors({ submit: error?.message || "Failed to delete organization" });
+      setErrors({ submit: error?.message || "Failed to delete organization. Please check your password." });
     } finally {
       setIsLoading(false);
     }
@@ -126,24 +124,32 @@ export default function DeleteOrganizationModal({
 
               <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
                 <label className={`${styles["field-label"]} ${styles["field-label-sm"]}`}>
-                  Type <span className={styles["field-label-confirm"]}>{CONFIRM_TEXT}</span>{" "}
-                  to confirm <span className={`${styles["field-label-required"]} ${styles["field-label-required-sm"]}`}>*</span>
+                  Enter your password to confirm{" "}
+                  <span className={`${styles["field-label-required"]} ${styles["field-label-required-sm"]}`}>*</span>
                 </label>
-                <input
-                  type="text"
-                  value={formData.confirmText}
-                  onChange={(e) => {
-                    setFormData({ ...formData, confirmText: e.target.value });
-                    if (errors.confirmText)
-                      setErrors({ ...errors, confirmText: "" });
-                  }}
-                  placeholder={CONFIRM_TEXT}
-                  className={`${styles["field-input"]} ${styles["field-input-sm"]} ${styles["field-input-mono"]} ${errors.confirmText ? styles.error : ""}`}
-                />
-                {errors.confirmText && (
+                <div className={styles["password-input-wrapper"]}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (errors.password) setErrors({ ...errors, password: "" });
+                    }}
+                    placeholder="Enter your password"
+                    className={`${styles["field-input"]} ${styles["field-input-sm"]} ${errors.password ? styles.error : ""}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className={styles["password-toggle-btn"]}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {errors.password && (
                   <div className={`${styles["field-error"]} ${styles["field-error-inline"]}`}>
                     <AlertCircle className={styles["error-icon"]} />
-                    {errors.confirmText}
+                    {errors.password}
                   </div>
                 )}
               </div>

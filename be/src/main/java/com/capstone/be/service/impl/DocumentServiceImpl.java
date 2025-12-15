@@ -291,6 +291,27 @@ public class DocumentServiceImpl implements DocumentService {
 
     // ===== 2. Handle new tags (by name) =====
     if (newTags != null && !newTags.isEmpty()) {
+      // Validate new tag names
+      java.util.regex.Pattern validTagPattern = java.util.regex.Pattern.compile("^[\\p{L}\\p{N}\\s\\-]+$");
+      
+      for (String rawName : newTags) {
+        if (rawName != null && !rawName.trim().isEmpty()) {
+          String trimmedName = rawName.trim();
+          if (trimmedName.length() > 50) {
+            throw new InvalidRequestException(
+                "Tag name must not exceed 50 characters: " + trimmedName,
+                "INVALID_TAG_NAME"
+            );
+          }
+          if (!validTagPattern.matcher(trimmedName).matches()) {
+            throw new InvalidRequestException(
+                "Tag name can only contain letters, numbers, spaces, and hyphens: " + trimmedName,
+                "INVALID_TAG_NAME"
+            );
+          }
+        }
+      }
+      
       // Map normalizedName -> originalName (keep original name for display)
       Map<String, String> normalizedToOriginal = new HashMap<>();
 
@@ -546,13 +567,18 @@ public class DocumentServiceImpl implements DocumentService {
       throw ResourceNotFoundException.userById(userId);
     }
 
-    // Build specification based on filter
-    var spec = DocumentLibrarySpecification.buildLibrarySpec(userId, filter);
+    // Get reader profile ID for redemption queries
+    ReaderProfile readerProfile = readerProfileRepository.findByUserId(userId).orElse(null);
+    UUID readerProfileId = readerProfile != null ? readerProfile.getId() : null;
+
+    // Build specification based on filter - use userId for owned docs, readerProfileId for purchased
+    var spec = DocumentLibrarySpecification.buildLibrarySpec(userId, readerProfileId, filter);
 
     // Fetch documents with specification
     Page<Document> documentsPage = documentRepository.findAll(spec, pageable);
 
     // Map to response DTO
+    final UUID finalReaderProfileId = readerProfileId;
     Page<DocumentLibraryResponse> responsePage = documentsPage.map(document -> {
       DocumentLibraryResponse response = documentMapper.toLibraryResponse(document);
 
@@ -566,9 +592,9 @@ public class DocumentServiceImpl implements DocumentService {
 
       // Build user relation info
       boolean isOwned = document.getUploader().getId().equals(userId);
-      DocumentRedemption redemption = documentRedemptionRepository
-          .findByReader_IdAndDocument_Id(userId, document.getId())
-          .orElse(null);
+      DocumentRedemption redemption = finalReaderProfileId != null 
+          ? documentRedemptionRepository.findByReader_IdAndDocument_Id(finalReaderProfileId, document.getId()).orElse(null)
+          : null;
       boolean isPurchased = redemption != null;
 
       DocumentLibraryResponse.UserRelationInfo userRelation = DocumentLibraryResponse.UserRelationInfo.builder()

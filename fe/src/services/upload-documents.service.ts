@@ -29,6 +29,7 @@ export type UploadDocumentRequest = {
   title: string;
   description: string;
   visibility: "PUBLIC" | "INTERNAL" | "PRIVATE";
+  isPremium?: boolean;
   typeId: string;
   domainIds: string[];
   specializationIds: string[];
@@ -120,7 +121,7 @@ export async function uploadDocument(
     title: data.title,
     description: data.description,
     visibility: data.visibility,
-    isPremium: false, // Default to false, can be made configurable later
+    isPremium: data.isPremium ?? false,
     docTypeId: data.typeId,
     specializationId: data.specializationIds[0], // Backend expects single specializationId
     organizationId: data.organizationId || null,

@@ -38,7 +38,25 @@ export function UpdateDomainModal({
       setError(null);
 
       if (!name.trim()) {
-        setError("Domain name cannot be empty.");
+        const msg = "Domain name cannot be empty.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
+        return;
+      }
+
+      if (name.trim().length < 3 || name.trim().length > 100) {
+        const msg = "Domain name must be between 3 and 100 characters.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
+        return;
+      }
+
+      // Validate special characters
+      const validPattern = /^[\p{L}\p{N}\s-]+$/u;
+      if (!validPattern.test(name.trim())) {
+        const msg = "Domain name can only contain letters, numbers, spaces, and hyphens.";
+        setError(msg);
+        showToast({ type: "error", title: "Validation Error", message: msg, duration: 3000 });
         return;
       }
 
@@ -112,12 +130,18 @@ export function UpdateDomainModal({
                 id="updateDomainName"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 100) {
+                    setName(e.target.value);
+                  }
+                }}
                 className={styles["form-input"]}
-                placeholder="Enter domain name"
+                placeholder="Enter domain name (3-100 characters)"
                 disabled={isLoading}
+                maxLength={100}
                 autoFocus
               />
+              <p className={styles["form-hint"]}>{name.length}/100 characters</p>
             </div>
 
             {error && <p className={styles["form-error"]}>{error}</p>}

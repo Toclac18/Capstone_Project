@@ -6,6 +6,7 @@ import com.capstone.be.dto.request.specialization.CreateSpecializationRequest;
 import com.capstone.be.dto.request.specialization.UpdateSpecializationRequest;
 import com.capstone.be.dto.response.specialization.SpecializationDetailResponse;
 import com.capstone.be.exception.DuplicateResourceException;
+import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.mapper.SpecializationMapper;
 import com.capstone.be.repository.DomainRepository;
@@ -66,13 +67,26 @@ public class SpecializationServiceImpl implements SpecializationService {
     Domain domain = domainRepository.findById(request.getDomainId())
         .orElseThrow(() -> new ResourceNotFoundException("Domain", request.getDomainId()));
 
-    // Check for duplicate code (optional - depends on business rules)
-    // For now, we allow duplicate codes across different domains
+    // Check duplicate code within same domain
+    if (specializationRepository.existsByCodeAndDomain_Id(request.getCode(), request.getDomainId())) {
+      throw new InvalidRequestException(
+          "Specialization with code '" + request.getCode() + "' already exists in this domain",
+          "DUPLICATE_SPECIALIZATION_CODE"
+      );
+    }
+
+    // Check duplicate name within same domain (case-insensitive)
+    if (specializationRepository.existsByNameIgnoreCaseAndDomain_Id(request.getName().trim(), request.getDomainId())) {
+      throw new InvalidRequestException(
+          "Specialization with name '" + request.getName() + "' already exists in this domain",
+          "DUPLICATE_SPECIALIZATION_NAME"
+      );
+    }
 
     // Create new specialization
     Specialization specialization = Specialization.builder()
         .code(request.getCode())
-        .name(request.getName())
+        .name(request.getName().trim())
         .domain(domain)
         .build();
 
@@ -92,6 +106,8 @@ public class SpecializationServiceImpl implements SpecializationService {
     Specialization specialization = specializationRepository.findById(specializationId)
         .orElseThrow(() -> new ResourceNotFoundException("Specialization", specializationId));
 
+    UUID targetDomainId = specialization.getDomain().getId();
+
     // Find domain if changed
     if (request.getDomainId() != null &&
         !specialization.getDomain().getId().equals(request.getDomainId())) {
@@ -99,17 +115,30 @@ public class SpecializationServiceImpl implements SpecializationService {
       Domain domain = domainRepository.findById(request.getDomainId())
           .orElseThrow(() -> new ResourceNotFoundException("Domain", request.getDomainId()));
 
+      targetDomainId = request.getDomainId();
       specialization.setDomain(domain);
     }
 
-    // Update code
+    // Update code with duplicate check
     if (request.getCode() != null) {
+      if (specializationRepository.existsByCodeAndDomain_IdAndIdNot(request.getCode(), targetDomainId, specializationId)) {
+        throw new InvalidRequestException(
+            "Specialization with code '" + request.getCode() + "' already exists in this domain",
+            "DUPLICATE_SPECIALIZATION_CODE"
+        );
+      }
       specialization.setCode(request.getCode());
     }
 
-    // Update name
+    // Update name with duplicate check
     if (request.getName() != null && !request.getName().isBlank()) {
-      specialization.setName(request.getName());
+      if (specializationRepository.existsByNameIgnoreCaseAndDomain_IdAndIdNot(request.getName().trim(), targetDomainId, specializationId)) {
+        throw new InvalidRequestException(
+            "Specialization with name '" + request.getName() + "' already exists in this domain",
+            "DUPLICATE_SPECIALIZATION_NAME"
+        );
+      }
+      specialization.setName(request.getName().trim());
     }
 
     specialization = specializationRepository.save(specialization);

@@ -52,6 +52,7 @@ export default function UploadDocumentPage() {
   const [description, setDescription] = useState("");
   const [visibility, setVisibility] = useState<"PUBLIC" | "INTERNAL">("PUBLIC");
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>("");
+  const [isPremium, setIsPremium] = useState(false);
   const [typeId, setTypeId] = useState("");
   const [selectedDomainId, setSelectedDomainId] = useState<string>("");
   const [selectedSpecializationId, setSelectedSpecializationId] = useState<string>("");
@@ -391,9 +392,37 @@ export default function UploadDocumentPage() {
     }
   };
 
+  // Validate tag name: only letters, numbers, spaces, and hyphens (max 50 chars)
+  const validateTagName = (value: string): string | null => {
+    if (!value.trim()) {
+      return "Tag name cannot be empty.";
+    }
+    if (value.length > 50) {
+      return "Tag name must not exceed 50 characters.";
+    }
+    // Allow letters (including Vietnamese), numbers, spaces, and hyphens
+    const validPattern = /^[\p{L}\p{N}\s-]+$/u;
+    if (!validPattern.test(value)) {
+      return "Tag name can only contain letters, numbers, spaces, and hyphens.";
+    }
+    return null;
+  };
+
   const handleAddNewTag = () => {
     const tag = newTagInput.trim();
     if (!tag) return;
+
+    // Validate tag name
+    const validationError = validateTagName(tag);
+    if (validationError) {
+      showToast({
+        type: "error",
+        title: "Invalid tag name",
+        message: validationError,
+        duration: 3000,
+      });
+      return;
+    }
     
     // Check if tag already exists in existing tags list
     const tagExists = tags.some((t) => t.name.toLowerCase() === tag.toLowerCase());
@@ -511,6 +540,7 @@ export default function UploadDocumentPage() {
     setTitle("");
     setDescription("");
     setVisibility("PUBLIC");
+    setIsPremium(false);
     setTypeId("");
     setSelectedDomainId("");
     setSelectedSpecializationId("");
@@ -540,6 +570,7 @@ export default function UploadDocumentPage() {
     setFileSelected(false);
     setDescription("");
     setVisibility("PUBLIC");
+    setIsPremium(false);
     setTypeId("");
     setSelectedDomainId("");
     setSelectedSpecializationId("");
@@ -598,6 +629,7 @@ export default function UploadDocumentPage() {
         title: title.trim(),
         description: description.trim(),
         visibility,
+        isPremium,
         typeId,
         domainIds: [selectedDomainId],
         specializationIds: selectedSpecializationId ? [selectedSpecializationId] : [],
@@ -1069,6 +1101,26 @@ export default function UploadDocumentPage() {
                   </div>
                 )}
 
+                {/* Premium Toggle */}
+                <div className={styles["field-group"]}>
+                  <label className={styles["field-label"]}>Premium Document</label>
+                  <div className={styles["toggle-wrapper"]}>
+                    <button
+                      type="button"
+                      onClick={() => setIsPremium(!isPremium)}
+                      className={`${styles["toggle-btn"]} ${isPremium ? styles["toggle-active"] : ""}`}
+                    >
+                      <span className={styles["toggle-slider"]} />
+                    </button>
+                    <span className={styles["toggle-label"]}>
+                      {isPremium ? "Premium" : "Free"}
+                    </span>
+                  </div>
+                  <p className={styles["help-text"]}>
+                    Premium documents require readers to redeem before viewing.
+                  </p>
+                </div>
+
                 {/* Tags Multi-select with Combobox */}
                 <div className={styles["field-group"]}>
                   <label className={styles["field-label"]}>Tags (optional)</label>
@@ -1117,7 +1169,7 @@ export default function UploadDocumentPage() {
                             handleAddNewTag();
                           }
                         }}
-                        placeholder="Enter new tag name"
+                        placeholder="Enter new tag name (max 50 chars)"
                         className={styles["new-tag-input"]}
                       />
                       <button

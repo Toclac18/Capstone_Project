@@ -18,8 +18,8 @@ export async function updateOrganizationInfo(
   return updateOrganizationInfoService(data);
 }
 
-export async function deleteOrganization(): Promise<{ message: string }> {
-  return deleteOrganizationService();
+export async function deleteOrganization(password: string): Promise<{ message: string }> {
+  return deleteOrganizationService(password);
 }
 
 /**

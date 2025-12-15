@@ -113,10 +113,12 @@ export async function updateOrganizationInfo(
 
 /**
  * Delete organization for the logged-in organization admin
+ * Requires password confirmation
  */
-export async function deleteOrganization(): Promise<{ message: string }> {
+export async function deleteOrganization(password: string): Promise<{ message: string }> {
   const res = await apiClient.delete<{ message: string }>(
-    "/org-admin/manage-organization"
+    "/org-admin/manage-organization",
+    { data: { password } }
   );
   // Response is already parsed by API route (extracted from { success, data, timestamp })
   return res.data;

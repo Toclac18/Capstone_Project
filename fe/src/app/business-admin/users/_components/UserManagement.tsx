@@ -7,7 +7,7 @@ import { getReaders, getReviewers, updateReaderStatus, updateReviewerStatus } fr
 import { UserFilters } from "./UserFilters";
 import { Pagination } from "./Pagination";
 import { useToast, toast } from "@/components/ui/toast";
-import { Eye, Power } from "lucide-react";
+import { Eye } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
 import styles from "../styles.module.css";
 

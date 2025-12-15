@@ -14,7 +14,7 @@ import {
 import { OrganizationFilters } from "./OrganizationFilters";
 import { Pagination } from "@/app/business-admin/users/_components/Pagination";
 import { useToast, toast } from "@/components/ui/toast";
-import { Eye, Power } from "lucide-react";
+import { Eye } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
 import styles from "../styles.module.css";
 

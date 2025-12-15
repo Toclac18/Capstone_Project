@@ -13,9 +13,8 @@ import {
 } from "../api";
 import { DocumentFilters } from "./DocumentFilters";
 import { Pagination } from "@/app/business-admin/users/_components/Pagination";
-import DeleteConfirmation from "@/components/ui/delete-confirmation";
 import { useToast, toast } from "@/components/ui/toast";
-import { Eye, Power } from "lucide-react";
+import { Eye } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
 import styles from "../styles.module.css";
 

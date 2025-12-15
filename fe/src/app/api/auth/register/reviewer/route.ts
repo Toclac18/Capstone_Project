@@ -1,5 +1,5 @@
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { jsonResponse, parseError, badRequest } from "@/server/response";
+import { jsonResponse, badRequest } from "@/server/response";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handlePOST(req: Request) {

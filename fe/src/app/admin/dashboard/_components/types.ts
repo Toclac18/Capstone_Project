@@ -16,6 +16,7 @@ export interface SystemAdminDashboard {
     failedLoginsThisMonth: number;
     activeUsersLast7Days: number;
     activeUsersLast30Days: number;
+    mostAccessedModules?: Array<{ module: string; count: number; previousCount?: number }>;
   };
   userActivity: {
     userGrowthByRole: Array<{

@@ -1,10 +1,11 @@
 "use client";
 
-import type { LoadState } from "@/types/statistics";
+import type { LoadState, StatisticsQueryParams } from "@/types/statistics";
 import dynamic from "next/dynamic";
 import type { ApexOptions } from "apexcharts";
-import { LogIn, Activity, AlertCircle } from "lucide-react";
+import { LogIn } from "lucide-react";
 import type { SystemAdminDashboard } from "./types";
+import { useState, useMemo } from "react";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -12,9 +13,18 @@ interface AccessStatisticsTabProps {
   state: LoadState;
   statistics: SystemAdminDashboard | null;
   error: string | null;
+  filters?: StatisticsQueryParams;
+  onFilterChange?: (filters: StatisticsQueryParams) => void;
 }
 
-export function AccessStatisticsTab({ state, statistics, error }: AccessStatisticsTabProps) {
+type TimeRange = "all" | "7days" | "1year";
+
+export function AccessStatisticsTab({ state, statistics, error, filters, onFilterChange }: AccessStatisticsTabProps) {
+  const [timeRange, setTimeRange] = useState<TimeRange>("1year");
+  
+  // Get login dates for chart - must be before early returns (Rules of Hooks)
+  const loginSuccessDates = statistics?.accessStatistics?.loginSuccessTrend?.map((d) => d.date) || [];
+
   if (state === "loading") {
     return (
       <div className="flex items-center justify-center py-12">
@@ -91,32 +101,12 @@ export function AccessStatisticsTab({ state, statistics, error }: AccessStatisti
       icon: LogIn,
       color: "purple",
     },
-    {
-      title: "Active Users (7 days)",
-      value: accessStatistics?.activeUsersLast7Days ?? 0,
-      icon: Activity,
-      color: "orange",
-    },
-    {
-      title: "Active Users (30 days)",
-      value: accessStatistics?.activeUsersLast30Days ?? 0,
-      icon: Activity,
-      color: "green",
-    },
-    {
-      title: "Failed Logins Today",
-      value: accessStatistics?.failedLoginsToday ?? 0,
-      icon: AlertCircle,
-      color: "red",
-    },
   ];
 
-  // Successful Logins Chart
-  const loginSuccessDates = accessStatistics?.loginSuccessTrend?.map((d) => d.date) || [];
-  const loginSuccessCategories = getFormattedCategories(loginSuccessDates);
-  const loginSuccessData = accessStatistics?.loginSuccessTrend?.map((d) => d.count) || [];
+  const loginChartCategories = getFormattedCategories(loginSuccessDates);
+  const loginChartData = accessStatistics?.loginSuccessTrend?.map((d) => d.count) || [];
 
-  const loginSuccessOptions: ApexOptions = {
+  const loginChartOptions: ApexOptions = {
     chart: {
       type: "line",
       height: 400,
@@ -125,7 +115,7 @@ export function AccessStatisticsTab({ state, statistics, error }: AccessStatisti
     dataLabels: { enabled: false },
     stroke: { curve: "smooth", width: 3 },
     xaxis: {
-      categories: loginSuccessCategories,
+      categories: loginChartCategories,
       labels: {
         rotate: -45,
         style: { fontSize: "11px" },
@@ -133,7 +123,7 @@ export function AccessStatisticsTab({ state, statistics, error }: AccessStatisti
       },
     },
     yaxis: { 
-      title: { text: "Login Count" },
+      title: { text: "Number of Logins" },
       min: 0,
       forceNiceScale: true,
       tickAmount: 5,
@@ -159,9 +149,9 @@ export function AccessStatisticsTab({ state, statistics, error }: AccessStatisti
       },
     },
     legend: { position: "top" },
-    colors: ["#10B981"],
+    colors: ["#3b82f6"],
     title: {
-      text: "Successful Logins Over Time",
+      text: "Number of logins by time",
       style: {
         fontSize: "16px",
         fontWeight: 600,
@@ -169,14 +159,16 @@ export function AccessStatisticsTab({ state, statistics, error }: AccessStatisti
     },
   };
 
-  const loginSuccessSeries = [{ name: "Successful Logins", data: loginSuccessData }];
+  const loginChartSeries = [
+    { name: "Logins", data: loginChartData },
+  ];
 
   // Failed Logins Chart
   const loginFailedDates = accessStatistics?.loginFailedTrend?.map((d) => d.date) || [];
   const loginFailedCategories = getFormattedCategories(loginFailedDates);
   const loginFailedData = accessStatistics?.loginFailedTrend?.map((d) => d.count) || [];
 
-  const loginFailedOptions: ApexOptions = {
+  const failedLoginsChartOptions: ApexOptions = {
     chart: {
       type: "line",
       height: 400,
@@ -193,7 +185,7 @@ export function AccessStatisticsTab({ state, statistics, error }: AccessStatisti
       },
     },
     yaxis: { 
-      title: { text: "Login Count" },
+      title: { text: "Number of Failed Logins" },
       min: 0,
       forceNiceScale: true,
       tickAmount: 5,
@@ -218,7 +210,6 @@ export function AccessStatisticsTab({ state, statistics, error }: AccessStatisti
         },
       },
     },
-    legend: { position: "top" },
     colors: ["#EF4444"],
     title: {
       text: "Failed Logins Over Time",
@@ -229,65 +220,33 @@ export function AccessStatisticsTab({ state, statistics, error }: AccessStatisti
     },
   };
 
-  const loginFailedSeries = [{ name: "Failed Logins", data: loginFailedData }];
+  const failedLoginsChartSeries = [
+    { name: "Failed Logins", data: loginFailedData },
+  ];
 
-  // Active Users Trend Chart
-  const activeUsersDates = accessStatistics?.activeUsersTrend?.map((d) => d.date) || [];
-  const activeUsersCategories = getFormattedCategories(activeUsersDates);
-  const activeUsersData = accessStatistics?.activeUsersTrend?.map((d) => d.count) || [];
-
-  const activeUsersOptions: ApexOptions = {
-    chart: {
-      type: "area",
-      height: 400,
-      toolbar: { show: false },
-    },
-    dataLabels: { enabled: false },
-    stroke: { curve: "smooth", width: 2 },
-    fill: { type: "gradient", gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.3 } },
-    xaxis: {
-      categories: activeUsersCategories,
-      labels: {
-        rotate: -45,
-        style: { fontSize: "11px" },
-        hideOverlappingLabels: true,
-      },
-    },
-    yaxis: { 
-      title: { text: "Active Users (Daily)" },
-      min: 0,
-      forceNiceScale: true,
-      tickAmount: 5,
-      labels: {
-        formatter: (val: number) => Math.round(val).toString(),
-      },
-      decimalsInFloat: 0,
-    },
-    tooltip: {
-      y: {
-        formatter: (val: number) => Math.round(val).toString(),
-      },
-      x: {
-        formatter: function (val: number, opts: any) {
-          const index = opts.dataPointIndex;
-          if (index >= 0 && index < activeUsersDates.length) {
-            return formatDateForTooltip(activeUsersDates[index]);
-          }
-          return val.toString();
-        },
-      },
-    },
-    colors: ["#3C50E0"],
-    title: {
-      text: "Daily Active Users",
-      style: {
-        fontSize: "16px",
-        fontWeight: 600,
-      },
-    },
+  // Handle time range filter
+  const handleTimeRangeChange = (range: TimeRange) => {
+    setTimeRange(range);
+    if (onFilterChange) {
+      const now = new Date();
+      const newFilters: StatisticsQueryParams = {};
+      
+      if (range === "7days") {
+        const startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 7);
+        newFilters.startDate = startDate.toISOString().split("T")[0];
+        newFilters.endDate = now.toISOString().split("T")[0];
+      } else if (range === "1year") {
+        const startDate = new Date(now);
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        newFilters.startDate = startDate.toISOString().split("T")[0];
+        newFilters.endDate = now.toISOString().split("T")[0];
+      }
+      // "all" means no filters
+      
+      onFilterChange(newFilters);
+    }
   };
-
-  const activeUsersSeries = [{ name: "Daily Active Users", data: activeUsersData }];
 
   const colorClasses = {
     blue: "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
@@ -299,6 +258,42 @@ export function AccessStatisticsTab({ state, statistics, error }: AccessStatisti
 
   return (
     <div className="space-y-6">
+      {/* Time Range Filter Buttons */}
+      <div className="rounded-[10px] bg-white p-4 shadow-1 dark:bg-gray-dark dark:shadow-card">
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleTimeRangeChange("all")}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+              timeRange === "all"
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => handleTimeRangeChange("7days")}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+              timeRange === "7days"
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            }`}
+          >
+            7 days
+          </button>
+          <button
+            onClick={() => handleTimeRangeChange("1year")}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+              timeRange === "1year"
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            }`}
+          >
+            1 year
+          </button>
+        </div>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {accessCards.map((card) => {
@@ -326,19 +321,23 @@ export function AccessStatisticsTab({ state, statistics, error }: AccessStatisti
         })}
       </div>
 
-      {/* Successful Logins Chart */}
-      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
-        <Chart options={loginSuccessOptions} series={loginSuccessSeries} type="line" height={400} />
-      </div>
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Number of Logins by Time Chart */}
+        <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
+          <Chart options={loginChartOptions} series={loginChartSeries} type="line" height={400} />
+        </div>
 
-      {/* Failed Logins Chart */}
-      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
-        <Chart options={loginFailedOptions} series={loginFailedSeries} type="line" height={400} />
-      </div>
-
-      {/* Daily Active Users Chart */}
-      <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
-        <Chart options={activeUsersOptions} series={activeUsersSeries} type="area" height={400} />
+        {/* Failed Logins Chart */}
+        <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
+          {loginFailedData.length > 0 ? (
+            <Chart options={failedLoginsChartOptions} series={failedLoginsChartSeries} type="line" height={400} />
+          ) : (
+            <div className="flex h-[400px] items-center justify-center text-gray-500 dark:text-gray-400">
+              <p>No failed login data available</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

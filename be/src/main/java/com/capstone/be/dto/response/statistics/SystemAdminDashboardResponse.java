@@ -58,6 +58,19 @@ public class SystemAdminDashboardResponse {
     private Long failedLoginsThisMonth;
     private Long activeUsersLast7Days; // Users who logged in last 7 days
     private Long activeUsersLast30Days; // Users who logged in last 30 days
+    
+    // Most accessed modules
+    private List<ModuleAccessData> mostAccessedModules;
+  }
+  
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class ModuleAccessData {
+    private String module;
+    private Long count;
+    private Long previousCount; // For comparison with previous period
   }
 
   @Data

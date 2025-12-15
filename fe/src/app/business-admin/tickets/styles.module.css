@@ -1,0 +1,392 @@
+/* Business Admin Ticket Management Styles */
+
+/* Container */
+.container {
+  @apply mx-auto w-full gap-6;
+}
+
+/* Title */
+.page-title {
+  @apply mb-6 text-3xl font-extrabold text-dark;
+}
+:global(html.dark) .page-title {
+  @apply text-white;
+}
+
+/* Filters Container */
+.filters-container {
+  @apply rounded-xl border p-6 shadow-sm mb-2;
+  @apply border-stroke bg-white text-dark;
+}
+:global(html.dark) .filters-container {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.label {
+  @apply mb-2 block text-sm font-medium text-dark;
+}
+:global(html.dark) .label {
+  @apply text-white;
+}
+
+/* Inputs / Select */
+.input {
+  @apply w-full rounded-lg border border-stroke px-3 py-2 text-sm text-dark placeholder:text-dark-5 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+}
+:global(html.dark) .input {
+  @apply border-stroke-dark bg-dark-3 text-white placeholder:text-dark-6 focus:border-primary;
+}
+
+.select {
+  @apply w-full rounded-lg border border-stroke px-3 py-2 text-sm text-dark focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+}
+:global(html.dark) .select {
+  @apply border-stroke-dark bg-dark-3 text-white focus:border-primary;
+}
+
+/* Buttons */
+.btn {
+  @apply inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-primary {
+  @apply bg-primary text-white hover:bg-primary/90;
+}
+
+.btn-secondary {
+  @apply border border-stroke bg-white text-dark hover:bg-gray-2;
+}
+:global(html.dark) .btn-secondary {
+  @apply border-stroke-dark bg-dark-2 text-white hover:bg-dark-3;
+}
+
+/* Table Container */
+.table-container {
+  @apply rounded-xl border shadow-lg overflow-hidden;
+  @apply border-stroke bg-white text-dark;
+}
+:global(html.dark) .table-container {
+  @apply border-stroke-dark bg-dark-2 text-dark-8;
+}
+
+/* Table */
+.table {
+  @apply min-w-full divide-y divide-gray-200 table-fixed;
+}
+:global(html.dark) .table {
+  @apply divide-gray-700;
+}
+
+/* Table auto layout */
+.table {
+  @apply min-w-full divide-y divide-gray-200;
+}
+:global(html.dark) .table {
+  @apply divide-gray-700;
+}
+
+.table-header {
+  @apply bg-gray-50;
+}
+:global(html.dark) .table-header {
+  @apply bg-gray-800;
+}
+
+.table-header-cell {
+  @apply px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+:global(html.dark) .table-header-cell {
+  @apply text-gray-400;
+}
+
+.table-header-cell-center {
+  @apply text-center;
+}
+
+.table-body {
+  @apply bg-white divide-y divide-gray-200;
+}
+:global(html.dark) .table-body {
+  @apply bg-gray-900 divide-gray-700;
+}
+
+.table-row {
+  @apply hover:bg-gray-50 transition;
+}
+:global(html.dark) .table-row {
+  @apply hover:bg-gray-800;
+}
+
+.table-cell {
+  @apply px-4 py-4 whitespace-nowrap text-sm text-gray-500;
+}
+:global(html.dark) .table-cell {
+  @apply text-gray-400;
+}
+
+.table-cell-center {
+  @apply text-center;
+}
+
+.table-cell-main {
+  @apply text-sm font-medium text-gray-900;
+}
+:global(html.dark) .table-cell-main {
+  @apply text-white;
+}
+
+.ticket-code {
+  @apply font-mono font-semibold text-primary;
+}
+
+/* Status Badge */
+.status-badge {
+  @apply inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border;
+}
+
+.status-new {
+  @apply bg-blue-100 text-blue-800 border-blue-200;
+}
+:global(html.dark) .status-new {
+  @apply bg-blue-900/30 text-blue-300 border-blue-700;
+}
+
+.status-in-progress {
+  @apply bg-yellow-100 text-yellow-800 border-yellow-200;
+}
+:global(html.dark) .status-in-progress {
+  @apply bg-yellow-900/30 text-yellow-300 border-yellow-700;
+}
+
+.status-resolved {
+  @apply bg-green-100 text-green-800 border-green-200;
+}
+:global(html.dark) .status-resolved {
+  @apply bg-green-900/30 text-green-300 border-green-700;
+}
+
+.status-closed {
+  @apply bg-gray-100 text-gray-600 border-gray-200;
+}
+:global(html.dark) .status-closed {
+  @apply bg-gray-800 text-gray-400 border-gray-600;
+}
+
+/* Urgency Badge */
+.urgency-badge {
+  @apply inline-flex px-2 py-1 text-xs font-medium rounded;
+}
+
+.urgency-low {
+  @apply bg-green-100 text-green-700;
+}
+:global(html.dark) .urgency-low {
+  @apply bg-green-900/30 text-green-400;
+}
+
+.urgency-normal {
+  @apply bg-blue-100 text-blue-700;
+}
+:global(html.dark) .urgency-normal {
+  @apply bg-blue-900/30 text-blue-400;
+}
+
+.urgency-high {
+  @apply bg-red-100 text-red-700;
+}
+:global(html.dark) .urgency-high {
+  @apply bg-red-900/30 text-red-400;
+}
+
+/* Category Badge */
+.category-badge {
+  @apply inline-flex px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-600;
+}
+:global(html.dark) .category-badge {
+  @apply bg-gray-700 text-gray-300;
+}
+
+/* Action Cell */
+.action-cell {
+  @apply flex items-center justify-center;
+}
+
+.action-icon-btn {
+  @apply h-8 w-8 rounded-lg transition-all duration-200;
+  @apply flex items-center justify-center;
+  @apply border border-gray-300 bg-white;
+  @apply text-gray-600 hover:text-primary hover:border-primary hover:bg-gray-50;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+:global(html.dark) .action-icon-btn {
+  @apply border-gray-600 bg-gray-800;
+  @apply text-gray-400 hover:text-primary hover:border-primary hover:bg-gray-700;
+}
+
+/* Loading & Empty States */
+.loading-container,
+.empty-container {
+  @apply px-6 py-12 text-center text-gray-500;
+}
+:global(html.dark) .loading-container,
+:global(html.dark) .empty-container {
+  @apply text-gray-400;
+}
+
+/* Alerts */
+.alert {
+  @apply rounded-lg border-l-4 p-4 text-sm font-medium mb-4;
+}
+
+.alert-error {
+  @apply border-red bg-red-light-6 text-red-dark;
+}
+:global(html.dark) .alert-error {
+  @apply border-red bg-dark-2 text-red;
+}
+
+/* Search input with icon */
+.search-container {
+  @apply relative flex items-center;
+}
+
+.search-icon {
+  @apply absolute left-3 h-5 w-5 text-gray-400 pointer-events-none;
+}
+:global(html.dark) .search-icon {
+  @apply text-gray-600;
+}
+
+.search-input {
+  @apply w-full rounded-lg border border-stroke pl-10 pr-3 py-2 text-sm text-dark placeholder:text-dark-5 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+}
+:global(html.dark) .search-input {
+  @apply border-stroke-dark bg-dark-3 text-white placeholder:text-dark-6 focus:border-primary;
+}
+
+.filter-tag {
+  @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  @apply fixed inset-0 z-50 flex items-center justify-center;
+}
+
+.modal-backdrop {
+  @apply absolute inset-0 bg-black/50;
+}
+
+.modal-container {
+  @apply relative z-10 w-full max-w-2xl mx-4;
+}
+
+.modal-card {
+  @apply rounded-xl border shadow-xl max-h-[90vh] overflow-y-auto;
+  @apply border-gray-200 bg-white text-dark;
+}
+:global(html.dark) .modal-card {
+  @apply border-gray-700 bg-dark-2 text-dark-8;
+}
+
+.modal-header {
+  @apply flex items-center justify-between px-6 py-4 border-b;
+  @apply border-gray-200;
+}
+:global(html.dark) .modal-header {
+  @apply border-gray-700;
+}
+
+.modal-title {
+  @apply text-lg font-semibold text-gray-900;
+}
+:global(html.dark) .modal-title {
+  @apply text-white;
+}
+
+.modal-subtitle {
+  @apply text-sm text-gray-500 mt-0.5;
+}
+:global(html.dark) .modal-subtitle {
+  @apply text-gray-400;
+}
+
+.modal-close-button {
+  @apply p-1 rounded-lg transition-colors text-2xl leading-none;
+  @apply text-gray-500 hover:text-gray-700 hover:bg-gray-100;
+}
+:global(html.dark) .modal-close-button {
+  @apply text-gray-400 hover:text-gray-200 hover:bg-gray-700;
+}
+
+.modal-content {
+  @apply px-6 py-5 space-y-5;
+}
+
+.modal-info-grid {
+  @apply grid grid-cols-2 gap-4 p-4 rounded-lg bg-gray-50;
+}
+:global(html.dark) .modal-info-grid {
+  @apply bg-gray-800;
+}
+
+.modal-info-item {
+  @apply flex flex-col gap-1;
+}
+
+.modal-info-label {
+  @apply text-xs font-medium text-gray-500;
+}
+:global(html.dark) .modal-info-label {
+  @apply text-gray-400;
+}
+
+.modal-info-value {
+  @apply text-sm font-medium text-gray-900;
+}
+:global(html.dark) .modal-info-value {
+  @apply text-white;
+}
+
+.modal-section {
+  @apply space-y-2;
+}
+
+.modal-section-title {
+  @apply text-sm font-semibold text-gray-700;
+}
+:global(html.dark) .modal-section-title {
+  @apply text-gray-300;
+}
+
+.modal-section-content {
+  @apply p-3 rounded-lg text-sm bg-gray-50 text-gray-700 whitespace-pre-wrap;
+}
+:global(html.dark) .modal-section-content {
+  @apply bg-gray-800 text-gray-300;
+}
+
+.modal-footer {
+  @apply flex items-center justify-end gap-3 px-6 py-4 border-t;
+  @apply border-gray-200;
+}
+:global(html.dark) .modal-footer {
+  @apply border-gray-700;
+}
+
+.modal-button-cancel {
+  @apply px-4 py-2 rounded-lg border transition-colors text-sm font-medium;
+  @apply border-gray-300 bg-white text-gray-700;
+  @apply hover:bg-gray-50;
+}
+:global(html.dark) .modal-button-cancel {
+  @apply border-gray-600 bg-dark-3 text-gray-300;
+  @apply hover:bg-gray-700;
+}
+
+.modal-button-submit {
+  @apply px-4 py-2 rounded-lg transition-colors text-sm font-medium;
+  @apply bg-primary text-white;
+  @apply hover:bg-primary/90;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}

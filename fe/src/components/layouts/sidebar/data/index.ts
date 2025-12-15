@@ -9,6 +9,11 @@ export const NAV_DATA = [
         icon: Icons.HomeIcon,
         url: "/homepage",
       },
+      {
+        title: "Contact Admin",
+        icon: Icons.HeadphonesIcon,
+        url: "/contact-admin",
+      },
     ],
   },
 ];
@@ -42,6 +47,11 @@ export const READER_NAV_DATA = [
         title: "My Statistics",
         icon: Icons.BarChartIcon,
         url: "/reader/statistics",
+      },
+      {
+        title: "Contact Admin",
+        icon: Icons.HeadphonesIcon,
+        url: "/contact-admin",
       },
     ],
   },
@@ -144,6 +154,11 @@ export const BUSINESS_ADMIN_NAV_DATA = [
         title: "Report Management",
         icon: Icons.BarChartIcon,
         url: "/business-admin/reports",
+      },
+      {
+        title: "Contact Tickets",
+        icon: Icons.HeadphonesIcon,
+        url: "/business-admin/tickets",
       },
     ],
   },

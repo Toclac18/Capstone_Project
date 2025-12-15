@@ -32,18 +32,18 @@ export async function proxyJsonResponse(
 ): Promise<Response> {
   const status = upstream.status;
   const text = await upstream.text();
-  
+
   // For 204 No Content, return empty response without content-type
   if (status === 204) {
     const headers: Record<string, string> = {
       ...(init?.headers ?? {}),
     };
-    
+
     const mode = init?.mode;
     if (mode) {
       headers["x-mode"] = String(mode);
     }
-    
+
     return new Response(null, {
       status: 204,
       headers,
@@ -84,8 +84,16 @@ export function parseError(text: string, fallback = "Request failed"): string {
   }
 }
 
+// map sang be structure
 export function badRequest(msg: string, code = 400) {
-  return new Response(JSON.stringify({ error: msg }), {
+  const apiResponse = {
+    success: false,
+    message: msg,
+    data: null,
+    timestamp: new Date().toISOString(),
+  };
+
+  return new Response(JSON.stringify(apiResponse), {
     status: code,
     headers: { "content-type": "application/json" },
   });

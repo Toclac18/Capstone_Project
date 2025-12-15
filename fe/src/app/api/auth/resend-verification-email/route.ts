@@ -32,10 +32,7 @@ async function handlePOST(req: Request) {
 
   if (!upstream.ok) {
     const text = await upstream.text();
-    return jsonResponse(
-      { error: parseError(text, "Failed to resend verification email") },
-      { status: upstream.status },
-    );
+    return jsonResponse(JSON.parse(text), { status: upstream.status });
   }
 
   // Backend returns ResponseEntity<Void> (204 No Content) or 200 OK

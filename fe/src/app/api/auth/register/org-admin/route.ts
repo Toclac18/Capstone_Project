@@ -92,10 +92,7 @@ async function handlePOST(req: Request) {
 
   if (!upstream.ok) {
     const text = await upstream.text();
-    return jsonResponse(
-      { error: parseError(text, "Registration failed") },
-      { status: upstream.status },
-    );
+    return jsonResponse(JSON.parse(text), { status: upstream.status });
   }
 
   // Parse response from backend

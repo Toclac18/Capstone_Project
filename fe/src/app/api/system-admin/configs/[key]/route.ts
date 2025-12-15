@@ -42,7 +42,7 @@ async function handlePUT(
     }
 
     const raw = await upstream.json().catch(() => ({}));
-    return jsonResponse(raw?.data ?? raw, {
+    return jsonResponse(raw, {
       status: upstream.status,
       mode: "real",
     });

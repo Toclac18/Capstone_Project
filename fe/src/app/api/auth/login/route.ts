@@ -1,7 +1,7 @@
 // app/api/auth/login/route.ts
 import { cookies } from "next/headers";
 import { BE_BASE, COOKIE_NAME } from "@/server/config";
-import { jsonResponse, parseError, badRequest } from "@/server/response";
+import { jsonResponse, badRequest } from "@/server/response";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handlePOST(req: Request) {

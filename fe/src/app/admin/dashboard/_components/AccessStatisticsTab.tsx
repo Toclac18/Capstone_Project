@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import type { ApexOptions } from "apexcharts";
 import { LogIn } from "lucide-react";
 import type { SystemAdminDashboard } from "./types";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -19,7 +19,7 @@ interface AccessStatisticsTabProps {
 
 type TimeRange = "all" | "7days" | "1year";
 
-export function AccessStatisticsTab({ state, statistics, error, filters, onFilterChange }: AccessStatisticsTabProps) {
+export function AccessStatisticsTab({ state, statistics, error, onFilterChange }: AccessStatisticsTabProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>("1year");
   
   // Get login dates for chart - must be before early returns (Rules of Hooks)

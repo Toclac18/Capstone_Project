@@ -84,18 +84,32 @@ const getErrorMessage = (error: AxiosError): string => {
   const status = error.response?.status ?? null;
   const payload = error.response?.data as any;
 
+  // Check both "message" and "error" fields from backend response
   if (payload?.message) return String(payload.message);
+  if (payload?.error) {
+    const errorMsg = String(payload.error);
+    // Map technical messages to user-friendly ones
+    const lowerMsg = errorMsg.toLowerCase();
+    if (lowerMsg === "bad credentials") {
+      return "Invalid email or password";
+    }
+    if (lowerMsg === "incorrect password" || lowerMsg === "wrong password") {
+      return "Incorrect password";
+    }
+    return errorMsg;
+  }
 
-  if (error.code === "ECONNABORTED") return "REQUEST TIMEOUT.";
-  if (!error.response) return "CANNOT CONNECT TO SERVER.";
+  if (error.code === "ECONNABORTED") return "Request timeout";
+  if (!error.response) return "Cannot connect to server";
 
-  if (status === 401) return error.message || "SESSION EXPIRED.";
-  if (status === 403) return error.message || "PERMISSION DENIED.";
-  if (status === 404) return error.message || "RESOURCE NOT FOUND.";
-  if (status === 409) return error.message || "CONFLICT ERROR.";
-  if (status === 500) return error.message || "SERVER ERROR";
+  // Fallback messages when no payload message/error
+  if (status === 401) return "Session expired";
+  if (status === 403) return "Permission denied";
+  if (status === 404) return "Resource not found";
+  if (status === 409) return "Conflict error";
+  if (status === 500) return "Server error";
 
-  return error.message || "REQUEST ERROR.";
+  return error.message || "Request error";
 };
 
 apiClient.interceptors.response.use(

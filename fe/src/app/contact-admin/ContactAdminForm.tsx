@@ -1,4 +1,3 @@
-// src/app/contact-admin/ContactAdminForm.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -11,21 +10,26 @@ import {
 import styles from "./styles.module.css";
 
 const CATEGORIES = [
-  "PAYMENT",
-  "ACCESS",
-  "CONTENT",
-  "TECHNICAL",
-  "ACCOUNT",
-  "OTHER",
+  { value: "TECHNICAL", label: "Technical Issue" },
+  { value: "PAYMENT", label: "Payment" },
+  { value: "ACCESS", label: "Access Problem" },
+  { value: "CONTENT", label: "Content" },
+  { value: "ACCOUNT", label: "Account" },
+  { value: "OTHER", label: "Other" },
 ] as const;
-const URGENCY_LEVELS = ["LOW", "NORMAL", "HIGH"] as const;
+
+const URGENCY_LEVELS = [
+  { value: "LOW", label: "Low" },
+  { value: "NORMAL", label: "Normal" },
+  { value: "HIGH", label: "High" },
+] as const;
 
 type FormValues = {
   name: string;
   email: string;
-  category: (typeof CATEGORIES)[number];
+  category: (typeof CATEGORIES)[number]["value"];
   otherCategory?: string;
-  urgency: (typeof URGENCY_LEVELS)[number];
+  urgency: (typeof URGENCY_LEVELS)[number]["value"];
   subject: string;
   message: string;
 };
@@ -51,7 +55,8 @@ export default function ContactAdminForm() {
     },
   });
 
-  const isOther = watch("category") === "OTHER";
+  const selectedCategory = watch("category");
+  const isOther = selectedCategory === "OTHER";
 
   useEffect(() => {
     if (!isOther) {
@@ -80,7 +85,10 @@ export default function ContactAdminForm() {
     };
 
     try {
-      const resp = await postJSON(payload);
+      const [resp] = await Promise.all([
+        postJSON(payload),
+        new Promise((resolve) => setTimeout(resolve, 1000)),
+      ]);
       setSuccess(resp);
       reset();
     } catch (e: unknown) {
@@ -90,201 +98,216 @@ export default function ContactAdminForm() {
     }
   };
 
-  // Always render a line under each field; if no error, render NBSP
-  const errorTextOrSpacer = (msg?: string) => (msg ? msg : "\u00A0");
+  if (success) {
+    return (
+      <div className={styles["form-container"]}>
+        <div className={styles["success-card"]}>
+          <div className={styles["success-icon-wrapper"]}>
+            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className={styles["success-title"]}>Ticket Submitted!</h2>
+          <p className={styles["success-message"]}>{success.message}</p>
+          <div className={styles["ticket-info"]}>
+            <span className={styles["ticket-label"]}>Ticket Code:</span>
+            <span className={styles["ticket-code"]}>{success.ticketCode}</span>
+          </div>
+          <p className={styles["success-note"]}>
+            Save this code to track your ticket status.
+          </p>
+          <button
+            onClick={() => setSuccess(null)}
+            className={styles["form-submit-btn"]}
+          >
+            Submit Another Ticket
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className={styles["form-container"]}
-    >
-      <h2 className={styles["form-title"]}>Submit a Support Ticket</h2>
+    <form onSubmit={handleSubmit(onSubmit)} className={styles["form-container"]}>
+      <div className={styles["form-header"]}>
+        <h2 className={styles["form-title"]}>Contact Support</h2>
+        <p className={styles["form-subtitle"]}>
+          We&apos;re here to help. Fill out the form below and we&apos;ll get back to you soon.
+        </p>
+      </div>
 
-      {success && (
-        <div className="w-full">
-          <div className={styles["form-alert-success"]}>
-            Ticket created successfully!
-            <p className="mt-1">{success.message}</p>
+      {error && (
+        <div className={styles["form-alert-error"]}>{error}</div>
+      )}
+
+      {/* Contact Info */}
+      <div className={styles["form-section"]}>
+        <h3 className={styles["form-section-header"]}>Contact Information</h3>
+        <div className={styles["form-grid"]}>
+          <div className={styles["form-field-group"]}>
+            <label htmlFor="name" className={styles["form-label"]}>
+              Full Name
+            </label>
+            <input
+              id="name"
+              className={`${styles["form-input"]} ${errors.name ? styles.error : ""}`}
+              placeholder="Enter your name"
+              {...register("name", {
+                required: "Name is required",
+                minLength: { value: 2, message: "At least 2 characters" },
+              })}
+            />
+            {errors.name && (
+              <p className={styles["form-error-message"]}>{errors.name.message}</p>
+            )}
+          </div>
+
+          <div className={styles["form-field-group"]}>
+            <label htmlFor="email" className={styles["form-label"]}>
+              Email Address
+            </label>
+            <input
+              id="email"
+              type="email"
+              className={`${styles["form-input"]} ${errors.email ? styles.error : ""}`}
+              placeholder="your@email.com"
+              {...register("email", {
+                required: "Email is required",
+                pattern: { value: /^\S+@\S+$/i, message: "Invalid email" },
+              })}
+            />
+            {errors.email && (
+              <p className={styles["form-error-message"]}>{errors.email.message}</p>
+            )}
           </div>
         </div>
-      )}
-      {error && (
-        <div className="w-full">
-          <div className={styles["form-alert-error"]}>{error}</div>
-        </div>
-      )}
+      </div>
 
-      <h3 className={styles["form-section-header"]}>Your Contact Details</h3>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {/* Issue Details */}
+      <div className={styles["form-section"]}>
+        <h3 className={styles["form-section-header"]}>Issue Details</h3>
+        
+        <div className={styles["form-grid"]}>
+          {/* Category Dropdown */}
+          <div className={styles["form-field-group"]}>
+            <label htmlFor="category" className={styles["form-label"]}>
+              Category
+            </label>
+            <select
+              id="category"
+              className={`${styles["form-select"]} ${errors.category ? styles.error : ""}`}
+              {...register("category", { required: "Select a category" })}
+            >
+              {CATEGORIES.map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
+            {errors.category && (
+              <p className={styles["form-error-message"]}>{errors.category.message}</p>
+            )}
+          </div>
+
+          {/* Urgency Dropdown */}
+          <div className={styles["form-field-group"]}>
+            <label htmlFor="urgency" className={styles["form-label"]}>
+              Priority
+            </label>
+            <select
+              id="urgency"
+              className={`${styles["form-select"]} ${errors.urgency ? styles.error : ""}`}
+              {...register("urgency", { required: "Select priority" })}
+            >
+              {URGENCY_LEVELS.map((level) => (
+                <option key={level.value} value={level.value}>
+                  {level.label}
+                </option>
+              ))}
+            </select>
+            {errors.urgency && (
+              <p className={styles["form-error-message"]}>{errors.urgency.message}</p>
+            )}
+          </div>
+        </div>
+
+        {isOther && (
+          <div className={styles["form-field-group"]}>
+            <label htmlFor="otherCategory" className={styles["form-label"]}>
+              Please specify
+            </label>
+            <input
+              id="otherCategory"
+              className={`${styles["form-input"]} ${errors.otherCategory ? styles.error : ""}`}
+              placeholder="Describe your issue type"
+              {...register("otherCategory", {
+                required: "Please specify",
+                minLength: { value: 3, message: "At least 3 characters" },
+              })}
+            />
+            {errors.otherCategory && (
+              <p className={styles["form-error-message"]}>{errors.otherCategory.message}</p>
+            )}
+          </div>
+        )}
+
+        {/* Subject */}
         <div className={styles["form-field-group"]}>
-          <label htmlFor="name" className={styles["form-label"]}>
-            Full Name *
+          <label htmlFor="subject" className={styles["form-label"]}>
+            Subject
           </label>
           <input
-            id="name"
-            className={`${styles["form-input"]} ${errors.name ? styles.error : ""}`}
-            placeholder="John Doe"
-            {...register("name", {
-              required: "Your name is required",
-              minLength: {
-                value: 2,
-                message: "Name must be at least 2 characters",
-              },
+            id="subject"
+            className={`${styles["form-input"]} ${errors.subject ? styles.error : ""}`}
+            placeholder="Brief description of your issue"
+            {...register("subject", {
+              required: "Subject is required",
+              minLength: { value: 3, message: "At least 3 characters" },
             })}
-            aria-invalid={!!errors.name}
           />
-          <p className={styles["form-error-message"]}>
-            {errorTextOrSpacer(errors.name?.message)}
-          </p>
+          {errors.subject && (
+            <p className={styles["form-error-message"]}>{errors.subject.message}</p>
+          )}
         </div>
 
+        {/* Message */}
         <div className={styles["form-field-group"]}>
-          <label htmlFor="email" className={styles["form-label"]}>
-            Email *
+          <label htmlFor="message" className={styles["form-label"]}>
+            Message
           </label>
-          <input
-            id="email"
-            type="email"
-            className={`${styles["form-input"]} ${errors.email ? styles.error : ""}`}
-            placeholder="john@example.com"
-            {...register("email", {
-              required: "Your email is required",
-              pattern: {
-                value: /^\S+@\S+$/i,
-                message: "Please enter a valid email address",
-              },
+          <textarea
+            id="message"
+            rows={5}
+            className={`${styles["form-textarea"]} ${errors.message ? styles.error : ""}`}
+            placeholder="Describe your issue in detail..."
+            {...register("message", {
+              required: "Message is required",
+              minLength: { value: 10, message: "At least 10 characters" },
             })}
-            aria-invalid={!!errors.email}
           />
-          <p className={styles["form-error-message"]}>
-            {errorTextOrSpacer(errors.email?.message)}
-          </p>
+          {errors.message && (
+            <p className={styles["form-error-message"]}>{errors.message.message}</p>
+          )}
         </div>
       </div>
 
-      <h3 className={styles["form-section-header"]}>Issue Details</h3>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className={styles["form-field-group"]}>
-          <label htmlFor="category" className={styles["form-label"]}>
-            Category *
-          </label>
-          <select
-            id="category"
-            className={`${styles["form-select"]} ${errors.category ? styles.error : ""}`}
-            {...register("category", { required: "Please select a category" })}
-            aria-invalid={!!errors.category}
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c.charAt(0) + c.slice(1).toLowerCase()}
-              </option>
-            ))}
-          </select>
-          <p className={styles["form-error-message"]}>
-            {errorTextOrSpacer(errors.category?.message)}
-          </p>
-        </div>
-
-        <div className={styles["form-field-group"]}>
-          <label htmlFor="urgency" className={styles["form-label"]}>
-            Urgency *
-          </label>
-          <select
-            id="urgency"
-            className={`${styles["form-select"]} ${errors.urgency ? styles.error : ""}`}
-            {...register("urgency", {
-              required: "Please select an urgency level",
-            })}
-            aria-invalid={!!errors.urgency}
-          >
-            {URGENCY_LEVELS.map((u) => (
-              <option key={u} value={u}>
-                {u.charAt(0) + u.slice(1).toLowerCase()}
-              </option>
-            ))}
-          </select>
-          <p className={styles["form-error-message"]}>
-            {errorTextOrSpacer(errors.urgency?.message)}
-          </p>
-        </div>
-      </div>
-
-      {isOther && (
-        <div className={styles["form-field-group"]}>
-          <label htmlFor="otherCategory" className={styles["form-label"]}>
-            Please specify *
-          </label>
-          <input
-            id="otherCategory"
-            className={`${styles["form-input"]} ${errors.otherCategory ? styles.error : ""}`}
-            placeholder="Describe your issue type (e.g., Partnership, Feedback...)"
-            {...register("otherCategory", {
-              required: "Please specify your issue type",
-              minLength: { value: 3, message: "Must be at least 3 characters" },
-            })}
-            aria-invalid={!!errors.otherCategory}
-          />
-          <p className={styles["form-error-message"]}>
-            {errorTextOrSpacer(errors.otherCategory?.message)}
-          </p>
-        </div>
-      )}
-
-      <div className={styles["form-field-group"]}>
-        <label htmlFor="subject" className={styles["form-label"]}>
-          Subject *
-        </label>
-        <input
-          id="subject"
-          className={`${styles["form-input"]} ${errors.subject ? styles.error : ""}`}
-          placeholder="Briefly describe your issue"
-          {...register("subject", {
-            required: "Subject is required",
-            minLength: {
-              value: 3,
-              message: "Subject must be at least 3 characters",
-            },
-          })}
-          aria-invalid={!!errors.subject}
-        />
-        <p className={styles["form-error-message"]}>
-          {errorTextOrSpacer(errors.subject?.message)}
-        </p>
-      </div>
-
-      <div className={styles["form-field-group"]}>
-        <label htmlFor="message" className={styles["form-label"]}>
-          Message *
-        </label>
-        <textarea
-          id="message"
-          rows={6}
-          className={`${styles["form-textarea"]} ${errors.message ? styles.error : ""}`}
-          placeholder="Provide detailed information about your issue..."
-          {...register("message", {
-            required: "Message is required",
-            minLength: {
-              value: 10,
-              message: "Message must be at least 10 characters",
-            },
-          })}
-          aria-invalid={!!errors.message}
-        />
-        <p className={styles["form-error-message"]}>
-          {errorTextOrSpacer(errors.message?.message)}
-        </p>
-      </div>
-
-      {/* Centered submit area */}
-      <div className={styles["form-actions"]}>
-        <button
-          type="submit"
-          disabled={loading}
-          className={styles["form-submit-btn"]}
-        >
-          {loading ? "Submitting..." : "Submit Ticket"}
-        </button>
-      </div>
+      <button
+        type="submit"
+        disabled={loading}
+        className={styles["form-submit-btn"]}
+      >
+        {loading ? (
+          <span className={styles["btn-loading"]}>
+            <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+            Submitting...
+          </span>
+        ) : (
+          "Submit Ticket"
+        )}
+      </button>
     </form>
   );
 }

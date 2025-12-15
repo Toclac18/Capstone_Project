@@ -24,19 +24,14 @@ export const READER_NAV_DATA = [
     label: "READER",
     items: [
       {
-        title: "My Organizations",
-        icon: Icons.BuildingIcon,
-        url: "/reader/organizations",
-      },
-      {
         title: "Search Document",
         icon: Icons.SearchIcon,
         url: "/search",
       },
       {
-        title: "Upload History",
-        icon: Icons.HistoryIcon,
-        url: "/reader/upload-history",
+        title: "My Organizations",
+        icon: Icons.BuildingIcon,
+        url: "/reader/organizations",
       },
       {
         title: "My Library",
@@ -48,6 +43,16 @@ export const READER_NAV_DATA = [
         icon: Icons.BarChartIcon,
         url: "/reader/statistics",
       },
+      {
+        title: "Upload History",
+        icon: Icons.HistoryIcon,
+        url: "/reader/upload-history",
+      },
+      {
+        title: "Read History",
+        icon: Icons.ClockIcon,
+        url: "/reader/read-history",
+      },     
       {
         title: "Contact Admin",
         icon: Icons.HeadphonesIcon,

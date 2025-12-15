@@ -464,6 +464,12 @@ public class DocumentServiceImpl implements DocumentService {
       log.info("Created new read history for user {} and document {}", userId, documentId);
     }
 
+    // Increment view count
+    int currentViewCount = document.getViewCount() != null ? document.getViewCount() : 0;
+    document.setViewCount(currentViewCount + 1);
+    documentRepository.save(document);
+    log.info("Incremented view count for document {} to {}", documentId, currentViewCount + 1);
+
     // Generate presigned URL
     String presignedUrl = fileStorageService.generatePresignedUrl(
         FileStorage.DOCUMENT_FOLDER,
@@ -726,8 +732,8 @@ public class DocumentServiceImpl implements DocumentService {
       throw ResourceNotFoundException.userById(userId);
     }
 
-    // Fetch read history with pagination
-    Page<DocumentReadHistory> historyPage = documentReadHistoryRepository.findByUser_Id(userId,
+    // Fetch read history with pagination, ordered by most recent first
+    Page<DocumentReadHistory> historyPage = documentReadHistoryRepository.findByUser_IdOrderByCreatedAtDesc(userId,
         pageable);
 
     // Map to response DTO

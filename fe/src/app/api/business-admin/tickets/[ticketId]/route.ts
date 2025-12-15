@@ -6,7 +6,7 @@ type RouteContext = {
   params: Promise<{ ticketId: string }>;
 };
 
-async function handleGET(req: Request, context: RouteContext) {
+async function handleGET(_req: Request, context: RouteContext) {
   const { ticketId } = await context.params;
 
   const cookieStore = await cookies();

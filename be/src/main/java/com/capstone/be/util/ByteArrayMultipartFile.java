@@ -1,17 +1,14 @@
 package com.capstone.be.util;
 
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * A simple implementation of MultipartFile that wraps a byte array.
- * Used for creating MultipartFile from converted documents.
+ * Used for converting files (e.g., DOCX to PDF) without needing spring-test dependency.
  */
 public class ByteArrayMultipartFile implements MultipartFile {
 
@@ -64,11 +61,6 @@ public class ByteArrayMultipartFile implements MultipartFile {
 
   @Override
   public void transferTo(File dest) throws IOException, IllegalStateException {
-    Files.write(dest.toPath(), content);
-  }
-
-  @Override
-  public void transferTo(Path dest) throws IOException, IllegalStateException {
-    Files.write(dest, content);
+    java.nio.file.Files.write(dest.toPath(), content);
   }
 }

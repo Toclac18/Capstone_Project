@@ -552,10 +552,12 @@ public class UserServiceImpl implements UserService {
       UserStatus status, String search, Pageable pageable) {
     log.info("Admin getting all readers - status: {}, search: {}", status, search);
 
+    // If status is null (not filtered), exclude DELETED by default
     Specification<User> spec = Specification
         .where(UserSpecification.hasRole(UserRole.READER))
-        // Only filter by status when explicitly provided; otherwise include all statuses
-        .and(status != null ? UserSpecification.hasStatus(status) : null)
+        .and(status != null 
+            ? UserSpecification.hasStatus(status) 
+            : UserSpecification.hasStatusNot(UserStatus.DELETED))
         .and(UserSpecification.searchByKeyword(search));
     Page<User> users = userRepository.findAll(spec, pageable);
 
@@ -613,18 +615,6 @@ public class UserServiceImpl implements UserService {
     log.info("Reader status updated successfully for user: {} - reason: {}", userId,
         request.getReason());
 
-    // Notify reader about status change (best-effort)
-    try {
-      emailService.sendUserStatusUpdateEmail(
-          user.getEmail(),
-          user.getFullName(),
-          request.getStatus(),
-          request.getReason()
-      );
-    } catch (Exception e) {
-      log.warn("Failed to send reader status update email for user {}: {}", userId, e.getMessage());
-    }
-
     return buildAdminReaderResponse(user);
   }
 
@@ -636,10 +626,12 @@ public class UserServiceImpl implements UserService {
       UserStatus status, String search, Pageable pageable) {
     log.info("Admin getting all reviewers - status: {}, search: {}", status, search);
 
+    // If status is null (not filtered), exclude DELETED by default
     Specification<User> spec = Specification
         .where(UserSpecification.hasRole(UserRole.REVIEWER))
-        // Only filter by status when explicitly provided; otherwise include all statuses
-        .and(status != null ? UserSpecification.hasStatus(status) : null)
+        .and(status != null 
+            ? UserSpecification.hasStatus(status) 
+            : UserSpecification.hasStatusNot(UserStatus.DELETED))
         .and(UserSpecification.searchByKeyword(search));
     Page<User> users = userRepository.findAll(spec, pageable);
 
@@ -697,18 +689,6 @@ public class UserServiceImpl implements UserService {
     log.info("Reviewer status updated successfully for user: {} - reason: {}", userId,
         request.getReason());
 
-    // Notify reviewer about status change (best-effort)
-    try {
-      emailService.sendUserStatusUpdateEmail(
-          user.getEmail(),
-          user.getFullName(),
-          request.getStatus(),
-          request.getReason()
-      );
-    } catch (Exception e) {
-      log.warn("Failed to send reviewer status update email for user {}: {}", userId, e.getMessage());
-    }
-
     return buildAdminReviewerResponse(user);
   }
 
@@ -721,10 +701,12 @@ public class UserServiceImpl implements UserService {
     log.info("Admin getting all organizations - status: {}, search: {}", status, search);
 
     // Use searchOrganizationsByKeyword for organizations to search in multiple fields
+    // If status is null (not filtered), exclude DELETED by default
     Specification<User> spec = Specification
         .where(UserSpecification.hasRole(UserRole.ORGANIZATION_ADMIN))
-        // Only filter by status when explicitly provided; otherwise include all statuses
-        .and(status != null ? UserSpecification.hasStatus(status) : null)
+        .and(status != null 
+            ? UserSpecification.hasStatus(status) 
+            : UserSpecification.hasStatusNot(UserStatus.DELETED))
         .and(UserSpecification.searchOrganizationsByKeyword(search));
     
     Page<User> users = userRepository.findAll(spec, pageable);
@@ -783,18 +765,6 @@ public class UserServiceImpl implements UserService {
 
     log.info("Organization status updated successfully for user: {} - reason: {}", userId,
         request.getReason());
-
-    // Notify organization admin about status change (best-effort)
-    try {
-      emailService.sendOrganizationStatusUpdateEmail(
-          user.getEmail(),
-          user.getFullName(),
-          request.getStatus(),
-          request.getReason()
-      );
-    } catch (Exception e) {
-      log.warn("Failed to send organization status update email for user {}: {}", userId, e.getMessage());
-    }
 
     return buildAdminOrganizationResponse(user);
   }

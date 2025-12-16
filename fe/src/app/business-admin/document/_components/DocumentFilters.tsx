@@ -149,10 +149,13 @@ export function DocumentFilters({
       typeId: data.typeId || undefined,
       isPublic: data.isPublic === "" ? undefined : data.isPublic === "true",
       isPremium: data.isPremium === "" ? undefined : data.isPremium === "true",
+      // Only include status if explicitly selected, otherwise exclude DELETED by default
       status: data.status || undefined,
       dateFrom: data.dateFrom || undefined,
       dateTo: data.dateTo || undefined,
       page: 1,
+      // Exclude DELETED when status is not selected (deleted: false means exclude deleted)
+      deleted: data.status ? undefined : false,
     };
     onFiltersChange(filters);
   };
@@ -172,6 +175,7 @@ export function DocumentFilters({
       dateFrom: undefined,
       dateTo: undefined,
       page: 1,
+      deleted: false, // Exclude DELETED by default
     };
     onFiltersChange(clearedFilters);
   };

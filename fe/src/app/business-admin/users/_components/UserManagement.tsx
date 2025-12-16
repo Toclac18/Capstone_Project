@@ -6,8 +6,9 @@ import type { User, UserResponse, UserQueryParams } from "../api";
 import { getReaders, getReviewers, updateReaderStatus, updateReviewerStatus } from "../api";
 import { UserFilters } from "./UserFilters";
 import { Pagination } from "./Pagination";
+import DeleteConfirmation from "@/components/ui/delete-confirmation";
 import { useToast, toast } from "@/components/ui/toast";
-import { Eye } from "lucide-react";
+import { Eye, Power } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
 import styles from "../styles.module.css";
 
@@ -98,6 +99,29 @@ export function UserManagement() {
     fetchUsers(resetFilters, tab);
   };
 
+  const handleDelete = async (userId: string | number) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      if (activeTab === "readers") {
+        await updateReaderStatus(String(userId), "DELETED");
+      } else {
+        await updateReviewerStatus(String(userId), "DELETED");
+      }
+      showToast(toast.success("User Deleted", `${activeTab === "readers" ? "Reader" : "Reviewer"} deleted successfully`));
+      await fetchUsers(filters, activeTab);
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Failed to delete user";
+      showToast(toast.error("Delete Failed", errorMessage));
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleActivate = async () => {
     if (!activateModal) return;
 
@@ -139,11 +163,11 @@ export function UserManagement() {
       case "INACTIVE":
         return styles["status-inactive"];
       case "REJECTED":
-        return styles["status-deleted"];
+        return styles["status-inactive"];
       case "DELETED":
         return styles["status-deleted"];
       default:
-        return styles["status-inactive"];
+        return styles["status-deleted"];
     }
   };
 
@@ -274,6 +298,34 @@ export function UserManagement() {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
+                        {user.status === "DELETED" ? (
+                          <button
+                            onClick={() => setActivateModal({
+                              open: true,
+                              userId: user.id,
+                              userName: (user as any).fullName || user.name || user.email,
+                            })}
+                            disabled={loading || isActivating}
+                            className="h-9 px-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 border border-green-300 bg-white text-green-600 hover:text-green-700 hover:border-green-400 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-green-300 disabled:hover:bg-white shadow-sm hover:shadow-md dark:border-green-700 dark:bg-gray-800 dark:text-green-400 dark:hover:text-green-300 dark:hover:border-green-600 dark:hover:bg-green-900/20 dark:disabled:hover:border-green-700 dark:disabled:hover:bg-gray-800"
+                            title="Activate User"
+                          >
+                            <Power className="w-4 h-4" />
+                            <span>Activate</span>
+                          </button>
+                        ) : (
+                          <div className={styles["delete-btn-wrapper"]}>
+                            <DeleteConfirmation
+                              onDelete={handleDelete}
+                              itemId={user.id}
+                              itemName={(user as any).fullName || user.name || user.email}
+                              title={`Delete ${activeTab === "readers" ? "Reader" : "Reviewer"}`}
+                              description={`Are you sure you want to delete "${(user as any).fullName || user.name || user.email}"?`}
+                              size="sm"
+                              variant="outline"
+                              className="!h-9 !px-3 !min-w-[90px]"
+                            />
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>

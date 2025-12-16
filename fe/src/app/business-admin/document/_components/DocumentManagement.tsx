@@ -9,12 +9,14 @@ import type {
 } from "../api";
 import {
   getDocuments,
+  deleteDocument,
   activateDocument,
 } from "../api";
 import { DocumentFilters } from "./DocumentFilters";
 import { Pagination } from "@/app/business-admin/users/_components/Pagination";
+import DeleteConfirmation from "@/components/ui/delete-confirmation";
 import { useToast, toast } from "@/components/ui/toast";
-import { Eye } from "lucide-react";
+import { Eye, Power } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
 import styles from "../styles.module.css";
 
@@ -39,6 +41,7 @@ export function DocumentManagement() {
     search: "",
     sortBy: "createdAt",
     sortOrder: "desc",
+    deleted: false, // Exclude DELETED by default
   });
 
   // Fetch documents from API
@@ -49,9 +52,19 @@ export function DocumentManagement() {
     try {
       const updatedFilters = { ...queryParams, limit: itemsPerPage };
       const response: DocumentListResponse = await getDocuments(updatedFilters);
-
-      setDocuments(response.documents);
-      setTotalItems(response.total);
+      
+      // Filter out DELETED documents if deleted is false and status is not explicitly selected
+      let filteredDocuments = response.documents;
+      let adjustedTotal = response.total;
+      if (updatedFilters.deleted === false && !updatedFilters.status) {
+        filteredDocuments = response.documents.filter(doc => doc.status !== "DELETED");
+        // Adjust total count based on filtered results (approximate)
+        const deletedCount = response.documents.length - filteredDocuments.length;
+        adjustedTotal = Math.max(0, response.total - deletedCount);
+      }
+      
+      setDocuments(filteredDocuments);
+      setTotalItems(adjustedTotal);
       setCurrentPage(response.page);
       setFilters(updatedFilters);
     } catch (e: unknown) {
@@ -85,6 +98,24 @@ export function DocumentManagement() {
     fetchDocuments(updatedFilters);
   };
 
+  const handleDelete = async (docId: string | number) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      await deleteDocument(String(docId));
+      showToast(toast.success("Document Deleted", "Document status changed to DELETED successfully"));
+      await fetchDocuments(filters);
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Failed to delete document";
+      showToast(toast.error("Delete Failed", errorMessage));
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleActivate = async () => {
     if (!activateModal) return;
 
@@ -108,26 +139,6 @@ export function DocumentManagement() {
 
   const handleDetail = (docId: string) => {
     window.location.href = `/business-admin/document/${docId}`;
-  };
-
-  const getStatusBadgeClass = (status?: string) => {
-    switch (status) {
-      case "ACTIVE":
-        return styles["status-active"];
-      // Highlight "in progress" statuses separately if you want later
-      case "REVIEWING":
-      case "AI_VERIFYING":
-        return styles["status-inactive"];
-      case "REJECTED":
-      case "AI_REJECTED":
-      case "INACTIVE":
-        return styles["status-inactive"];
-      case "DELETED":
-        // Align with user / organization where DELETED is gray
-        return styles["status-deleted"] ?? styles["status-inactive"];
-      default:
-        return styles["status-inactive"];
-    }
   };
 
   return (
@@ -205,7 +216,21 @@ export function DocumentManagement() {
                     </td>
                     <td className={styles["table-cell"]}>
                       <span
-                        className={`${styles["status-badge"]} ${getStatusBadgeClass(doc.status)}`}
+                        className={`${styles["status-badge"]} ${
+                          doc.status === "ACTIVE"
+                            ? styles["status-active"]
+                            : doc.status === "REJECTED" || doc.status === "DELETED"
+                            ? styles["status-inactive"]
+                            : doc.status === "REVIEWING" || doc.status === "AI_VERIFYING"
+                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                            : doc.status === "AI_VERIFIED"
+                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                            : doc.status === "AI_REJECTED"
+                            ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                            : doc.status === "INACTIVE"
+                            ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                            : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                        }`}
                       >
                         {doc.status 
                           ? doc.status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
@@ -251,6 +276,32 @@ export function DocumentManagement() {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
+                        {doc.status === "DELETED" ? (
+                          <button
+                            onClick={() => setActivateModal({
+                              open: true,
+                              docId: doc.id,
+                              docTitle: doc.title || "Document",
+                            })}
+                            disabled={loading || isActivating}
+                            className="h-9 px-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 border border-green-300 bg-white text-green-600 hover:text-green-700 hover:border-green-400 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-green-300 disabled:hover:bg-white shadow-sm hover:shadow-md dark:border-green-700 dark:bg-gray-800 dark:text-green-400 dark:hover:text-green-300 dark:hover:border-green-600 dark:hover:bg-green-900/20 dark:disabled:hover:border-green-700 dark:disabled:hover:bg-gray-800"
+                            title="Activate Document"
+                          >
+                            <Power className="w-4 h-4" />
+                            <span>Activate</span>
+                          </button>
+                        ) : (
+                          <DeleteConfirmation
+                            onDelete={handleDelete}
+                            itemId={doc.id}
+                            itemName={doc.title || "Document"}
+                            title="Delete Document"
+                            description={`Are you sure you want to delete "${doc.title || "this document"}"?`}
+                            size="sm"
+                            variant="text"
+                            className={styles["delete-btn-wrapper"]}
+                          />
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -38,7 +38,6 @@ import com.capstone.be.service.AiDocumentModerationAndSummarizationService;
 import com.capstone.be.service.DocumentAccessService;
 import com.capstone.be.service.DocumentService;
 import com.capstone.be.service.DocumentThumbnailService;
-import com.capstone.be.service.EmailService;
 import com.capstone.be.service.FileStorageService;
 import com.capstone.be.util.StringUtil;
 
@@ -86,7 +85,6 @@ public class DocumentServiceImpl implements DocumentService {
   private final DocumentAccessService documentAccessService;
   private final OrgEnrollmentRepository orgEnrollmentRepository;
   private final AiDocumentModerationAndSummarizationService aiModerationService;
-  private final EmailService emailService;
 
   @Value("${app.document.defaultPremiumPrice:120}")
   private Integer premiumDocPrice;
@@ -1059,8 +1057,6 @@ public class DocumentServiceImpl implements DocumentService {
     documentRepository.save(document);
 
     log.info("Successfully activated document {}", documentId);
-
-    notifyDocumentOwnerStatusChange(document, DocStatus.ACTIVE, "Activated by Business Admin");
   }
 
   @Override
@@ -1071,12 +1067,11 @@ public class DocumentServiceImpl implements DocumentService {
     Document document = documentRepository.findById(documentId)
         .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
 
+//    if (document.getStatus().eq)
     document.setStatus(DocStatus.INACTIVE);
     documentRepository.save(document);
 
     log.info("Successfully deactivated document {}", documentId);
-
-    notifyDocumentOwnerStatusChange(document, DocStatus.INACTIVE, "Deactivated by Business Admin");
   }
 
   @Override
@@ -1091,31 +1086,6 @@ public class DocumentServiceImpl implements DocumentService {
     documentRepository.save(document);
 
     log.info("Successfully updated document {} status to {}", documentId, status);
-
-    notifyDocumentOwnerStatusChange(document, status, "Status updated by Business Admin");
-  }
-
-  /**
-   * Notify document uploader about status changes.
-   * This is a best-effort notification and should not break business flow.
-   */
-  private void notifyDocumentOwnerStatusChange(Document document, DocStatus newStatus, String reason) {
-    try {
-      User uploader = document.getUploader();
-      if (uploader == null || uploader.getEmail() == null) {
-        return;
-      }
-
-      emailService.sendDocumentStatusUpdateEmail(
-          uploader.getEmail(),
-          uploader.getFullName(),
-          document.getTitle(),
-          newStatus,
-          reason
-      );
-    } catch (Exception e) {
-      log.warn("Failed to send document status update email for document {}: {}", document.getId(), e.getMessage());
-    }
   }
 
   private DocumentDetailResponse mapDocumentToDetailResponse(Document document, UUID userId) {

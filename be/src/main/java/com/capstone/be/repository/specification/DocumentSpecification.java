@@ -57,6 +57,9 @@ public class DocumentSpecification {
 
       if (status != null) {
         predicates.add(criteriaBuilder.equal(root.get("status"), status));
+      } else {
+        // If status is null (not filtered), exclude DELETED by default
+        predicates.add(criteriaBuilder.notEqual(root.get("status"), DocStatus.DELETED));
       }
 
       if (visibility != null) {

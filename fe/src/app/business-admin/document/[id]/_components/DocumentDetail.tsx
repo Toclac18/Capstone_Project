@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Eye, FileText, X, UserPlus, PowerOff, Power } from "lucide-react";
 import type { DocumentDetail } from "../../api";
-import { getDocument, deactivateDocument, activateDocument } from "../../api";
+import { getDocument, deleteDocument, deactivateDocument, activateDocument } from "../../api";
+import DeleteConfirmation from "@/components/ui/delete-confirmation";
 import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
 import { useToast, toast } from "@/components/ui/toast";
 import { AssignReviewerModal } from "../../_components/AssignReviewerModal";
@@ -26,25 +27,6 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [showActivateModal, setShowActivateModal] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
-
-  const getStatusBadgeClass = (status?: string) => {
-    switch (status) {
-      case "ACTIVE":
-        return styles["status-active"];
-      case "REVIEWING":
-      case "AI_VERIFYING":
-        return styles["status-inactive"];
-      case "REJECTED":
-      case "AI_REJECTED":
-      case "INACTIVE":
-        return styles["status-inactive"];
-      case "DELETED":
-        // Align with user / organization where DELETED is gray
-        return styles["status-deleted"] ?? styles["status-inactive"];
-      default:
-        return styles["status-inactive"];
-    }
-  };
 
   const fetchDocument = useCallback(async () => {
     setLoading(true);
@@ -70,6 +52,28 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
   useEffect(() => {
     fetchDocument();
   }, [fetchDocument]);
+
+  const handleDelete = async () => {
+    if (!document) return;
+    
+    setLoading(true);
+    setError(null);
+
+    try {
+      await deleteDocument(document.id);
+      showToast(toast.success("Document Deleted", "Document status changed to DELETED successfully"));
+      setTimeout(() => {
+        router.push("/business-admin/document");
+      }, 1500);
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Failed to delete document";
+      showToast(toast.error("Delete Failed", errorMessage));
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleViewDocument = () => {
     // Navigate to reader view document page
@@ -221,7 +225,13 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
                 <label className={styles["label"]}>Status</label>
                 <div className={styles["status-container"]}>
                   <span
-                    className={`${styles["status-badge"]} ${getStatusBadgeClass(document.status)}`}
+                    className={`${styles["status-badge"]} ${
+                      document.status === "ACTIVE"
+                        ? styles["status-active"]
+                        : document.status === "REJECTED" || document.status === "DELETED"
+                        ? styles["status-inactive"]
+                        : styles["status-pending"]
+                    }`}
                   >
                     {document.status || "N/A"}
                   </span>
@@ -536,7 +546,7 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
                     <span>Deactivate</span>
                   </button>
                 )}
-                {(document.status === "INACTIVE" || document.status === "DELETED") && (
+                {document.status === "DELETED" && (
                   <button
                     onClick={() => setShowActivateModal(true)}
                     className={`${styles["action-button"]} ${styles["action-button-primary"]}`}
@@ -545,6 +555,18 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
                     <Power className="w-4 h-4" />
                     <span>Activate</span>
                   </button>
+                )}
+                {document.status !== "DELETED" && document.status !== "ACTIVE" && (
+                  <DeleteConfirmation
+                    onDelete={handleDelete}
+                    itemId={document.id}
+                    itemName={document.title || "Document"}
+                    title="Delete Document"
+                    description={`Are you sure you want to delete "${document.title || "this document"}"? This will change its status to DELETED.`}
+                    size="lg"
+                    variant="outline"
+                    className="w-full"
+                  />
                 )}
               </div>
             </div>

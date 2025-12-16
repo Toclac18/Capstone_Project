@@ -1,8 +1,6 @@
 package com.capstone.be.service;
 
 import java.util.UUID;
-import com.capstone.be.domain.enums.DocStatus;
-import com.capstone.be.domain.enums.UserStatus;
 
 /**
  * Service for sending emails
@@ -113,41 +111,4 @@ public interface EmailService {
    * @param organizationName Organization name
    */
   void sendAccountCreationInvitation(String email, String organizationName);
-
-  /**
-   * Send notification when a user's account status is changed by an admin.
-   *
-   * @param email      User email
-   * @param fullName   User full name (optional)
-   * @param newStatus  New account status
-   * @param reason     Optional reason from admin
-   */
-  void sendUserStatusUpdateEmail(String email, String fullName, UserStatus newStatus, String reason);
-
-  /**
-   * Send notification when an organization admin account status is changed.
-   *
-   * @param email      Organization admin email
-   * @param fullName   Organization admin full name (optional)
-   * @param newStatus  New account status
-   * @param reason     Optional reason from admin
-   */
-  void sendOrganizationStatusUpdateEmail(String email, String fullName, UserStatus newStatus, String reason);
-
-  /**
-   * Send notification when a document status is changed by Business Admin.
-   *
-   * @param email         Uploader email
-   * @param fullName      Uploader full name (optional)
-   * @param documentTitle Document title
-   * @param newStatus     New document status
-   * @param reason        Optional reason from admin
-   */
-  void sendDocumentStatusUpdateEmail(
-      String email,
-      String fullName,
-      String documentTitle,
-      DocStatus newStatus,
-      String reason
-  );
 }

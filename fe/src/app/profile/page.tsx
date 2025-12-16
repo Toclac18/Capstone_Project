@@ -29,7 +29,6 @@ import {
   Trash2,
   Camera,
   GraduationCap,
-  FileText,
   Bell,
 } from "lucide-react";
 import ChangeEmailModal from "./_components/ChangeEmailModal";
@@ -528,10 +527,10 @@ export default function Page() {
                   </div>
                 </div>
               )}
-              {/* Reader/Reviewer common fields */}
-              {(role === "READER" || role === "REVIEWER") && (
+              {/* Reader fields */}
+              {role === "READER" && (
                 <>
-                  {role === "READER" && (profile as ReaderProfileResponse & { role: "READER" })?.dob && (
+                  {(profile as ReaderProfileResponse & { role: "READER" })?.dob && (
                     <div className={styles["profile-detail-item"]}>
                       <div
                         className={`${styles["profile-detail-icon-wrapper"]} ${styles["blue"]}`}
@@ -546,25 +545,6 @@ export default function Page() {
                         </p>
                         <p className={styles["profile-detail-value"]}>
                           {formatDate((profile as ReaderProfileResponse & { role: "READER" }).dob || undefined)}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {role === "REVIEWER" && (profile as ReviewerProfileResponse & { role: "REVIEWER" })?.dateOfBirth && (
-                    <div className={styles["profile-detail-item"]}>
-                      <div
-                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["blue"]}`}
-                      >
-                        <Calendar
-                          className={`${styles["profile-detail-icon"]} ${styles["blue"]}`}
-                        />
-                      </div>
-                      <div>
-                        <p className={styles["profile-detail-label"]}>
-                          Date of Birth
-                        </p>
-                        <p className={styles["profile-detail-value"]}>
-                          {formatDate((profile as ReviewerProfileResponse & { role: "REVIEWER" }).dateOfBirth || undefined)}
                         </p>
                       </div>
                     </div>
@@ -587,6 +567,27 @@ export default function Page() {
                     </div>
                   </div>
                 </>
+              )}
+
+              {/* Reviewer date of birth */}
+              {role === "REVIEWER" && (profile as ReviewerProfileResponse & { role: "REVIEWER" })?.dateOfBirth && (
+                <div className={styles["profile-detail-item"]}>
+                  <div
+                    className={`${styles["profile-detail-icon-wrapper"]} ${styles["blue"]}`}
+                  >
+                    <Calendar
+                      className={`${styles["profile-detail-icon"]} ${styles["blue"]}`}
+                    />
+                  </div>
+                  <div>
+                    <p className={styles["profile-detail-label"]}>
+                      Date of Birth
+                    </p>
+                    <p className={styles["profile-detail-value"]}>
+                      {formatDate((profile as ReviewerProfileResponse & { role: "REVIEWER" }).dateOfBirth || undefined)}
+                    </p>
+                  </div>
+                </div>
               )}
 
               {/* Reviewer specific fields */}
@@ -660,39 +661,7 @@ export default function Page() {
                       </div>
                     </div>
                   )}
-                  {(profile as ReviewerProfileResponse & { role: "REVIEWER" })?.credentialFileUrls &&
-                    (profile as ReviewerProfileResponse & { role: "REVIEWER" }).credentialFileUrls.length > 0 && (
-                    <div className={`${styles["profile-detail-item"]} ${styles["profile-detail-item-full-width"]}`}>
-                      <div
-                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["green"]}`}
-                      >
-                        <FileText
-                          className={`${styles["profile-detail-icon"]} ${styles["green"]}`}
-                        />
-                      </div>
-                      <div style={{ width: "100%" }}>
-                        <p className={styles["profile-detail-label"]}>Certificate Files</p>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "0.25rem" }}>
-                          {(profile as ReviewerProfileResponse & { role: "REVIEWER" }).credentialFileUrls.map((url, index) => (
-                            <a
-                              key={index}
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={styles["profile-detail-value"]}
-                              style={{
-                                color: "var(--primary-color, #6366f1)",
-                                textDecoration: "underline",
-                                wordBreak: "break-all",
-                              }}
-                            >
-                              Certificate {index + 1}
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+
                 </>
               )}
             </div>

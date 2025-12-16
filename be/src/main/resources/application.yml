@@ -58,8 +58,9 @@ app:
 
   mail:
     from: ${MAIL_FROM:no-reply@capstone.com}
-    verificationBaseUrl: ${MAIL_VERIFICATION_BASE_URL:http://localhost:3000/verify-email}
+    verificationBaseUrl: ${MAIL_VERIFICATION_BASE_URL:http://localhost:3000/auth/verify-email}
     joinOrganizationBaseUrl: ${MAIL_JOIN_ORGANIZATION_BASE_URL:http://localhost:3000/reader/join-organization}
+    frontendBaseUrl: ${FRONTEND_BASE_URL:http://localhost:3000}
   audit:
     log:
       retention-enabled: ${AUDIT_LOG_RETENTION_ENABLED:true}

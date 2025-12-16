@@ -31,6 +31,9 @@ public class EmailServiceImpl implements EmailService {
   @Value("${app.mail.joinOrganizationBaseUrl}")
   private String joinOrganizationBaseUrl;
 
+  @Value("${app.mail.frontendBaseUrl}")
+  private String frontendBaseUrl;
+
   @Override
   @Async
   public void sendEmailVerification(UUID userId, String email, String token) {
@@ -932,60 +935,157 @@ public class EmailServiceImpl implements EmailService {
   ) {
     String displayName = (fullName != null && !fullName.isBlank()) ? fullName : "User";
     String safeTitle = (documentTitle != null && !documentTitle.isBlank()) ? documentTitle : "Your document";
-    String statusLabel = newStatus != null ? newStatus.name() : "UPDATED";
+    
+    // Determine colors and labels based on status
+    String headerColor;
+    String statusLabel;
+    String statusEmoji;
+    String mainMessage;
+    String pointsText = "";
+    
+    if (newStatus == DocStatus.ACTIVE) {
+      headerColor = "#4CAF50"; // Green
+      statusLabel = "APPROVED";
+      statusEmoji = "✅";
+      mainMessage = "Great news! Your document has been approved and is now live on the platform.";
+      // Extract points from reason if available
+      if (reason != null && reason.contains("points")) {
+        pointsText = reason;
+      }
+    } else if (newStatus == DocStatus.REJECTED) {
+      headerColor = "#E53935"; // Red
+      statusLabel = "REJECTED";
+      statusEmoji = "❌";
+      mainMessage = "Unfortunately, your document has been rejected after review.";
+    } else if (newStatus == DocStatus.AI_REJECTED) {
+      headerColor = "#FB8C00"; // Orange
+      statusLabel = "NOT APPROVED";
+      statusEmoji = "⚠️";
+      mainMessage = "Your document could not be approved by our automated content review system.";
+    } else {
+      headerColor = "#1976D2"; // Blue (default)
+      statusLabel = newStatus != null ? newStatus.name() : "UPDATED";
+      statusEmoji = "📋";
+      mainMessage = "The status of your document has been updated.";
+    }
 
-    String reasonSection = (reason != null && !reason.trim().isEmpty())
-        ? """
-            <div class="reason-box">
-                <h3>Admin Note:</h3>
-                <p>%s</p>
-            </div>
-            """.formatted(reason)
-        : "";
+    // Build reason/details section
+    String detailsSection = "";
+    if (reason != null && !reason.trim().isEmpty()) {
+      detailsSection = String.format("""
+          <tr>
+            <td style="padding: 0 30px 20px 30px;">
+              <table width="100%%" cellpadding="0" cellspacing="0" style="background-color: #FFF8E1; border-radius: 8px; border-left: 4px solid #FFC107;">
+                <tr>
+                  <td style="padding: 16px;">
+                    <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 600; color: #F57C00;">📝 Details</p>
+                    <p style="margin: 0; font-size: 14px; color: #5D4037; line-height: 1.5;">%s</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          """, reason);
+    }
 
-    return """
+    // Build points reward section for approved documents
+    String pointsSection = "";
+    if (newStatus == DocStatus.ACTIVE && !pointsText.isEmpty()) {
+      pointsSection = """
+          <tr>
+            <td style="padding: 0 30px 20px 30px;">
+              <table width="100%%" cellpadding="0" cellspacing="0" style="background-color: #E8F5E9; border-radius: 8px;">
+                <tr>
+                  <td style="padding: 16px; text-align: center;">
+                    <p style="margin: 0; font-size: 28px;">🎉</p>
+                    <p style="margin: 8px 0 0 0; font-size: 14px; font-weight: 600; color: #2E7D32;">Points Earned!</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          """;
+    }
+
+    return String.format("""
         <!DOCTYPE html>
         <html>
         <head>
-            <meta charset="UTF-8">
-            <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background-color: #3F51B5; color: white; padding: 20px; text-align: center; }
-                .content { padding: 20px; background-color: #f9f9f9; }
-                .doc-box { background-color: #e8eaf6; border-left: 4px solid #3F51B5;
-                           padding: 15px; margin: 20px 0; }
-                .status-box { background-color: #e3f2fd; border-left: 4px solid #2196F3;
-                              padding: 15px; margin: 20px 0; }
-                .reason-box { background-color: #fff3cd; border-left: 4px solid #ffc107;
-                              padding: 15px; margin: 20px 0; }
-                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-            </style>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>Document Status Update</h1>
-                </div>
-                <div class="content">
-                    <h2>Hello %s,</h2>
-                    <p>The status of one of your documents on the Capstone Platform has been updated by a Business Admin.</p>
-                    <div class="doc-box">
-                        <p style=\"margin: 0;\"><strong>Document:</strong> %s</p>
-                    </div>
-                    <div class="status-box">
-                        <p style="margin: 0;"><strong>New Status:</strong> %s</p>
-                    </div>
-                    %s
-                    <p>You can sign in to the platform to view more details about this change.</p>
-                </div>
-                <div class="footer">
-                    <p>&copy; 2025 Capstone Platform. All rights reserved.</p>
-                </div>
-            </div>
+        <body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+          <table width="100%%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                  
+                  <!-- Header -->
+                  <tr>
+                    <td style="background-color: %s; padding: 40px 30px; text-align: center;">
+                      <p style="margin: 0 0 12px 0; font-size: 48px;">%s</p>
+                      <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 600;">Document %s</h1>
+                    </td>
+                  </tr>
+                  
+                  <!-- Body -->
+                  <tr>
+                    <td style="padding: 30px 30px 20px 30px;">
+                      <p style="margin: 0 0 16px 0; font-size: 16px; color: #333333;">Hello <strong>%s</strong>,</p>
+                      <p style="margin: 0; font-size: 15px; color: #666666; line-height: 1.6;">%s</p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Document Card -->
+                  <tr>
+                    <td style="padding: 0 30px 20px 30px;">
+                      <table width="100%%" cellpadding="0" cellspacing="0" style="background-color: #F5F5F5; border-radius: 8px;">
+                        <tr>
+                          <td style="padding: 16px;">
+                            <p style="margin: 0 0 6px 0; font-size: 11px; color: #999999; text-transform: uppercase; letter-spacing: 1px;">Document Title</p>
+                            <p style="margin: 0; font-size: 15px; color: #333333; font-weight: 600;">📄 %s</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  %s
+                  %s
+                  
+                  <!-- CTA Button -->
+                  <tr>
+                    <td style="padding: 10px 30px 30px 30px; text-align: center;">
+                      <a href="%s" style="display: inline-block; background-color: %s; color: #ffffff; padding: 14px 36px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600;">Go to Readee</a>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #FAFAFA; padding: 20px 30px; text-align: center; border-top: 1px solid #EEEEEE;">
+                      <p style="margin: 0 0 4px 0; font-size: 12px; color: #999999;">© 2025 Readee Platform. All rights reserved.</p>
+                      <p style="margin: 0; font-size: 11px; color: #BBBBBB;">This is an automated message, please do not reply.</p>
+                    </td>
+                  </tr>
+                  
+                </table>
+              </td>
+            </tr>
+          </table>
         </body>
         </html>
-        """.formatted(displayName, safeTitle, statusLabel, reasonSection);
+        """,
+        headerColor,
+        statusEmoji,
+        statusLabel,
+        displayName,
+        mainMessage,
+        safeTitle,
+        detailsSection,
+        pointsSection,
+        frontendBaseUrl,
+        headerColor
+    );
   }
 }
 

@@ -72,7 +72,10 @@ export default function UploadHistoryPage() {
   );
 
   useEffect(() => {
-    fetchData(filters);
+    const loadData = async () => {
+      await fetchData(filters);
+    };
+    loadData();
   }, [filters, fetchData]);
 
   const handleFiltersChange = (newFilters: UploadHistoryQueryParams) => {

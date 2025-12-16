@@ -111,7 +111,9 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
       switch (status) {
         // 401: Hết phiên -> Login
         case 401:
-          if (currentPath?.includes("/auth/sign-in")) return;
+          if (currentPath?.startsWith("/auth/")) {
+            return;
+          }
           showAlert({
             title: "SESSION EXPIRED",
             description: "Your session has expired. Please sign in again.",

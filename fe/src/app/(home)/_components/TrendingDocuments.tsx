@@ -5,7 +5,7 @@ import { Eye, ThumbsUp } from "lucide-react";
 import Link from "next/link";
 import { sanitizeImageUrl } from "@/utils/imageUrl";
 
-const THUMBNAIL_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/document-thumbnails/";
+const THUMBNAIL_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/doc-thumbs/";
 
 interface TrendingDocumentsProps {
   documents: TrendingDocument[];

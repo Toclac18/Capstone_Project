@@ -2,11 +2,13 @@ package com.capstone.be.service.impl;
 
 import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.service.DocumentConversionService;
+import com.capstone.be.service.SystemConfigService;
 import jakarta.annotation.PostConstruct;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,13 +19,23 @@ import org.springframework.web.multipart.MultipartFile;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DocumentConversionServiceImpl implements DocumentConversionService {
+
+  private final SystemConfigService systemConfigService;
 
   @Value("${app.document.conversion.libreoffice-path:}")
   private String libreOfficePath;
 
   @Value("${app.document.conversion.timeout-seconds:60}")
-  private int conversionTimeoutSeconds;
+  private int conversionTimeoutSecondsFallback;
+
+  /**
+   * Get conversion timeout seconds from SystemConfig, fallback to @Value
+   */
+  private int getConversionTimeoutSeconds() {
+    return systemConfigService.getIntValue("document.conversion.timeoutSeconds", conversionTimeoutSecondsFallback);
+  }
 
   private String detectedLibreOfficePath = null;
 
@@ -145,12 +157,13 @@ public class DocumentConversionServiceImpl implements DocumentConversionService 
         }
       }
 
-      boolean completed = process.waitFor(conversionTimeoutSeconds, TimeUnit.SECONDS);
+      int timeoutSeconds = getConversionTimeoutSeconds();
+      boolean completed = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
 
       if (!completed) {
         process.destroyForcibly();
         throw new InvalidRequestException(
-            "DOCX to PDF conversion timed out after " + conversionTimeoutSeconds + " seconds");
+            "DOCX to PDF conversion timed out after " + timeoutSeconds + " seconds");
       }
 
       if (process.exitValue() != 0) {

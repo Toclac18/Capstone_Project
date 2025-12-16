@@ -40,6 +40,7 @@ import com.capstone.be.service.DocumentService;
 import com.capstone.be.service.DocumentThumbnailService;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.service.FileStorageService;
+import com.capstone.be.service.SystemConfigService;
 import com.capstone.be.util.StringUtil;
 
 import java.time.Instant;
@@ -89,12 +90,27 @@ public class DocumentServiceImpl implements DocumentService {
   private final AiDocumentModerationAndSummarizationService aiModerationService;
   private final EmailService emailService;
   private final com.capstone.be.service.DocumentConversionService documentConversionService;
+  private final SystemConfigService systemConfigService;
 
   @Value("${app.document.defaultPremiumPrice:100}")
-  private Integer premiumDocPrice;
+  private Integer defaultPremiumPriceFallback;
 
   @Value("${app.s3.document.presignedExpInMinutes:60}")
-  private Integer presignedUrlExpirationMinutes;
+  private Integer presignedUrlExpirationMinutesFallback;
+
+  /**
+   * Get premium document price from SystemConfig, fallback to @Value
+   */
+  private Integer getPremiumDocPrice() {
+    return systemConfigService.getIntValue("document.defaultPremiumPrice", defaultPremiumPriceFallback);
+  }
+
+  /**
+   * Get presigned URL expiration minutes from SystemConfig, fallback to @Value
+   */
+  private Integer getPresignedUrlExpirationMinutes() {
+    return systemConfigService.getIntValue("s3.document.presignedExpInMinutes", presignedUrlExpirationMinutesFallback);
+  }
 
   @Override
   @Transactional
@@ -438,7 +454,7 @@ public class DocumentServiceImpl implements DocumentService {
       String fileUrl) {
 
     // Determine price: use configured premium price or 0
-    Integer price = Boolean.TRUE.equals(request.getIsPremium()) ? premiumDocPrice : 0;
+    Integer price = Boolean.TRUE.equals(request.getIsPremium()) ? getPremiumDocPrice() : 0;
 
     return Document.builder()
         .title(request.getTitle())
@@ -519,17 +535,18 @@ public class DocumentServiceImpl implements DocumentService {
     log.info("Incremented view count for document {} to {}", documentId, currentViewCount + 1);
 
     // Generate presigned URL
+    Integer expirationMinutes = getPresignedUrlExpirationMinutes();
     String presignedUrl = fileStorageService.generatePresignedUrl(
         FileStorage.DOCUMENT_FOLDER,
         document.getFileKey(),
-        presignedUrlExpirationMinutes
+        expirationMinutes
     );
 
     log.info("Generated presigned URL for document {} for user {}", documentId, userId);
 
     return DocumentPresignedUrlResponse.builder()
         .presignedUrl(presignedUrl)
-        .expiresInMinutes(presignedUrlExpirationMinutes)
+        .expiresInMinutes(expirationMinutes)
         .build();
   }
 
@@ -729,7 +746,7 @@ public class DocumentServiceImpl implements DocumentService {
     document.setOrganization(organization);
 
     // Update price based on premium status
-    Integer price = Boolean.TRUE.equals(request.getIsPremium()) ? premiumDocPrice : 0;
+    Integer price = Boolean.TRUE.equals(request.getIsPremium()) ? getPremiumDocPrice() : 0;
     document.setPrice(price);
 
     document = documentRepository.save(document);
@@ -1229,7 +1246,7 @@ public class DocumentServiceImpl implements DocumentService {
         presignedUrl = fileStorageService.generatePresignedUrl(
                 FileStorage.DOCUMENT_FOLDER,
                 document.getFileKey(),
-                presignedUrlExpirationMinutes
+                getPresignedUrlExpirationMinutes()
         );
       }
       response.setPresignedUrl(presignedUrl);
@@ -1254,7 +1271,7 @@ public class DocumentServiceImpl implements DocumentService {
         presignedUrl = fileStorageService.generatePresignedUrl(
                 FileStorage.DOCUMENT_FOLDER,
                 document.getFileKey(),
-                presignedUrlExpirationMinutes
+                getPresignedUrlExpirationMinutes()
         );
       }
       response.setPresignedUrl(presignedUrl);

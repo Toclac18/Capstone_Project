@@ -21,6 +21,7 @@
     "clsx": "2.1.1",
     "date-fns": "^4.1.0",
     "dayjs": "1.11.13",
+    "dompurify": "^3.0.6",
     "flatpickr": "4.6.13",
     "jose": "5.9.3",
     "lucide-react": "0.546.0",

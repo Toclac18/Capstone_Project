@@ -90,6 +90,9 @@ dependencies {
 //    implementation 'fr.opensagres.xdocreport:org.apache.poi.xwpf.converter.pdf:1.0.6'
 
     implementation 'commons-validator:commons-validator:1.10.0'
+
+    // HTML Sanitization (for Policy content XSS protection)
+    implementation 'org.jsoup:jsoup:1.17.2'
 }
 
 //MapStruct Compiler Configuration

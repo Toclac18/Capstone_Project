@@ -12,6 +12,7 @@ import com.capstone.be.repository.DocumentRepository;
 import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.service.AiDocumentModerationAndSummarizationService;
 import com.capstone.be.service.EmailService;
+import com.capstone.be.service.SystemConfigService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,6 +43,7 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
   private final ReaderProfileRepository readerProfileRepository;
   private final EmailService emailService;
   private final RestTemplate restTemplate;
+  private final SystemConfigService systemConfigService;
 
   @Value("${app.ai.moderationService.url}")
   private String aiServiceUrl;
@@ -50,7 +52,14 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
   private String aiApiKey;
 
   @Value("${app.document.points.ai-approval:20}")
-  private int aiApprovalPoints;
+  private int aiApprovalPointsFallback;
+
+  /**
+   * Get AI approval points from SystemConfig, fallback to @Value
+   */
+  private int getAiApprovalPoints() {
+    return systemConfigService.getIntValue("document.points.aiApproval", aiApprovalPointsFallback);
+  }
 
   @Override
   @Async
@@ -165,7 +174,8 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
         log.info("Non-premium document ID: {} passed AI moderation, set to ACTIVE", documentId);
 
         // Award points to uploader for non-premium document
-        awardPointsToUploader(uploader, aiApprovalPoints, documentId);
+        int points = getAiApprovalPoints();
+        awardPointsToUploader(uploader, points, documentId);
 
         // Send email notification to uploader
         try {
@@ -174,7 +184,7 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
               uploaderName,
               document.getTitle(),
               DocStatus.ACTIVE,
-              "Your document has been approved by our AI moderation system. You have been awarded " + aiApprovalPoints + " points!"
+              "Your document has been approved by our AI moderation system. You have been awarded " + points + " points!"
           );
         } catch (Exception e) {
           log.error("Failed to send document approval email to {}: {}", uploaderEmail, e.getMessage());

@@ -12,6 +12,7 @@ import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
 import { CreatePolicyModal } from "./CreatePolicyModal";
 import { UpdatePolicyModal } from "./UpdatePolicyModal";
 import { PolicyList } from "./PolicyList";
+import { sanitizeHtml } from "@/utils/htmlSanitizer";
 import styles from "./styles.module.css";
 
 export function PolicyManagement() {
@@ -150,9 +151,12 @@ export function PolicyManagement() {
       {viewPolicy && (
         <div
           className={styles.modalBackdrop}
-          onClick={() => {
-            setIsViewerOpen(false);
-            setViewPolicy(null);
+          onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+            // Only close if clicking directly on the backdrop, not on modal content
+            if (e.target === e.currentTarget) {
+              setIsViewerOpen(false);
+              setViewPolicy(null);
+            }
           }}
         >
           <div className={styles.viewerContent} onClick={(e) => e.stopPropagation()}>
@@ -171,7 +175,7 @@ export function PolicyManagement() {
             </div>
             <div
               className={styles.viewerBody}
-              dangerouslySetInnerHTML={{ __html: viewPolicy.content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(viewPolicy.content) }}
             />
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { getActivePolicy } from "@/services/policyService";
 import type { Policy } from "@/types/policy";
+import { sanitizeHtml } from "@/utils/htmlSanitizer";
 import styles from "./styles.module.css";
 
 interface PolicyViewerProps {
@@ -77,8 +78,11 @@ export default function PolicyViewer({
 
   if (!isOpen) return null;
 
-  const handleBackdropClick = () => {
-    onClose();
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only close if clicking directly on the backdrop, not on modal content
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
   };
 
   return (
@@ -126,7 +130,7 @@ export default function PolicyViewer({
           ) : policy ? (
             <div
               className={styles.content}
-              dangerouslySetInnerHTML={{ __html: policy.content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(policy.content) }}
             />
           ) : (
             <div className={styles.empty}>

@@ -19,7 +19,7 @@ import {
 type LoadState = "loading" | "success" | "empty" | "error";
 
 const ITEMS_PER_PAGE = 10;
-const THUMBNAIL_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/thumb/";
+const THUMBNAIL_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/doc-thumbs/";
 const DEFAULT_THUMBNAIL = "/images/document.jpg";
 
 export default function ReadHistoryPage() {

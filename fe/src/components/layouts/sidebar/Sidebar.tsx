@@ -18,6 +18,7 @@ import { useSidebarContext } from "./SidebarContext";
 import { useReader } from "@/hooks/useReader";
 import type * as React from "react";
 import { MenuItem } from "./MenuItem";
+import { SavedListsSection } from "./SavedListsSection";
 
 /* --------------------------- Types ------------------------------ */
 export type NavLinkItem = {
@@ -53,7 +54,7 @@ export function Sidebar({
   const pathname = usePathname();
   const { setIsOpen, isOpen, isMobile, toggleSidebar } = useSidebarContext();
   const [expanded, setExpanded] = useState<string[]>([]);
-  const { role, loading } = useReader();
+  const { role, loading, isAuthenticated } = useReader();
 
   // Get menu data based on role
   const defaultSections = useMemo<NavSection[]>(() => {
@@ -212,6 +213,9 @@ export function Sidebar({
                 </nav>
               </div>
             ))}
+
+            {/* Saved Lists Section - only for READER*/}
+            <SavedListsSection isAuthenticated={isAuthenticated} role={role} />
           </div>
         </div>
       </aside>

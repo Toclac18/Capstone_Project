@@ -718,7 +718,7 @@ export default function UploadDocumentPage() {
 
           {/* Supported File Types */}
           <p className={styles["supported-files"]}>
-            Supported file types: PDF, DOCX
+            Supported file types: PDF, DOCX (DOCX files will be automatically converted to PDF)
           </p>
 
             {/* Uploader Agreement */}

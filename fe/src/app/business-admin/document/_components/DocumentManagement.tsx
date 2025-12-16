@@ -110,26 +110,6 @@ export function DocumentManagement() {
     window.location.href = `/business-admin/document/${docId}`;
   };
 
-  const getStatusBadgeClass = (status?: string) => {
-    switch (status) {
-      case "ACTIVE":
-        return styles["status-active"];
-      // Highlight "in progress" statuses separately if you want later
-      case "REVIEWING":
-      case "AI_VERIFYING":
-        return styles["status-inactive"];
-      case "REJECTED":
-      case "AI_REJECTED":
-      case "INACTIVE":
-        return styles["status-inactive"];
-      case "DELETED":
-        // Align with user / organization where DELETED is gray
-        return styles["status-deleted"] ?? styles["status-inactive"];
-      default:
-        return styles["status-inactive"];
-    }
-  };
-
   return (
     <div className={styles["container"]}>
       {/* Header */}
@@ -205,7 +185,23 @@ export function DocumentManagement() {
                     </td>
                     <td className={styles["table-cell"]}>
                       <span
-                        className={`${styles["status-badge"]} ${getStatusBadgeClass(doc.status)}`}
+                        className={`${styles["status-badge"]} ${
+                          doc.status === "ACTIVE"
+                            ? styles["status-active"]
+                            : doc.status === "REJECTED" || doc.status === "DELETED"
+                            ? styles["status-inactive"]
+                            : doc.status === "REVIEWING" || doc.status === "AI_VERIFYING"
+                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                            : doc.status === "PENDING_REVIEW"
+                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                            : doc.status === "PENDING_APPROVE"
+                            ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                            : doc.status === "AI_REJECTED"
+                            ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                            : doc.status === "INACTIVE"
+                            ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                            : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                        }`}
                       >
                         {doc.status 
                           ? doc.status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())

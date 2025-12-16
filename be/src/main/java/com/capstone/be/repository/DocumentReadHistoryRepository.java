@@ -24,6 +24,11 @@ public interface DocumentReadHistoryRepository extends JpaRepository<DocumentRea
   Page<DocumentReadHistory> findByUser_Id(UUID userId, Pageable pageable);
 
   /**
+   * Find read history for a specific user, ordered by most recent first
+   */
+  Page<DocumentReadHistory> findByUser_IdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
+
+  /**
    * Find all read history records for a user and document
    */
   List<DocumentReadHistory> findByUser_IdAndDocument_Id(UUID userId, UUID documentId);

@@ -53,7 +53,18 @@ async function handleGET(request: Request) {
   if (dateTo) queryParams.append("dateTo", dateTo);
   if (type && isValidUUID(type)) queryParams.append("docTypeId", type);
   if (domain && isValidUUID(domain)) queryParams.append("domainId", domain);
-  if (status) queryParams.append("status", status);
+  // Map frontend status groups to backend statuses
+  if (status) {
+    if (status === "PENDING") {
+      queryParams.append("statuses", "AI_VERIFYING,PENDING_REVIEW,REVIEWING,PENDING_APPROVE");
+    } else if (status === "APPROVED") {
+      queryParams.append("statuses", "ACTIVE");
+    } else if (status === "REJECTED") {
+      queryParams.append("statuses", "REJECTED,AI_REJECTED");
+    } else {
+      queryParams.append("status", status);
+    }
+  }
   queryParams.append("page", String(page - 1)); // Backend uses 0-indexed
   queryParams.append("size", String(limit));
 

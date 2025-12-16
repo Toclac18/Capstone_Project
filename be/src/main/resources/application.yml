@@ -58,8 +58,9 @@ app:
 
   mail:
     from: ${MAIL_FROM:no-reply@capstone.com}
-    verificationBaseUrl: ${MAIL_VERIFICATION_BASE_URL:http://localhost:3000/verify-email}
+    verificationBaseUrl: ${MAIL_VERIFICATION_BASE_URL:http://localhost:3000/auth/verify-email}
     joinOrganizationBaseUrl: ${MAIL_JOIN_ORGANIZATION_BASE_URL:http://localhost:3000/reader/join-organization}
+    frontendBaseUrl: ${FRONTEND_BASE_URL:http://localhost:3000}
   audit:
     log:
       retention-enabled: ${AUDIT_LOG_RETENTION_ENABLED:true}
@@ -67,7 +68,13 @@ app:
       retention-cron: ${AUDIT_LOG_RETENTION_CRON:0 0 2 * * ?}  # Daily at 2:00 AM
 
   document:
-    defaultPremiumPrice: 120
+    defaultPremiumPrice: 100
+    conversion:
+      libreoffice-path: ${LIBREOFFICE_PATH:}
+      timeout-seconds: ${DOCUMENT_CONVERSION_TIMEOUT:60}
+    points:
+      ai-approval: ${DOCUMENT_AI_APPROVAL_POINTS:20}
+      ba-approval: ${DOCUMENT_BA_APPROVAL_POINTS:100}
 
   s3:
     document:

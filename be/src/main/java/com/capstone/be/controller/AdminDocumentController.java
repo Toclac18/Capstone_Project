@@ -159,7 +159,7 @@ public class AdminDocumentController {
   }
 
   /**
-   * Fix documents with old status 'VERIFIED' to 'AI_VERIFIED'
+   * Fix documents with old status 'VERIFIED' or 'AI_VERIFIED' to 'PENDING_REVIEW'
    * POST /api/admin/documents/fix-status
    * 
    * This is a one-time migration endpoint to fix data inconsistency
@@ -171,37 +171,37 @@ public class AdminDocumentController {
     log.info("Admin manually triggering document status fix");
     
     try {
-      // Check if there are any documents with status 'VERIFIED'
+      // Check if there are any documents with old status 'VERIFIED' or 'AI_VERIFIED'
       Integer count = jdbcTemplate.queryForObject(
-          "SELECT COUNT(*) FROM document WHERE status = 'VERIFIED'",
+          "SELECT COUNT(*) FROM document WHERE status IN ('VERIFIED', 'AI_VERIFIED')",
           Integer.class
       );
 
       if (count != null && count > 0) {
-        log.warn("Found {} documents with old status 'VERIFIED'. Fixing to 'AI_VERIFIED'...", count);
+        log.warn("Found {} documents with old status 'VERIFIED' or 'AI_VERIFIED'. Fixing to 'PENDING_REVIEW'...", count);
         
-        // Update all documents with status 'VERIFIED' to 'AI_VERIFIED'
+        // Update all documents with old status to 'PENDING_REVIEW'
         int updated = jdbcTemplate.update(
-            "UPDATE document SET status = 'AI_VERIFIED' WHERE status = 'VERIFIED'"
+            "UPDATE document SET status = 'PENDING_REVIEW' WHERE status IN ('VERIFIED', 'AI_VERIFIED')"
         );
         
-        log.info("Successfully updated {} documents from 'VERIFIED' to 'AI_VERIFIED'", updated);
+        log.info("Successfully updated {} documents to 'PENDING_REVIEW'", updated);
         
         return ResponseEntity.ok(ApiResponse.<String>builder()
             .success(true)
-            .message("Successfully updated " + updated + " documents from 'VERIFIED' to 'AI_VERIFIED'")
+            .message("Successfully updated " + updated + " documents to 'PENDING_REVIEW'")
             .data("Updated " + updated + " documents")
             .build());
       } else {
-        log.info("No documents with old status 'VERIFIED' found. Migration not needed.");
+        log.info("No documents with old status found. Migration not needed.");
         return ResponseEntity.ok(ApiResponse.<String>builder()
             .success(true)
-            .message("No documents with status 'VERIFIED' found. Migration not needed.")
+            .message("No documents with old status found. Migration not needed.")
             .data("No documents to update")
             .build());
       }
     } catch (Exception e) {
-      log.error("Error fixing document status from 'VERIFIED' to 'AI_VERIFIED': {}", e.getMessage(), e);
+      log.error("Error fixing document status: {}", e.getMessage(), e);
       return ResponseEntity.ok(ApiResponse.<String>builder()
           .success(false)
           .message("Error fixing document status: " + e.getMessage())

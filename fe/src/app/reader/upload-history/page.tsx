@@ -11,10 +11,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useCallback, useEffect, useState, useMemo } from "react";
-import { fetchUploadHistory, requestReReview, type DocumentHistory, type UploadHistoryQueryParams } from "./api";
+import { fetchUploadHistory, type DocumentHistory, type UploadHistoryQueryParams } from "./api";
 import { Pagination } from "@/components/ui/pagination";
 import { UploadHistoryFilters } from "./_components/UploadHistoryFilters";
-import ReReviewModal from "./_components/ReReviewModal";
 import { useToast } from "@/components/ui/toast";
 import styles from "./styles.module.css";
 import { AlertCircle, FileText, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
@@ -39,9 +38,6 @@ export default function UploadHistoryPage() {
   });
   const [sortBy, setSortBy] = useState<SortColumn | undefined>(undefined);
   const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined);
-  const [reReviewingId, setReReviewingId] = useState<string | null>(null);
-  const [isReReviewModalOpen, setIsReReviewModalOpen] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<DocumentHistory | null>(null);
   const isLoading = state === "loading";
 
   const fetchData = useCallback(
@@ -76,7 +72,10 @@ export default function UploadHistoryPage() {
   );
 
   useEffect(() => {
-    fetchData(filters);
+    const loadData = async () => {
+      await fetchData(filters);
+    };
+    loadData();
   }, [filters, fetchData]);
 
   const handleFiltersChange = (newFilters: UploadHistoryQueryParams) => {
@@ -93,39 +92,6 @@ export default function UploadHistoryPage() {
       page,
     }));
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleReReviewClick = (document: DocumentHistory) => {
-    setSelectedDocument(document);
-    setIsReReviewModalOpen(true);
-  };
-
-  const handleReReviewSubmit = async (reason: string) => {
-    if (!selectedDocument) return;
-
-    setReReviewingId(selectedDocument.id);
-    try {
-      await requestReReview(selectedDocument.id, reason);
-
-      showToast({
-        type: "success",
-        title: "Re-review Requested",
-        message: "Your request has been submitted and is under review.",
-        duration: 5000,
-      });
-
-      await fetchData(filters);
-      setIsReReviewModalOpen(false);
-      setSelectedDocument(null);
-    } finally {
-      setReReviewingId(null);
-    }
-  };
-
-  const handleReReviewModalClose = () => {
-    if (reReviewingId) return;
-    setIsReReviewModalOpen(false);
-    setSelectedDocument(null);
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -150,10 +116,11 @@ export default function UploadHistoryPage() {
   const getStatusBadgeClass = (status: string): string => {
     switch (status) {
       case "ACTIVE":
-      case "AI_VERIFIED":
         return styles["status-approved"];
       case "AI_VERIFYING":
       case "REVIEWING":
+      case "PENDING_REVIEW":
+      case "PENDING_APPROVE":
         return styles["status-pending"];
       case "REJECTED":
       case "AI_REJECTED":
@@ -167,8 +134,9 @@ export default function UploadHistoryPage() {
     switch (status) {
       case "AI_VERIFYING":
       case "REVIEWING":
+      case "PENDING_REVIEW":
+      case "PENDING_APPROVE":
         return "Pending";
-      case "AI_VERIFIED":
       case "ACTIVE":
         return "Approved";
       case "AI_REJECTED":
@@ -315,20 +283,9 @@ export default function UploadHistoryPage() {
                     {formatFileSize(doc.fileSize)}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className={`${styles["status-badge"]} ${getStatusBadgeClass(doc.status)}`}>
-                        {getStatusLabel(doc.status)}
-                      </span>
-                      {doc.status === "REJECTED" && doc.canRequestReview && (
-                        <button
-                          onClick={() => handleReReviewClick(doc)}
-                          disabled={reReviewingId === doc.id || isReReviewModalOpen}
-                          className={styles["btn-request-review"]}
-                        >
-                          Re-review
-                        </button>
-                      )}
-                    </div>
+                    <span className={`${styles["status-badge"]} ${getStatusBadgeClass(doc.status)}`}>
+                      {getStatusLabel(doc.status)}
+                    </span>
                   </TableCell>
                 </TableRow>
               ))}
@@ -348,15 +305,6 @@ export default function UploadHistoryPage() {
         </div>
       )}
 
-      {selectedDocument && (
-        <ReReviewModal
-          key={selectedDocument.id}
-          isOpen={isReReviewModalOpen}
-          onClose={handleReReviewModalClose}
-          onSubmit={handleReReviewSubmit}
-          documentName={selectedDocument.documentName}
-        />
-      )}
     </main>
   );
 }

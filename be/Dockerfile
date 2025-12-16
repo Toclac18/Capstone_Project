@@ -23,6 +23,15 @@ FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
+# Install LibreOffice for DOCX to PDF conversion
+RUN apk add --no-cache \
+    libreoffice \
+    libreoffice-writer \
+    fontconfig \
+    ttf-dejavu \
+    ttf-liberation \
+    && rm -rf /var/cache/apk/*
+
 # Create non-root user
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring

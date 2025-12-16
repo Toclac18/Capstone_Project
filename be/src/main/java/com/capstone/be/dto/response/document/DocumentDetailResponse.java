@@ -175,7 +175,7 @@ public class DocumentDetailResponse {
   public static class ReviewRequestSummary {
     private Integer pendingCount;
     private Integer acceptedCount;
-    private Integer completedCount;
+    private Integer submittedReviewCount;  // Number of ReviewResults submitted
     private Integer rejectedCount;
     private Integer expiredCount;
     private Boolean hasActiveReview;

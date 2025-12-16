@@ -2,28 +2,32 @@ package com.capstone.be.domain.entity;
 
 import com.capstone.be.domain.entity.common.BaseEntity;
 import com.capstone.be.domain.enums.ReviewDecision;
+import com.capstone.be.domain.enums.ReviewResultStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.time.Instant;
+
 /**
- * Entity representing a review submission by a reviewer for a document
+ * Entity representing a review result submitted by a reviewer for a document
  * This is created when a reviewer submits their review (report + decision)
+ * One ReviewRequest can have multiple ReviewResults (if BA rejects and reviewer re-submits)
  */
 @Entity
-@Table(name = "document_review")
+@Table(name = "review_result")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class DocumentReview extends BaseEntity {
+public class ReviewResult extends BaseEntity {
 
   /**
-   * The review request this review is for
+   * The review request this result is for
    */
-  @OneToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "review_request_id", nullable = false, unique = true)
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "review_request_id", nullable = false)
   private ReviewRequest reviewRequest;
 
   /**
@@ -60,8 +64,34 @@ public class DocumentReview extends BaseEntity {
   private ReviewDecision decision;
 
   /**
+   * Status of this review result (PENDING, APPROVED, REJECTED by BA)
+   */
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  @Builder.Default
+  private ReviewResultStatus status = ReviewResultStatus.PENDING;
+
+  /**
    * Timestamp when the review was submitted
    */
   @Column(nullable = false)
-  private java.time.Instant submittedAt;
+  private Instant submittedAt;
+
+  /**
+   * BA who approved/rejected this review result
+   */
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "approved_by_id")
+  private User approvedBy;
+
+  /**
+   * Timestamp when BA approved/rejected
+   */
+  private Instant approvedAt;
+
+  /**
+   * Reason if BA rejects the review result (requires reviewer to re-review)
+   */
+  @Column(columnDefinition = "TEXT")
+  private String rejectionReason;
 }

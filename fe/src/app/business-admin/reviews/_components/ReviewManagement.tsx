@@ -48,10 +48,10 @@ export function ReviewManagement() {
 
     switch (tab) {
       case "needs-assignment":
-        // Documents that are AI_VERIFIED (chưa có reviewer accept)
+        // Documents that are PENDING_REVIEW (chưa có reviewer accept)
         return {
           ...baseFilters,
-          status: "AI_VERIFIED",
+          status: "PENDING_REVIEW",
         };
       case "pending":
         // Documents with review request status = PENDING
@@ -234,9 +234,9 @@ export function ReviewManagement() {
     
     // Filter by tab based on review request status
     if (activeTab === "needs-assignment") {
-      // Documents with status AI_VERIFIED and no active review request
+      // Documents with status PENDING_REVIEW and no active review request
       filtered = filtered.filter((doc) => {
-        if (doc.status !== "AI_VERIFIED") return false;
+        if (doc.status !== "PENDING_REVIEW") return false;
         const req = getReviewRequestForDocument(doc.id);
         // No review request or only REJECTED/EXPIRED/COMPLETED
         return !req || (req.status !== "PENDING" && req.status !== "ACCEPTED");
@@ -296,7 +296,7 @@ export function ReviewManagement() {
     // "all" tab shows all documents
     
     // Priority sorting:
-    // 1. Needs assignment (AI_VERIFIED + premium + no review request)
+    // 1. Needs assignment (PENDING_REVIEW + premium + no review request)
     // 2. PENDING review requests (by response deadline)
     // 3. ACCEPTED review requests (by review deadline)
     // 4. COMPLETED
@@ -425,7 +425,7 @@ export function ReviewManagement() {
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case "AI_VERIFIED":
+      case "PENDING_REVIEW":
         return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
       case "REVIEWING":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
@@ -747,7 +747,7 @@ export function ReviewManagement() {
                             {reviewRequest.status === "EXPIRED" && <AlertCircle className="w-3 h-3" />}
                             <span>{reviewRequest.status}</span>
                           </span>
-                        ) : doc.status === "AI_VERIFIED" ? (
+                        ) : doc.status === "PENDING_REVIEW" ? (
                           <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
                             <AlertCircle className="w-4 h-4" />
                             <span>No Review Request</span>
@@ -813,7 +813,7 @@ export function ReviewManagement() {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          {doc.status === "AI_VERIFIED" && !reviewRequest && (
+                          {doc.status === "PENDING_REVIEW" && !reviewRequest && (
                             <button
                               onClick={() => handleAssignClick(doc)}
                               className={styles["action-icon-btn"]}

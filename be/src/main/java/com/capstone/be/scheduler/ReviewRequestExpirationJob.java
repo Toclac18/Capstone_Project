@@ -81,6 +81,7 @@ public class ReviewRequestExpirationJob {
    * Expire ACCEPTED review requests that passed review deadline
    * Runs every day at 00:00:00 (midnight)
    * Note: This marks ACCEPTED requests as EXPIRED if review deadline passed without submission
+   * Also resets Document status to PENDING_REVIEW so BA can assign another reviewer
    */
   @Scheduled(cron = "0 0 0 * * *")
   @Transactional
@@ -110,6 +111,14 @@ public class ReviewRequestExpirationJob {
 
           request.setStatus(ReviewRequestStatus.EXPIRED);
           reviewRequestRepository.save(request);
+
+          // Reset Document status to PENDING_REVIEW so BA can assign another reviewer
+          var document = request.getDocument();
+          if (document.getStatus() == com.capstone.be.domain.enums.DocStatus.REVIEWING) {
+            document.setStatus(com.capstone.be.domain.enums.DocStatus.PENDING_REVIEW);
+            log.info("Document {} status reset to PENDING_REVIEW due to expired review request", document.getId());
+          }
+
           expiredCount++;
 
         } catch (Exception e) {

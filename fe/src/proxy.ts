@@ -40,6 +40,16 @@ export default function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  const token = req.cookies.get(COOKIE_NAME)?.value;
+
+  // Redirect authenticated users away from auth pages
+  if (isPublicPrefix(pathname) && token) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/homepage";
+    url.search = "";
+    return NextResponse.redirect(url, 307);
+  }
+
   if (
     isPublicPage(pathname) ||
     isPublicPrefix(pathname) ||
@@ -49,7 +59,6 @@ export default function middleware(req: NextRequest) {
   }
 
   if (!pathname.startsWith("/api")) {
-    const token = req.cookies.get(COOKIE_NAME)?.value;
     if (!token) {
       const url = req.nextUrl.clone();
       url.pathname = "/auth/sign-in";

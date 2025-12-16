@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { mockDB, type ContactAdminPayload } from "@/mock/db.mock";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
-import { badRequest, proxyJsonResponse, jsonResponse } from "@/server/response";
+import { badRequest, jsonResponse } from "@/server/response";
 
 async function handlePOST(req: Request) {
   let body: ContactAdminPayload;
@@ -57,14 +57,45 @@ async function handlePOST(req: Request) {
   if (cookieHeader) fh.set("Cookie", cookieHeader);
   if (ip) fh.set("X-Forwarded-For", ip);
 
-  const upstream = await fetch(`${BE_BASE}/api/contact-admin`, {
+  const upstream = await fetch(`${BE_BASE}/api/contact-tickets`, {
     method: "POST",
     headers: fh,
     body: JSON.stringify(body),
     cache: "no-store",
   });
 
-  return proxyJsonResponse(upstream, { mode: "real" });
+  if (!upstream.ok) {
+    const text = await upstream.text();
+    let errorMsg = "Failed to submit ticket";
+    try {
+      const json = JSON.parse(text);
+      errorMsg = json?.message || json?.error || errorMsg;
+    } catch {
+      errorMsg = text || errorMsg;
+    }
+    return jsonResponse({ error: errorMsg }, { status: upstream.status });
+  }
+
+  // Parse backend response
+  const text = await upstream.text();
+  try {
+    const json = JSON.parse(text);
+    // Backend may wrap in { data: ... } or return directly
+    const data = json?.data || json;
+    return jsonResponse({
+      ticketId: data.ticketId,
+      ticketCode: data.ticketCode,
+      status: data.status,
+      message: data.message || "Your ticket has been submitted successfully!",
+    }, { status: 201 });
+  } catch {
+    return jsonResponse({
+      ticketId: null,
+      ticketCode: null,
+      status: "NEW",
+      message: "Ticket submitted successfully",
+    }, { status: 201 });
+  }
 }
 
 export const POST = (...args: Parameters<typeof handlePOST>) =>

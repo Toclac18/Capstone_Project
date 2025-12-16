@@ -110,26 +110,6 @@ export function DocumentManagement() {
     window.location.href = `/business-admin/document/${docId}`;
   };
 
-  const getStatusBadgeClass = (status?: string) => {
-    switch (status) {
-      case "ACTIVE":
-        return styles["status-active"];
-      // Highlight "in progress" statuses separately if you want later
-      case "REVIEWING":
-      case "AI_VERIFYING":
-        return styles["status-inactive"];
-      case "REJECTED":
-      case "AI_REJECTED":
-      case "INACTIVE":
-        return styles["status-inactive"];
-      case "DELETED":
-        // Align with user / organization where DELETED is gray
-        return styles["status-deleted"] ?? styles["status-inactive"];
-      default:
-        return styles["status-inactive"];
-    }
-  };
-
   return (
     <div className={styles["container"]}>
       {/* Header */}

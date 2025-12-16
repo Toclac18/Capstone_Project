@@ -31,7 +31,7 @@ export function Header() {
     if (loading) return false;
 
     // Only show for READER role
-    return role === "READER" || role === "REVIEWER";
+    return role === "READER";
   }, [role, loading, pathname]);
 
   return (

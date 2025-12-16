@@ -77,6 +77,7 @@ public class DocumentServiceImpl implements DocumentService {
   private final DocumentRedemptionRepository documentRedemptionRepository;
   private final DocumentReadHistoryRepository documentReadHistoryRepository;
   private final ReviewRequestRepository reviewRequestRepository;
+  private final com.capstone.be.repository.ReviewResultRepository reviewResultRepository;
   private final com.capstone.be.repository.CommentRepository commentRepository;
   private final com.capstone.be.repository.SavedListDocumentRepository savedListDocumentRepository;
   private final com.capstone.be.repository.DocumentReportRepository documentReportRepository;
@@ -87,8 +88,9 @@ public class DocumentServiceImpl implements DocumentService {
   private final OrgEnrollmentRepository orgEnrollmentRepository;
   private final AiDocumentModerationAndSummarizationService aiModerationService;
   private final EmailService emailService;
+  private final com.capstone.be.service.DocumentConversionService documentConversionService;
 
-  @Value("${app.document.defaultPremiumPrice:120}")
+  @Value("${app.document.defaultPremiumPrice:100}")
   private Integer premiumDocPrice;
 
   @Value("${app.s3.document.presignedExpInMinutes:60}")
@@ -105,6 +107,34 @@ public class DocumentServiceImpl implements DocumentService {
     // Validate file
     validateFile(file);
 
+    // Convert DOCX to PDF if needed
+    MultipartFile fileToUpload = file;
+    if (isDocxFile(file)) {
+      log.info("Converting DOCX to PDF for document: {}", request.getTitle());
+      try {
+        java.io.InputStream pdfStream = documentConversionService.convertDocxToPdf(file);
+        byte[] pdfBytes = pdfStream.readAllBytes();
+        String originalFilename = file.getOriginalFilename();
+        String pdfFilename = originalFilename != null 
+            ? originalFilename.replaceAll("(?i)\\.docx$", ".pdf")
+            : "document.pdf";
+        fileToUpload = new com.capstone.be.util.ByteArrayMultipartFile(
+            "file",
+            pdfFilename,
+            "application/pdf",
+            pdfBytes
+        );
+        log.info("Successfully converted DOCX to PDF: {} -> {}", originalFilename, pdfFilename);
+      } catch (Exception e) {
+        log.error("Failed to convert DOCX to PDF: {}", e.getMessage(), e);
+        throw new BusinessException(
+            "Failed to convert DOCX to PDF: " + e.getMessage(),
+            HttpStatus.BAD_REQUEST,
+            "CONVERSION_FAILED"
+        );
+      }
+    }
+
     // Fetch required entities
     User uploader = getUserById(uploaderId);
     DocType docType = getDocTypeById(request.getDocTypeId());
@@ -115,12 +145,12 @@ public class DocumentServiceImpl implements DocumentService {
     Set<Tag> allTags = handleTags(request.getTagCodes(), request.getNewTags());
 
     // Upload file to S3
-    String fileKey = fileStorageService.uploadFile(file, FileStorage.DOCUMENT_FOLDER, null);
+    String fileKey = fileStorageService.uploadFile(fileToUpload, FileStorage.DOCUMENT_FOLDER, null);
     log.info("Uploaded document file to S3: {}", fileKey);
 
     // 2) Generate thumbnail từ trang đầu tiên & upload lên S3
     String thumbnailKey = documentThumbnailService.generateAndUploadThumbnail(
-        file,
+        fileToUpload,
         FileStorage.DOCUMENT_THUMB_FOLDER
     );
     if (thumbnailKey != null) {
@@ -145,7 +175,7 @@ public class DocumentServiceImpl implements DocumentService {
 
     // Trigger async AI processing (will update document status and summaries after completion)
     UUID documentId = document.getId();
-    aiModerationService.processDocumentAsync(documentId, file)
+    aiModerationService.processDocumentAsync(documentId, fileToUpload)
         .thenAccept(aiResponse -> {
           log.info("AI processing completed for document ID: {} with status: {}",
               documentId, aiResponse.getStatus());
@@ -197,7 +227,7 @@ public class DocumentServiceImpl implements DocumentService {
   }
 
   /**
-   * Validate uploaded file
+   * Validate uploaded file - allows PDF and DOCX
    */
   private void validateFile(MultipartFile file) {
     if (file == null || file.isEmpty()) {
@@ -209,13 +239,29 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     String contentType = file.getContentType();
-    if (contentType == null || !contentType.equals("application/pdf")) {
+    String filename = file.getOriginalFilename();
+    boolean isPdf = "application/pdf".equals(contentType) 
+        || (filename != null && filename.toLowerCase().endsWith(".pdf"));
+    boolean isDocx = "application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(contentType)
+        || (filename != null && filename.toLowerCase().endsWith(".docx"));
+    
+    if (!isPdf && !isDocx) {
       throw new BusinessException(
-          "Only PDF files are allowed",
+          "Only PDF and DOCX files are allowed",
           HttpStatus.BAD_REQUEST,
           "INVALID_FILE_TYPE"
       );
     }
+  }
+  
+  /**
+   * Check if file is a DOCX file
+   */
+  private boolean isDocxFile(MultipartFile file) {
+    String contentType = file.getContentType();
+    String filename = file.getOriginalFilename();
+    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(contentType)
+        || (filename != null && filename.toLowerCase().endsWith(".docx"));
   }
 
   /**
@@ -465,6 +511,12 @@ public class DocumentServiceImpl implements DocumentService {
 
       log.info("Created new read history for user {} and document {}", userId, documentId);
     }
+
+    // Increment view count
+    int currentViewCount = document.getViewCount() != null ? document.getViewCount() : 0;
+    document.setViewCount(currentViewCount + 1);
+    documentRepository.save(document);
+    log.info("Incremented view count for document {} to {}", documentId, currentViewCount + 1);
 
     // Generate presigned URL
     String presignedUrl = fileStorageService.generatePresignedUrl(
@@ -728,8 +780,8 @@ public class DocumentServiceImpl implements DocumentService {
       throw ResourceNotFoundException.userById(userId);
     }
 
-    // Fetch read history with pagination
-    Page<DocumentReadHistory> historyPage = documentReadHistoryRepository.findByUser_Id(userId,
+    // Fetch read history with pagination, ordered by most recent first
+    Page<DocumentReadHistory> historyPage = documentReadHistoryRepository.findByUser_IdOrderByCreatedAtDesc(userId,
         pageable);
 
     // Map to response DTO
@@ -923,7 +975,7 @@ public class DocumentServiceImpl implements DocumentService {
         AdminDocumentListResponse.ReviewStatusInfo reviewStatus = AdminDocumentListResponse.ReviewStatusInfo.builder()
             .pendingCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.PENDING))
             .acceptedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.ACCEPTED))
-            .completedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.COMPLETED))
+            .submittedReviewCount((int) reviewResultRepository.countByReviewRequest_Document_IdAndSubmittedAtIsNotNull(documentId))
             .rejectedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.REJECTED))
             .expiredCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.EXPIRED))
             .hasActiveReview(
@@ -983,7 +1035,7 @@ public class DocumentServiceImpl implements DocumentService {
       DocumentDetailResponse.ReviewRequestSummary reviewSummary = DocumentDetailResponse.ReviewRequestSummary.builder()
           .pendingCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.PENDING))
           .acceptedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.ACCEPTED))
-          .completedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.COMPLETED))
+          .submittedReviewCount((int) reviewResultRepository.countByReviewRequest_Document_IdAndSubmittedAtIsNotNull(documentId))
           .rejectedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.REJECTED))
           .expiredCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.EXPIRED))
           .hasActiveReview(
@@ -1376,9 +1428,7 @@ public class DocumentServiceImpl implements DocumentService {
     long acceptedReviewRequests = allReviewRequests.stream()
         .filter(rr -> rr.getStatus() == ReviewRequestStatus.ACCEPTED)
         .count();
-    long completedReviews = allReviewRequests.stream()
-        .filter(rr -> rr.getStatus() == ReviewRequestStatus.COMPLETED)
-        .count();
+    long submittedReviews = reviewResultRepository.countBySubmittedAtIsNotNull();
     long totalReviewRequests = allReviewRequests.size();
     
     // Recent activity (last 30 days)
@@ -1408,7 +1458,7 @@ public class DocumentServiceImpl implements DocumentService {
         .totalReviewRequests(totalReviewRequests)
         .pendingReviewRequests(pendingReviewRequests)
         .acceptedReviewRequests(acceptedReviewRequests)
-        .completedReviews(completedReviews)
+        .submittedReviews(submittedReviews)
         .documentsUploadedLast30Days(documentsUploadedLast30Days)
         .documentsActivatedLast30Days(documentsActivatedLast30Days)
         .build();

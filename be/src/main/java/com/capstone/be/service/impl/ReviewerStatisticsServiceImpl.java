@@ -1,11 +1,11 @@
 package com.capstone.be.service.impl;
 
-import com.capstone.be.domain.entity.DocumentReview;
+import com.capstone.be.domain.entity.ReviewResult;
 import com.capstone.be.domain.entity.ReviewRequest;
 import com.capstone.be.domain.enums.ReviewDecision;
 import com.capstone.be.domain.enums.ReviewRequestStatus;
 import com.capstone.be.dto.response.statistics.ReviewerStatisticsResponse;
-import com.capstone.be.repository.DocumentReviewRepository;
+import com.capstone.be.repository.ReviewResultRepository;
 import com.capstone.be.repository.ReviewRequestRepository;
 import com.capstone.be.service.ReviewerStatisticsService;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 public class ReviewerStatisticsServiceImpl implements ReviewerStatisticsService {
 
   private final ReviewRequestRepository reviewRequestRepository;
-  private final DocumentReviewRepository documentReviewRepository;
+  private final ReviewResultRepository reviewResultRepository;
 
   private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
 
@@ -61,11 +61,11 @@ public class ReviewerStatisticsServiceImpl implements ReviewerStatisticsService 
         .collect(Collectors.toList());
 
     // Get all document reviews for this reviewer
-    List<DocumentReview> allReviews = documentReviewRepository.findByReviewer_Id(
+    List<ReviewResult> allReviews = reviewResultRepository.findByReviewer_Id(
         reviewerId, org.springframework.data.domain.Pageable.unpaged()).getContent();
 
     // Filter reviews by date range (based on submitted date)
-    List<DocumentReview> filteredReviews = allReviews.stream()
+    List<ReviewResult> filteredReviews = allReviews.stream()
         .filter(review -> {
           Instant submittedAt = review.getSubmittedAt();
           return submittedAt != null && !submittedAt.isBefore(finalStartDate) && !submittedAt.isAfter(finalEndDate);
@@ -93,9 +93,6 @@ public class ReviewerStatisticsServiceImpl implements ReviewerStatisticsService 
             .count())
         .expiredReviewRequests(filteredRequests.stream()
             .filter(r -> r.getStatus() == ReviewRequestStatus.EXPIRED)
-            .count())
-        .completedReviewRequests(filteredRequests.stream()
-            .filter(r -> r.getStatus() == ReviewRequestStatus.COMPLETED)
             .count())
         .build();
 

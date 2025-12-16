@@ -432,11 +432,7 @@
 
 /* Modal Styles */
 .modal-overlay {
-  @apply fixed inset-0 z-50 flex items-center justify-center p-4;
-}
-
-.modal-backdrop {
-  @apply absolute inset-0 bg-black/50 backdrop-blur-sm;
+  @apply fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60;
 }
 
 .modal-container-md {
@@ -455,10 +451,10 @@
 }
 
 .modal-header {
-  @apply flex items-center justify-between p-4 border-b border-stroke;
+  @apply flex items-center justify-between px-5 py-4 border-b border-stroke bg-white;
 }
 :global(html.dark) .modal-header {
-  @apply border-stroke-dark;
+  @apply border-stroke-dark bg-dark-2;
 }
 
 .modal-header-left {
@@ -547,10 +543,10 @@
 }
 
 .modal-footer {
-  @apply flex items-center justify-end gap-3 p-4 border-t border-stroke bg-gray-2;
+  @apply flex items-center justify-end gap-3 px-5 py-4 border-t border-stroke bg-gray-1;
 }
 :global(html.dark) .modal-footer {
-  @apply border-stroke-dark bg-dark-2;
+  @apply border-stroke-dark bg-dark-3;
 }
 
 .modal-button-cancel {
@@ -761,4 +757,210 @@
 :global(html.dark) .review-action-button-active.review-action-button-reject {
   @apply bg-red-600 border-red-600 text-white hover:bg-red-600;
   @apply ring-red-400;
+}
+
+
+/* Fullscreen Modal Styles */
+.modal-fullscreen {
+  @apply relative z-10 mx-4 flex h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl border border-stroke;
+}
+:global(html.dark) .modal-fullscreen {
+  @apply bg-dark-2 border-stroke-dark;
+}
+
+.modal-body-split {
+  @apply flex flex-1 overflow-hidden;
+}
+
+.modal-close {
+  @apply rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors flex-shrink-0;
+}
+:global(html.dark) .modal-close {
+  @apply text-gray-400 hover:bg-dark-3 hover:text-white;
+}
+
+/* Preview Panel */
+.preview-panel {
+  @apply flex w-1/2 flex-col border-r border-stroke;
+}
+:global(html.dark) .preview-panel {
+  @apply border-stroke-dark;
+}
+
+.preview-tabs {
+  @apply flex border-b border-stroke;
+}
+:global(html.dark) .preview-tabs {
+  @apply border-stroke-dark;
+}
+
+.preview-tab {
+  @apply flex flex-1 items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-gray-500 hover:bg-gray-50;
+}
+:global(html.dark) .preview-tab {
+  @apply text-gray-400 hover:bg-dark-3;
+}
+
+.preview-tab-active {
+  @apply border-b-2 border-primary bg-gray-50 text-primary;
+}
+:global(html.dark) .preview-tab-active {
+  @apply bg-dark-3 text-white;
+}
+
+.preview-content {
+  @apply flex-1 overflow-hidden bg-gray-100;
+}
+:global(html.dark) .preview-content {
+  @apply bg-dark-3;
+}
+
+.preview-actions {
+  @apply flex gap-2 border-t border-stroke p-3;
+}
+:global(html.dark) .preview-actions {
+  @apply border-stroke-dark;
+}
+
+.preview-btn {
+  @apply flex items-center gap-1.5 rounded-lg border border-stroke bg-white px-3 py-2 text-sm text-dark hover:bg-gray-50;
+}
+:global(html.dark) .preview-btn {
+  @apply border-stroke-dark bg-dark-3 text-white hover:bg-dark-4;
+}
+
+/* Info Panel */
+.info-panel {
+  @apply w-1/2 overflow-y-auto p-5;
+}
+
+.info-section {
+  @apply mb-5;
+}
+
+.info-title {
+  @apply mb-3 text-sm font-semibold text-dark;
+}
+:global(html.dark) .info-title {
+  @apply text-white;
+}
+
+.info-card {
+  @apply mb-2 rounded-lg border border-stroke bg-gray-1 p-3;
+}
+:global(html.dark) .info-card {
+  @apply border-stroke-dark bg-dark-3;
+}
+
+.info-row {
+  @apply grid grid-cols-2 gap-2;
+}
+
+.info-label {
+  @apply text-xs text-gray-500 mb-1;
+}
+:global(html.dark) .info-label {
+  @apply text-gray-400;
+}
+
+.info-value {
+  @apply text-sm font-medium text-dark;
+}
+:global(html.dark) .info-value {
+  @apply text-white;
+}
+
+.decision-card {
+  @apply flex items-center gap-2 rounded-lg p-3 text-sm font-medium;
+}
+
+.decision-approve-card {
+  @apply bg-green-50 text-green-700;
+}
+:global(html.dark) .decision-approve-card {
+  @apply bg-green-900/20 text-green-400;
+}
+
+.decision-reject-card {
+  @apply bg-red-50 text-red-700;
+}
+:global(html.dark) .decision-reject-card {
+  @apply bg-red-900/20 text-red-400;
+}
+
+.comment-card {
+  @apply mt-2 rounded-lg border border-stroke bg-gray-1 p-3;
+}
+:global(html.dark) .comment-card {
+  @apply border-stroke-dark bg-dark-3;
+}
+
+.comment-text {
+  @apply mt-1 text-sm text-gray-700;
+}
+:global(html.dark) .comment-text {
+  @apply text-gray-300;
+}
+
+.status-card {
+  @apply space-y-2 rounded-lg border border-stroke bg-gray-1 p-3;
+}
+:global(html.dark) .status-card {
+  @apply border-stroke-dark bg-dark-3;
+}
+
+.status-row {
+  @apply flex items-center justify-between;
+}
+
+.status-label {
+  @apply text-sm text-gray-500;
+}
+:global(html.dark) .status-label {
+  @apply text-gray-400;
+}
+
+.status-value {
+  @apply text-sm font-medium text-dark;
+}
+:global(html.dark) .status-value {
+  @apply text-white;
+}
+
+.rejection-card {
+  @apply mt-2 rounded-lg border border-red-200 bg-red-50 p-3;
+}
+:global(html.dark) .rejection-card {
+  @apply border-red-900/50 bg-red-900/20;
+}
+
+.rejection-title {
+  @apply text-sm font-medium text-red-700;
+}
+:global(html.dark) .rejection-title {
+  @apply text-red-400;
+}
+
+.rejection-text {
+  @apply mt-1 text-sm text-red-600;
+}
+:global(html.dark) .rejection-text {
+  @apply text-red-300;
+}
+
+.pdf-loading-box {
+  @apply flex h-full w-full flex-col items-center justify-center gap-3 text-gray-500;
+}
+:global(html.dark) .pdf-loading-box {
+  @apply text-gray-400;
+}
+
+/* Action Button View */
+.action-button-view {
+  @apply inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium
+         text-primary bg-primary/10 rounded-lg
+         hover:bg-primary/20 transition-colors;
+}
+:global(html.dark) .action-button-view {
+  @apply text-primary bg-primary/20 hover:bg-primary/30;
 }

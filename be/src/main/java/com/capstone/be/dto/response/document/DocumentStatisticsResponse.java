@@ -40,7 +40,7 @@ public class DocumentStatisticsResponse {
   private Long totalReviewRequests;
   private Long pendingReviewRequests;
   private Long acceptedReviewRequests;
-  private Long completedReviews;
+  private Long submittedReviews;  // Number of ReviewResults submitted
   
   // Recent activity (last 30 days)
   private Long documentsUploadedLast30Days;

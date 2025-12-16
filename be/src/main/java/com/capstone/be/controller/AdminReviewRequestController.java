@@ -1,9 +1,11 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.domain.enums.ReviewResultStatus;
 import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.dto.common.PagedResponse;
+import com.capstone.be.dto.request.review.ApproveReviewResultRequest;
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
-import com.capstone.be.dto.response.review.DocumentReviewResponse;
+import com.capstone.be.dto.response.review.ReviewResultResponse;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
 import com.capstone.be.scheduler.ReviewRequestExpirationJob;
 import com.capstone.be.security.model.UserPrincipal;
@@ -120,12 +122,12 @@ public class AdminReviewRequestController {
    */
   @GetMapping("/admin/review-requests/{reviewRequestId}/review")
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
-  public ResponseEntity<ApiResponse<DocumentReviewResponse>> getDocumentReviewByReviewRequestId(
+  public ResponseEntity<ApiResponse<ReviewResultResponse>> getReviewResultByReviewRequestId(
       @PathVariable(name = "reviewRequestId") UUID reviewRequestId) {
 
     log.info("Business Admin requesting document review for review request {}", reviewRequestId);
 
-    DocumentReviewResponse response = reviewRequestService.getDocumentReviewByReviewRequestId(reviewRequestId);
+    ReviewResultResponse response = reviewRequestService.getReviewResultByReviewRequestId(reviewRequestId);
 
     return ResponseEntity.ok(ApiResponse.success(response, "Document review retrieved successfully"));
   }
@@ -153,5 +155,89 @@ public class AdminReviewRequestController {
           .status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body(ApiResponse.error("Failed to run expiration job: " + e.getMessage()));
     }
+  }
+
+  // ==================== REVIEW RESULT APPROVAL ENDPOINTS ====================
+
+  /**
+   * Get all pending review results waiting for BA approval
+   * GET /api/v1/admin/review-results/pending
+   *
+   * @param page Page number (default 0)
+   * @param size Page size (default 10)
+   * @return Paginated list of pending review results
+   */
+  @GetMapping("/admin/review-results/pending")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  public ResponseEntity<PagedResponse<ReviewResultResponse>> getPendingReviewResults(
+      @RequestParam(name = "page", defaultValue = "0") int page,
+      @RequestParam(name = "size", defaultValue = "10") int size) {
+
+    log.info("Business Admin requesting pending review results (page: {}, size: {})", page, size);
+
+    Pageable pageable = PageRequest.of(page, size);
+
+    Page<ReviewResultResponse> result = reviewRequestService.getPendingReviewResults(pageable);
+
+    return ResponseEntity.ok(PagedResponse.of(result, "Pending review results retrieved successfully"));
+  }
+
+  /**
+   * Get all review results with optional status filter
+   * GET /api/v1/admin/review-results
+   *
+   * @param status Optional status filter (PENDING, APPROVED, REJECTED)
+   * @param page   Page number (default 0)
+   * @param size   Page size (default 10)
+   * @return Paginated list of review results
+   */
+  @GetMapping("/admin/review-results")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  public ResponseEntity<PagedResponse<ReviewResultResponse>> getAllReviewResults(
+      @RequestParam(name = "status", required = false) ReviewResultStatus status,
+      @RequestParam(name = "page", defaultValue = "0") int page,
+      @RequestParam(name = "size", defaultValue = "10") int size) {
+
+    log.info("Business Admin requesting all review results with status: {} (page: {}, size: {})", 
+        status, page, size);
+
+    Pageable pageable = PageRequest.of(page, size);
+
+    Page<ReviewResultResponse> result = reviewRequestService.getAllReviewResults(status, pageable);
+
+    return ResponseEntity.ok(PagedResponse.of(result, "Review results retrieved successfully"));
+  }
+
+  /**
+   * Approve or reject a review result
+   * PUT /api/v1/admin/review-results/{reviewId}/approve
+   *
+   * If approved: apply reviewer's decision to document (ACTIVE or REJECTED)
+   * If rejected: document goes back to REVIEWING, reviewer must re-review
+   *
+   * @param userPrincipal Authenticated Business Admin
+   * @param reviewId      Document review ID
+   * @param request       Approval request (approved + optional rejectionReason)
+   * @return Updated document review response
+   */
+  @PutMapping("/admin/review-results/{reviewId}/approve")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  public ResponseEntity<ApiResponse<ReviewResultResponse>> approveReviewResult(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "reviewId") UUID reviewId,
+      @Valid @RequestBody ApproveReviewResultRequest request) {
+
+    UUID businessAdminId = userPrincipal.getId();
+    log.info("Business Admin {} approving/rejecting review result {}: approved={}",
+        businessAdminId, reviewId, request.getApproved());
+
+    ReviewResultResponse response = reviewRequestService.approveReviewResult(
+        businessAdminId, reviewId, request);
+
+    String message = request.getApproved()
+        ? "Review result approved successfully"
+        : "Review result rejected. Reviewer must re-review the document.";
+
+    return ResponseEntity.ok(ApiResponse.success(response, message));
   }
 }

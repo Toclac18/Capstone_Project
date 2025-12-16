@@ -76,8 +76,11 @@ public class DocumentUploadHistorySpecification {
               cb.equal(specializationJoin.get("domain").get("id"), filter.getDomainId()));
         }
 
-        // Filter by document status
-        if (filter.getStatus() != null) {
+        // Filter by document status (single or multiple)
+        var statusList = filter.getStatusList();
+        if (statusList != null && !statusList.isEmpty()) {
+          predicates.add(root.get("status").in(statusList));
+        } else if (filter.getStatus() != null) {
           predicates.add(cb.equal(root.get("status"), filter.getStatus()));
         }
       }

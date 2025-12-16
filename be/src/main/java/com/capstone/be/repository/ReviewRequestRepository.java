@@ -75,4 +75,22 @@ public interface ReviewRequestRepository extends JpaRepository<ReviewRequest, UU
         AND rr.reviewDeadline < :now
       """)
   List<ReviewRequest> findExpiredAcceptedRequests(@Param("now") Instant now);
+
+  // Lấy ACCEPTED review requests của reviewer mà chưa có ReviewResult submitted
+  // (hoặc có ReviewResult nhưng status = REJECTED bởi BA, cần review lại)
+  @Query("""
+      SELECT rr FROM ReviewRequest rr
+      WHERE rr.reviewer.id = :reviewerId
+        AND rr.status = com.capstone.be.domain.enums.ReviewRequestStatus.ACCEPTED
+        AND NOT EXISTS (
+          SELECT dr FROM ReviewResult dr 
+          WHERE dr.reviewRequest.id = rr.id 
+            AND dr.submittedAt IS NOT NULL
+            AND dr.status != com.capstone.be.domain.enums.ReviewResultStatus.REJECTED
+        )
+      """)
+  Page<ReviewRequest> findAcceptedRequestsWithoutSubmittedReview(
+      @Param("reviewerId") UUID reviewerId,
+      Pageable pageable
+  );
 }

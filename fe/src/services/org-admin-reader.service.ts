@@ -11,7 +11,7 @@ export type ChangeEnrollmentStatusPayload = {
 export async function changeEnrollmentStatus(
   payload: ChangeEnrollmentStatusPayload,
 ): Promise<OrgEnrollment> {
-  const res = await apiClient.post<OrgEnrollment>(
+  const res = await apiClient.put<OrgEnrollment>(
     "org-admin/reader-change-access",
     payload,
   );

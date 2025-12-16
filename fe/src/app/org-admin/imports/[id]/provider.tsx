@@ -6,6 +6,8 @@ import {
   PagedResult,
   OrgEnrollment,
 } from "@/services/org-admin-imports.service";
+import { toast, useToast } from "@/components/ui/toast";
+import { generateCsv } from "@/utils/csv-export";
 import React, {
   createContext,
   useContext,
@@ -103,6 +105,7 @@ export default function ImportDetailProvider({
 }) {
   const [rows, setRows] = useState<DetailData | undefined>();
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (!id) return;
@@ -127,8 +130,49 @@ export default function ImportDetailProvider({
   const summary = useMemo(() => buildSummary(rows), [rows]);
 
   const downloadCsv = () => {
-    const qs = new URLSearchParams({ id, download: "csv" }).toString();
-    window.location.href = `/api/org-admin/imports?${qs}`;
+    try {
+      // Check if data is available
+      if (!rows?.items || rows.items.length === 0) {
+        showToast(toast.warning("No Data", "No results available to download"));
+        return;
+      }
+
+      // Define CSV headers
+      const headers = [
+        "Email",
+        "Full Name",
+        "Organization",
+        "Status",
+        "Invited At",
+        "Responded At",
+      ];
+
+      // Convert rows to CSV format
+      const csvData = rows.items.map((item) => [
+        item.memberEmail,
+        item.memberFullName || "",
+        item.organizationName,
+        item.status,
+        item.invitedAt ? new Date(item.invitedAt).toLocaleString() : "",
+        item.respondedAt ? new Date(item.respondedAt).toLocaleString() : "",
+      ]);
+
+      // Generate and download CSV
+      generateCsv(headers, csvData, `import_results_${id}`);
+
+      // Show success toast
+      showToast(
+        toast.success(
+          "Download Complete",
+          `Downloaded ${rows.items.length} record(s)`,
+        ),
+      );
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      showToast(toast.error("Download Failed", errorMsg));
+      console.error("CSV download error:", error);
+    }
   };
 
   return (

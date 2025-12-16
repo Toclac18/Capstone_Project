@@ -10,7 +10,7 @@ type ChangeEnrollmentStatusBody = {
   status?: string;
 };
 
-async function handlePOST(req: Request) {
+async function handlePUT(req: Request) {
   let body: ChangeEnrollmentStatusBody;
 
   // 1. Parse JSON
@@ -40,13 +40,14 @@ async function handlePOST(req: Request) {
   const authHeader = await getAuthHeader("org-admin-imports-upload");
   const fh = new Headers();
   if (authHeader) fh.set("Authorization", authHeader);
+  fh.set("Content-Type", "application/json");
 
   const ip = fh.get("x-forwarded-for")?.split(",")[0]?.trim();
 
   if (ip) fh.set("X-Forwarded-For", ip);
 
   const upstream = await fetch(
-    `${BE_BASE}/api/org-enrollments/${body.enrollmentId}/status`,
+    `${BE_BASE}/api/organization/members/${body.enrollmentId}/status`,
     {
       method: "PUT",
       headers: fh,
@@ -58,7 +59,7 @@ async function handlePOST(req: Request) {
   return proxyJsonResponse(upstream, { mode: "real" });
 }
 
-export const POST = (...args: Parameters<typeof handlePOST>) =>
-  withErrorBoundary(() => handlePOST(...args), {
-    context: "api/organization/change-reader-access/route.ts/POST",
+export const PUT = (...args: Parameters<typeof handlePUT>) =>
+  withErrorBoundary(() => handlePUT(...args), {
+    context: "api/org-admin/reader-change-access/route.ts/PUT",
   });

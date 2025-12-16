@@ -7,7 +7,7 @@ import com.capstone.be.dto.response.statistics.HomepageTrendingDocumentsResponse
 import com.capstone.be.dto.response.statistics.HomepageTrendingReviewersResponse;
 import com.capstone.be.domain.entity.Document;
 import com.capstone.be.repository.DocumentRepository;
-import com.capstone.be.repository.DocumentReviewRepository;
+import com.capstone.be.repository.ReviewResultRepository;
 import com.capstone.be.repository.ReviewerProfileRepository;
 import com.capstone.be.service.TrendingDataCacheService;
 import java.time.Instant;
@@ -35,7 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TrendingDataCacheServiceImpl implements TrendingDataCacheService {
 
   private final DocumentRepository documentRepository;
-  private final DocumentReviewRepository documentReviewRepository;
+  private final ReviewResultRepository reviewResultRepository;
   private final ReviewerProfileRepository reviewerProfileRepository;
 
   private static final int TOP_LIMIT = 5;
@@ -156,7 +156,7 @@ public class TrendingDataCacheServiceImpl implements TrendingDataCacheService {
     Pageable pageable = PageRequest.of(0, TOP_LIMIT);
 
     // First, get top reviewers from last 7 days
-    Page<Object[]> topReviewersLast7Days = documentReviewRepository.findTopReviewersLast7Days(
+    Page<Object[]> topReviewersLast7Days = reviewResultRepository.findTopReviewersLast7Days(
         sevenDaysAgo, pageable);
 
     List<HomepageTrendingReviewersResponse.TrendingReviewer> reviewers = topReviewersLast7Days
@@ -176,7 +176,7 @@ public class TrendingDataCacheServiceImpl implements TrendingDataCacheService {
       int needed = TOP_LIMIT - reviewers.size();
       Pageable allTimePageable = PageRequest.of(0, TOP_LIMIT * 2); // Get more to filter out duplicates
 
-      Page<Object[]> allTimeReviewersData = documentReviewRepository.findTopReviewersAllTime(
+      Page<Object[]> allTimeReviewersData = reviewResultRepository.findTopReviewersAllTime(
           allTimePageable);
 
       // Filter out reviewers we already have and add until we reach TOP_LIMIT

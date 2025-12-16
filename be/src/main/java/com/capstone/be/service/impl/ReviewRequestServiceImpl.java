@@ -1,7 +1,8 @@
 package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.Document;
-import com.capstone.be.domain.entity.DocumentReview;
+import com.capstone.be.domain.entity.ReaderProfile;
+import com.capstone.be.domain.entity.ReviewResult;
 import com.capstone.be.domain.entity.DocumentTagLink;
 import com.capstone.be.domain.entity.ReviewRequest;
 import com.capstone.be.domain.entity.Tag;
@@ -10,32 +11,40 @@ import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.ReviewDecision;
 import com.capstone.be.domain.enums.ReviewRequestStatus;
 import com.capstone.be.domain.enums.UserRole;
+import com.capstone.be.dto.request.review.ApproveReviewResultRequest;
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
 import com.capstone.be.dto.request.review.RespondReviewRequestRequest;
 import com.capstone.be.dto.request.review.ReviewHistoryFilterRequest;
 import com.capstone.be.dto.request.review.SubmitReviewRequest;
-import com.capstone.be.dto.response.review.DocumentReviewResponse;
+import com.capstone.be.domain.enums.ReviewResultStatus;
+import com.capstone.be.dto.response.review.ReviewResultResponse;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
 import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
-import com.capstone.be.mapper.DocumentReviewMapper;
+import com.capstone.be.mapper.ReviewResultMapper;
 import com.capstone.be.mapper.ReviewRequestMapper;
 import com.capstone.be.repository.DocumentRepository;
-import com.capstone.be.repository.DocumentReviewRepository;
+import com.capstone.be.repository.ReaderProfileRepository;
+import com.capstone.be.repository.ReviewResultRepository;
 import com.capstone.be.repository.DocumentTagLinkRepository;
 import com.capstone.be.repository.ReviewRequestRepository;
 import com.capstone.be.repository.UserRepository;
-import com.capstone.be.repository.spec.DocumentReviewSpecification;
+import com.capstone.be.repository.spec.ReviewResultSpecification;
+import com.capstone.be.service.DocumentConversionService;
+import com.capstone.be.service.EmailService;
 import com.capstone.be.service.FileStorageService;
 import com.capstone.be.service.ReviewRequestService;
+import com.capstone.be.util.ByteArrayMultipartFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -52,14 +61,20 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
   private final ReviewRequestRepository reviewRequestRepository;
   private final DocumentRepository documentRepository;
   private final UserRepository userRepository;
-  private final DocumentReviewRepository documentReviewRepository;
+  private final ReviewResultRepository reviewResultRepository;
+  private final ReaderProfileRepository readerProfileRepository;
   private final ReviewRequestMapper reviewRequestMapper;
-  private final DocumentReviewMapper documentReviewMapper;
+  private final ReviewResultMapper reviewResultMapper;
   private final FileStorageService fileStorageService;
   private final DocumentTagLinkRepository documentTagLinkRepository;
+  private final DocumentConversionService documentConversionService;
+  private final EmailService emailService;
+
+  @Value("${app.document.points.ba-approval:100}")
+  private int baApprovalPoints;
 
   private static final int RESPONSE_DEADLINE_DAYS = 1;
-  private static final int REVIEW_DEADLINE_DAYS = 3;
+  private static final int REVIEW_DEADLINE_DAYS = 2;
   private static final int PRESIGNED_URL_EXPIRATION_MINUTES = 60; // 1 hour
 
   @Override
@@ -85,9 +100,9 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
       throw new InvalidRequestException("Only premium documents can be assigned for review");
     }
 
-    // Check if document status is AI_VERIFIED
-    if (document.getStatus() != DocStatus.AI_VERIFIED) {
-      throw new InvalidRequestException("Only documents with AI_VERIFIED status can be assigned for review. Current status: " + document.getStatus());
+    // Check if document status is PENDING_REVIEW
+    if (document.getStatus() != DocStatus.PENDING_REVIEW) {
+      throw new InvalidRequestException("Only documents with PENDING_REVIEW status can be assigned for review. Current status: " + document.getStatus());
     }
 
     // Validate Reviewer
@@ -184,7 +199,7 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     reviewRequest = reviewRequestRepository.save(reviewRequest);
 
-    // Document status remains AI_VERIFIED until reviewer accepts
+    // Document status remains PENDING_REVIEW until reviewer accepts
     // Will be updated to REVIEWING when reviewer accepts the request
     log.info("Successfully assigned reviewer {} to document {}. Review request created with PENDING status", request.getReviewerId(), documentId);
 
@@ -295,7 +310,7 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     if (request.getAccept()) {
       reviewRequest.setStatus(ReviewRequestStatus.ACCEPTED);
-      // Calculate review deadline (3 days from acceptance)
+      // Calculate review deadline (2 days from acceptance)
       Instant reviewDeadline = calculateDeadline(respondedAt, REVIEW_DEADLINE_DAYS);
       reviewRequest.setReviewDeadline(reviewDeadline);
       
@@ -307,7 +322,7 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
     } else {
       reviewRequest.setStatus(ReviewRequestStatus.REJECTED);
       reviewRequest.setRejectionReason(request.getRejectionReason());
-      // Document status remains AI_VERIFIED if reviewer rejects
+      // Document status remains PENDING_REVIEW if reviewer rejects
       // Business admin can assign another reviewer
       log.info("Reviewer {} rejected review request {}", reviewerId, reviewRequestId);
     }
@@ -335,10 +350,10 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
       throw new InvalidRequestException("User is not a reviewer");
     }
 
-    // Get all ACCEPTED review requests
-    Page<ReviewRequest> requests = reviewRequestRepository.findByReviewer_IdAndStatus(
+    // Get ACCEPTED review requests that don't have a submitted review yet
+    // OR have a review that was REJECTED by BA (needs re-review)
+    Page<ReviewRequest> requests = reviewRequestRepository.findAcceptedRequestsWithoutSubmittedReview(
         reviewerId,
-        ReviewRequestStatus.ACCEPTED,
         pageable
     );
 
@@ -348,7 +363,24 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
           .stream()
           .map(DocumentTagLink::getTag)
           .collect(Collectors.toList());
-      return reviewRequestMapper.toResponse(request, tags);
+      ReviewRequestResponse response = reviewRequestMapper.toResponse(request, tags);
+      
+      // Generate presigned URL for document file
+      Document document = request.getDocument();
+      if (document.getFileKey() != null) {
+        try {
+          String documentFileUrl = fileStorageService.generatePresignedUrl(
+              com.capstone.be.config.constant.FileStorage.DOCUMENT_FOLDER,
+              document.getFileKey(),
+              PRESIGNED_URL_EXPIRATION_MINUTES
+          );
+          response.getDocument().setFileUrl(documentFileUrl);
+        } catch (Exception e) {
+          log.error("Failed to generate presigned URL for document file: {}", e.getMessage());
+        }
+      }
+      
+      return response;
     });
   }
 
@@ -393,7 +425,7 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
   @Override
   @Transactional
-  public DocumentReviewResponse submitReview(UUID reviewerId, UUID reviewRequestId, SubmitReviewRequest request, MultipartFile reportFile) {
+  public ReviewResultResponse submitReview(UUID reviewerId, UUID reviewRequestId, SubmitReviewRequest request, MultipartFile reportFile) {
     log.info("Reviewer {} submitting review for review request {}: decision={}, file={}",
         reviewerId, reviewRequestId, request.getDecision(), reportFile != null ? reportFile.getOriginalFilename() : "null");
 
@@ -419,20 +451,22 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
       throw new InvalidRequestException("Can only submit review for accepted review requests. Current status: " + reviewRequest.getStatus());
     }
 
-    // Check if review has already been submitted
-    if (documentReviewRepository.existsByReviewRequest_Id(reviewRequestId)) {
-      throw new InvalidRequestException("Review has already been submitted for this review request");
-    }
-
-    // Validate report file
+    // Validate report file first
     if (reportFile == null || reportFile.isEmpty()) {
       throw new InvalidRequestException("Review report file is required");
     }
 
-    // Validate file type (accept .doc, .docx)
+    // Validate file type (accept PDF or DOCX)
     String originalFilename = reportFile.getOriginalFilename();
-    if (originalFilename == null || (!originalFilename.endsWith(".doc") && !originalFilename.endsWith(".docx"))) {
-      throw new InvalidRequestException("Review report file must be a Word document (.doc or .docx)");
+    if (originalFilename == null) {
+      throw new InvalidRequestException("File name is required");
+    }
+    
+    boolean isPdf = documentConversionService.isPdfFile(originalFilename);
+    boolean isDocx = documentConversionService.isDocxFile(originalFilename);
+    
+    if (!isPdf && !isDocx) {
+      throw new InvalidRequestException("Review report file must be a PDF or DOCX file");
     }
 
     // Check if review deadline has passed
@@ -445,17 +479,59 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
     // Get document
     Document document = reviewRequest.getDocument();
 
-    // Upload review report file to S3
-    String customFilename = String.format("review_%s_%s", reviewRequestId, originalFilename);
-    String reportFilePath = fileStorageService.uploadFile(
-        reportFile,
+    // Convert DOCX to PDF if needed, then upload to S3
+    String reportFilePath;
+    MultipartFile fileToUpload = reportFile;
+    String pdfFilename;
+    
+    if (isDocx) {
+      log.info("Converting DOCX to PDF: {}", originalFilename);
+      try (InputStream pdfInputStream = documentConversionService.convertDocxToPdf(reportFile)) {
+        // Create a new filename with .pdf extension
+        String baseFilename = originalFilename.substring(0, originalFilename.lastIndexOf('.'));
+        pdfFilename = String.format("review_%s_%s.pdf", reviewRequestId, baseFilename);
+        
+        // Create a ByteArrayMultipartFile from the converted PDF
+        byte[] pdfBytes = pdfInputStream.readAllBytes();
+        fileToUpload = new ByteArrayMultipartFile(
+            "reportFile",
+            pdfFilename,
+            "application/pdf",
+            pdfBytes
+        );
+        log.info("DOCX converted to PDF successfully: {} ({} bytes)", pdfFilename, pdfBytes.length);
+      } catch (Exception e) {
+        log.error("Failed to convert DOCX to PDF: {}", e.getMessage(), e);
+        throw new InvalidRequestException("Failed to convert DOCX to PDF: " + e.getMessage());
+      }
+    } else {
+      // Already PDF, use original filename
+      pdfFilename = String.format("review_%s_%s", reviewRequestId, originalFilename);
+    }
+    
+    // Upload PDF file to S3
+    reportFilePath = fileStorageService.uploadFile(
+        fileToUpload,
         com.capstone.be.config.constant.FileStorage.REVIEW_REPORT_FOLDER,
-        customFilename
+        pdfFilename
     );
-    log.info("Uploaded review report file to S3: {}", reportFilePath);
+    log.info("Uploaded review report PDF to S3: {}", reportFilePath);
 
-    // Create DocumentReview
-    DocumentReview documentReview = DocumentReview.builder()
+    // Check if there's already a non-rejected review (PENDING or APPROVED)
+    // If latest review is REJECTED by BA, allow re-submit (create new record)
+    Optional<ReviewResult> latestReviewOpt = reviewResultRepository.findFirstByReviewRequest_IdOrderBySubmittedAtDesc(reviewRequestId);
+    
+    if (latestReviewOpt.isPresent()) {
+      ReviewResult latestReview = latestReviewOpt.get();
+      // Only allow re-submit if previous review was REJECTED by BA
+      if (latestReview.getStatus() != ReviewResultStatus.REJECTED) {
+        throw new InvalidRequestException("Review has already been submitted for this review request. Status: " + latestReview.getStatus());
+      }
+      log.info("Previous review {} was rejected by BA. Creating new review submission.", latestReview.getId());
+    }
+
+    // Create new ReviewResult (keep history of all submissions)
+    ReviewResult reviewResult = ReviewResult.builder()
         .reviewRequest(reviewRequest)
         .document(document)
         .reviewer(reviewer)
@@ -463,20 +539,17 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
         .reportFilePath(reportFilePath)
         .decision(request.getDecision())
         .submittedAt(now)
+        .status(ReviewResultStatus.PENDING)
         .build();
+    reviewResult = reviewResultRepository.save(reviewResult);
 
-    documentReview = documentReviewRepository.save(documentReview);
-
-    if (request.getDecision() == ReviewDecision.APPROVED) {
-      document.setStatus(DocStatus.ACTIVE);
-    } else if (request.getDecision() == ReviewDecision.REJECTED) {
-      document.setStatus(DocStatus.REJECTED);
-    }
-
+    // Document goes to PENDING_APPROVE - BA will approve/reject the review result
+    document.setStatus(DocStatus.PENDING_APPROVE);
     documentRepository.save(document);
 
-    reviewRequest.setStatus(ReviewRequestStatus.COMPLETED);
-    reviewRequestRepository.save(reviewRequest);
+    // ReviewRequest status remains ACCEPTED (not COMPLETED)
+    // It will be used to track the review process
+    log.info("Review submitted. Document status changed to PENDING_APPROVE, waiting for BA approval");
 
     log.info("Successfully submitted review for document {}", document.getId());
 
@@ -486,12 +559,12 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
         .map(DocumentTagLink::getTag)
         .collect(Collectors.toList());
 
-    return documentReviewMapper.toResponse(documentReview, tags);
+    return reviewResultMapper.toResponse(reviewResult, tags);
   }
 
   @Override
   @Transactional(readOnly = true)
-  public Page<DocumentReviewResponse> getReviewerHistory(UUID reviewerId, ReviewHistoryFilterRequest filter, Pageable pageable) {
+  public Page<ReviewResultResponse> getReviewerHistory(UUID reviewerId, ReviewHistoryFilterRequest filter, Pageable pageable) {
     log.info("Getting review history for reviewer {} with filters: {}", reviewerId, filter);
 
     // Validate Reviewer
@@ -503,8 +576,8 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
     }
 
     // Use Specification to filter
-    Page<DocumentReview> reviews = documentReviewRepository.findAll(
-        DocumentReviewSpecification.filterReviewHistory(reviewerId, filter),
+    Page<ReviewResult> reviews = reviewResultRepository.findAll(
+        ReviewResultSpecification.filterReviewHistory(reviewerId, filter),
         pageable
     );
 
@@ -515,7 +588,7 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
           .map(DocumentTagLink::getTag)
           .collect(Collectors.toList());
       
-      DocumentReviewResponse response = documentReviewMapper.toResponse(review, tags);
+      ReviewResultResponse response = reviewResultMapper.toResponse(review, tags);
 
       // Generate presigned URL for report file
       if (review.getReportFilePath() != null) {
@@ -535,33 +608,48 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
         }
       }
 
+      // Generate presigned URL for document file
+      Document document = review.getDocument();
+      if (document.getFileKey() != null) {
+        try {
+          String documentFileUrl = fileStorageService.generatePresignedUrl(
+              com.capstone.be.config.constant.FileStorage.DOCUMENT_FOLDER,
+              document.getFileKey(),
+              PRESIGNED_URL_EXPIRATION_MINUTES
+          );
+          response.getDocument().setFileUrl(documentFileUrl);
+        } catch (Exception e) {
+          log.error("Failed to generate presigned URL for document file: {}", e.getMessage());
+        }
+      }
+
       return response;
     });
   }
 
   @Override
   @Transactional(readOnly = true)
-  public DocumentReviewResponse getDocumentReviewByReviewRequestId(UUID reviewRequestId) {
+  public ReviewResultResponse getReviewResultByReviewRequestId(UUID reviewRequestId) {
     log.info("Getting document review for review request {}", reviewRequestId);
 
-    // Get DocumentReview by review request ID
-    DocumentReview documentReview = documentReviewRepository.findByReviewRequest_Id(reviewRequestId)
+    // Get latest ReviewResult by review request ID
+    ReviewResult reviewResult = reviewResultRepository.findFirstByReviewRequest_IdOrderBySubmittedAtDesc(reviewRequestId)
         .orElseThrow(() -> new ResourceNotFoundException("Document review not found for review request ID: " + reviewRequestId));
 
     // Load tags for the document
-    List<Tag> tags = documentTagLinkRepository.findByDocument_Id(documentReview.getDocument().getId())
+    List<Tag> tags = documentTagLinkRepository.findByDocument_Id(reviewResult.getDocument().getId())
         .stream()
         .map(DocumentTagLink::getTag)
         .collect(Collectors.toList());
 
-    DocumentReviewResponse response = documentReviewMapper.toResponse(documentReview, tags);
+    ReviewResultResponse response = reviewResultMapper.toResponse(reviewResult, tags);
 
     // Generate presigned URL for report file
-    if (documentReview.getReportFilePath() != null) {
+    if (reviewResult.getReportFilePath() != null) {
       try {
         // reportFilePath is the filename returned from uploadFile (format: review_xxx_filename.docx)
         // uploadFile returns only filename, not full path
-        String filename = documentReview.getReportFilePath();
+        String filename = reviewResult.getReportFilePath();
         String reportFileUrl = fileStorageService.generatePresignedUrl(
             com.capstone.be.config.constant.FileStorage.REVIEW_REPORT_FOLDER,
             filename,
@@ -578,6 +666,235 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
     return response;
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public Page<ReviewResultResponse> getPendingReviewResults(Pageable pageable) {
+    log.info("Getting pending review results for BA approval");
+
+    Page<ReviewResult> reviews = reviewResultRepository.findByStatus(ReviewResultStatus.PENDING, pageable);
+
+    return reviews.map(review -> {
+      List<Tag> tags = documentTagLinkRepository.findByDocument_Id(review.getDocument().getId())
+          .stream()
+          .map(DocumentTagLink::getTag)
+          .collect(Collectors.toList());
+
+      ReviewResultResponse response = reviewResultMapper.toResponse(review, tags);
+
+      // Generate presigned URL for report file
+      if (review.getReportFilePath() != null) {
+        try {
+          String filename = review.getReportFilePath();
+          String reportFileUrl = fileStorageService.generatePresignedUrl(
+              com.capstone.be.config.constant.FileStorage.REVIEW_REPORT_FOLDER,
+              filename,
+              PRESIGNED_URL_EXPIRATION_MINUTES
+          );
+          response.setReportFileUrl(reportFileUrl);
+        } catch (Exception e) {
+          log.error("Failed to generate presigned URL for report file: {}", e.getMessage());
+        }
+      }
+
+      // Generate presigned URL for document file
+      Document document = review.getDocument();
+      if (document.getFileKey() != null) {
+        try {
+          String documentFileUrl = fileStorageService.generatePresignedUrl(
+              com.capstone.be.config.constant.FileStorage.DOCUMENT_FOLDER,
+              document.getFileKey(),
+              PRESIGNED_URL_EXPIRATION_MINUTES
+          );
+          response.getDocument().setFileUrl(documentFileUrl);
+        } catch (Exception e) {
+          log.error("Failed to generate presigned URL for document file: {}", e.getMessage());
+        }
+      }
+
+      return response;
+    });
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<ReviewResultResponse> getAllReviewResults(ReviewResultStatus status, Pageable pageable) {
+    log.info("Getting all review results with status filter: {}", status);
+
+    Page<ReviewResult> reviews;
+    if (status != null) {
+      reviews = reviewResultRepository.findByStatus(status, pageable);
+    } else {
+      reviews = reviewResultRepository.findAll(pageable);
+    }
+
+    return reviews.map(review -> {
+      List<Tag> tags = documentTagLinkRepository.findByDocument_Id(review.getDocument().getId())
+          .stream()
+          .map(DocumentTagLink::getTag)
+          .collect(Collectors.toList());
+
+      ReviewResultResponse response = reviewResultMapper.toResponse(review, tags);
+
+      // Generate presigned URL for report file
+      if (review.getReportFilePath() != null) {
+        try {
+          String filename = review.getReportFilePath();
+          String reportFileUrl = fileStorageService.generatePresignedUrl(
+              com.capstone.be.config.constant.FileStorage.REVIEW_REPORT_FOLDER,
+              filename,
+              PRESIGNED_URL_EXPIRATION_MINUTES
+          );
+          response.setReportFileUrl(reportFileUrl);
+        } catch (Exception e) {
+          log.error("Failed to generate presigned URL for report file: {}", e.getMessage());
+        }
+      }
+
+      // Generate presigned URL for document file
+      Document document = review.getDocument();
+      if (document.getFileKey() != null) {
+        try {
+          String documentFileUrl = fileStorageService.generatePresignedUrl(
+              com.capstone.be.config.constant.FileStorage.DOCUMENT_FOLDER,
+              document.getFileKey(),
+              PRESIGNED_URL_EXPIRATION_MINUTES
+          );
+          response.getDocument().setFileUrl(documentFileUrl);
+        } catch (Exception e) {
+          log.error("Failed to generate presigned URL for document file: {}", e.getMessage());
+        }
+      }
+
+      return response;
+    });
+  }
+
+  @Override
+  @Transactional
+  public ReviewResultResponse approveReviewResult(UUID businessAdminId, UUID reviewId, ApproveReviewResultRequest request) {
+    log.info("BA {} approving/rejecting review result {}: approved={}", businessAdminId, reviewId, request.getApproved());
+
+    // Validate Business Admin
+    User businessAdmin = userRepository.findById(businessAdminId)
+        .orElseThrow(() -> new ResourceNotFoundException("Business Admin not found with ID: " + businessAdminId));
+
+    if (businessAdmin.getRole() != UserRole.BUSINESS_ADMIN) {
+      throw new InvalidRequestException("Only Business Admin can approve review results");
+    }
+
+    // Get ReviewResult
+    ReviewResult reviewResult = reviewResultRepository.findById(reviewId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document review not found with ID: " + reviewId));
+
+    // Check if review is PENDING
+    if (reviewResult.getStatus() != ReviewResultStatus.PENDING) {
+      throw new InvalidRequestException("This review result has already been processed. Current status: " + reviewResult.getStatus());
+    }
+
+    Document document = reviewResult.getDocument();
+    ReviewRequest reviewRequest = reviewResult.getReviewRequest();
+    Instant now = Instant.now();
+
+    User uploader = document.getUploader();
+    String uploaderEmail = uploader.getEmail();
+    String uploaderName = uploader.getFullName();
+
+    if (request.getApproved()) {
+      // BA approves the review result
+      reviewResult.setStatus(ReviewResultStatus.APPROVED);
+      reviewResult.setApprovedBy(businessAdmin);
+      reviewResult.setApprovedAt(now);
+
+      // Apply reviewer's decision to document
+      if (reviewResult.getDecision() == ReviewDecision.APPROVED) {
+        document.setStatus(DocStatus.ACTIVE);
+        log.info("Review result approved. Document {} is now ACTIVE", document.getId());
+
+        // Award points to uploader for premium document approval
+        awardPointsToUploader(uploader, baApprovalPoints, document.getId());
+
+        // Send approval email to uploader
+        try {
+          emailService.sendDocumentStatusUpdateEmail(
+              uploaderEmail,
+              uploaderName,
+              document.getTitle(),
+              DocStatus.ACTIVE,
+              "Your premium document has been reviewed and approved. You have been awarded " + baApprovalPoints + " points!"
+          );
+        } catch (Exception e) {
+          log.error("Failed to send document approval email to {}: {}", uploaderEmail, e.getMessage());
+        }
+      } else {
+        document.setStatus(DocStatus.REJECTED);
+        log.info("Review result approved. Document {} is now REJECTED", document.getId());
+
+        // Send rejection email to uploader
+        try {
+          String reason = reviewResult.getComment() != null ? reviewResult.getComment() : "Document did not meet our quality standards";
+          emailService.sendDocumentStatusUpdateEmail(
+              uploaderEmail,
+              uploaderName,
+              document.getTitle(),
+              DocStatus.REJECTED,
+              reason
+          );
+        } catch (Exception e) {
+          log.error("Failed to send document rejection email to {}: {}", uploaderEmail, e.getMessage());
+        }
+      }
+    } else {
+      // BA rejects the review result - reviewer must re-review
+      if (request.getRejectionReason() == null || request.getRejectionReason().isBlank()) {
+        throw new InvalidRequestException("Rejection reason is required when rejecting a review result");
+      }
+
+      reviewResult.setStatus(ReviewResultStatus.REJECTED);
+      reviewResult.setApprovedBy(businessAdmin);
+      reviewResult.setApprovedAt(now);
+      reviewResult.setRejectionReason(request.getRejectionReason());
+
+      // Document goes back to REVIEWING - reviewer must re-review
+      document.setStatus(DocStatus.REVIEWING);
+
+      // Reset review deadline for re-review (3 more days)
+      Instant newReviewDeadline = calculateDeadline(now, REVIEW_DEADLINE_DAYS);
+      reviewRequest.setReviewDeadline(newReviewDeadline);
+      reviewRequestRepository.save(reviewRequest);
+
+      log.info("Review result rejected. Document {} is back to REVIEWING. Reviewer must re-review by {}", 
+          document.getId(), newReviewDeadline);
+    }
+
+    documentRepository.save(document);
+    reviewResult = reviewResultRepository.save(reviewResult);
+
+    // Load tags for the document
+    List<Tag> tags = documentTagLinkRepository.findByDocument_Id(document.getId())
+        .stream()
+        .map(DocumentTagLink::getTag)
+        .collect(Collectors.toList());
+
+    ReviewResultResponse response = reviewResultMapper.toResponse(reviewResult, tags);
+
+    // Generate presigned URL for report file
+    if (reviewResult.getReportFilePath() != null) {
+      try {
+        String filename = reviewResult.getReportFilePath();
+        String reportFileUrl = fileStorageService.generatePresignedUrl(
+            com.capstone.be.config.constant.FileStorage.REVIEW_REPORT_FOLDER,
+            filename,
+            PRESIGNED_URL_EXPIRATION_MINUTES
+        );
+        response.setReportFileUrl(reportFileUrl);
+      } catch (Exception e) {
+        log.error("Failed to generate presigned URL for report file: {}", e.getMessage());
+      }
+    }
+
+    return response;
+  }
+
   /**
    * Calculate deadline (làm tròn tới 0h của ngày tiếp theo)
    * Ví dụ: Nếu hiện tại là 2025-01-15 14:30:00 và days = 1
@@ -587,5 +904,27 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
     LocalDate fromDate = from.atZone(ZoneId.systemDefault()).toLocalDate();
     LocalDate deadlineDate = fromDate.plusDays(days + 1); // +1 để làm tròn lên ngày tiếp theo
     return deadlineDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+  }
+
+  /**
+   * Award points to uploader's reader profile
+   */
+  private void awardPointsToUploader(User uploader, int points, UUID documentId) {
+    try {
+      ReaderProfile readerProfile = readerProfileRepository.findByUserId(uploader.getId())
+          .orElse(null);
+      
+      if (readerProfile != null) {
+        int currentPoints = readerProfile.getPoint() != null ? readerProfile.getPoint() : 0;
+        readerProfile.setPoint(currentPoints + points);
+        readerProfileRepository.save(readerProfile);
+        log.info("Awarded {} points to user {} for document {}. New balance: {}", 
+            points, uploader.getId(), documentId, readerProfile.getPoint());
+      } else {
+        log.warn("Reader profile not found for user {}. Cannot award points.", uploader.getId());
+      }
+    } catch (Exception e) {
+      log.error("Failed to award points to user {}: {}", uploader.getId(), e.getMessage());
+    }
   }
 }

@@ -6,7 +6,7 @@ import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.review.RespondReviewRequestRequest;
 import com.capstone.be.dto.request.review.ReviewHistoryFilterRequest;
 import com.capstone.be.dto.request.review.SubmitReviewRequest;
-import com.capstone.be.dto.response.review.DocumentReviewResponse;
+import com.capstone.be.dto.response.review.ReviewResultResponse;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.ReviewRequestService;
@@ -164,7 +164,7 @@ public class ReviewRequestController {
    */
   @PutMapping(value = "/{reviewRequestId}/submit", consumes = "multipart/form-data")
   @PreAuthorize("hasRole('REVIEWER')")
-  public ResponseEntity<ApiResponse<DocumentReviewResponse>> submitReview(
+  public ResponseEntity<ApiResponse<ReviewResultResponse>> submitReview(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @PathVariable(name = "reviewRequestId") UUID reviewRequestId,
       @Valid @RequestPart(name = "request") SubmitReviewRequest request,
@@ -174,7 +174,7 @@ public class ReviewRequestController {
     log.info("Reviewer {} submitting review for review request {}: decision={}, file={}",
         reviewerId, reviewRequestId, request.getDecision(), reportFile.getOriginalFilename());
 
-    DocumentReviewResponse response = reviewRequestService.submitReview(
+    ReviewResultResponse response = reviewRequestService.submitReview(
         reviewerId, reviewRequestId, request, reportFile);
 
     return ResponseEntity
@@ -198,7 +198,7 @@ public class ReviewRequestController {
    */
   @GetMapping("/history")
   @PreAuthorize("hasRole('REVIEWER')")
-  public ResponseEntity<PagedResponse<DocumentReviewResponse>> getReviewHistory(
+  public ResponseEntity<PagedResponse<ReviewResultResponse>> getReviewHistory(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @RequestParam(name = "decision", required = false) ReviewDecision decision,
       @RequestParam(name = "dateFrom", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant dateFrom,
@@ -225,7 +225,7 @@ public class ReviewRequestController {
 
     Pageable pageable = PageRequest.of(page, size);
 
-    Page<DocumentReviewResponse> result = reviewRequestService.getReviewerHistory(
+    Page<ReviewResultResponse> result = reviewRequestService.getReviewerHistory(
         reviewerId, filter, pageable);
 
     return ResponseEntity.ok(PagedResponse.of(result, "Review history retrieved successfully"));

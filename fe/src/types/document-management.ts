@@ -205,7 +205,7 @@ export interface DocumentQueryParams {
   typeId?: string;
   isPublic?: boolean;
   isPremium?: boolean;
-  status?: string; // DocStatus enum: AI_VERIFYING, AI_VERIFIED, AI_REJECTED, REVIEWING, ACTIVE, REJECTED, INACTIVE, DELETED
+  status?: string; // DocStatus enum: AI_VERIFYING, PENDING_REVIEW, AI_REJECTED, REVIEWING, PENDING_APPROVE, ACTIVE, REJECTED, INACTIVE, DELETED
   deleted?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';

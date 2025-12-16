@@ -68,7 +68,7 @@ public class AdminDocumentListResponse {
   public static class ReviewStatusInfo {
     private Integer pendingCount;  // Number of PENDING review requests
     private Integer acceptedCount;  // Number of ACCEPTED review requests
-    private Integer completedCount;  // Number of COMPLETED reviews
+    private Integer submittedReviewCount;  // Number of ReviewResults submitted
     private Integer rejectedCount;  // Number of REJECTED review requests
     private Integer expiredCount;  // Number of EXPIRED review requests
     private Boolean hasActiveReview;  // True if has any PENDING or ACCEPTED requests

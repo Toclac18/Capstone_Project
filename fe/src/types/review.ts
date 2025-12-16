@@ -22,6 +22,7 @@ export interface ReviewDocument {
   reviewDeadline?: string; // Due date for completing the review
   specializationId?: string;
   specialization?: string; // Specialization name
+  fileUrl?: string; // Presigned URL for document file
 }
 
 // Document waiting for reviewer to accept invitation (Request Review tab)
@@ -43,6 +44,8 @@ export interface ReviewRequest {
   specialization?: string; // Specialization name
 }
 
+export type BAApprovalStatus = "PENDING" | "APPROVED" | "REJECTED";
+
 export interface ReviewHistory {
   id: string;
   documentId: string;
@@ -60,6 +63,17 @@ export interface ReviewHistory {
   reviewerId: string;
   reviewerName: string;
   comments?: string;
+  // File URLs
+  fileUrl?: string; // Presigned URL for document file
+  reportFileUrl?: string; // Presigned URL for review report file
+  // BA approval status
+  baApprovalStatus?: BAApprovalStatus;
+  baApproval?: {
+    approvedById?: string;
+    approvedByName?: string;
+    approvedAt?: string;
+    rejectionReason?: string;
+  };
 }
 
 export interface ReviewListQueryParams {

@@ -38,6 +38,7 @@ public class ReviewRequestResponse {
     private String title;
     private String description;
     private String thumbnailUrl;
+    private String fileUrl;
     private Integer pageCount;
     private Integer price;
     private DocStatus status;

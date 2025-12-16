@@ -516,7 +516,7 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
                   <Eye className="w-4 h-4" />
                   <span>View Document</span>
                 </button>
-                {document.isPremium && document.status === "AI_VERIFIED" && (
+                {document.isPremium && document.status === "PENDING_REVIEW" && (
                   <button
                     onClick={() => setShowAssignReviewerModal(true)}
                     className={`${styles["action-button"]} ${styles["action-button-primary"]}`}

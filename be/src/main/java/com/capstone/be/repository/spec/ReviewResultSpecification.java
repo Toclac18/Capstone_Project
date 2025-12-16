@@ -1,7 +1,7 @@
 package com.capstone.be.repository.spec;
 
 import com.capstone.be.domain.entity.Document;
-import com.capstone.be.domain.entity.DocumentReview;
+import com.capstone.be.domain.entity.ReviewResult;
 import com.capstone.be.domain.entity.Specialization;
 import com.capstone.be.dto.request.review.ReviewHistoryFilterRequest;
 import jakarta.persistence.criteria.Join;
@@ -13,21 +13,21 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Specification for filtering DocumentReview entities
+ * Specification for filtering ReviewResult entities
  */
-public class DocumentReviewSpecification {
+public class ReviewResultSpecification {
 
   /**
    * Build specification for filtering review history by reviewer and optional filters
    *
    * @param reviewerId reviewer ID
    * @param filter     filter criteria (optional)
-   * @return Specification for DocumentReview
+   * @return Specification for ReviewResult
    */
-  public static Specification<DocumentReview> filterReviewHistory(UUID reviewerId, ReviewHistoryFilterRequest filter) {
+  public static Specification<ReviewResult> filterReviewHistory(UUID reviewerId, ReviewHistoryFilterRequest filter) {
     return (root, query, criteriaBuilder) -> {
       // Store joins for reuse when filtering
-      Join<DocumentReview, Document> documentJoin = null;
+      Join<ReviewResult, Document> documentJoin = null;
       Join<Document, Specialization> specializationJoin = null;
 
       // Check if we need to filter by document properties
@@ -38,20 +38,13 @@ public class DocumentReviewSpecification {
       );
 
       // Eager load related entities to avoid lazy loading issues
-      // Note: When filtering, we use joins for filtering but cannot fetch from those joins
-      // So we fetch separately from root, or skip fetching when filtering
       if (query != null && Long.class != query.getResultType()) {
         if (needDocumentJoin) {
-          // When filtering, create joins for filtering (but don't fetch from them)
-          // We'll let Hibernate lazy load to avoid the fetch conflict
           documentJoin = root.join("document", jakarta.persistence.criteria.JoinType.LEFT);
           if (filter.getDomainId() != null) {
             specializationJoin = documentJoin.join("specialization", jakarta.persistence.criteria.JoinType.LEFT);
           }
-          // Note: We don't fetch here to avoid "owner not in select list" error
-          // The entities will be lazy loaded, which is acceptable for filtered queries
         } else {
-          // Use fetch when no filtering needed
           root.fetch("document", jakarta.persistence.criteria.JoinType.LEFT)
               .fetch("docType", jakarta.persistence.criteria.JoinType.LEFT);
           root.fetch("document", jakarta.persistence.criteria.JoinType.LEFT)
@@ -60,7 +53,6 @@ public class DocumentReviewSpecification {
         }
         root.fetch("reviewer", jakarta.persistence.criteria.JoinType.LEFT);
       } else if (needDocumentJoin) {
-        // Even for count queries, we need joins for filtering
         documentJoin = root.join("document", jakarta.persistence.criteria.JoinType.LEFT);
         if (filter.getDomainId() != null) {
           specializationJoin = documentJoin.join("specialization", jakarta.persistence.criteria.JoinType.LEFT);
@@ -88,7 +80,7 @@ public class DocumentReviewSpecification {
           predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("submittedAt"), filter.getDateTo()));
         }
 
-        // Filter by document type - use existing join if available
+        // Filter by document type
         if (filter.getDocTypeId() != null) {
           if (documentJoin == null) {
             documentJoin = root.join("document", jakarta.persistence.criteria.JoinType.LEFT);
@@ -96,7 +88,7 @@ public class DocumentReviewSpecification {
           predicates.add(criteriaBuilder.equal(documentJoin.get("docType").get("id"), filter.getDocTypeId()));
         }
 
-        // Filter by domain - use existing joins if available
+        // Filter by domain
         if (filter.getDomainId() != null) {
           if (documentJoin == null) {
             documentJoin = root.join("document", jakarta.persistence.criteria.JoinType.LEFT);
@@ -107,7 +99,7 @@ public class DocumentReviewSpecification {
           predicates.add(criteriaBuilder.equal(specializationJoin.get("domain").get("id"), filter.getDomainId()));
         }
 
-        // Search by document title (case-insensitive, partial match)
+        // Search by document title
         if (filter.getSearch() != null && !filter.getSearch().trim().isEmpty()) {
           if (documentJoin == null) {
             documentJoin = root.join("document", jakarta.persistence.criteria.JoinType.LEFT);

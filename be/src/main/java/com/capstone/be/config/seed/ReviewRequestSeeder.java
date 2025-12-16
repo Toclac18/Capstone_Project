@@ -2,15 +2,16 @@ package com.capstone.be.config.seed;
 
 import com.capstone.be.config.seed.event.DocumentSeededEvent;
 import com.capstone.be.domain.entity.Document;
-import com.capstone.be.domain.entity.DocumentReview;
+import com.capstone.be.domain.entity.ReviewResult;
 import com.capstone.be.domain.entity.ReviewRequest;
 import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.ReviewDecision;
 import com.capstone.be.domain.enums.ReviewRequestStatus;
+import com.capstone.be.domain.enums.ReviewResultStatus;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.repository.DocumentRepository;
-import com.capstone.be.repository.DocumentReviewRepository;
+import com.capstone.be.repository.ReviewResultRepository;
 import com.capstone.be.repository.ReviewRequestRepository;
 import com.capstone.be.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 /**
- * Seeder for ReviewRequest and DocumentReview (dev profile only)
+ * Seeder for ReviewRequest and ReviewResult (dev profile only)
+ * 
+ * Creates review data based on document status:
+ * - PENDING_REVIEW docs: Create PENDING review requests (waiting for reviewer to accept)
+ * - REVIEWING docs: Create ACCEPTED review requests (reviewer working on it)
+ * - PENDING_APPROVE docs: Create ACCEPTED requests + PENDING ReviewResult (waiting BA approval)
+ * - ACTIVE/REJECTED docs: Create ACCEPTED requests + APPROVED ReviewResult (completed)
  */
 @Profile("dev")
 @Component
@@ -34,30 +41,31 @@ import java.util.List;
 public class ReviewRequestSeeder {
 
   private final ReviewRequestRepository reviewRequestRepository;
-  private final DocumentReviewRepository documentReviewRepository;
+  private final ReviewResultRepository reviewResultRepository;
   private final DocumentRepository documentRepository;
   private final UserRepository userRepository;
 
   @Transactional
   @EventListener(DocumentSeededEvent.class)
   public void run() {
-    log.info("🌱 Start seeding ReviewRequest & DocumentReview");
+    log.info("🌱 Start seeding ReviewRequest & ReviewResult");
 
-    if (reviewRequestRepository.count() > 0) {
-      log.warn("ReviewRequest already exist → skip seeding.");
+    // Only skip if we already have review results
+    long existingResults = reviewResultRepository.count();
+    long existingRequests = reviewRequestRepository.count();
+    log.info("📊 Current data: {} review requests, {} review results", existingRequests, existingResults);
+    
+    if (existingResults > 0) {
+      log.warn("⚠️ ReviewResult already has {} records → skip seeding. Delete review_result table data and restart to re-seed.", existingResults);
       return;
     }
+    
+    log.info("✅ No existing review results found. Proceeding with seeding...");
 
     // Get users
-    User businessAdmin = userRepository.findByEmail("business1@capstone.com")
-        .orElse(null);
-    List<User> allUsers = userRepository.findAll();
-    List<User> reviewers = allUsers.stream()
+    User businessAdmin = userRepository.findByEmail("business1@capstone.com").orElse(null);
+    List<User> reviewers = userRepository.findAll().stream()
         .filter(u -> u.getRole() == UserRole.REVIEWER)
-        .toList();
-    List<Document> allDocuments = documentRepository.findAll();
-    List<Document> premiumDocuments = allDocuments.stream()
-        .filter(d -> Boolean.TRUE.equals(d.getIsPremium()))
         .toList();
 
     if (businessAdmin == null) {
@@ -70,161 +78,251 @@ public class ReviewRequestSeeder {
       return;
     }
 
-    if (premiumDocuments.isEmpty()) {
-      log.warn("⚠️ No premium documents found. Skipping review request seed.");
-      return;
-    }
-
     Instant now = Instant.now();
-
-    // Create review requests with different statuses
     int requestIndex = 0;
-    int docIndex = 0;
+    int reviewerIndex = 0;
 
-    // 1. PENDING requests (10 requests) - for testing pending tab
-    int pendingCount = Math.min(10, premiumDocuments.size());
-    for (int i = 0; i < pendingCount; i++) {
-      Document doc = premiumDocuments.get(docIndex % premiumDocuments.size());
-      User reviewer = reviewers.get(i % reviewers.size());
+    // 1. PENDING_REVIEW documents → Create PENDING review requests
+    List<Document> pendingReviewDocs = documentRepository.findAll().stream()
+        .filter(d -> d.getStatus() == DocStatus.PENDING_REVIEW)
+        .toList();
+    
+    log.info("Creating PENDING review requests for {} PENDING_REVIEW documents", pendingReviewDocs.size());
+    for (Document doc : pendingReviewDocs) {
+      User reviewer = reviewers.get(reviewerIndex % reviewers.size());
+      reviewerIndex++;
       
       ReviewRequest request = ReviewRequest.builder()
-          .id(SeedUtil.generateUUID("review-request-pending-" + requestIndex))
+          .id(SeedUtil.generateUUID("review-request-" + requestIndex))
           .document(doc)
           .reviewer(reviewer)
           .assignedBy(businessAdmin)
           .status(ReviewRequestStatus.PENDING)
-          .responseDeadline(now.plus(1, ChronoUnit.DAYS).plus(i, ChronoUnit.HOURS))
-          .reviewDeadline(now.plus(4, ChronoUnit.DAYS).plus(i, ChronoUnit.HOURS))
-          .note("Please review this document carefully. Request #" + (i + 1))
+          .responseDeadline(now.plus(1, ChronoUnit.DAYS))
+          .note("Please review this premium document. Request #" + (requestIndex + 1))
           .build();
 
       reviewRequestRepository.save(request);
-      log.info("✅ Created PENDING review request #{}: Document '{}' → Reviewer '{}'", 
-          i + 1, doc.getTitle(), reviewer.getEmail());
+      log.info("✅ Created PENDING request: '{}' → Reviewer '{}'", doc.getTitle(), reviewer.getEmail());
       requestIndex++;
-      docIndex++;
     }
 
-    // 2. ACCEPTED requests (15 requests) - for testing todo tab
-    int acceptedCount = Math.min(15, premiumDocuments.size() * 2);
-    for (int i = 0; i < acceptedCount; i++) {
-      Document doc = premiumDocuments.get(docIndex % premiumDocuments.size());
-      User reviewer = reviewers.get(i % reviewers.size());
+    // 2. REVIEWING documents → Create ACCEPTED review requests (no ReviewResult yet)
+    List<Document> reviewingDocs = documentRepository.findAll().stream()
+        .filter(d -> d.getStatus() == DocStatus.REVIEWING)
+        .toList();
+    
+    log.info("Creating ACCEPTED review requests for {} REVIEWING documents", reviewingDocs.size());
+    for (Document doc : reviewingDocs) {
+      User reviewer = reviewers.get(reviewerIndex % reviewers.size());
+      reviewerIndex++;
       
       ReviewRequest request = ReviewRequest.builder()
-          .id(SeedUtil.generateUUID("review-request-accepted-" + requestIndex))
+          .id(SeedUtil.generateUUID("review-request-" + requestIndex))
           .document(doc)
           .reviewer(reviewer)
           .assignedBy(businessAdmin)
           .status(ReviewRequestStatus.ACCEPTED)
-          .responseDeadline(now.minus(1, ChronoUnit.DAYS).minus(i, ChronoUnit.HOURS))
-          .reviewDeadline(now.plus(2, ChronoUnit.DAYS).plus(i, ChronoUnit.HOURS))
-          .respondedAt(now.minus(12, ChronoUnit.HOURS).minus(i, ChronoUnit.HOURS))
-          .note("Reviewer has accepted this request. Todo #" + (i + 1))
+          .responseDeadline(now.minus(1, ChronoUnit.DAYS))
+          .reviewDeadline(now.plus(2, ChronoUnit.DAYS))
+          .respondedAt(now.minus(12, ChronoUnit.HOURS))
+          .note("Reviewer is working on this document. Todo #" + (requestIndex + 1))
           .build();
 
       reviewRequestRepository.save(request);
-      log.info("✅ Created ACCEPTED review request #{}: Document '{}' → Reviewer '{}'", 
-          i + 1, doc.getTitle(), reviewer.getEmail());
+      log.info("✅ Created ACCEPTED request (Todo): '{}' → Reviewer '{}'", doc.getTitle(), reviewer.getEmail());
       requestIndex++;
-      docIndex++;
     }
 
-    // 3. REJECTED requests (5 requests)
-    int rejectedCount = Math.min(5, premiumDocuments.size());
-    for (int i = 0; i < rejectedCount; i++) {
-      Document doc = premiumDocuments.get(docIndex % premiumDocuments.size());
-      User reviewer = reviewers.get(i % reviewers.size());
-      
-      String[] rejectionReasons = {
-        "I don't have expertise in this domain.",
-        "Currently overloaded with other review tasks.",
-        "The document is outside my area of specialization.",
-        "Unable to commit to the review deadline.",
-        "Personal reasons prevent me from taking this review."
-      };
+    // 3. PENDING_APPROVE documents → Create ACCEPTED requests + PENDING ReviewResult
+    List<Document> pendingApproveDocs = documentRepository.findAll().stream()
+        .filter(d -> d.getStatus() == DocStatus.PENDING_APPROVE)
+        .toList();
+    
+    log.info("Creating review results for {} PENDING_APPROVE documents", pendingApproveDocs.size());
+    for (int i = 0; i < pendingApproveDocs.size(); i++) {
+      Document doc = pendingApproveDocs.get(i);
+      User reviewer = reviewers.get(reviewerIndex % reviewers.size());
+      reviewerIndex++;
       
       ReviewRequest request = ReviewRequest.builder()
-          .id(SeedUtil.generateUUID("review-request-rejected-" + requestIndex))
+          .id(SeedUtil.generateUUID("review-request-" + requestIndex))
+          .document(doc)
+          .reviewer(reviewer)
+          .assignedBy(businessAdmin)
+          .status(ReviewRequestStatus.ACCEPTED)
+          .responseDeadline(now.minus(3, ChronoUnit.DAYS))
+          .reviewDeadline(now.minus(1, ChronoUnit.DAYS))
+          .respondedAt(now.minus(2, ChronoUnit.DAYS))
+          .note("Review submitted, waiting for BA approval.")
+          .build();
+
+      ReviewRequest savedRequest = reviewRequestRepository.save(request);
+      
+      // Create PENDING ReviewResult (waiting BA approval)
+      ReviewDecision decision = (i % 2 == 0) ? ReviewDecision.APPROVED : ReviewDecision.REJECTED;
+      ReviewResult review = ReviewResult.builder()
+          .id(SeedUtil.generateUUID("review-result-pending-" + i))
+          .reviewRequest(savedRequest)
+          .document(doc)
+          .reviewer(reviewer)
+          .comment("Review completed. Decision: " + decision + ". Waiting for BA approval.")
+          .reportFilePath("reviews/review-report-pending-" + i + ".docx")
+          .decision(decision)
+          .status(ReviewResultStatus.PENDING)
+          .submittedAt(now.minus(6, ChronoUnit.HOURS))
+          .build();
+
+      reviewResultRepository.save(review);
+      log.info("✅ Created PENDING review result: '{}' → Decision '{}' (waiting BA)", doc.getTitle(), decision);
+      requestIndex++;
+    }
+
+    // 4. ACTIVE premium documents → Create completed review flow (distribute among reviewers)
+    List<Document> allDocs = documentRepository.findAll();
+    log.info("Total documents in DB: {}", allDocs.size());
+    
+    // Debug: count documents by status
+    long pendingReviewCount = allDocs.stream().filter(d -> d.getStatus() == DocStatus.PENDING_REVIEW).count();
+    long reviewingCount = allDocs.stream().filter(d -> d.getStatus() == DocStatus.REVIEWING).count();
+    long pendingApproveCount = allDocs.stream().filter(d -> d.getStatus() == DocStatus.PENDING_APPROVE).count();
+    long activeCount = allDocs.stream().filter(d -> d.getStatus() == DocStatus.ACTIVE).count();
+    long rejectedCount = allDocs.stream().filter(d -> d.getStatus() == DocStatus.REJECTED).count();
+    long activePremiumCount = allDocs.stream().filter(d -> d.getStatus() == DocStatus.ACTIVE && Boolean.TRUE.equals(d.getIsPremium())).count();
+    
+    log.info("Document status distribution: PENDING_REVIEW={}, REVIEWING={}, PENDING_APPROVE={}, ACTIVE={} (premium={}), REJECTED={}", 
+        pendingReviewCount, reviewingCount, pendingApproveCount, activeCount, activePremiumCount, rejectedCount);
+    
+    List<Document> activeDocs = allDocs.stream()
+        .filter(d -> d.getStatus() == DocStatus.ACTIVE && Boolean.TRUE.equals(d.getIsPremium()))
+        .toList();
+    
+    log.info("Creating completed reviews for {} ACTIVE premium documents", activeDocs.size());
+    for (int i = 0; i < activeDocs.size(); i++) {
+      Document doc = activeDocs.get(i);
+      // Distribute documents evenly among reviewers
+      User reviewer = reviewers.get(i % reviewers.size());
+      
+      // Vary the submission time within last 7 days for trending calculation
+      int daysAgo = (i % 7) + 1;
+      int hoursOffset = (i % 12);
+      Instant submittedAt = now.minus(daysAgo, ChronoUnit.DAYS).minus(hoursOffset, ChronoUnit.HOURS);
+      
+      ReviewRequest request = ReviewRequest.builder()
+          .id(SeedUtil.generateUUID("review-request-active-" + i))
+          .document(doc)
+          .reviewer(reviewer)
+          .assignedBy(businessAdmin)
+          .status(ReviewRequestStatus.ACCEPTED)
+          .responseDeadline(submittedAt.minus(3, ChronoUnit.DAYS))
+          .reviewDeadline(submittedAt.minus(1, ChronoUnit.DAYS))
+          .respondedAt(submittedAt.minus(2, ChronoUnit.DAYS))
+          .note("Review completed and approved.")
+          .build();
+
+      ReviewRequest savedRequest = reviewRequestRepository.save(request);
+      
+      // Create APPROVED ReviewResult
+      ReviewResult review = ReviewResult.builder()
+          .id(SeedUtil.generateUUID("review-result-active-" + i))
+          .reviewRequest(savedRequest)
+          .document(doc)
+          .reviewer(reviewer)
+          .comment("This document has been thoroughly reviewed. The content is accurate and well-structured. Approved for publication.")
+          .reportFilePath("reviews/review-report-active-" + i + ".docx")
+          .decision(ReviewDecision.APPROVED)
+          .status(ReviewResultStatus.APPROVED)
+          .submittedAt(submittedAt)
+          .approvedBy(businessAdmin)
+          .approvedAt(submittedAt.plus(2, ChronoUnit.HOURS))
+          .build();
+
+      reviewResultRepository.save(review);
+      log.info("✅ Created APPROVED review: '{}' → Reviewer '{}' (submitted {} days ago)", 
+          doc.getTitle(), reviewer.getEmail(), daysAgo);
+      requestIndex++;
+    }
+
+    // 5. REJECTED documents → Create completed review flow with rejection
+    List<Document> rejectedDocs = documentRepository.findAll().stream()
+        .filter(d -> d.getStatus() == DocStatus.REJECTED)
+        .toList();
+    
+    log.info("Creating rejection reviews for {} REJECTED documents", rejectedDocs.size());
+    for (int i = 0; i < rejectedDocs.size(); i++) {
+      Document doc = rejectedDocs.get(i);
+      User reviewer = reviewers.get(reviewerIndex % reviewers.size());
+      reviewerIndex++;
+      
+      Instant submittedAt = now.minus(i + 2, ChronoUnit.DAYS);
+      
+      ReviewRequest request = ReviewRequest.builder()
+          .id(SeedUtil.generateUUID("review-request-" + requestIndex))
+          .document(doc)
+          .reviewer(reviewer)
+          .assignedBy(businessAdmin)
+          .status(ReviewRequestStatus.ACCEPTED)
+          .responseDeadline(submittedAt.minus(3, ChronoUnit.DAYS))
+          .reviewDeadline(submittedAt.minus(1, ChronoUnit.DAYS))
+          .respondedAt(submittedAt.minus(2, ChronoUnit.DAYS))
+          .note("Review completed - document rejected.")
+          .build();
+
+      ReviewRequest savedRequest = reviewRequestRepository.save(request);
+      
+      // Create APPROVED ReviewResult with REJECTED decision
+      ReviewResult review = ReviewResult.builder()
+          .id(SeedUtil.generateUUID("review-result-rejected-" + i))
+          .reviewRequest(savedRequest)
+          .document(doc)
+          .reviewer(reviewer)
+          .comment("After careful review, this document does not meet our quality standards. The content has significant issues that need to be addressed.")
+          .reportFilePath("reviews/review-report-rejected-" + i + ".docx")
+          .decision(ReviewDecision.REJECTED)
+          .status(ReviewResultStatus.APPROVED) // BA approved the rejection
+          .submittedAt(submittedAt)
+          .approvedBy(businessAdmin)
+          .approvedAt(submittedAt.plus(3, ChronoUnit.HOURS))
+          .build();
+
+      reviewResultRepository.save(review);
+      log.info("✅ Created REJECTED review: '{}' → REJECTED", doc.getTitle());
+      requestIndex++;
+    }
+
+    // 6. Create some additional REJECTED review requests (reviewer declined invitation)
+    List<Document> pendingReviewDocsForRejection = documentRepository.findAll().stream()
+        .filter(d -> d.getStatus() == DocStatus.PENDING_REVIEW)
+        .limit(3)
+        .toList();
+    
+    String[] rejectionReasons = {
+        "I don't have expertise in this domain.",
+        "Currently overloaded with other review tasks.",
+        "The document is outside my area of specialization."
+    };
+    
+    for (int i = 0; i < pendingReviewDocsForRejection.size(); i++) {
+      Document doc = pendingReviewDocsForRejection.get(i);
+      // Use a different reviewer than the one assigned
+      User reviewer = reviewers.get((reviewerIndex + 1) % reviewers.size());
+      
+      ReviewRequest request = ReviewRequest.builder()
+          .id(SeedUtil.generateUUID("review-request-declined-" + i))
           .document(doc)
           .reviewer(reviewer)
           .assignedBy(businessAdmin)
           .status(ReviewRequestStatus.REJECTED)
-          .responseDeadline(now.minus(2, ChronoUnit.DAYS).minus(i, ChronoUnit.HOURS))
-          .reviewDeadline(null)
-          .respondedAt(now.minus(1, ChronoUnit.DAYS).minus(i, ChronoUnit.HOURS))
+          .responseDeadline(now.minus(1, ChronoUnit.DAYS))
+          .respondedAt(now.minus(12, ChronoUnit.HOURS))
           .rejectionReason(rejectionReasons[i % rejectionReasons.length])
-          .note("Reviewer rejected this request.")
+          .note("Reviewer declined this request.")
           .build();
 
       reviewRequestRepository.save(request);
-      log.info("✅ Created REJECTED review request #{}: Document '{}' → Reviewer '{}'", 
-          i + 1, doc.getTitle(), reviewer.getEmail());
-      requestIndex++;
-      docIndex++;
+      log.info("✅ Created REJECTED (declined) request: '{}' → Reviewer '{}'", doc.getTitle(), reviewer.getEmail());
     }
 
-    // 4. COMPLETED requests with DocumentReview (20 requests) - for testing history tab
-    // Get all ACCEPTED requests
-    List<ReviewRequest> allRequests = reviewRequestRepository.findAll();
-    List<ReviewRequest> acceptedRequests = allRequests.stream()
-        .filter(r -> r.getStatus() == ReviewRequestStatus.ACCEPTED)
-        .limit(20)
-        .toList();
-    
-    String[] reviewComments = {
-      "This document has been thoroughly reviewed. The content is accurate, well-structured, and provides valuable insights. I recommend approval.",
-      "After careful examination, I found the document to be comprehensive and well-researched. The methodology is sound and the conclusions are supported by evidence.",
-      "The document demonstrates high quality research with clear presentation. However, there are some minor areas that could be improved. Overall, I recommend approval.",
-      "This is an excellent piece of work with strong theoretical foundations. The practical applications are well-explained. I recommend approval.",
-      "The document contains valuable information but lacks depth in certain sections. The writing is clear but could benefit from more examples. I recommend approval with minor revisions.",
-      "After thorough review, I found several critical issues with the methodology and data analysis. The conclusions are not well-supported. I recommend rejection.",
-      "The document has significant gaps in the literature review and the research design has flaws. The findings are questionable. I recommend rejection.",
-      "While the topic is interesting, the document lacks rigor and the arguments are not well-developed. More work is needed before this can be approved.",
-      "The document shows promise but requires substantial revision. The core ideas are good but the execution needs improvement. I recommend rejection with suggestions for resubmission.",
-      "This document does not meet the quality standards required. The research methodology is flawed and the conclusions are not supported by the data presented."
-    };
-    
-    for (int i = 0; i < acceptedRequests.size(); i++) {
-      ReviewRequest request = acceptedRequests.get(i);
-      
-      // Update request status to COMPLETED
-      request.setStatus(ReviewRequestStatus.COMPLETED);
-      reviewRequestRepository.save(request);
-
-      // Alternate between APPROVED and REJECTED decisions
-      ReviewDecision decision = (i % 3 == 0) ? ReviewDecision.REJECTED : ReviewDecision.APPROVED;
-      String comment = reviewComments[i % reviewComments.length];
-      
-      // Create DocumentReview
-      DocumentReview review = DocumentReview.builder()
-          .id(SeedUtil.generateUUID("document-review-" + i))
-          .reviewRequest(request)
-          .document(request.getDocument())
-          .reviewer(request.getReviewer())
-          .comment(comment)
-          .reportFilePath("reviews/review-report-" + i + ".docx")
-          .decision(decision)
-          .submittedAt(now.minus(i, ChronoUnit.HOURS).minus(i * 2, ChronoUnit.MINUTES))
-          .build();
-
-      documentReviewRepository.save(review);
-
-      // Update document status based on review decision (only if not already set)
-      Document doc = request.getDocument();
-      if (review.getDecision() == ReviewDecision.APPROVED && doc.getStatus() != DocStatus.ACTIVE) {
-        doc.setStatus(DocStatus.ACTIVE);
-        documentRepository.save(doc);
-      } else if (review.getDecision() == ReviewDecision.REJECTED && doc.getStatus() != DocStatus.REJECTED) {
-        doc.setStatus(DocStatus.REJECTED);
-        documentRepository.save(doc);
-      }
-
-      log.info("✅ Created COMPLETED review #{}: Document '{}' → Decision '{}'", 
-          i + 1, doc.getTitle(), review.getDecision());
-    }
-
-    log.info("✅ ReviewRequest & DocumentReview seeding completed!");
+    log.info("✅ ReviewRequest & ReviewResult seeding completed! Total requests: {}", requestIndex);
   }
 }
-

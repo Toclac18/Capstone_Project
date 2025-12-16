@@ -9,6 +9,7 @@ import { logout } from "@/services/auth.service";
 import {
   requestEmailChange,
   verifyEmailChangeOtp,
+  verifyPasswordForEmailChange,
   changePassword,
 } from "@/services/profile.service";
 import {
@@ -65,13 +66,13 @@ export default function ManageOrganizationPage() {
 
 
   const handleChangeEmail = async (password: string, newEmail: string, otp: string) => {
-    // Step 1: Verify password
+    // Step 1: Verify password only
     if (password && !newEmail && !otp) {
-      // This step is handled by ChangeEmailModal internally
+      await verifyPasswordForEmailChange(password);
       return { step: "email" };
     }
     
-    // Step 2: Request email change (password + newEmail)
+    // Step 2: Request email change (password + newEmail) - sends OTP
     if (password && newEmail && !otp) {
       await requestEmailChange(password, newEmail);
       showToast({
@@ -82,7 +83,7 @@ export default function ManageOrganizationPage() {
       return { step: "verify" };
     }
     
-    // Step 3: Verify OTP
+    // Step 3: Verify OTP and complete email change
     if (password && newEmail && otp) {
       await verifyEmailChangeOtp(otp);
       showToast({

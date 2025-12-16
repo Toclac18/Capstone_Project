@@ -45,7 +45,8 @@ export interface ReviewRequestResponse {
   updatedAt?: string;
 }
 
-export interface DocumentReviewResponse {
+// Review Result Response (renamed from DocumentReview)
+export interface ReviewResultResponse {
   id: string;
   reviewRequestId: string;
   document: {
@@ -67,16 +68,32 @@ export interface DocumentReviewResponse {
   };
   reviewer?: {
     id: string;
-    username: string;
+    fullName: string;
+    email: string;
+    avatarUrl?: string;
+  };
+  uploader?: {
+    id: string;
+    fullName: string;
     email: string;
   };
   report?: string;
   reportFileUrl?: string;
   decision: "APPROVED" | "REJECTED";
+  status: "PENDING" | "APPROVED" | "REJECTED"; // BA approval status
   submittedAt: string;
+  approval?: {
+    approvedById?: string;
+    approvedByName?: string;
+    approvedAt?: string;
+    rejectionReason?: string;
+  };
   createdAt?: string;
   updatedAt?: string;
 }
+
+// Alias for backward compatibility
+export type DocumentReviewResponse = ReviewResultResponse;
 
 export interface PagedResponse<T> {
   content: T[];
@@ -151,11 +168,12 @@ function mapReviewRequestToDocument(req: ReviewRequestResponse): any {
     status: "PENDING",
     reviewRequestDate: req.createdAt || "",
     reviewDeadline: req.reviewDeadline,
+    fileUrl: (req.document as any).fileUrl, // Document file URL
   };
 }
 
-// Helper function to map DocumentReviewResponse to frontend ReviewHistory type
-function mapDocumentReviewToHistory(review: DocumentReviewResponse): any {
+// Helper function to map ReviewResultResponse to frontend ReviewHistory type
+function mapReviewResultToHistory(review: ReviewResultResponse): any {
   return {
     id: review.id,
     documentId: review.document.id,
@@ -164,14 +182,25 @@ function mapDocumentReviewToHistory(review: DocumentReviewResponse): any {
     domain: review.document.domain?.name,
     specialization: review.document.specialization?.name,
     tags: review.document.tags?.slice(0, 3).map(t => t.name) || [],
-    uploaderName: undefined,
+    uploaderName: review.uploader?.fullName,
     uploadedDate: review.createdAt,
     reviewDate: review.submittedAt,
     action: review.decision === "APPROVED" ? "APPROVE" : "REJECT",
     verificationTime: review.submittedAt,
     reviewerId: review.reviewer?.id || "",
-    reviewerName: review.reviewer?.username || "",
+    reviewerName: review.reviewer?.fullName || "",
     comments: review.report,
+    // File URLs
+    fileUrl: (review.document as any).fileUrl, // Document file URL
+    reportFileUrl: review.reportFileUrl, // Review report file URL
+    // BA approval status
+    baApprovalStatus: review.status, // PENDING, APPROVED, REJECTED
+    baApproval: review.approval ? {
+      approvedById: review.approval.approvedById,
+      approvedByName: review.approval.approvedByName,
+      approvedAt: review.approval.approvedAt,
+      rejectionReason: review.approval.rejectionReason,
+    } : undefined,
   };
 }
 
@@ -217,7 +246,7 @@ async function getReviewHistory(params?: {
   docTypeId?: string;
   domainId?: string;
   search?: string;
-}): Promise<PagedResponse<DocumentReviewResponse>> {
+}): Promise<PagedResponse<ReviewResultResponse>> {
   const queryParams = new URLSearchParams();
   if (params?.page !== undefined) queryParams.append("page", params.page.toString());
   if (params?.size !== undefined) queryParams.append("size", params.size.toString());
@@ -228,7 +257,7 @@ async function getReviewHistory(params?: {
   if (params?.domainId) queryParams.append("domainId", params.domainId);
   if (params?.search) queryParams.append("search", params.search);
 
-  const res = await apiClient.get<BackendPagedResponse<DocumentReviewResponse>>(
+  const res = await apiClient.get<BackendPagedResponse<ReviewResultResponse>>(
     `/reviewer/review-list/history${queryParams.toString() ? `?${queryParams.toString()}` : ""}`,
   );
 
@@ -260,14 +289,14 @@ async function submitReviewRequest(
     decision: "APPROVED" | "REJECTED";
   },
   reportFile: File,
-): Promise<DocumentReviewResponse> {
+): Promise<ReviewResultResponse> {
   const formData = new FormData();
   formData.append("request", JSON.stringify(data));
   formData.append("reportFile", reportFile);
 
-  // API route already unwraps ApiResponse, so we get DocumentReviewResponse directly
+  // API route already unwraps ApiResponse, so we get ReviewResultResponse directly
   // Don't set Content-Type header - apiClient will handle it for FormData
-  const res = await apiClient.put<DocumentReviewResponse>(
+  const res = await apiClient.put<ReviewResultResponse>(
     `/reviewer/review-list/${encodeURIComponent(reviewRequestId)}/submit`,
     formData,
   );
@@ -328,7 +357,7 @@ export async function getReviewedHistory(params?: {
   });
 
   return {
-    reviews: response.content.map(mapDocumentReviewToHistory),
+    reviews: response.content.map(mapReviewResultToHistory),
     total: response.totalElements,
   };
 }
@@ -358,5 +387,5 @@ export async function submitReview(
     decision: action === "APPROVE" ? "APPROVED" : "REJECTED",
   }, reportFile);
   
-  return mapDocumentReviewToHistory(response);
+  return mapReviewResultToHistory(response);
 }

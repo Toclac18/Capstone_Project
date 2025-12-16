@@ -1,124 +1,166 @@
-/* Contact Admin Form Styles – stable dark-mode with :global(html.dark) + higher contrast in light */
+/* Contact Admin Form Styles */
 
-/* Card / container */
+/* Container */
 .form-container {
-  @apply mx-auto grid max-w-2xl gap-7 rounded-xl border p-10 shadow-lg;
-  @apply border-stroke bg-white text-dark; /* high-contrast for light */
+  @apply mx-auto max-w-2xl rounded-2xl border p-8 shadow-lg;
+  @apply border-stroke bg-white;
 }
 :global(html.dark) .form-container {
-  @apply border-stroke-dark bg-dark-2 text-dark-8;
+  @apply border-stroke-dark bg-dark-2;
 }
 
-/* Title */
+/* Header */
+.form-header {
+  @apply mb-8 text-center;
+}
+
 .form-title {
-  @apply mb-8 text-center text-3xl font-extrabold text-dark;
+  @apply text-2xl font-bold text-dark;
 }
 :global(html.dark) .form-title {
   @apply text-white;
 }
 
-/* Section headers */
-.form-section-header {
-  @apply mb-4 pt-4 text-xl font-bold text-dark-3;
+.form-subtitle {
+  @apply mt-2 text-sm text-dark-5;
 }
-:global(html.dark) .form-section-header {
-  @apply text-dark-6; /* a bit softer than pure white in dark */
+:global(html.dark) .form-subtitle {
+  @apply text-dark-6;
 }
 
-/* Groups & labels */
+/* Sections */
+.form-section {
+  @apply mb-6 space-y-4;
+}
+
+.form-section-header {
+  @apply text-base font-semibold text-dark-3 pb-2 border-b border-stroke;
+}
+:global(html.dark) .form-section-header {
+  @apply text-dark-6 border-stroke-dark;
+}
+
+/* Grid */
+.form-grid {
+  @apply grid grid-cols-1 gap-4 md:grid-cols-2;
+}
+
+/* Field Group */
 .form-field-group {
-  @apply grid gap-2;
+  @apply space-y-1.5;
 }
 
 .form-label {
-  @apply mb-1 block text-base font-semibold text-dark-4; /* clearer in light */
+  @apply block text-sm font-medium text-dark-4;
 }
 :global(html.dark) .form-label {
-  @apply text-dark-6; /* readable on dark card */
+  @apply text-dark-6;
 }
 
-/* Inputs / Select / Textarea */
+/* Inputs */
 .form-input,
 .form-select,
 .form-textarea {
-  @apply w-full rounded-lg border p-3.5 text-base shadow-sm transition-all duration-200 ease-in-out;
-  @apply border-stroke bg-white text-dark placeholder-gray-6; /* stronger placeholder */
-  @apply focus:border-primary focus:ring-2 focus:ring-primary/60;
+  @apply w-full rounded-lg border px-4 py-3 text-sm transition-colors;
+  @apply border-stroke bg-white text-dark placeholder-gray-5;
+  @apply focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
 }
 :global(html.dark) .form-input,
 :global(html.dark) .form-select,
 :global(html.dark) .form-textarea {
-  @apply border-stroke-dark bg-dark-3 text-dark-8 placeholder-dark-6; /* darker field bg for contrast */
+  @apply border-stroke-dark bg-dark-3 text-dark-8 placeholder-dark-5;
+}
+
+.form-select {
+  @apply cursor-pointer appearance-none bg-no-repeat;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-size: 1.25em 1.25em;
+  padding-right: 2.5rem;
 }
 
 .form-textarea {
-  @apply min-h-[140px] resize-y;
+  @apply min-h-[120px] resize-y;
 }
 
-/* --- Exported error marker so TSX can use styles.error --- */
 .error {
+  @apply border-red focus:border-red focus:ring-red/20;
 }
 
-/* Error state */
-.form-input.error,
-.form-select.error,
-.form-textarea.error {
-  @apply border-red focus:border-red focus:ring-red/30;
-}
-:global(html.dark) .form-input.error,
-:global(html.dark) .form-select.error,
-:global(html.dark) .form-textarea.error {
-  @apply border-red focus:ring-red;
-}
-
-/* Keep layout stable:
-   - fixed line height (h-5 ~ 20px)
-   - single line, no wrap, clipped if long
-   => both columns reserve identical space whether there's an error or not */
 .form-error-message {
-  @apply mt-1 text-sm text-red;
-  @apply h-5 overflow-hidden text-ellipsis whitespace-nowrap leading-5;
+  @apply text-xs text-red;
 }
 
-/* Button */
+/* Submit Button */
 .form-submit-btn {
-  @apply w-full rounded-lg bg-primary px-6 py-3.5 text-lg font-bold text-white shadow-md;
-  @apply transition-all duration-200 ease-in-out hover:brightness-110;
-  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+  @apply w-full rounded-lg bg-primary px-6 py-3.5 text-base font-semibold text-white transition-all;
+  @apply hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+  @apply disabled:cursor-not-allowed disabled:opacity-60;
 }
 :global(html.dark) .form-submit-btn {
   @apply focus:ring-offset-dark-2;
 }
-.form-submit-btn:disabled {
-  @apply cursor-not-allowed opacity-60;
-}
 
-/* Centered submit row */
-.form-actions {
-  @apply mt-4 flex justify-center;
+.btn-loading {
+  @apply flex items-center justify-center;
 }
 
 /* Alerts */
-.form-alert-success {
-  @apply rounded-lg border-l-4 p-4 text-sm font-medium;
-  @apply border-green bg-green-light-6 text-green-dark;
-}
-:global(html.dark) .form-alert-success {
-  @apply border-green bg-dark-2 text-green-light-1;
-}
-
 .form-alert-error {
-  @apply rounded-lg border-l-4 p-4 text-sm font-medium;
-  @apply border-red bg-red-light-6 text-red-dark;
+  @apply mb-4 rounded-lg border-l-4 border-red bg-red/10 p-4 text-sm text-red;
 }
 :global(html.dark) .form-alert-error {
-  @apply border-red bg-dark-2 text-red;
+  @apply bg-red/20;
 }
 
-/* Meta */
-.form-meta-text {
-  @apply mt-4 text-center text-xs text-gray-6;
+/* Success Card */
+.success-card {
+  @apply flex flex-col items-center py-8 text-center;
 }
-:global(html.dark) .form-meta-text {
+
+.success-icon-wrapper {
+  @apply mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green/10 text-green;
+}
+
+.success-title {
+  @apply text-xl font-bold text-dark;
+}
+:global(html.dark) .success-title {
+  @apply text-white;
+}
+
+.success-message {
+  @apply mt-2 text-sm text-dark-5;
+}
+:global(html.dark) .success-message {
   @apply text-dark-6;
+}
+
+.ticket-info {
+  @apply mt-6 flex items-center gap-2 rounded-lg bg-gray-1 px-4 py-3;
+}
+:global(html.dark) .ticket-info {
+  @apply bg-dark-3;
+}
+
+.ticket-label {
+  @apply text-sm text-dark-5;
+}
+:global(html.dark) .ticket-label {
+  @apply text-dark-6;
+}
+
+.ticket-code {
+  @apply font-mono text-base font-bold text-primary;
+}
+
+.success-note {
+  @apply mt-3 text-xs text-dark-5;
+}
+:global(html.dark) .success-note {
+  @apply text-dark-6;
+}
+
+.success-card .form-submit-btn {
+  @apply mt-6 w-auto;
 }

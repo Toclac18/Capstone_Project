@@ -9,6 +9,11 @@ export const NAV_DATA = [
         icon: Icons.HomeIcon,
         url: "/homepage",
       },
+      {
+        title: "Contact Admin",
+        icon: Icons.HeadphonesIcon,
+        url: "/contact-admin",
+      },
     ],
   },
 ];
@@ -19,9 +24,9 @@ export const READER_NAV_DATA = [
     label: "READER",
     items: [
       {
-        title: "My Organizations",
-        icon: Icons.BuildingIcon,
-        url: "/reader/organizations",
+        title: "Home",
+        icon: Icons.HomeIcon,
+        url: "/homepage",
       },
       {
         title: "Search Document",
@@ -29,9 +34,9 @@ export const READER_NAV_DATA = [
         url: "/search",
       },
       {
-        title: "Upload History",
-        icon: Icons.HistoryIcon,
-        url: "/reader/upload-history",
+        title: "My Organizations",
+        icon: Icons.BuildingIcon,
+        url: "/reader/organizations",
       },
       {
         title: "My Library",
@@ -43,6 +48,21 @@ export const READER_NAV_DATA = [
         icon: Icons.BarChartIcon,
         url: "/reader/statistics",
       },
+      {
+        title: "Upload History",
+        icon: Icons.HistoryIcon,
+        url: "/reader/upload-history",
+      },
+      {
+        title: "Read History",
+        icon: Icons.ClockIcon,
+        url: "/reader/read-history",
+      },     
+      {
+        title: "Contact Admin",
+        icon: Icons.HeadphonesIcon,
+        url: "/contact-admin",
+      },
     ],
   },
 ];
@@ -52,6 +72,11 @@ export const REVIEWER_NAV_DATA = [
   {
     label: "REVIEWER",
     items: [
+      {
+        title: "Home",
+        icon: Icons.HomeIcon,
+        url: "/homepage",
+      },
       {
         title: "View Review List",
         icon: Icons.ClipboardCheckIcon,
@@ -126,6 +151,11 @@ export const BUSINESS_ADMIN_NAV_DATA = [
         url: "/business-admin/reviews",
       },
       {
+        title: "Review Approval",
+        icon: Icons.CheckCircleIcon,
+        url: "/business-admin/review-approval",
+      },
+      {
         title: "Document Domain Management",
         icon: Icons.FolderIcon,
         url: "/business-admin/domains",
@@ -144,6 +174,11 @@ export const BUSINESS_ADMIN_NAV_DATA = [
         title: "Report Management",
         icon: Icons.BarChartIcon,
         url: "/business-admin/reports",
+      },
+      {
+        title: "Contact Tickets",
+        icon: Icons.HeadphonesIcon,
+        url: "/business-admin/tickets",
       },
     ],
   },

@@ -37,12 +37,16 @@ export default function MetaGrid() {
 
         <div className={s.card}>
           <div className={s.kvRow}>
-            <span className={s.kvLabel}>Total rows</span>
+            <span className={s.kvLabel}>Total records</span>
             <span className={s.kvValue}>{summary.totalRows}</span>
           </div>
           <div className={s.kvRow}>
             <span className={s.kvLabel}>Success</span>
             <span className={s.kvValue}>{summary.successCount}</span>
+          </div>
+          <div className={s.kvRow}>
+            <span className={s.kvLabel}>Pending</span>
+            <span className={s.kvValue}>{summary.pendingCount}</span>
           </div>
           <div className={s.kvRow}>
             <span className={s.kvLabel}>Failed</span>

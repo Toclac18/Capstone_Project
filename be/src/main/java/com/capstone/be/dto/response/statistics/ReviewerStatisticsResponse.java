@@ -88,11 +88,6 @@ public class ReviewerStatisticsResponse {
      * Expired review requests
      */
     private Long expiredReviewRequests;
-
-    /**
-     * Completed review requests
-     */
-    private Long completedReviewRequests;
   }
 }
 

@@ -76,6 +76,7 @@ public class DocumentServiceImpl implements DocumentService {
   private final DocumentRedemptionRepository documentRedemptionRepository;
   private final DocumentReadHistoryRepository documentReadHistoryRepository;
   private final ReviewRequestRepository reviewRequestRepository;
+  private final com.capstone.be.repository.ReviewResultRepository reviewResultRepository;
   private final com.capstone.be.repository.CommentRepository commentRepository;
   private final com.capstone.be.repository.SavedListDocumentRepository savedListDocumentRepository;
   private final com.capstone.be.repository.DocumentReportRepository documentReportRepository;
@@ -927,7 +928,7 @@ public class DocumentServiceImpl implements DocumentService {
         AdminDocumentListResponse.ReviewStatusInfo reviewStatus = AdminDocumentListResponse.ReviewStatusInfo.builder()
             .pendingCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.PENDING))
             .acceptedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.ACCEPTED))
-            .completedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.COMPLETED))
+            .submittedReviewCount((int) reviewResultRepository.countByReviewRequest_Document_IdAndSubmittedAtIsNotNull(documentId))
             .rejectedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.REJECTED))
             .expiredCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.EXPIRED))
             .hasActiveReview(
@@ -987,7 +988,7 @@ public class DocumentServiceImpl implements DocumentService {
       DocumentDetailResponse.ReviewRequestSummary reviewSummary = DocumentDetailResponse.ReviewRequestSummary.builder()
           .pendingCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.PENDING))
           .acceptedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.ACCEPTED))
-          .completedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.COMPLETED))
+          .submittedReviewCount((int) reviewResultRepository.countByReviewRequest_Document_IdAndSubmittedAtIsNotNull(documentId))
           .rejectedCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.REJECTED))
           .expiredCount((int) reviewRequestRepository.countByDocument_IdAndStatus(documentId, ReviewRequestStatus.EXPIRED))
           .hasActiveReview(
@@ -1352,9 +1353,7 @@ public class DocumentServiceImpl implements DocumentService {
     long acceptedReviewRequests = allReviewRequests.stream()
         .filter(rr -> rr.getStatus() == ReviewRequestStatus.ACCEPTED)
         .count();
-    long completedReviews = allReviewRequests.stream()
-        .filter(rr -> rr.getStatus() == ReviewRequestStatus.COMPLETED)
-        .count();
+    long submittedReviews = reviewResultRepository.countBySubmittedAtIsNotNull();
     long totalReviewRequests = allReviewRequests.size();
     
     // Recent activity (last 30 days)
@@ -1384,7 +1383,7 @@ public class DocumentServiceImpl implements DocumentService {
         .totalReviewRequests(totalReviewRequests)
         .pendingReviewRequests(pendingReviewRequests)
         .acceptedReviewRequests(acceptedReviewRequests)
-        .completedReviews(completedReviews)
+        .submittedReviews(submittedReviews)
         .documentsUploadedLast30Days(documentsUploadedLast30Days)
         .documentsActivatedLast30Days(documentsActivatedLast30Days)
         .build();

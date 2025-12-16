@@ -223,8 +223,10 @@ export function DocumentManagement() {
                             ? styles["status-inactive"]
                             : doc.status === "REVIEWING" || doc.status === "AI_VERIFYING"
                             ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                            : doc.status === "AI_VERIFIED"
+                            : doc.status === "PENDING_REVIEW"
                             ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                            : doc.status === "PENDING_APPROVE"
+                            ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
                             : doc.status === "AI_REJECTED"
                             ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
                             : doc.status === "INACTIVE"

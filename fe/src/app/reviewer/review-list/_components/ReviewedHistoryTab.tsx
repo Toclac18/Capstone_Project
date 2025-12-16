@@ -9,7 +9,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { formatDate, formatTime } from "@/utils/format-date";
 import { getDocumentTypes, getDomains } from "@/services/upload-documents.service";
 import styles from "../styles.module.css";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
 
 const ITEMS_PER_PAGE = 12;
 const MAX_TAGS_DISPLAY = 3;
@@ -166,6 +166,42 @@ export function ReviewedHistoryTab() {
     }
   }, []);
 
+  const getBAApprovalIcon = useCallback((status?: string) => {
+    switch (status) {
+      case "APPROVED":
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case "REJECTED":
+        return <XCircle className="w-4 h-4 text-red-600" />;
+      case "PENDING":
+      default:
+        return <Clock className="w-4 h-4 text-yellow-600" />;
+    }
+  }, []);
+
+  const getBAApprovalLabel = useCallback((status?: string) => {
+    switch (status) {
+      case "APPROVED":
+        return "BA Approved";
+      case "REJECTED":
+        return "BA Rejected";
+      case "PENDING":
+      default:
+        return "Pending BA Approval";
+    }
+  }, []);
+
+  const getBAApprovalClass = useCallback((status?: string) => {
+    switch (status) {
+      case "APPROVED":
+        return "text-green-600 dark:text-green-400";
+      case "REJECTED":
+        return "text-red-600 dark:text-red-400";
+      case "PENDING":
+      default:
+        return "text-yellow-600 dark:text-yellow-400";
+    }
+  }, []);
+
   return (
     <div className={styles["tab-content"]}>
       <HistoryFilters onFiltersChange={handleFiltersChange} loading={loading} />
@@ -189,14 +225,14 @@ export function ReviewedHistoryTab() {
               <table className={styles["table"]}>
                 <thead className={styles["table-header"]}>
                   <tr>
-                    <th className={styles["table-header-cell"]} style={{ width: "20%" }}>Title</th>
-                    <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Type</th>
-                    <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Domain</th>
-                    <th className={styles["table-header-cell"]} style={{ width: "12%" }}>Specialization</th>
-                    <th className={styles["table-header-cell"]} style={{ width: "15%" }}>Tags</th>
-                    <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Uploader</th>
-                    <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Date Upload</th>
-                    <th className={styles["table-header-cell"]} style={{ width: "13%" }}>Review Date</th>
+                    <th className={styles["table-header-cell"]} style={{ width: "18%" }}>Title</th>
+                    <th className={styles["table-header-cell"]} style={{ width: "8%" }}>Type</th>
+                    <th className={styles["table-header-cell"]} style={{ width: "8%" }}>Domain</th>
+                    <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Specialization</th>
+                    <th className={styles["table-header-cell"]} style={{ width: "12%" }}>Tags</th>
+                    <th className={styles["table-header-cell"]} style={{ width: "9%" }}>Uploader</th>
+                    <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Review Date</th>
+                    <th className={styles["table-header-cell"]} style={{ width: "12%" }}>BA Approval</th>
                   </tr>
                 </thead>
                 <tbody className={styles["table-body"]}>
@@ -258,23 +294,31 @@ export function ReviewedHistoryTab() {
                         </span>
                       </td>
                       <td className={styles["table-cell"]}>
-                        {review.uploadedDate ? (
-                          <span className={styles["table-cell-value"]}>
-                            {formatDate(review.uploadedDate)}
-                          </span>
-                        ) : (
-                          <span className={styles["text-muted"]}>—</span>
-                        )}
-                      </td>
-                      <td className={styles["table-cell"]}>
                         <span className={styles["table-cell-value"]}>
                           {formatDate(review.reviewDate)}
                         </span>
-                        {review.verificationTime && (
-                          <div className={styles["verification-time"]}>
-                            Verified: {formatTime(review.verificationTime)}
+                      </td>
+                      <td className={styles["table-cell"]}>
+                        <div className="flex flex-col gap-1">
+                          <div className={`flex items-center gap-1.5 ${getBAApprovalClass(review.baApprovalStatus)}`}>
+                            {getBAApprovalIcon(review.baApprovalStatus)}
+                            <span className="text-sm font-medium">
+                              {getBAApprovalLabel(review.baApprovalStatus)}
+                            </span>
                           </div>
-                        )}
+                          {review.baApproval?.rejectionReason && (
+                            <div className="text-xs text-red-500 dark:text-red-400 mt-0.5" title={review.baApproval.rejectionReason}>
+                              Reason: {review.baApproval.rejectionReason.length > 30 
+                                ? review.baApproval.rejectionReason.substring(0, 30) + "..." 
+                                : review.baApproval.rejectionReason}
+                            </div>
+                          )}
+                          {review.baApproval?.approvedAt && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {formatDate(review.baApproval.approvedAt)}
+                            </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

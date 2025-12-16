@@ -63,9 +63,9 @@ export async function getAllReviewRequests(
 }
 
 /**
- * Document Review Types
+ * Review Result Types (renamed from DocumentReview)
  */
-export interface DocumentReviewResponse {
+export interface ReviewResultResponse {
   id: string;
   reviewRequestId: string;
   document: {
@@ -102,16 +102,22 @@ export interface DocumentReviewResponse {
   updatedAt?: string;
 }
 
+// Alias for backward compatibility
+export type DocumentReviewResponse = ReviewResultResponse;
+
 /**
- * Get document review by review request ID
+ * Get review result by review request ID
  * GET /business-admin/review-requests/{reviewRequestId}/review
  */
-export async function getDocumentReviewByReviewRequestId(
+export async function getReviewResultByReviewRequestId(
   reviewRequestId: string,
-): Promise<DocumentReviewResponse> {
-  const res = await apiClient.get<DocumentReviewResponse>(
+): Promise<ReviewResultResponse> {
+  const res = await apiClient.get<ReviewResultResponse>(
     `/business-admin/review-requests/${reviewRequestId}/review`,
   );
   return res.data;
 }
+
+// Alias for backward compatibility
+export const getDocumentReviewByReviewRequestId = getReviewResultByReviewRequestId;
 

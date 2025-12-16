@@ -1,11 +1,13 @@
 package com.capstone.be.service;
 
+import com.capstone.be.dto.request.review.ApproveReviewResultRequest;
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
 import com.capstone.be.dto.request.review.RespondReviewRequestRequest;
 import com.capstone.be.dto.request.review.ReviewHistoryFilterRequest;
 import com.capstone.be.dto.request.review.SubmitReviewRequest;
-import com.capstone.be.dto.response.review.DocumentReviewResponse;
+import com.capstone.be.dto.response.review.ReviewResultResponse;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
+import com.capstone.be.domain.enums.ReviewResultStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -18,7 +20,7 @@ public interface ReviewRequestService {
 
   /**
    * Assign a reviewer to review a document (BA assigns)
-   * Only premium documents with AI_VERIFIED status can be assigned
+   * Only premium documents with PENDING_REVIEW status can be assigned
    *
    * @param businessAdminId Business Admin ID who assigns
    * @param documentId      Document ID to be reviewed
@@ -92,7 +94,7 @@ public interface ReviewRequestService {
    * @param reportFile       Review report file (docx)
    * @return Document review response
    */
-  DocumentReviewResponse submitReview(UUID reviewerId, UUID reviewRequestId, SubmitReviewRequest request, org.springframework.web.multipart.MultipartFile reportFile);
+  ReviewResultResponse submitReview(UUID reviewerId, UUID reviewRequestId, SubmitReviewRequest request, org.springframework.web.multipart.MultipartFile reportFile);
 
   /**
    * View review history for a reviewer (all reviews submitted by the reviewer)
@@ -103,7 +105,7 @@ public interface ReviewRequestService {
    * @param pageable   Pagination parameters
    * @return Page of document review responses
    */
-  Page<DocumentReviewResponse> getReviewerHistory(UUID reviewerId, ReviewHistoryFilterRequest filter, Pageable pageable);
+  Page<ReviewResultResponse> getReviewerHistory(UUID reviewerId, ReviewHistoryFilterRequest filter, Pageable pageable);
 
   /**
    * Business Admin - Get document review by review request ID
@@ -111,5 +113,35 @@ public interface ReviewRequestService {
    * @param reviewRequestId Review request ID
    * @return Document review response
    */
-  DocumentReviewResponse getDocumentReviewByReviewRequestId(UUID reviewRequestId);
+  ReviewResultResponse getReviewResultByReviewRequestId(UUID reviewRequestId);
+
+  /**
+   * Business Admin - Get all pending review results (PENDING status)
+   * These are reviews submitted by reviewers waiting for BA approval
+   *
+   * @param pageable Pagination parameters
+   * @return Page of document review responses with PENDING status
+   */
+  Page<ReviewResultResponse> getPendingReviewResults(Pageable pageable);
+
+  /**
+   * Business Admin - Get all review results with optional status filter
+   *
+   * @param status   Optional status filter (null = all)
+   * @param pageable Pagination parameters
+   * @return Page of document review responses
+   */
+  Page<ReviewResultResponse> getAllReviewResults(ReviewResultStatus status, Pageable pageable);
+
+  /**
+   * Business Admin - Approve or reject a review result
+   * If approved: apply reviewer's decision to document (ACTIVE or REJECTED)
+   * If rejected: document goes back to REVIEWING, reviewer must re-review
+   *
+   * @param businessAdminId Business Admin ID
+   * @param reviewId        Document review ID
+   * @param request         Approval request
+   * @return Updated document review response
+   */
+  ReviewResultResponse approveReviewResult(UUID businessAdminId, UUID reviewId, ApproveReviewResultRequest request);
 }

@@ -6,11 +6,10 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum ReviewRequestStatus {
-  PENDING("Pending"),           // Chờ reviewer phản hồi
-  ACCEPTED("Accepted"),         // Reviewer đồng ý
+  PENDING("Pending"),           // Chờ reviewer phản hồi (1 ngày)
+  ACCEPTED("Accepted"),         // Reviewer đồng ý review
   REJECTED("Rejected"),         // Reviewer từ chối
-  EXPIRED("Expired"),           // Quá hạn 1 ngày không phản hồi
-  COMPLETED("Completed");       // Review đã được submit
+  EXPIRED("Expired");           // Quá hạn không phản hồi hoặc không submit review
 
   private final String displayName;
 }

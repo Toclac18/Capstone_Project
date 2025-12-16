@@ -21,6 +21,10 @@ import java.util.stream.Collectors;
 
 /**
  * Seeder for Document AND Read History (dev profile only)
+ * 
+ * Document Status Flow:
+ * - Free documents: PENDING → AI_MODERATION → ACTIVE (no review needed)
+ * - Premium documents: PENDING → AI_MODERATION → PENDING_REVIEW → REVIEWING → PENDING_APPROVE → ACTIVE/REJECTED
  */
 @Profile("dev")
 @Component
@@ -36,12 +40,8 @@ public class DocumentSeeder {
   private final OrganizationProfileRepository organizationProfileRepository;
   private final TagRepository tagRepository;
   private final DocumentTagLinkRepository documentTagLinkRepository;
-
-  // Inject thêm Repository này
   private final DocumentReadHistoryRepository documentReadHistoryRepository;
-
   private final ApplicationEventPublisher eventPublisher;
-
 
   @Transactional
   @EventListener(TagSeededEvent.class)
@@ -54,29 +54,27 @@ public class DocumentSeeder {
       return;
     }
 
-    // 1. Tạo 20 documents (nhiều data để test trending feature)
-    for (int i = 0; i < 20; i++) {
+    // 1. Tạo 30 documents với các status khác nhau
+    for (int i = 0; i < 30; i++) {
       createDocument(i);
     }
 
     // 2. Sau khi tạo xong Document thì tạo luôn History
     seedReadHistory();
 
-    // 3. Tạo comment cho docs
+    // 3. Tạo comment cho docs (chỉ cho ACTIVE docs)
     genCommentForDocument();
 
-    // 4. Tạo engagement data (views, votes)
+    // 4. Tạo engagement data (views, votes) cho ACTIVE docs
     seedEngagementData();
 
     eventPublisher.publishEvent(new DocumentSeededEvent());
-
   }
 
   private void createDocument(int seed) {
     OrganizationProfile orgProfile =
             organizationProfileRepository.findByEmail("contact@hust.edu.vn").orElse(null);
 
-    // Xoay vòng giữa các user để phân bổ documents
     List<User> users = userRepository.findAll();
     if (users.isEmpty()) {
       log.warn("⚠️ No users found. Skipping document seed " + seed);
@@ -95,7 +93,7 @@ public class DocumentSeeder {
       return;
     }
 
-    com.capstone.be.domain.entity.DocumentSummarization summarization = DocumentSummarization.builder()
+    DocumentSummarization summarization = DocumentSummarization.builder()
             .shortSummary("Tóm tắt ngắn gọn cho tài liệu số " + (seed + 1) + ". Nội dung bao quát các khái niệm chính.")
             .mediumSummary("Tóm tắt vừa phải: Tài liệu này đi sâu vào lý thuyết và thực hành, cung cấp cái nhìn tổng quan về chủ đề với các ví dụ minh họa cụ thể cho tài liệu " + (seed + 1) + ".")
             .detailedSummary("Tóm tắt chi tiết: Đây là bản phân tích đầy đủ, kết nối các phương pháp cổ điển với các phát triển hiện đại. Tài liệu làm rõ các giả định, điều kiện biên và tính hợp lệ thống kê của các phát hiện được báo cáo, đồng thời đề xuất các tiêu chuẩn có thể tái lập cho tài liệu số " + (seed + 1) + ".")
@@ -121,16 +119,37 @@ public class DocumentSeeder {
             "Microservices Architecture",
             "Reactive Programming",
             "GraphQL API Development",
-            "Blockchain và Smart Contracts"
+            "Blockchain và Smart Contracts",
+            "DevOps Best Practices",
+            "System Design Interview",
+            "Clean Code Principles",
+            "Design Patterns in Java",
+            "Agile Project Management",
+            "Data Structures Advanced",
+            "Computer Vision Basics",
+            "Natural Language Processing",
+            "Distributed Systems",
+            "Software Architecture"
     };
     String title = seed < titles.length ? titles[seed] : "Tài liệu tham khảo " + seed;
 
-    // Tạo engagement data để test trending (các documents gần đây sẽ có views/votes cao)
-    int daysAgo = Math.max(0, 7 - (seed % 8)); // Docs mới nhất (daysAgo = 0) sẽ có views cao nhất
-    int viewCount = (20 - seed) * 50; // Docs đầu tiên có views cao, giảm dần
-    int upvoteCount = Math.max(0, (15 - seed) * 3);
-    int downvoteCount = Math.max(0, (seed - 10) * 2);
-    int voteScore = upvoteCount - downvoteCount;
+    // Determine if premium and status based on seed
+    boolean isPremium = seed % 3 != 0; // 2/3 documents are premium
+    DocStatus status = determineDocumentStatus(seed, isPremium);
+    
+    // Only ACTIVE documents have engagement data
+    int viewCount = 0;
+    int upvoteCount = 0;
+    int voteScore = 0;
+    int daysAgo = 7;
+    
+    if (status == DocStatus.ACTIVE) {
+      daysAgo = Math.max(0, 7 - (seed % 8));
+      viewCount = (30 - seed) * 50;
+      upvoteCount = Math.max(0, (20 - seed) * 3);
+      int downvoteCount = Math.max(0, (seed - 15) * 2);
+      voteScore = upvoteCount - downvoteCount;
+    }
 
     Document document = Document.builder()
             .id(SeedUtil.generateUUID("doc-" + seed))
@@ -140,12 +159,12 @@ public class DocumentSeeder {
             .organization(orgProfile)
             .visibility(DocVisibility.PUBLIC)
             .docType(docType)
-            .isPremium(seed % 3 != 0) // Một số là premium
-            .price(seed % 3 != 0 ? 100 + (seed * 25) : 0)
+            .isPremium(isPremium)
+            .price(isPremium ? 100 + (seed * 25) : 0)
             .thumbnailKey("/thumbnail-" + (seed % 5 + 1) + ".jpg")
             .fileKey("file-" + (seed + 1) + ".pdf")
             .pageCount(20 + (seed * 5))
-            .status(DocStatus.ACTIVE)
+            .status(status)
             .specialization(spec)
             .summarizations(summarization)
             .viewCount(viewCount)
@@ -171,12 +190,46 @@ public class DocumentSeeder {
       }
     }
 
-    log.info("✅ Created document #{}: {} (Views: {}, Upvotes: {}, DaysAgo: {})",
-            seed + 1, savedDoc.getTitle(), viewCount, upvoteCount, daysAgo);
+    log.info("✅ Created document #{}: {} (Premium: {}, Status: {})",
+            seed + 1, savedDoc.getTitle(), isPremium, status);
   }
 
   /**
-   * Logic tạo lịch sử đọc cho user reader1
+   * Determine document status based on seed and premium flag
+   * 
+   * Distribution for 30 documents:
+   * - Free documents (10): All ACTIVE
+   * - Premium documents (20):
+   *   - 5 PENDING_REVIEW (waiting for reviewer assignment)
+   *   - 5 REVIEWING (reviewer accepted, working on review)
+   *   - 3 PENDING_APPROVE (reviewer submitted, waiting BA approval)
+   *   - 5 ACTIVE (review approved)
+   *   - 2 REJECTED (review rejected)
+   */
+  private DocStatus determineDocumentStatus(int seed, boolean isPremium) {
+    if (!isPremium) {
+      // Free documents are always ACTIVE (no review needed)
+      return DocStatus.ACTIVE;
+    }
+    
+    // Premium documents have various statuses
+    int premiumIndex = seed / 3; // 0, 1, 2, 3, ... for premium docs
+    
+    if (premiumIndex < 5) {
+      return DocStatus.PENDING_REVIEW; // 5 docs waiting for reviewer
+    } else if (premiumIndex < 10) {
+      return DocStatus.REVIEWING; // 5 docs being reviewed
+    } else if (premiumIndex < 13) {
+      return DocStatus.PENDING_APPROVE; // 3 docs waiting BA approval
+    } else if (premiumIndex < 18) {
+      return DocStatus.ACTIVE; // 5 docs approved
+    } else {
+      return DocStatus.REJECTED; // 2 docs rejected
+    }
+  }
+
+  /**
+   * Logic tạo lịch sử đọc cho user reader1 (chỉ cho ACTIVE docs)
    */
   private void seedReadHistory() {
     if (documentReadHistoryRepository.count() > 0) {
@@ -187,17 +240,17 @@ public class DocumentSeeder {
     User reader = userRepository.findByEmail("reader1@gmail.com").orElse(null);
     if (reader == null) return;
 
-    List<Document> documents = documentRepository.findAll();
+    List<Document> activeDocuments = documentRepository.findAll().stream()
+            .filter(d -> d.getStatus() == DocStatus.ACTIVE)
+            .toList();
 
-    for (int i = 0; i < documents.size(); i++) {
-      Document doc = documents.get(i);
+    for (int i = 0; i < activeDocuments.size(); i++) {
+      Document doc = activeDocuments.get(i);
 
       DocumentReadHistory history = DocumentReadHistory.builder()
               .id(SeedUtil.generateUUID("history-" + i))
               .user(reader)
               .document(doc)
-              // Có thể set createdAt nếu Entity cho phép để test sort history
-              // .createdAt(Instant.now().minusSeconds(i * 3600))
               .build();
 
       documentReadHistoryRepository.save(history);
@@ -206,7 +259,6 @@ public class DocumentSeeder {
   }
 
   private void genCommentForDocument() {
-    // 1. Danh sách email theo yêu cầu
     List<String> targetEmails = List.of(
             "reader1@gmail.com",
             "reader2@gmail.com",
@@ -216,7 +268,6 @@ public class DocumentSeeder {
             "reader.pending@gmail.com"
     );
 
-    // 2. Tìm User entity từ Email
     List<User> users = targetEmails.stream()
             .map(email -> userRepository.findByEmail(email).orElse(null))
             .filter(Objects::nonNull)
@@ -229,13 +280,15 @@ public class DocumentSeeder {
 
     log.info("Found {} users for commenting.", users.size());
 
-    // 3. Tạo comment cho tất cả documents
-    List<Document> allDocs = documentRepository.findAll();
+    // Chỉ tạo comment cho ACTIVE documents
+    List<Document> activeDocs = documentRepository.findAll().stream()
+            .filter(d -> d.getStatus() == DocStatus.ACTIVE)
+            .toList();
+    
     List<Comment> commentsToSave = new ArrayList<>();
     int userCursor = 0;
 
-    for (Document doc : allDocs) {
-      // Mỗi document có 2-10 comments tùy theo index
+    for (Document doc : activeDocs) {
       int commentCount = 2 + (int) (Math.random() * 9);
       for (int i = 0; i < commentCount; i++) {
         User currentUser = users.get(userCursor % users.size());
@@ -252,25 +305,25 @@ public class DocumentSeeder {
       }
     }
 
-    // 4. Lưu vào Database
     if (!commentsToSave.isEmpty()) {
       commentRepository.saveAll(commentsToSave);
-      log.info("✅ Đã tạo thành công {} comments cho {} documents", commentsToSave.size(), allDocs.size());
+      log.info("✅ Đã tạo thành công {} comments cho {} ACTIVE documents", commentsToSave.size(), activeDocs.size());
     }
   }
 
   /**
-   * Seed engagement data: views, votes cho documents để test trending feature
+   * Seed engagement data cho ACTIVE documents
    */
   private void seedEngagementData() {
-    List<Document> allDocs = documentRepository.findAll();
-    log.info("📊 Seeding engagement data for {} documents", allDocs.size());
+    List<Document> activeDocs = documentRepository.findAll().stream()
+            .filter(d -> d.getStatus() == DocStatus.ACTIVE)
+            .toList();
+    
+    log.info("📊 Seeding engagement data for {} ACTIVE documents", activeDocs.size());
 
-    for (int i = 0; i < allDocs.size(); i++) {
-      Document doc = allDocs.get(i);
+    for (int i = 0; i < activeDocs.size(); i++) {
+      Document doc = activeDocs.get(i);
 
-      // Tính toán engagement based on position
-      // Documents đầu tiên có engagement cao, documents sau có ít hơn
       int position = i;
       int views = (20 - position) * 100 + (int) (Math.random() * 500);
       int upvotes = Math.max(0, (15 - position) * 5 + (int) (Math.random() * 20));
@@ -281,8 +334,7 @@ public class DocumentSeeder {
       doc.setUpvoteCount(Math.max(0, upvotes));
       doc.setVoteScore(voteScore);
 
-      // Set createdAt để mô phỏng các documents gần đây
-      int daysAgo = i % 8; // Xoay vòng giữa 0-7 ngày
+      int daysAgo = i % 8;
       doc.setCreatedAt(Instant.now().minusSeconds(daysAgo * 24 * 60 * 60L));
 
       documentRepository.save(doc);

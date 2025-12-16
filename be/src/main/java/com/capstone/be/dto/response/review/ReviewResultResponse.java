@@ -1,6 +1,7 @@
 package com.capstone.be.dto.response.review;
 
 import com.capstone.be.domain.enums.ReviewDecision;
+import com.capstone.be.domain.enums.ReviewResultStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,22 +11,25 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Response DTO for document review
+ * Response DTO for review result
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class DocumentReviewResponse {
+public class ReviewResultResponse {
 
   private UUID id;
   private UUID reviewRequestId;
   private DocumentInfo document;
   private ReviewerInfo reviewer;
+  private UploaderInfo uploader;
   private String report;
   private String reportFileUrl;
   private ReviewDecision decision;
+  private ReviewResultStatus status;
   private Instant submittedAt;
+  private ApprovalInfo approval;
   private Instant createdAt;
   private Instant updatedAt;
 
@@ -107,7 +111,35 @@ public class DocumentReviewResponse {
   @AllArgsConstructor
   public static class ReviewerInfo {
     private UUID id;
-    private String username;
+    private String fullName;
     private String email;
+    private String avatarUrl;
+  }
+
+  /**
+   * Nested DTO for uploader information
+   */
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class UploaderInfo {
+    private UUID id;
+    private String fullName;
+    private String email;
+  }
+
+  /**
+   * Nested DTO for BA approval information
+   */
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class ApprovalInfo {
+    private UUID approvedById;
+    private String approvedByName;
+    private Instant approvedAt;
+    private String rejectionReason;
   }
 }

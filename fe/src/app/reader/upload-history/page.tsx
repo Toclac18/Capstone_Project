@@ -150,10 +150,11 @@ export default function UploadHistoryPage() {
   const getStatusBadgeClass = (status: string): string => {
     switch (status) {
       case "ACTIVE":
-      case "AI_VERIFIED":
         return styles["status-approved"];
       case "AI_VERIFYING":
       case "REVIEWING":
+      case "PENDING_REVIEW":
+      case "PENDING_APPROVE":
         return styles["status-pending"];
       case "REJECTED":
       case "AI_REJECTED":
@@ -167,8 +168,9 @@ export default function UploadHistoryPage() {
     switch (status) {
       case "AI_VERIFYING":
       case "REVIEWING":
+      case "PENDING_REVIEW":
+      case "PENDING_APPROVE":
         return "Pending";
-      case "AI_VERIFIED":
       case "ACTIVE":
         return "Approved";
       case "AI_REJECTED":

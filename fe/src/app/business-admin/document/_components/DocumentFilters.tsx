@@ -24,9 +24,10 @@ const SORT_ORDER_OPTIONS = [
 const STATUS_OPTIONS = [
   { value: "", label: "All Status" },
   { value: "AI_VERIFYING", label: "AI Verifying" },
-  { value: "AI_VERIFIED", label: "AI Verified" },
+  { value: "PENDING_REVIEW", label: "Pending Review" },
   { value: "AI_REJECTED", label: "AI Rejected" },
   { value: "REVIEWING", label: "Reviewing" },
+  { value: "PENDING_APPROVE", label: "Pending Approve" },
   { value: "ACTIVE", label: "Active" },
   { value: "REJECTED", label: "Rejected" },
   { value: "INACTIVE", label: "Inactive" },

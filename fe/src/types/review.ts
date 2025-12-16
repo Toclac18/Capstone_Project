@@ -43,6 +43,8 @@ export interface ReviewRequest {
   specialization?: string; // Specialization name
 }
 
+export type BAApprovalStatus = "PENDING" | "APPROVED" | "REJECTED";
+
 export interface ReviewHistory {
   id: string;
   documentId: string;
@@ -60,6 +62,14 @@ export interface ReviewHistory {
   reviewerId: string;
   reviewerName: string;
   comments?: string;
+  // BA approval status
+  baApprovalStatus?: BAApprovalStatus;
+  baApproval?: {
+    approvedById?: string;
+    approvedByName?: string;
+    approvedAt?: string;
+    rejectionReason?: string;
+  };
 }
 
 export interface ReviewListQueryParams {

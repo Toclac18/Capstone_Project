@@ -117,8 +117,8 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
         .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
 
     if ("pass".equalsIgnoreCase(response.getStatus())) {
-      // AI approved - update status and summaries
-      document.setStatus(DocStatus.AI_VERIFIED);
+      // AI approved - update status to PENDING_REVIEW (waiting for BA to assign reviewer)
+      document.setStatus(DocStatus.PENDING_REVIEW);
 
       // Extract and set summaries
       if (response.getSummaries() != null) {

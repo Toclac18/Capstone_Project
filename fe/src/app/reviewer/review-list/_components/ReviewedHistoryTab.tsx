@@ -10,7 +10,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { formatDate } from "@/utils/format-date";
 import { getDocumentTypes, getDomains } from "@/services/upload-documents.service";
 import styles from "../styles.module.css";
-import { CheckCircle, XCircle, Clock, AlertCircle, Eye } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Eye } from "lucide-react";
 
 const ITEMS_PER_PAGE = 12;
 const MAX_TAGS_DISPLAY = 3;

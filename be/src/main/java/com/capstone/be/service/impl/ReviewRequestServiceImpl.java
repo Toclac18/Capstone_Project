@@ -1,6 +1,7 @@
 package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.Document;
+import com.capstone.be.domain.entity.ReaderProfile;
 import com.capstone.be.domain.entity.ReviewResult;
 import com.capstone.be.domain.entity.DocumentTagLink;
 import com.capstone.be.domain.entity.ReviewRequest;
@@ -23,17 +24,20 @@ import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.mapper.ReviewResultMapper;
 import com.capstone.be.mapper.ReviewRequestMapper;
 import com.capstone.be.repository.DocumentRepository;
+import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.repository.ReviewResultRepository;
 import com.capstone.be.repository.DocumentTagLinkRepository;
 import com.capstone.be.repository.ReviewRequestRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.repository.spec.ReviewResultSpecification;
 import com.capstone.be.service.DocumentConversionService;
+import com.capstone.be.service.EmailService;
 import com.capstone.be.service.FileStorageService;
 import com.capstone.be.service.ReviewRequestService;
 import com.capstone.be.util.ByteArrayMultipartFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -58,11 +62,16 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
   private final DocumentRepository documentRepository;
   private final UserRepository userRepository;
   private final ReviewResultRepository reviewResultRepository;
+  private final ReaderProfileRepository readerProfileRepository;
   private final ReviewRequestMapper reviewRequestMapper;
   private final ReviewResultMapper reviewResultMapper;
   private final FileStorageService fileStorageService;
   private final DocumentTagLinkRepository documentTagLinkRepository;
   private final DocumentConversionService documentConversionService;
+  private final EmailService emailService;
+
+  @Value("${app.document.points.ba-approval:100}")
+  private int baApprovalPoints;
 
   private static final int RESPONSE_DEADLINE_DAYS = 1;
   private static final int REVIEW_DEADLINE_DAYS = 2;
@@ -786,6 +795,10 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
     ReviewRequest reviewRequest = reviewResult.getReviewRequest();
     Instant now = Instant.now();
 
+    User uploader = document.getUploader();
+    String uploaderEmail = uploader.getEmail();
+    String uploaderName = uploader.getFullName();
+
     if (request.getApproved()) {
       // BA approves the review result
       reviewResult.setStatus(ReviewResultStatus.APPROVED);
@@ -796,9 +809,39 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
       if (reviewResult.getDecision() == ReviewDecision.APPROVED) {
         document.setStatus(DocStatus.ACTIVE);
         log.info("Review result approved. Document {} is now ACTIVE", document.getId());
+
+        // Award points to uploader for premium document approval
+        awardPointsToUploader(uploader, baApprovalPoints, document.getId());
+
+        // Send approval email to uploader
+        try {
+          emailService.sendDocumentStatusUpdateEmail(
+              uploaderEmail,
+              uploaderName,
+              document.getTitle(),
+              DocStatus.ACTIVE,
+              "Your premium document has been reviewed and approved. You have been awarded " + baApprovalPoints + " points!"
+          );
+        } catch (Exception e) {
+          log.error("Failed to send document approval email to {}: {}", uploaderEmail, e.getMessage());
+        }
       } else {
         document.setStatus(DocStatus.REJECTED);
         log.info("Review result approved. Document {} is now REJECTED", document.getId());
+
+        // Send rejection email to uploader
+        try {
+          String reason = reviewResult.getComment() != null ? reviewResult.getComment() : "Document did not meet our quality standards";
+          emailService.sendDocumentStatusUpdateEmail(
+              uploaderEmail,
+              uploaderName,
+              document.getTitle(),
+              DocStatus.REJECTED,
+              reason
+          );
+        } catch (Exception e) {
+          log.error("Failed to send document rejection email to {}: {}", uploaderEmail, e.getMessage());
+        }
       }
     } else {
       // BA rejects the review result - reviewer must re-review
@@ -861,5 +904,27 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
     LocalDate fromDate = from.atZone(ZoneId.systemDefault()).toLocalDate();
     LocalDate deadlineDate = fromDate.plusDays(days + 1); // +1 để làm tròn lên ngày tiếp theo
     return deadlineDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+  }
+
+  /**
+   * Award points to uploader's reader profile
+   */
+  private void awardPointsToUploader(User uploader, int points, UUID documentId) {
+    try {
+      ReaderProfile readerProfile = readerProfileRepository.findByUserId(uploader.getId())
+          .orElse(null);
+      
+      if (readerProfile != null) {
+        int currentPoints = readerProfile.getPoint() != null ? readerProfile.getPoint() : 0;
+        readerProfile.setPoint(currentPoints + points);
+        readerProfileRepository.save(readerProfile);
+        log.info("Awarded {} points to user {} for document {}. New balance: {}", 
+            points, uploader.getId(), documentId, readerProfile.getPoint());
+      } else {
+        log.warn("Reader profile not found for user {}. Cannot award points.", uploader.getId());
+      }
+    } catch (Exception e) {
+      log.error("Failed to award points to user {}: {}", uploader.getId(), e.getMessage());
+    }
   }
 }

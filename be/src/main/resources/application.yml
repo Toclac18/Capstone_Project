@@ -71,6 +71,9 @@ app:
     conversion:
       libreoffice-path: ${LIBREOFFICE_PATH:}
       timeout-seconds: ${DOCUMENT_CONVERSION_TIMEOUT:60}
+    points:
+      ai-approval: ${DOCUMENT_AI_APPROVAL_POINTS:20}
+      ba-approval: ${DOCUMENT_BA_APPROVAL_POINTS:100}
 
   s3:
     document:

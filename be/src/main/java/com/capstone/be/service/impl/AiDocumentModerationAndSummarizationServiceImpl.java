@@ -2,12 +2,16 @@ package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.Document;
 import com.capstone.be.domain.entity.DocumentSummarization;
+import com.capstone.be.domain.entity.ReaderProfile;
+import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.dto.ai.AiModerationResponse;
 import com.capstone.be.exception.BusinessException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.repository.DocumentRepository;
+import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.service.AiDocumentModerationAndSummarizationService;
+import com.capstone.be.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +39,8 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
     AiDocumentModerationAndSummarizationService {
 
   private final DocumentRepository documentRepository;
+  private final ReaderProfileRepository readerProfileRepository;
+  private final EmailService emailService;
   private final RestTemplate restTemplate;
 
   @Value("${app.ai.moderationService.url}")
@@ -42,6 +48,9 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
 
   @Value("${app.ai.moderationService.apiKey}")
   private String aiApiKey;
+
+  @Value("${app.document.points.ai-approval:20}")
+  private int aiApprovalPoints;
 
   @Override
   @Async
@@ -116,10 +125,11 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
     Document document = documentRepository.findById(documentId)
         .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
 
-    if ("pass".equalsIgnoreCase(response.getStatus())) {
-      // AI approved - update status to PENDING_REVIEW (waiting for BA to assign reviewer)
-      document.setStatus(DocStatus.PENDING_REVIEW);
+    User uploader = document.getUploader();
+    String uploaderEmail = uploader.getEmail();
+    String uploaderName = uploader.getFullName();
 
+    if ("pass".equalsIgnoreCase(response.getStatus())) {
       // Extract and set summaries
       if (response.getSummaries() != null) {
         DocumentSummarization summarization = DocumentSummarization.builder()
@@ -144,15 +154,80 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
         log.info("Set AI-generated summaries for document ID: {}", documentId);
       }
 
+      // Check if document is premium or not
+      if (Boolean.TRUE.equals(document.getIsPremium())) {
+        // Premium document: needs human review
+        document.setStatus(DocStatus.PENDING_REVIEW);
+        log.info("Premium document ID: {} passed AI moderation, waiting for reviewer assignment", documentId);
+      } else {
+        // Non-premium document: AI approval is final, set to ACTIVE
+        document.setStatus(DocStatus.ACTIVE);
+        log.info("Non-premium document ID: {} passed AI moderation, set to ACTIVE", documentId);
+
+        // Award points to uploader for non-premium document
+        awardPointsToUploader(uploader, aiApprovalPoints, documentId);
+
+        // Send email notification to uploader
+        try {
+          emailService.sendDocumentStatusUpdateEmail(
+              uploaderEmail,
+              uploaderName,
+              document.getTitle(),
+              DocStatus.ACTIVE,
+              "Your document has been approved by our AI moderation system. You have been awarded " + aiApprovalPoints + " points!"
+          );
+        } catch (Exception e) {
+          log.error("Failed to send document approval email to {}: {}", uploaderEmail, e.getMessage());
+        }
+      }
+
     } else {
       // AI rejected - mark as rejected
       document.setStatus(DocStatus.AI_REJECTED);
       log.warn("Document ID: {} rejected by AI moderation. Violations: {}",
           documentId, response.getViolations());
+
+      // Send rejection email to uploader
+      try {
+        String violationsText = response.getViolations() != null 
+            ? String.join(", ", response.getViolations()) 
+            : "Content policy violation";
+        emailService.sendDocumentStatusUpdateEmail(
+            uploaderEmail,
+            uploaderName,
+            document.getTitle(),
+            DocStatus.AI_REJECTED,
+            "Reason: " + violationsText
+        );
+      } catch (Exception e) {
+        log.error("Failed to send document rejection email to {}: {}", uploaderEmail, e.getMessage());
+      }
     }
 
     documentRepository.save(document);
     log.info("Updated document ID: {} with status: {}", documentId, document.getStatus());
+  }
+
+  /**
+   * Award points to uploader's reader profile
+   */
+  private void awardPointsToUploader(User uploader, int points, UUID documentId) {
+    try {
+      ReaderProfile readerProfile = readerProfileRepository.findByUserId(uploader.getId())
+          .orElse(null);
+      
+      if (readerProfile != null) {
+        int currentPoints = readerProfile.getPoint() != null ? readerProfile.getPoint() : 0;
+        readerProfile.setPoint(currentPoints + points);
+        readerProfileRepository.save(readerProfile);
+        log.info("Awarded {} points to user {} for document {}. New balance: {}", 
+            points, uploader.getId(), documentId, readerProfile.getPoint());
+      } else {
+        log.warn("Reader profile not found for user {}. Cannot award points.", uploader.getId());
+      }
+    } catch (Exception e) {
+      log.error("Failed to award points to user {}: {}", uploader.getId(), e.getMessage());
+    }
   }
 
   /**

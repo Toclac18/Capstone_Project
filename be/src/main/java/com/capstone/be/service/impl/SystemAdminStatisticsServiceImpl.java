@@ -163,6 +163,9 @@ public class SystemAdminStatisticsServiceImpl implements SystemAdminStatisticsSe
         .distinct()
         .count();
 
+    // Calculate most accessed modules
+    List<SystemAdminDashboardResponse.ModuleAccessData> mostAccessedModules = calculateMostAccessedModules(startDate, endDate);
+
     return SystemAdminDashboardResponse.AccessStatistics.builder()
         .loginSuccessTrend(loginSuccessTrend)
         .loginFailedTrend(loginFailedTrend)
@@ -175,6 +178,7 @@ public class SystemAdminStatisticsServiceImpl implements SystemAdminStatisticsSe
         .failedLoginsThisMonth(failedLoginsThisMonth)
         .activeUsersLast7Days(activeUsersLast7Days)
         .activeUsersLast30Days(activeUsersLast30Days)
+        .mostAccessedModules(mostAccessedModules)
         .build();
   }
 
@@ -441,6 +445,166 @@ public class SystemAdminStatisticsServiceImpl implements SystemAdminStatisticsSe
     }
 
     return buildTimeSeries(dateCounts, startDate, endDate);
+  }
+
+  private List<SystemAdminDashboardResponse.ModuleAccessData> calculateMostAccessedModules(
+      Instant startDate, Instant endDate) {
+    // Get all system logs (excluding login actions) for module access tracking
+    List<SystemLog> accessLogs = systemLogRepository.findAll(
+        (root, query, cb) -> {
+          var predicates = new ArrayList<jakarta.persistence.criteria.Predicate>();
+          // Exclude login actions
+          predicates.add(cb.notEqual(root.get("action"), LOGIN_SUCCESS_ACTION));
+          predicates.add(cb.notEqual(root.get("action"), LOGIN_FAILED_ACTION));
+          if (startDate != null) {
+            predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), startDate));
+          }
+          if (endDate != null) {
+            predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), endDate));
+          }
+          return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        });
+
+    // Extract module names from request paths or actions
+    // Module pattern: /api/{module}/... or /{module}/...
+    // Fallback: use action type if no requestPath
+    Map<String, Long> moduleCounts = new HashMap<>();
+    for (SystemLog log : accessLogs) {
+      String module = null;
+      
+      // Try to extract from requestPath first
+      String path = log.getRequestPath();
+      if (path != null && !path.isEmpty()) {
+        module = extractModuleFromPath(path);
+      }
+      
+      // Fallback: extract from action if no requestPath
+      if (module == null || module.isEmpty()) {
+        String action = log.getAction();
+        if (action != null && !action.isEmpty()) {
+          // Extract module from action (e.g., "DOCUMENT_UPLOAD" -> "document")
+          module = extractModuleFromAction(action);
+        }
+      }
+      
+      if (module != null && !module.isEmpty()) {
+        moduleCounts.put(module, moduleCounts.getOrDefault(module, 0L) + 1);
+      }
+    }
+
+    // Calculate previous period for comparison
+    long periodDays = startDate != null && endDate != null
+        ? java.time.Duration.between(startDate, endDate).toDays()
+        : 180; // Default 6 months
+    Instant previousStartDate = startDate != null 
+        ? startDate.minusSeconds(periodDays * 24 * 60 * 60)
+        : Instant.now().minusSeconds(periodDays * 2 * 24 * 60 * 60);
+    Instant previousEndDate = startDate != null ? startDate : Instant.now().minusSeconds(periodDays * 24 * 60 * 60);
+
+    List<SystemLog> previousAccessLogs = systemLogRepository.findAll(
+        (root, query, cb) -> {
+          var predicates = new ArrayList<jakarta.persistence.criteria.Predicate>();
+          predicates.add(cb.notEqual(root.get("action"), LOGIN_SUCCESS_ACTION));
+          predicates.add(cb.notEqual(root.get("action"), LOGIN_FAILED_ACTION));
+          predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), previousStartDate));
+          predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), previousEndDate));
+          return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        });
+
+    Map<String, Long> previousModuleCounts = new HashMap<>();
+    for (SystemLog log : previousAccessLogs) {
+      String module = null;
+      
+      // Try to extract from requestPath first
+      String path = log.getRequestPath();
+      if (path != null && !path.isEmpty()) {
+        module = extractModuleFromPath(path);
+      }
+      
+      // Fallback: extract from action if no requestPath
+      if (module == null || module.isEmpty()) {
+        String action = log.getAction();
+        if (action != null && !action.isEmpty()) {
+          module = extractModuleFromAction(action);
+        }
+      }
+      
+      if (module != null && !module.isEmpty()) {
+        previousModuleCounts.put(module, previousModuleCounts.getOrDefault(module, 0L) + 1);
+      }
+    }
+
+    // Get top 10 modules
+    return moduleCounts.entrySet().stream()
+        .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue()))
+        .limit(10)
+        .map(entry -> SystemAdminDashboardResponse.ModuleAccessData.builder()
+            .module(entry.getKey())
+            .count(entry.getValue())
+            .previousCount(previousModuleCounts.getOrDefault(entry.getKey(), 0L))
+            .build())
+        .collect(Collectors.toList());
+  }
+
+  private String extractModuleFromPath(String path) {
+    if (path == null || path.isEmpty()) return null;
+    
+    // Remove leading/trailing slashes and split
+    String cleanPath = path.startsWith("/") ? path.substring(1) : path;
+    String[] parts = cleanPath.split("/");
+    
+    if (parts.length == 0) return null;
+    
+    // If path starts with /api/, module is the second part (skip "api")
+    if (path.startsWith("/api/") && parts.length > 1) {
+      return parts[1];
+    }
+    // If path starts with /api, module is the first part after "api"
+    if (path.startsWith("/api") && parts.length > 0 && !parts[0].equals("api")) {
+      return parts[0];
+    }
+    // Otherwise, module is the first part
+    if (parts.length > 0 && !parts[0].isEmpty()) {
+      return parts[0];
+    }
+    return null;
+  }
+
+  private String extractModuleFromAction(String action) {
+    if (action == null || action.isEmpty()) return null;
+    
+    // Common action patterns:
+    // DOCUMENT_* -> "document"
+    // USER_* -> "user"
+    // ORGANIZATION_* -> "organization"
+    // REVIEW_* -> "review"
+    // STATISTICS_* -> "statistics"
+    // etc.
+    
+    String upperAction = action.toUpperCase();
+    if (upperAction.startsWith("DOCUMENT_")) {
+      return "document";
+    } else if (upperAction.startsWith("USER_")) {
+      return "user";
+    } else if (upperAction.startsWith("ORGANIZATION_")) {
+      return "organization";
+    } else if (upperAction.startsWith("REVIEW_")) {
+      return "review";
+    } else if (upperAction.startsWith("STATISTICS_")) {
+      return "statistics";
+    } else if (upperAction.startsWith("AUTH_") || upperAction.contains("LOGIN")) {
+      return "auth";
+    } else if (upperAction.startsWith("ADMIN_")) {
+      return "admin";
+    }
+    
+    // Fallback: use first part before underscore
+    int underscoreIndex = action.indexOf("_");
+    if (underscoreIndex > 0) {
+      return action.substring(0, underscoreIndex).toLowerCase();
+    }
+    
+    return action.toLowerCase();
   }
 
   private List<SystemAdminDashboardResponse.TimeSeriesData> buildTimeSeries(

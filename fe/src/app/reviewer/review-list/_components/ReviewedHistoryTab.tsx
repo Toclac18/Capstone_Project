@@ -7,7 +7,7 @@ import type { ReviewHistoryQueryParams } from "@/types/review";
 import { HistoryFilters } from "./HistoryFilters";
 import { ReviewHistoryDetailModal } from "./ReviewHistoryDetailModal";
 import { Pagination } from "@/components/ui/pagination";
-import { formatDate, formatTime } from "@/utils/format-date";
+import { formatDate } from "@/utils/format-date";
 import { getDocumentTypes, getDomains } from "@/services/upload-documents.service";
 import styles from "../styles.module.css";
 import { CheckCircle, XCircle, Clock, AlertCircle, Eye } from "lucide-react";

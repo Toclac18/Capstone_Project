@@ -67,7 +67,10 @@ app:
       retention-cron: ${AUDIT_LOG_RETENTION_CRON:0 0 2 * * ?}  # Daily at 2:00 AM
 
   document:
-    defaultPremiumPrice: 120
+    defaultPremiumPrice: 100
+    conversion:
+      libreoffice-path: ${LIBREOFFICE_PATH:}
+      timeout-seconds: ${DOCUMENT_CONVERSION_TIMEOUT:60}
 
   s3:
     document:

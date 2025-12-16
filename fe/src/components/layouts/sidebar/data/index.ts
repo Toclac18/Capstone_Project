@@ -141,6 +141,11 @@ export const BUSINESS_ADMIN_NAV_DATA = [
         url: "/business-admin/reviews",
       },
       {
+        title: "Review Approval",
+        icon: Icons.CheckCircleIcon,
+        url: "/business-admin/review-approval",
+      },
+      {
         title: "Document Domain Management",
         icon: Icons.FolderIcon,
         url: "/business-admin/domains",

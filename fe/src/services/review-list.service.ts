@@ -168,6 +168,7 @@ function mapReviewRequestToDocument(req: ReviewRequestResponse): any {
     status: "PENDING",
     reviewRequestDate: req.createdAt || "",
     reviewDeadline: req.reviewDeadline,
+    fileUrl: (req.document as any).fileUrl, // Document file URL
   };
 }
 
@@ -189,6 +190,9 @@ function mapReviewResultToHistory(review: ReviewResultResponse): any {
     reviewerId: review.reviewer?.id || "",
     reviewerName: review.reviewer?.fullName || "",
     comments: review.report,
+    // File URLs
+    fileUrl: (review.document as any).fileUrl, // Document file URL
+    reportFileUrl: review.reportFileUrl, // Review report file URL
     // BA approval status
     baApprovalStatus: review.status, // PENDING, APPROVED, REJECTED
     baApproval: review.approval ? {

@@ -5,11 +5,12 @@ import Link from "next/link";
 import { getReviewedHistory, type ReviewHistory } from "../api";
 import type { ReviewHistoryQueryParams } from "@/types/review";
 import { HistoryFilters } from "./HistoryFilters";
+import { ReviewHistoryDetailModal } from "./ReviewHistoryDetailModal";
 import { Pagination } from "@/components/ui/pagination";
 import { formatDate, formatTime } from "@/utils/format-date";
 import { getDocumentTypes, getDomains } from "@/services/upload-documents.service";
 import styles from "../styles.module.css";
-import { CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle, XCircle, Clock, AlertCircle, Eye } from "lucide-react";
 
 const ITEMS_PER_PAGE = 12;
 const MAX_TAGS_DISPLAY = 3;
@@ -28,6 +29,7 @@ export function ReviewedHistoryTab() {
   const [documentTypes, setDocumentTypes] = useState<Array<{ id: string; name: string }>>([]);
   const [domains, setDomains] = useState<Array<{ id: string; name: string }>>([]);
   const [optionsLoaded, setOptionsLoaded] = useState(false);
+  const [selectedReview, setSelectedReview] = useState<ReviewHistory | null>(null);
 
   // Load document types and domains for mapping
   useEffect(() => {
@@ -225,14 +227,15 @@ export function ReviewedHistoryTab() {
               <table className={styles["table"]}>
                 <thead className={styles["table-header"]}>
                   <tr>
-                    <th className={styles["table-header-cell"]} style={{ width: "18%" }}>Title</th>
+                    <th className={styles["table-header-cell"]} style={{ width: "16%" }}>Title</th>
                     <th className={styles["table-header-cell"]} style={{ width: "8%" }}>Type</th>
                     <th className={styles["table-header-cell"]} style={{ width: "8%" }}>Domain</th>
                     <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Specialization</th>
-                    <th className={styles["table-header-cell"]} style={{ width: "12%" }}>Tags</th>
+                    <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Tags</th>
                     <th className={styles["table-header-cell"]} style={{ width: "9%" }}>Uploader</th>
                     <th className={styles["table-header-cell"]} style={{ width: "10%" }}>Review Date</th>
                     <th className={styles["table-header-cell"]} style={{ width: "12%" }}>BA Approval</th>
+                    <th className={styles["table-header-cell"]} style={{ width: "8%" }}>Action</th>
                   </tr>
                 </thead>
                 <tbody className={styles["table-body"]}>
@@ -320,6 +323,16 @@ export function ReviewedHistoryTab() {
                           )}
                         </div>
                       </td>
+                      <td className={styles["table-cell"]}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedReview(review)}
+                          className={styles["action-button-view"]}
+                        >
+                          <Eye className="w-4 h-4" />
+                          View
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -340,6 +353,14 @@ export function ReviewedHistoryTab() {
             </div>
           )}
         </>
+      )}
+
+      {/* Review History Detail Modal */}
+      {selectedReview && (
+        <ReviewHistoryDetailModal
+          review={selectedReview}
+          onClose={() => setSelectedReview(null)}
+        />
       )}
     </div>
   );

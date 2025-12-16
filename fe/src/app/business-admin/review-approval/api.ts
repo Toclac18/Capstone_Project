@@ -44,6 +44,7 @@ export type DocumentInfo = {
   id: string;
   title: string;
   thumbnailUrl: string | null;
+  fileUrl: string | null;
   docType: DocTypeInfo;
   domain: DomainInfo;
   specialization: SpecializationInfo;

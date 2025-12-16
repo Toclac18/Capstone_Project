@@ -130,6 +130,8 @@ export function ReviewDetailModal({
             <div className={styles["preview-content"]}>
               {activeTab === "review" && review.reportFileUrl ? (
                 <SimplePdfViewer fileUrl={review.reportFileUrl} />
+              ) : activeTab === "document" && review.document.fileUrl ? (
+                <SimplePdfViewer fileUrl={review.document.fileUrl} />
               ) : activeTab === "document" ? (
                 <div className={styles["pdf-loading-box"]}>
                   <FileText className="h-12 w-12 text-gray-400" />
@@ -161,6 +163,25 @@ export function ReviewDetailModal({
                     className={styles["preview-btn"]}
                   >
                     <Download className="h-4 w-4" /> Download Review
+                  </a>
+                </>
+              )}
+              {activeTab === "document" && review.document.fileUrl && (
+                <>
+                  <a
+                    href={review.document.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles["preview-btn"]}
+                  >
+                    <ExternalLink className="h-4 w-4" /> Open in new tab
+                  </a>
+                  <a
+                    href={review.document.fileUrl}
+                    download
+                    className={styles["preview-btn"]}
+                  >
+                    <Download className="h-4 w-4" /> Download Document
                   </a>
                 </>
               )}

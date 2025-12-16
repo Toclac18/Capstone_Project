@@ -28,8 +28,10 @@ import com.capstone.be.repository.DocumentTagLinkRepository;
 import com.capstone.be.repository.ReviewRequestRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.repository.spec.ReviewResultSpecification;
+import com.capstone.be.service.DocumentConversionService;
 import com.capstone.be.service.FileStorageService;
 import com.capstone.be.service.ReviewRequestService;
+import com.capstone.be.util.ByteArrayMultipartFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -38,6 +40,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -59,9 +62,10 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
   private final ReviewResultMapper reviewResultMapper;
   private final FileStorageService fileStorageService;
   private final DocumentTagLinkRepository documentTagLinkRepository;
+  private final DocumentConversionService documentConversionService;
 
   private static final int RESPONSE_DEADLINE_DAYS = 1;
-  private static final int REVIEW_DEADLINE_DAYS = 3;
+  private static final int REVIEW_DEADLINE_DAYS = 2;
   private static final int PRESIGNED_URL_EXPIRATION_MINUTES = 60; // 1 hour
 
   @Override
@@ -297,7 +301,7 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
 
     if (request.getAccept()) {
       reviewRequest.setStatus(ReviewRequestStatus.ACCEPTED);
-      // Calculate review deadline (3 days from acceptance)
+      // Calculate review deadline (2 days from acceptance)
       Instant reviewDeadline = calculateDeadline(respondedAt, REVIEW_DEADLINE_DAYS);
       reviewRequest.setReviewDeadline(reviewDeadline);
       
@@ -350,7 +354,24 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
           .stream()
           .map(DocumentTagLink::getTag)
           .collect(Collectors.toList());
-      return reviewRequestMapper.toResponse(request, tags);
+      ReviewRequestResponse response = reviewRequestMapper.toResponse(request, tags);
+      
+      // Generate presigned URL for document file
+      Document document = request.getDocument();
+      if (document.getFileKey() != null) {
+        try {
+          String documentFileUrl = fileStorageService.generatePresignedUrl(
+              com.capstone.be.config.constant.FileStorage.DOCUMENT_FOLDER,
+              document.getFileKey(),
+              PRESIGNED_URL_EXPIRATION_MINUTES
+          );
+          response.getDocument().setFileUrl(documentFileUrl);
+        } catch (Exception e) {
+          log.error("Failed to generate presigned URL for document file: {}", e.getMessage());
+        }
+      }
+      
+      return response;
     });
   }
 
@@ -426,10 +447,17 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
       throw new InvalidRequestException("Review report file is required");
     }
 
-    // Validate file type (accept .doc, .docx)
+    // Validate file type (accept PDF or DOCX)
     String originalFilename = reportFile.getOriginalFilename();
-    if (originalFilename == null || (!originalFilename.endsWith(".doc") && !originalFilename.endsWith(".docx"))) {
-      throw new InvalidRequestException("Review report file must be a Word document (.doc or .docx)");
+    if (originalFilename == null) {
+      throw new InvalidRequestException("File name is required");
+    }
+    
+    boolean isPdf = documentConversionService.isPdfFile(originalFilename);
+    boolean isDocx = documentConversionService.isDocxFile(originalFilename);
+    
+    if (!isPdf && !isDocx) {
+      throw new InvalidRequestException("Review report file must be a PDF or DOCX file");
     }
 
     // Check if review deadline has passed
@@ -442,14 +470,43 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
     // Get document
     Document document = reviewRequest.getDocument();
 
-    // Upload review report file to S3
-    String customFilename = String.format("review_%s_%s", reviewRequestId, originalFilename);
-    String reportFilePath = fileStorageService.uploadFile(
-        reportFile,
+    // Convert DOCX to PDF if needed, then upload to S3
+    String reportFilePath;
+    MultipartFile fileToUpload = reportFile;
+    String pdfFilename;
+    
+    if (isDocx) {
+      log.info("Converting DOCX to PDF: {}", originalFilename);
+      try (InputStream pdfInputStream = documentConversionService.convertDocxToPdf(reportFile)) {
+        // Create a new filename with .pdf extension
+        String baseFilename = originalFilename.substring(0, originalFilename.lastIndexOf('.'));
+        pdfFilename = String.format("review_%s_%s.pdf", reviewRequestId, baseFilename);
+        
+        // Create a ByteArrayMultipartFile from the converted PDF
+        byte[] pdfBytes = pdfInputStream.readAllBytes();
+        fileToUpload = new ByteArrayMultipartFile(
+            "reportFile",
+            pdfFilename,
+            "application/pdf",
+            pdfBytes
+        );
+        log.info("DOCX converted to PDF successfully: {} ({} bytes)", pdfFilename, pdfBytes.length);
+      } catch (Exception e) {
+        log.error("Failed to convert DOCX to PDF: {}", e.getMessage(), e);
+        throw new InvalidRequestException("Failed to convert DOCX to PDF: " + e.getMessage());
+      }
+    } else {
+      // Already PDF, use original filename
+      pdfFilename = String.format("review_%s_%s", reviewRequestId, originalFilename);
+    }
+    
+    // Upload PDF file to S3
+    reportFilePath = fileStorageService.uploadFile(
+        fileToUpload,
         com.capstone.be.config.constant.FileStorage.REVIEW_REPORT_FOLDER,
-        customFilename
+        pdfFilename
     );
-    log.info("Uploaded review report file to S3: {}", reportFilePath);
+    log.info("Uploaded review report PDF to S3: {}", reportFilePath);
 
     // Check if there's already a non-rejected review (PENDING or APPROVED)
     // If latest review is REJECTED by BA, allow re-submit (create new record)
@@ -542,6 +599,21 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
         }
       }
 
+      // Generate presigned URL for document file
+      Document document = review.getDocument();
+      if (document.getFileKey() != null) {
+        try {
+          String documentFileUrl = fileStorageService.generatePresignedUrl(
+              com.capstone.be.config.constant.FileStorage.DOCUMENT_FOLDER,
+              document.getFileKey(),
+              PRESIGNED_URL_EXPIRATION_MINUTES
+          );
+          response.getDocument().setFileUrl(documentFileUrl);
+        } catch (Exception e) {
+          log.error("Failed to generate presigned URL for document file: {}", e.getMessage());
+        }
+      }
+
       return response;
     });
   }
@@ -615,6 +687,21 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
         }
       }
 
+      // Generate presigned URL for document file
+      Document document = review.getDocument();
+      if (document.getFileKey() != null) {
+        try {
+          String documentFileUrl = fileStorageService.generatePresignedUrl(
+              com.capstone.be.config.constant.FileStorage.DOCUMENT_FOLDER,
+              document.getFileKey(),
+              PRESIGNED_URL_EXPIRATION_MINUTES
+          );
+          response.getDocument().setFileUrl(documentFileUrl);
+        } catch (Exception e) {
+          log.error("Failed to generate presigned URL for document file: {}", e.getMessage());
+        }
+      }
+
       return response;
     });
   }
@@ -651,6 +738,21 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
           response.setReportFileUrl(reportFileUrl);
         } catch (Exception e) {
           log.error("Failed to generate presigned URL for report file: {}", e.getMessage());
+        }
+      }
+
+      // Generate presigned URL for document file
+      Document document = review.getDocument();
+      if (document.getFileKey() != null) {
+        try {
+          String documentFileUrl = fileStorageService.generatePresignedUrl(
+              com.capstone.be.config.constant.FileStorage.DOCUMENT_FOLDER,
+              document.getFileKey(),
+              PRESIGNED_URL_EXPIRATION_MINUTES
+          );
+          response.getDocument().setFileUrl(documentFileUrl);
+        } catch (Exception e) {
+          log.error("Failed to generate presigned URL for document file: {}", e.getMessage());
         }
       }
 

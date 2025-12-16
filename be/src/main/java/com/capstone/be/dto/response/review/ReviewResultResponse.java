@@ -44,6 +44,7 @@ public class ReviewResultResponse {
     private UUID id;
     private String title;
     private String thumbnailUrl;
+    private String fileUrl;
     private DocTypeInfo docType;
     private DomainInfo domain;
     private SpecializationInfo specialization;

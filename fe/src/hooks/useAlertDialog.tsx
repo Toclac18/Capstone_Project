@@ -87,19 +87,6 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
       const currentPath = pathnameRef.current;
       const currentRouter = routerRef.current;
 
-      // Skip global error dialog for pages that handle errors locally
-      const skipDialogPaths = [
-        "/auth/",                         // Auth pages (login, signup, forgot-password, etc.)
-        "/profile",                       // Profile/settings page (change password, email, delete account)
-        "/org-admin/manage-organization", // Org admin manage page (change email, password, delete org)
-      ];
-      const shouldSkipDialog = skipDialogPaths.some(
-        (path) => currentPath?.startsWith(path) || currentPath === path
-      );
-      if (shouldSkipDialog) {
-        return;
-      }
-
       // Cấu hình Dialog cơ bản (Fallback)
       const baseConfig: ShowAlertOptions = {
         variant: serverDialog?.variant ?? "error",
@@ -112,6 +99,9 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
       switch (status) {
         // Unauthorized -> Login
         case 401:
+          // Nếu đang ở trang login rồi thì không hiện nữa
+          if (currentPath?.includes("/auth/sign-in")) return;
+
           showAlert({
             title: "SESSION EXPIRED",
             description: "Your session has expired. Please sign in again.",

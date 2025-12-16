@@ -56,8 +56,39 @@ export default function ReadHistoryPage() {
   );
 
   useEffect(() => {
-    loadData(1);
-  }, [loadData]);
+    let isMounted = true;
+    
+    const fetchData = async () => {
+      setState("loading");
+      setError(null);
+      try {
+        const result = await fetchReadHistory({
+          page: 0,
+          size: ITEMS_PER_PAGE,
+        });
+        if (isMounted) {
+          setItems(result.data);
+          setTotalItems(result.pageInfo.totalElements);
+          setTotalPages(result.pageInfo.totalPages);
+          setCurrentPage(1);
+          setState(result.data.length ? "success" : "empty");
+        }
+      } catch (e: unknown) {
+        if (isMounted) {
+          const msg = e instanceof Error ? e.message : "Failed to load read history";
+          setError(msg);
+          setState("error");
+          showToast({ type: "error", title: "Error", message: msg });
+        }
+      }
+    };
+    
+    fetchData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [showToast]);
 
   const handlePageChange = (page: number) => {
     loadData(page);

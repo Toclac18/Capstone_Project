@@ -33,6 +33,7 @@ import com.capstone.be.repository.specification.UserSpecification;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.service.FileStorageService;
 import com.capstone.be.service.UserService;
+import com.capstone.be.service.helper.NotificationHelper;
 import com.capstone.be.util.OtpUtil;
 import com.capstone.be.util.TokenUtil;
 import java.time.Instant;
@@ -67,6 +68,7 @@ public class UserServiceImpl implements UserService {
 
   private final EmailService emailService;
   private final FileStorageService fileStorageService;
+  private final NotificationHelper notificationHelper;
 
   @Override
   @Transactional
@@ -145,6 +147,14 @@ public class UserServiceImpl implements UserService {
     userRepository.save(user);
 
     log.info("Account deleted successfully for user: {}", userId);
+
+    // Notify BUSINESS_ADMIN about user deletion
+    notificationHelper.sendNotificationToBusinessAdmins(
+        com.capstone.be.domain.enums.NotificationType.WARNING,
+        "User Account Deleted",
+        String.format("User account has been deleted: %s (%s) - Role: %s", 
+            user.getFullName(), user.getEmail(), user.getRole())
+    );
   }
 
   @Override

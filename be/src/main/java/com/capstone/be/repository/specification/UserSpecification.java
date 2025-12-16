@@ -8,6 +8,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import java.time.Instant;
+import java.util.List;
 import org.springframework.data.jpa.domain.Specification;
 
 /**
@@ -27,6 +28,20 @@ public class UserSpecification {
         return null;
       }
       return criteriaBuilder.equal(root.get("role"), role);
+    };
+  }
+
+  /**
+   * Filter users by multiple roles (OR condition)
+   * @param roles the user roles to filter by (nullable or empty list returns null)
+   * @return Specification that filters by any of the provided roles
+   */
+  public static Specification<User> hasAnyRole(List<UserRole> roles) {
+    return (root, query, criteriaBuilder) -> {
+      if (roles == null || roles.isEmpty()) {
+        return null;
+      }
+      return root.get("role").in(roles);
     };
   }
 

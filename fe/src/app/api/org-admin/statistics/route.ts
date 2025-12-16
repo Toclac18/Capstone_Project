@@ -52,9 +52,8 @@ async function handleGET(request: Request) {
   }
 
   const responseData = await upstream.json();
-  const statistics = responseData?.data || responseData;
 
-  return jsonResponse(statistics, {
+  return jsonResponse(responseData, {
     status: upstream.status,
     headers: {
       "content-type": "application/json",

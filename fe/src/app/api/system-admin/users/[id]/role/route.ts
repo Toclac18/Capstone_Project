@@ -70,7 +70,7 @@ async function handlePATCH(
       cache: "no-store",
     });
     const responseBody = await upstream.json().catch(() => ({}));
-    return jsonResponse(responseBody?.data ?? responseBody, {
+    return jsonResponse(responseBody, {
       status: upstream.status,
       mode: "real",
     });

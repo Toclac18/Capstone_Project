@@ -3,9 +3,8 @@ import {
   mockCreateSaveListAndAddDoc,
   mockFetchSaveLists,
 } from "@/mock/save-list.mock";
-import { jsonResponse, proxyJsonResponse } from "@/server/response";
+import { jsonResponse, proxyJsonResponse, badRequest } from "@/server/response";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { badRequest } from "@/server/response";
 import { getAuthHeader } from "@/server/auth";
 
 /**

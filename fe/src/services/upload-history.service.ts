@@ -56,17 +56,5 @@ export async function getUploadHistory(
   return res.data;
 }
 
-/**
- * Request re-review for a rejected document
- */
-export async function requestReReview(
-  documentId: string,
-  reason: string
-): Promise<{ message: string }> {
-  const res = await apiClient.post<{ message: string }>(
-    `/reader/documents/${documentId}/re-review`,
-    { reason }
-  );
-  return res.data;
-}
+
 

@@ -47,7 +47,7 @@ export function validateField(
       if (isNaN(dobDate.getTime())) return "Invalid date";
       if (dobDate > new Date()) return "Date of birth must be in the past";
       const age = calculateAge(dobDate);
-      if (age < 18) return "You must be at least 18 years old";
+      if (age < 13) return "You must be at least 18 years old";
       if (age > 80) return "You must be at most 80 years old";
       return "";
     }

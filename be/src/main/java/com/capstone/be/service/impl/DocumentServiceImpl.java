@@ -213,6 +213,14 @@ public class DocumentServiceImpl implements DocumentService {
       );
     }
 
+    // Send notification to Reader (uploader)
+    notificationHelper.sendSuccessNotification(
+        uploader,
+        "Document Uploaded Successfully",
+        String.format("Your document '%s' has been uploaded and is being processed.",
+            document.getTitle())
+    );
+
     // Trigger async AI processing (will update document status and summaries after completion)
     UUID documentId = document.getId();
     aiModerationService.processDocumentAsync(documentId, fileToUpload)
@@ -260,10 +268,21 @@ public class DocumentServiceImpl implements DocumentService {
             .document(document)
             .build();
 
-    reader.setPoint(reader.getPoint() - document.getPrice());
+    int pointsDeducted = document.getPrice();
+    reader.setPoint(reader.getPoint() - pointsDeducted);
     readerProfileRepository.save(reader);
 
     documentRedemptionRepository.save(redemption);
+
+    // Send notification to Reader about points deduction
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    notificationHelper.sendInfoNotification(
+        user,
+        "Document Redeemed",
+        String.format("You redeemed '%s' for %d points. Remaining balance: %d points.",
+            document.getTitle(), pointsDeducted, reader.getPoint())
+    );
   }
 
   /**

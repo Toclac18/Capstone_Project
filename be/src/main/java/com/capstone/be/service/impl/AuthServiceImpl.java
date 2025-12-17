@@ -183,6 +183,14 @@ public class AuthServiceImpl implements AuthService {
         log.info("{} {} email verified - waiting for admin approval",
             user.getRole(), email);
         // Don't send welcome email yet, wait for approval
+
+        // Notify BUSINESS_ADMIN about new reviewer/org admin pending approval
+        notificationHelper.sendNotificationToBusinessAdmins(
+            com.capstone.be.domain.enums.NotificationType.INFO,
+            "New " + user.getRole().name().replace("_", " ") + " Pending Approval",
+            String.format("A new %s has verified their email and is pending approval: %s (%s)",
+                user.getRole().name().replace("_", " "), user.getFullName(), user.getEmail())
+        );
       }
       userRepository.save(user);
     }
@@ -480,13 +488,6 @@ public class AuthServiceImpl implements AuthService {
 
     // Send verification email (async)
     emailService.sendEmailVerification(user.getId(), user.getEmail(), verificationToken);
-
-    // Notify BUSINESS_ADMIN about new reviewer registration
-    notificationHelper.sendNotificationToBusinessAdmins(
-        com.capstone.be.domain.enums.NotificationType.INFO,
-        "New Reviewer Registration",
-        String.format("A new REVIEWER has registered: %s (%s)", user.getFullName(), user.getEmail())
-    );
 
     // Return response WITHOUT access token (user needs to verify email first)
     return authMapper.toAuthResponse(user);

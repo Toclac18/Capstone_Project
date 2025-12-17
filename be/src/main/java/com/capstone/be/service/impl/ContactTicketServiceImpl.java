@@ -64,15 +64,25 @@ public class ContactTicketServiceImpl implements ContactTicketService {
 
     log.info("Contact ticket created successfully: {}", savedTicket.getTicketCode());
 
+    // Notify user (if authenticated) about ticket received
+    if (userId != null && savedTicket.getUser() != null) {
+      notificationHelper.sendInfoNotification(
+          savedTicket.getUser(),
+          "Support Ticket Received",
+          String.format("Your support ticket %s has been received. We'll get back to you soon.",
+              savedTicket.getTicketCode())
+      );
+    }
+
     // Notify BUSINESS_ADMIN about new contact ticket
-    String userInfo = userId != null 
+    String userInfo = userId != null
         ? String.format("User: %s (%s)", savedTicket.getUser().getFullName(), savedTicket.getEmail())
         : String.format("Guest: %s", savedTicket.getEmail());
-    
+
     notificationHelper.sendNotificationToBusinessAdmins(
         com.capstone.be.domain.enums.NotificationType.INFO,
         "New Contact Ticket",
-        String.format("A new contact ticket has been created: %s. %s", 
+        String.format("A new contact ticket has been created: %s. %s",
             savedTicket.getTicketCode(), userInfo)
     );
 

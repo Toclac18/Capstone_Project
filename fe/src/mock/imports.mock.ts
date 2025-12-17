@@ -126,6 +126,107 @@ const mockBatchList: MemberImportBatch[] = [
     adminEmail: "rachel.green@techcorp.com",
     importedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
   },
+
+  // Additional batches for pagination testing (batches 8-28)
+  ...Array.from({ length: 21 }, (_, i) => {
+    const batchNum = i + 8;
+    const daysAgo = 7 + i;
+    const successRate = [
+      85, 92, 78, 88, 95, 70, 82, 90, 75, 87, 93, 68, 84, 89, 91, 72, 86, 79,
+      94, 81, 77,
+    ][i];
+    const total = [
+      40, 60, 35, 80, 45, 90, 55, 100, 30, 75, 120, 25, 65, 85, 140, 50, 110,
+      70, 95, 35, 40,
+    ][i];
+    const success = Math.round((total * successRate) / 100);
+    const failed = Math.round(total * ((100 - successRate) / 100) * 0.7);
+    const skipped = total - success - failed;
+
+    return {
+      id: `batch-2024-${String(12 - Math.floor(daysAgo / 30)).padStart(2, "0")}-${String(16 - (daysAgo % 28) || 16).padStart(2, "0")}-${String(batchNum).padStart(3, "0")}`,
+      importSource: batchNum % 3 === 0 ? "MANUAL" : "EXCEL",
+      totalEmails: total,
+      successCount: success,
+      failedCount: failed,
+      skippedCount: skipped,
+      fileName: batchNum % 3 === 0 ? null : `batch_${batchNum}_data.xlsx`,
+      fileUrl: null,
+      notes: [
+        "Monthly team enrollment",
+        "Quarterly review batch",
+        "Partner integration wave",
+        "Customer onboarding",
+        "Department registration",
+        "Training program members",
+        "Conference attendees",
+        "Workshop participants",
+        "Certification holders",
+        "Premium tier users",
+        "Trial account conversion",
+        "Enterprise deployment",
+        "Community members",
+        "Vendor registration",
+        "Contractor onboarding",
+        "Affiliate program",
+        "Beta testers group",
+        "Focus group members",
+        "Advisory board",
+        "Research participants",
+        "Alumni network",
+      ][i],
+      adminName: [
+        "Sarah Johnson",
+        "Mike Chen",
+        "Lisa Park",
+        "David Roberts",
+        "Emma Wilson",
+        "James Park",
+        "Rachel Green",
+        "John Smith",
+        "Maria Garcia",
+        "Thomas Brown",
+        "Jennifer Lee",
+        "Robert Davis",
+        "Patricia Martinez",
+        "Christopher Anderson",
+        "Linda Taylor",
+        "Michael Wilson",
+        "Barbara Thomas",
+        "James Jackson",
+        "Mary White",
+        "Charles Harris",
+        "Susan Martin",
+      ][i],
+      adminEmail:
+        [
+          "sarah.johnson",
+          "mike.chen",
+          "lisa.park",
+          "david.roberts",
+          "emma.wilson",
+          "james.park",
+          "rachel.green",
+          "john.smith",
+          "maria.garcia",
+          "thomas.brown",
+          "jennifer.lee",
+          "robert.davis",
+          "patricia.martinez",
+          "christopher.anderson",
+          "linda.taylor",
+          "michael.wilson",
+          "barbara.thomas",
+          "james.jackson",
+          "mary.white",
+          "charles.harris",
+          "susan.martin",
+        ][i] + "@techcorp.com",
+      importedAt: new Date(
+        Date.now() - daysAgo * 24 * 60 * 60 * 1000,
+      ).toISOString(),
+    };
+  }),
 ];
 
 /**

@@ -81,6 +81,7 @@ app:
       presignedExpInMinutes: 20
 
   ai:
+    useMock: ${USE_MOCK_AI:false}
     moderationService:
       url: ${AI_MODERATION_SERVICE_URL:http://localhost:8000}
       apiKey: ${AI_MODERATION_API_KEY}

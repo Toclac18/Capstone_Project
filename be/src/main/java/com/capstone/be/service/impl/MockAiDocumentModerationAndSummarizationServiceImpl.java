@@ -6,7 +6,6 @@ import com.capstone.be.domain.entity.ReaderProfile;
 import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.dto.ai.AiModerationResponse;
-import com.capstone.be.exception.BusinessException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.repository.DocumentRepository;
 import com.capstone.be.repository.ReaderProfileRepository;
@@ -17,42 +16,30 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Real implementation of AI-based document moderation and summarization service.
- * Used when USE_MOCK_AI=false (default) to call the actual AI service.
+ * Mock implementation of AI-based document moderation and summarization service.
+ * Used when USE_MOCK_AI=true to allow app to run without AI service.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "app.ai.useMock", havingValue = "false", matchIfMissing = true)
-public class AiDocumentModerationAndSummarizationServiceImpl implements
+@ConditionalOnProperty(name = "app.ai.useMock", havingValue = "true")
+public class MockAiDocumentModerationAndSummarizationServiceImpl implements
     AiDocumentModerationAndSummarizationService {
 
   private final DocumentRepository documentRepository;
   private final ReaderProfileRepository readerProfileRepository;
   private final EmailService emailService;
-  private final RestTemplate restTemplate;
   private final SystemConfigService systemConfigService;
-
-  @Value("${app.ai.moderationService.url}")
-  private String aiServiceUrl;
-
-  @Value("${app.ai.moderationService.apiKey}")
-  private String aiApiKey;
 
   @Value("${app.document.points.ai-approval:20}")
   private int aiApprovalPointsFallback;
@@ -69,65 +56,72 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
   @Transactional
   public CompletableFuture<AiModerationResponse> processDocumentAsync(UUID documentId,
       MultipartFile file) {
-    log.info("Starting async AI processing for document ID: {}", documentId);
+    log.info("[MOCK AI] Starting mock AI processing for document ID: {}", documentId);
 
     try {
-      // Call AI service
-      AiModerationResponse response = callAiModerationService(file);
+      // Simulate AI processing delay (1-2 seconds)
+      Thread.sleep(1500);
 
-      // Update document based on AI response
+      // Create mock AI response (always passes moderation)
+      AiModerationResponse response = createMockAiResponse(file);
+
+      // Update document based on mock AI response
       updateDocumentAfterAiProcessing(documentId, response);
 
-      log.info("Successfully completed AI processing for document ID: {}", documentId);
+      log.info("[MOCK AI] Successfully completed mock AI processing for document ID: {}", documentId);
       return CompletableFuture.completedFuture(response);
 
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      log.error("[MOCK AI] Mock AI processing interrupted for document ID: {}", documentId, e);
+      handleAiProcessingError(documentId, e);
+      return CompletableFuture.failedFuture(e);
     } catch (Exception e) {
-      log.error("Error during AI processing for document ID: {}", documentId, e);
+      log.error("[MOCK AI] Error during mock AI processing for document ID: {}", documentId, e);
       handleAiProcessingError(documentId, e);
       return CompletableFuture.failedFuture(e);
     }
   }
 
   /**
-   * Call external AI moderation service
+   * Create mock AI moderation response
    */
-  private AiModerationResponse callAiModerationService(MultipartFile file) throws IOException {
-    log.info("Calling AI moderation service at: {}/api/v1/process-document", aiServiceUrl);
+  private AiModerationResponse createMockAiResponse(MultipartFile file) {
+    log.info("[MOCK AI] Generating mock AI response for file: {}", file.getOriginalFilename());
 
-    // Prepare multipart request
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-    headers.set("X-API-Key", aiApiKey);
-    headers.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
+    // Create mock summaries
+    AiModerationResponse.SummaryDetail shortSummary = new AiModerationResponse.SummaryDetail();
+    shortSummary.setText("This is a mock short summary of the document. The document has been automatically approved by the mock AI system.");
+    shortSummary.setOutputTokens(50);
 
-    // Create multipart body
-    MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-    ByteArrayResource fileResource = new ByteArrayResource(file.getBytes()) {
-      @Override
-      public String getFilename() {
-        return file.getOriginalFilename();
-      }
-    };
-    body.add("file", fileResource);
+    AiModerationResponse.SummaryDetail mediumSummary = new AiModerationResponse.SummaryDetail();
+    mediumSummary.setText("This is a mock medium summary of the document. The document contains educational content and has been reviewed by the mock AI moderation system. All content appears to be appropriate and follows community guidelines.");
+    mediumSummary.setOutputTokens(100);
 
-    HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+    AiModerationResponse.SummaryDetail detailedSummary = new AiModerationResponse.SummaryDetail();
+    detailedSummary.setText("This is a mock detailed summary of the document. The document has been thoroughly analyzed by the mock AI system. The content covers various topics in an educational manner and provides valuable information to readers. The document structure is well-organized with clear sections and appropriate formatting. No policy violations were detected during the automated moderation process.");
+    detailedSummary.setOutputTokens(200);
 
-    // Call AI service
-    String url = aiServiceUrl + "/api/v1/process-document";
-    ResponseEntity<AiModerationResponse> responseEntity = restTemplate.exchange(
-        url,
-        HttpMethod.POST,
-        requestEntity,
-        AiModerationResponse.class
-    );
+    AiModerationResponse.Summaries summaries = new AiModerationResponse.Summaries();
+    summaries.setShortSummary(shortSummary);
+    summaries.setMediumSummary(mediumSummary);
+    summaries.setDetailedSummary(detailedSummary);
 
-    if (!responseEntity.getStatusCode().is2xxSuccessful() || responseEntity.getBody() == null) {
-      throw new BusinessException("AI moderation service returned unsuccessful response",
-          HttpStatus.INTERNAL_SERVER_ERROR, "AI_SERVICE_ERROR");
-    }
+    // Create mock timings
+    AiModerationResponse.Timings timings = new AiModerationResponse.Timings();
+    timings.setOcrMs(800.0);
+    timings.setImageModerationMs(300.0);
+    timings.setTextModerationMs(400.0);
+    timings.setSummaryMs(1200.0);
+    timings.setTotalMs(1500.0);
 
-    log.info("AI service responded with status: {}", responseEntity.getBody().getStatus());
-    return responseEntity.getBody();
+    // Build response (always pass)
+    return AiModerationResponse.builder()
+        .status("pass")
+        .violations(Collections.emptyList())
+        .summaries(summaries)
+        .timings(timings)
+        .build();
   }
 
   /**
@@ -163,18 +157,18 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
             .build();
 
         document.setSummarizations(summarization);
-        log.info("Set AI-generated summaries for document ID: {}", documentId);
+        log.info("[MOCK AI] Set mock AI-generated summaries for document ID: {}", documentId);
       }
 
       // Check if document is premium or not
       if (Boolean.TRUE.equals(document.getIsPremium())) {
         // Premium document: needs human review
         document.setStatus(DocStatus.PENDING_REVIEW);
-        log.info("Premium document ID: {} passed AI moderation, waiting for reviewer assignment", documentId);
+        log.info("[MOCK AI] Premium document ID: {} passed mock AI moderation, waiting for reviewer assignment", documentId);
       } else {
         // Non-premium document: AI approval is final, set to ACTIVE
         document.setStatus(DocStatus.ACTIVE);
-        log.info("Non-premium document ID: {} passed AI moderation, set to ACTIVE", documentId);
+        log.info("[MOCK AI] Non-premium document ID: {} passed mock AI moderation, set to ACTIVE", documentId);
 
         // Award points to uploader for non-premium document
         int points = getAiApprovalPoints();
@@ -187,38 +181,38 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
               uploaderName,
               document.getTitle(),
               DocStatus.ACTIVE,
-              "Your document has been approved by our AI moderation system. You have been awarded " + points + " points!"
+              "Your document has been approved by our mock AI moderation system. You have been awarded " + points + " points! (Mock Mode)"
           );
         } catch (Exception e) {
-          log.error("Failed to send document approval email to {}: {}", uploaderEmail, e.getMessage());
+          log.error("[MOCK AI] Failed to send document approval email to {}: {}", uploaderEmail, e.getMessage());
         }
       }
 
     } else {
       // AI rejected - mark as rejected
       document.setStatus(DocStatus.AI_REJECTED);
-      log.warn("Document ID: {} rejected by AI moderation. Violations: {}",
+      log.warn("[MOCK AI] Document ID: {} rejected by mock AI moderation. Violations: {}",
           documentId, response.getViolations());
 
       // Send rejection email to uploader
       try {
-        String violationsText = response.getViolations() != null 
-            ? String.join(", ", response.getViolations()) 
+        String violationsText = response.getViolations() != null
+            ? String.join(", ", response.getViolations())
             : "Content policy violation";
         emailService.sendDocumentStatusUpdateEmail(
             uploaderEmail,
             uploaderName,
             document.getTitle(),
             DocStatus.AI_REJECTED,
-            "Reason: " + violationsText
+            "Reason: " + violationsText + " (Mock Mode)"
         );
       } catch (Exception e) {
-        log.error("Failed to send document rejection email to {}: {}", uploaderEmail, e.getMessage());
+        log.error("[MOCK AI] Failed to send document rejection email to {}: {}", uploaderEmail, e.getMessage());
       }
     }
 
     documentRepository.save(document);
-    log.info("Updated document ID: {} with status: {}", documentId, document.getStatus());
+    log.info("[MOCK AI] Updated document ID: {} with status: {}", documentId, document.getStatus());
   }
 
   /**
@@ -228,18 +222,18 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
     try {
       ReaderProfile readerProfile = readerProfileRepository.findByUserId(uploader.getId())
           .orElse(null);
-      
+
       if (readerProfile != null) {
         int currentPoints = readerProfile.getPoint() != null ? readerProfile.getPoint() : 0;
         readerProfile.setPoint(currentPoints + points);
         readerProfileRepository.save(readerProfile);
-        log.info("Awarded {} points to user {} for document {}. New balance: {}", 
+        log.info("[MOCK AI] Awarded {} points to user {} for document {}. New balance: {}",
             points, uploader.getId(), documentId, readerProfile.getPoint());
       } else {
-        log.warn("Reader profile not found for user {}. Cannot award points.", uploader.getId());
+        log.warn("[MOCK AI] Reader profile not found for user {}. Cannot award points.", uploader.getId());
       }
     } catch (Exception e) {
-      log.error("Failed to award points to user {}: {}", uploader.getId(), e.getMessage());
+      log.error("[MOCK AI] Failed to award points to user {}: {}", uploader.getId(), e.getMessage());
     }
   }
 
@@ -252,10 +246,10 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
       if (document != null) {
         document.setStatus(DocStatus.AI_REJECTED);
         documentRepository.save(document);
-        log.error("Marked document ID: {} as AI_REJECTED due to processing error", documentId);
+        log.error("[MOCK AI] Marked document ID: {} as AI_REJECTED due to processing error", documentId);
       }
     } catch (Exception ex) {
-      log.error("Failed to update document status after AI processing error for document ID: {}",
+      log.error("[MOCK AI] Failed to update document status after AI processing error for document ID: {}",
           documentId, ex);
     }
   }

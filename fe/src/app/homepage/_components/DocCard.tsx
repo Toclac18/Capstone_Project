@@ -70,6 +70,13 @@ export default function DocCard(props: Props) {
             className={styles.thumbImg}
           />
 
+          <div className={styles.thumbOverlay} aria-hidden>
+            <span className={styles.overlayLabel}>{specialization}</span>
+            {isPremium && (
+              <span className={styles.pointsBadge}>Premium • {points} pts</span>
+            )}
+          </div>
+
           <button
             type="button"
             className={styles.saveBtn}
@@ -90,31 +97,28 @@ export default function DocCard(props: Props) {
           </button>
         </div>
 
-        <div className={styles.cardTitle}>{title}</div>
+        <div className={styles.cardBody}>
+          <div className={styles.cardTitle}>{title}</div>
 
-        <div className={styles.meta}>
-          <div>• {viewCount.toLocaleString()} views</div>
-          <div>• {orgName}</div>
-          <div>• Public on {publicYear}</div>
-        </div>
-
-        <div className={styles.votesRow}>
-          <span className={styles.voteUp}>▲ {upvote_counts}</span>
-          <span className={styles.voteDown}>▼ {downvote_counts}</span>
-        </div>
-
-        {isPremium && (
           <div className={styles.meta}>
-            <span className={styles.specChip}>Premium • {points} pts</span>
+            <div>• {viewCount.toLocaleString()} views</div>
+            <div>• {orgName}</div>
+            <div>• Public on {publicYear}</div>
           </div>
-        )}
 
-        <div className={styles.cardTags}>
-          <span className={styles.tagPill}>{domain}</span>
-          <span className={styles.tagPill}>{specialization}</span>
+          <div className={styles.votesRow}>
+            <span className={styles.voteUp}>▲ {upvote_counts}</span>
+            <span className={styles.voteDown}>▼ {downvote_counts}</span>
+          </div>
+
+          <div className={styles.cardTags}>
+            <span className={styles.tagPill}>{domain}</span>
+          </div>
+
+          <div className={styles.cardFooter}>
+            <div className={styles.uploader}>Uploaded by {uploader}</div>
+          </div>
         </div>
-
-        <div className={styles.uploader}>Uploaded by {uploader}</div>
       </div>
 
       {isSaveModalOpen && (

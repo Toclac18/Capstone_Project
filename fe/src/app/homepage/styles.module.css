@@ -1,15 +1,15 @@
 /* ============ Container ============ */
 
 .pageShell {
-  @apply flex min-h-screen flex-col bg-slate-50;
+  @apply flex min-h-screen flex-col bg-gradient-to-b from-slate-50 via-white to-slate-50;
 }
 
 :global(html.dark) .pageShell {
-  @apply bg-slate-950;
+  @apply bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950;
 }
 
 .main {
-  @apply mx-auto w-full max-w-6xl flex-1 px-4 py-8 lg:px-8 lg:py-10;
+  @apply mx-auto w-full max-w-7xl flex-1 px-4 py-6 lg:px-8 lg:py-12;
 }
 
 .topRow {
@@ -24,98 +24,130 @@
 
 /* Input box */
 .search {
-  @apply w-full rounded-2xl border border-gray-200 bg-white/80 px-4 py-3 text-sm text-gray-800 shadow-sm outline-none backdrop-blur transition-all duration-200 placeholder:text-gray-400;
+  @apply w-full rounded-2xl border-2 border-transparent bg-white px-5 py-4 text-base text-gray-800 shadow-lg outline-none transition-all duration-300 placeholder:text-gray-400;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
 }
 
 .search:focus {
-  @apply border-indigo-400 bg-white shadow-md ring-2 ring-indigo-100;
+  @apply border-indigo-500 bg-white shadow-xl;
+  box-shadow: 0 12px 32px rgba(99, 102, 241, 0.2);
 }
 
 :global(html.dark) .search {
-  @apply border-gray-700 bg-gray-900/80 text-gray-100 placeholder:text-gray-500;
+  @apply border-gray-600 bg-gray-800/80 text-gray-100 placeholder:text-gray-400;
 }
 
 :global(html.dark) .search:focus {
-  @apply border-indigo-400 bg-gray-900 shadow-md ring-indigo-500/30;
+  @apply border-indigo-400 bg-gray-800 shadow-xl;
+  box-shadow: 0 12px 32px rgba(99, 102, 241, 0.25);
 }
 
 /* Magnifying button */
 .searchIconBtn {
-  @apply absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-indigo-50 text-gray-600 shadow-sm transition-all duration-200;
+  @apply absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg transition-all duration-300;
 }
 
 .searchIconBtn:hover {
-  @apply bg-indigo-100 text-indigo-600;
+  @apply shadow-xl;
+  transform: translateY(-50%) scale(1.1);
 }
 
 .searchIconBtn:active {
   @apply scale-95;
+  transform: translateY(-50%) scale(0.95);
 }
 
 .searchIconBtn:focus-visible {
-  @apply outline-none ring-2 ring-indigo-300/70;
+  @apply outline-none ring-2 ring-indigo-400/70;
 }
 
 :global(html.dark) .searchIconBtn {
-  @apply bg-gray-800 text-gray-300;
+  @apply bg-gradient-to-r from-indigo-600 to-indigo-700 text-white;
 }
 
 :global(html.dark) .searchIconBtn:hover {
-  @apply bg-gray-700 text-indigo-300;
+  @apply shadow-xl;
+}
+
+/* Clear (x) button inside search */
+.clearBtn {
+  @apply absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-600 shadow-sm transition-all duration-150;
+}
+
+.clearBtn:hover {
+  @apply bg-gray-100 text-gray-800;
+}
+
+:global(html.dark) .clearBtn {
+  @apply bg-gray-700/80 text-gray-200;
+}
+
+.clearIcon {
+  @apply h-4 w-4;
 }
 
 /* ============ Action Buttons (chips under search) ============ */
 
 .actions {
-  @apply mb-6 flex flex-wrap gap-3;
+  @apply mb-8 flex flex-wrap gap-3;
 }
 
 .actionBtn {
-  @apply inline-flex items-center rounded-full border border-indigo-50 bg-indigo-50 px-4 py-2 text-xs font-medium text-indigo-700 shadow-sm transition-all duration-200;
+  @apply inline-flex items-center gap-2 rounded-full border-0 bg-gradient-to-r from-indigo-500 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-300;
 }
 
 .actionBtn:hover {
-  @apply border-indigo-200 bg-indigo-100 text-indigo-800 shadow;
+  @apply shadow-xl;
+  transform: translateY(-2px);
 }
 
 .actionBtn:active {
-  @apply translate-y-0.5 shadow-none;
+  @apply scale-95;
 }
 
 .actionBtn:focus-visible {
-  @apply outline-none ring-2 ring-indigo-300/70;
+  @apply outline-none ring-2 ring-indigo-400/70;
+}
+
+.actionPrimary {
+  @apply bg-gradient-to-r from-rose-500 to-pink-500 px-6 text-white;
+  box-shadow: 0 10px 30px rgba(236, 72, 153, 0.18);
+}
+
+:global(html.dark) .actionPrimary {
+  @apply bg-gradient-to-r from-rose-600 to-pink-600 text-white;
 }
 
 :global(html.dark) .actionBtn {
-  @apply border-gray-700 bg-gray-800 text-gray-100 shadow-none;
+  @apply bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg;
 }
 
 :global(html.dark) .actionBtn:hover {
-  @apply border-gray-600 bg-gray-700;
+  @apply shadow-xl;
 }
 
 /* ============ Sections ============ */
 
 .section {
-  @apply mb-10;
+  @apply mb-16;
 }
 
 .sectionHeaderRow {
-  @apply mb-4 flex items-center justify-between gap-3;
+  @apply mb-6 flex items-center justify-between gap-3;
 }
 
 .sectionHeader {
-  @apply text-lg font-semibold text-gray-900;
+  @apply bg-gradient-to-r from-gray-900 via-indigo-700 to-gray-900 bg-clip-text text-2xl font-bold text-transparent;
 }
 
 :global(html.dark) .sectionHeader {
-  @apply text-gray-100;
+  @apply bg-gradient-to-r from-gray-100 via-indigo-300 to-gray-100 bg-clip-text text-transparent;
 }
 
 /* ============ Cards Grid ============ */
 
 .cardsGrid {
-  @apply flex gap-4 overflow-x-auto pb-2 md:gap-6;
+  @apply flex gap-6 overflow-x-auto pb-2;
 }
 
 @media (min-width: 1280px) {
@@ -127,7 +159,7 @@
 /* ============ DocCard ============ */
 
 .card {
-  @apply relative flex h-[380px] w-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white/95 px-4 pb-4 pt-3 text-sm text-gray-800 shadow-sm transition-all duration-300;
+  @apply relative flex h-96 w-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white px-4 pb-4 pt-3 text-sm text-gray-800 shadow-lg transition-all duration-300;
   transform: translateY(0);
 }
 
@@ -162,34 +194,60 @@
 
 /* Thumbnail inside doc card */
 .thumb {
-  @apply relative mb-3 h-32 w-full overflow-hidden rounded-xl bg-gray-100;
+  @apply relative mb-4 h-40 w-full overflow-hidden rounded-xl bg-gradient-to-br from-gray-100 to-gray-200;
 }
 
 :global(html.dark) .thumb {
-  @apply bg-slate-800;
+  @apply bg-gradient-to-br from-slate-700 to-slate-800;
 }
 
 .thumbImg {
   @apply object-cover transition-transform duration-300;
 }
 
+/* Overlay on thumbnail: specialization label + premium badge */
+.thumbOverlay {
+  @apply absolute bottom-3 left-3 flex items-center gap-2 rounded-full px-3 py-1 backdrop-blur;
+  background: linear-gradient(90deg, rgba(2, 6, 23, 0.6), rgba(2, 6, 23, 0.18));
+}
+
+:global(html.dark) .thumbOverlay {
+  background: linear-gradient(90deg, rgba(2, 6, 23, 0.7), rgba(2, 6, 23, 0.2));
+}
+
+.overlayLabel {
+  @apply text-xs font-semibold text-white;
+}
+
+.pointsBadge {
+  @apply ml-2 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800;
+}
+
+:global(html.dark) .pointsBadge {
+  @apply bg-yellow-600 text-yellow-100;
+}
+
 /* Hover states */
 .card:hover {
-  transform: translateY(-6px) scale(1.01);
-  box-shadow: 0 18px 35px rgba(15, 23, 42, 0.12);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow:
+    0 20px 40px rgba(15, 23, 42, 0.15),
+    0 0 1px rgba(99, 102, 241, 0.5);
   border-color: rgb(129, 140, 248);
 }
 
 .card:focus-within {
-  @apply ring-2 ring-indigo-300/60;
+  @apply ring-2 ring-indigo-400/70;
 }
 
 :global(html.dark) .card {
-  @apply border-gray-800 bg-gray-900/90 text-gray-100 shadow-none;
+  @apply border-gray-700 bg-gray-800/90 text-gray-100 shadow-xl;
 }
 
 :global(html.dark) .card:hover {
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.7);
+  box-shadow:
+    0 20px 40px rgba(15, 23, 42, 0.8),
+    0 0 1px rgba(99, 102, 241, 0.7);
   border-color: rgb(129, 140, 248);
 }
 
@@ -204,12 +262,12 @@
 
 /* Save button on thumbnail */
 .saveBtn {
-  @apply absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-gray-100 bg-white/90 text-gray-500 shadow-sm transition-all duration-200;
+  @apply absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border-0 bg-white/95 text-gray-700 shadow-lg transition-all duration-300;
   @apply backdrop-blur;
 }
 
 .saveBtn:hover {
-  @apply bg-indigo-600 text-white shadow-md;
+  @apply scale-110 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-xl;
 }
 
 .saveBtn:active {
@@ -225,11 +283,11 @@
 }
 
 :global(html.dark) .saveBtn {
-  @apply border-gray-700 bg-gray-900/90 text-gray-200 shadow-none;
+  @apply bg-gray-700/90 text-gray-100 shadow-lg;
 }
 
 :global(html.dark) .saveBtn:hover {
-  @apply bg-indigo-500 text-white shadow-lg;
+  @apply bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-xl;
 }
 
 .card:hover .thumbImg {
@@ -238,7 +296,7 @@
 
 /* Title */
 .cardTitle {
-  @apply mb-1 line-clamp-2 text-sm font-semibold leading-snug text-gray-900;
+  @apply mb-2 line-clamp-2 text-base font-bold leading-snug text-gray-900;
 }
 
 :global(html.dark) .cardTitle {
@@ -300,19 +358,19 @@
 /* ============ Specializations Block ============ */
 
 .specBlock {
-  @apply mb-8 rounded-2xl border border-gray-100 bg-white/60 p-4 shadow-sm;
+  @apply mb-10 rounded-2xl border border-indigo-100 bg-gradient-to-br from-white to-indigo-50/50 p-6 shadow-lg;
 }
 
 .specTitle {
-  @apply mb-3 text-sm font-semibold text-gray-800;
+  @apply mb-4 text-lg font-bold text-gray-900;
 }
 
 :global(html.dark) .specBlock {
-  @apply border-gray-800 bg-gray-900/70;
+  @apply border-indigo-900/40 bg-gradient-to-br from-slate-800 to-slate-900;
 }
 
 :global(html.dark) .specTitle {
-  @apply text-gray-100;
+  @apply text-gray-50;
 }
 
 /* ============ Pager (bottom control) ============ */
@@ -391,20 +449,20 @@
 /* ============ Hero ============ */
 
 .heroRow {
-  @apply mb-10 grid gap-6 rounded-3xl border border-stroke bg-gradient-to-r from-sky-50 via-indigo-50 to-purple-50 p-6 shadow-sm;
-  @apply lg:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)];
+  @apply mb-12 grid gap-8 rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 p-8 shadow-xl;
+  @apply lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)];
 }
 
 :global(html.dark) .heroRow {
-  @apply border-stroke-dark from-slate-900 via-slate-950 to-slate-900;
+  @apply border-indigo-900/40 bg-gradient-to-br from-slate-800 via-indigo-900/20 to-slate-800;
 }
 
 .heroMain {
-  @apply flex flex-col gap-4;
+  @apply flex flex-col gap-6;
 }
 
 .heroTitle {
-  @apply text-2xl font-extrabold tracking-tight text-gray-900 md:text-3xl;
+  @apply text-4xl font-extrabold tracking-tight text-gray-900 md:text-5xl;
 }
 
 :global(html.dark) .heroTitle {
@@ -412,7 +470,7 @@
 }
 
 .heroSubtitle {
-  @apply max-w-xl text-sm text-gray-600 md:text-base;
+  @apply max-w-2xl text-lg text-gray-600 md:text-lg;
 }
 
 :global(html.dark) .heroSubtitle {
@@ -430,23 +488,23 @@
 /* ============ Stats strip ============ */
 
 .statsStrip {
-  @apply flex h-full flex-col justify-between gap-3 rounded-2xl bg-white/70 p-3 backdrop-blur;
+  @apply flex h-full flex-col justify-between gap-4 rounded-2xl bg-gradient-to-br from-white to-indigo-50 p-4 shadow-lg;
 }
 
 :global(html.dark) .statsStrip {
-  @apply bg-slate-900/60;
+  @apply bg-gradient-to-br from-slate-800 to-slate-900;
 }
 
 .statsCard {
-  @apply flex flex-col gap-1 rounded-xl border border-dashed border-indigo-100 px-3 py-2;
+  @apply flex flex-col gap-2 rounded-xl border-l-4 border-indigo-500 bg-white/70 px-4 py-3 shadow-sm;
 }
 
 :global(html.dark) .statsCard {
-  @apply border-slate-700;
+  @apply border-indigo-400 bg-slate-700/60;
 }
 
 .statsLabel {
-  @apply text-xs font-semibold uppercase tracking-wide text-indigo-500;
+  @apply text-xs font-bold uppercase tracking-wider text-indigo-600;
 }
 
 :global(html.dark) .statsLabel {
@@ -454,7 +512,7 @@
 }
 
 .statsValue {
-  @apply text-2xl font-bold text-gray-900;
+  @apply text-3xl font-extrabold text-gray-900;
 }
 
 :global(html.dark) .statsValue {
@@ -473,6 +531,14 @@
 
 .cardTags {
   @apply mt-2 flex flex-wrap gap-1;
+}
+
+.cardBody {
+  @apply px-1;
+}
+
+.cardFooter {
+  @apply mt-3 flex items-center justify-between;
 }
 
 .tagPill {
@@ -496,7 +562,7 @@
 /* ============ Trending specs ============ */
 
 .trendingRow {
-  @apply mb-4 flex flex-wrap items-center gap-2 text-xs text-gray-600;
+  @apply mb-6 flex flex-wrap items-center gap-3 text-xs text-gray-600;
 }
 
 :global(html.dark) .trendingRow {
@@ -504,7 +570,7 @@
 }
 
 .trendingLabel {
-  @apply font-semibold uppercase tracking-wide;
+  @apply font-bold uppercase tracking-wider;
 }
 
 .trendingPills {
@@ -512,11 +578,11 @@
 }
 
 .trendingPill {
-  @apply rounded-full border border-indigo-100 bg-white px-3 py-1 text-xs font-medium text-indigo-600 transition hover:border-indigo-300 hover:bg-indigo-50;
+  @apply rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-700 transition-all duration-300 hover:border-indigo-400 hover:bg-indigo-100 hover:shadow-md;
 }
 
 :global(html.dark) .trendingPill {
-  @apply border-slate-700 bg-slate-900 text-indigo-300 hover:border-indigo-500 hover:bg-slate-800;
+  @apply border-indigo-700/50 bg-indigo-900/30 text-indigo-300 hover:border-indigo-600 hover:bg-indigo-900/50;
 }
 
 /* ============ Orgs section ============ */
@@ -547,6 +613,43 @@
 
 .orgSection {
   @apply mb-8;
+}
+
+/* Org showcase header and row styles */
+.orgHeaderRow {
+  @apply mb-3 flex items-center justify-between gap-3;
+}
+
+.orgHeaderLeft {
+  @apply flex items-center gap-3;
+}
+
+.orgLogo {
+  @apply flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 text-sm font-bold text-white shadow-md;
+}
+
+.orgMeta {
+  @apply text-xs text-gray-500;
+}
+
+.viewAllBtn {
+  @apply text-sm font-medium text-indigo-600 hover:text-indigo-700;
+}
+
+.orgCardsRow {
+  @apply flex gap-4 overflow-x-auto pb-2;
+}
+
+:global(html.dark) .orgMeta {
+  @apply text-gray-400;
+}
+
+.sectionSub {
+  @apply mt-1 text-xs text-gray-500;
+}
+
+:global(html.dark) .sectionSub {
+  @apply text-gray-400;
 }
 
 /* ============ Stats strip enhancements ============ */

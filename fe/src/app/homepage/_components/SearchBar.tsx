@@ -25,7 +25,7 @@ export default function SearchBar() {
     <div className={styles.searchWrap}>
       <input
         className={styles.search}
-        placeholder="Search by input title / uploader / specialization"
+        placeholder="Search title, uploader or specialization"
         value={localQ}
         onChange={(e) => {
           const value = e.target.value;
@@ -39,6 +39,34 @@ export default function SearchBar() {
         }}
         aria-label="Search"
       />
+      {localQ && (
+        <button
+          type="button"
+          className={styles.clearBtn}
+          aria-label="Clear search"
+          onClick={() => {
+            setLocalQ("");
+            setQ("");
+          }}
+        >
+          <svg
+            className={styles.clearIcon}
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            aria-hidden
+          >
+            <path
+              d="M6 6l12 12M18 6L6 18"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      )}
       <button
         className={styles.searchIconBtn}
         onClick={goSearchPage}

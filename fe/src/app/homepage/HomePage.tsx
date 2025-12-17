@@ -36,6 +36,9 @@ export default function Homepage() {
       <main className={styles.main}>
         {/* HERO SECTION */}
         <div className={styles.heroRow}>
+          {/* Decorative element on right */}
+          <div className={styles.heroDecorRight} />
+
           <div className={styles.heroMain}>
             <div>
               <h1 className={styles.heroTitle}>
@@ -64,17 +67,17 @@ export default function Homepage() {
             <RecommendedStrip />
 
             <Section
-              title="✨ Continue Reading"
+              title="Continue Reading"
               items={continueReading}
               sectionKey="continue"
-              defaultPageSize={8}
+              defaultPageSize={12}
             />
 
             <Section
-              title="👍 Top Upvoted"
+              title="Top Upvoted"
               items={topUpvoted}
               sectionKey="top"
-              defaultPageSize={8}
+              defaultPageSize={12}
             />
 
             <OrgHighlights />
@@ -89,10 +92,10 @@ export default function Homepage() {
             <GuestOrgShowcase />
 
             <Section
-              title="👍 Top Upvoted by Community"
+              title="Top Upvoted by Community"
               items={topUpvoted}
               sectionKey="top"
-              defaultPageSize={8}
+              defaultPageSize={12}
             />
           </>
         )}
@@ -101,7 +104,7 @@ export default function Homepage() {
         <SpecializationsBlock
           groups={specGroups}
           defaultGroupsPerPage={3}
-          maxItemsPerGroup={8}
+          maxItemsPerGroup={12}
         />
 
         <RecentRail />

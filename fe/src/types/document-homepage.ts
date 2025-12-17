@@ -32,4 +32,10 @@ export type DocumentItem = {
   }[];
 
   thumbnail: string;
+
+  organization?: {
+    id: string;
+    name: string;
+    logoUrl: string;
+  };
 };

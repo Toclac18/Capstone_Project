@@ -1,468 +1,111 @@
 /* ============ Container ============ */
 
 .pageShell {
-  @apply flex min-h-screen flex-col bg-gradient-to-b from-slate-50 via-white to-slate-50;
+  @apply flex min-h-screen flex-col bg-gray-50;
 }
 
 :global(html.dark) .pageShell {
-  @apply bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950;
+  @apply bg-dark;
 }
 
 .main {
-  @apply mx-auto w-full max-w-7xl flex-1 px-4 py-6 lg:px-8 lg:py-12;
+  @apply relative z-10 mx-auto w-full max-w-7xl flex-1 px-4 py-6 lg:px-8;
 }
 
-.topRow {
-  @apply mb-6 flex items-center gap-4;
+/* Decorative elements on left side of main content */
+.main::before {
+  content: "";
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 50%;
+  top: 30%;
+  left: -50px;
+  opacity: 0.3;
+  z-index: -1;
+  pointer-events: none;
 }
 
-/* ============ Search Bar ============ */
-
-.searchWrap {
-  @apply relative w-full;
-}
-
-/* Input box */
-.search {
-  @apply w-full rounded-2xl border-2 border-transparent bg-white px-5 py-4 text-base text-gray-800 shadow-lg outline-none transition-all duration-300 placeholder:text-gray-400;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
-}
-
-.search:focus {
-  @apply border-indigo-500 bg-white shadow-xl;
-  box-shadow: 0 12px 32px rgba(99, 102, 241, 0.2);
-}
-
-:global(html.dark) .search {
-  @apply border-gray-600 bg-gray-800/80 text-gray-100 placeholder:text-gray-400;
-}
-
-:global(html.dark) .search:focus {
-  @apply border-indigo-400 bg-gray-800 shadow-xl;
-  box-shadow: 0 12px 32px rgba(99, 102, 241, 0.25);
-}
-
-/* Magnifying button */
-.searchIconBtn {
-  @apply absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg transition-all duration-300;
-}
-
-.searchIconBtn:hover {
-  @apply shadow-xl;
-  transform: translateY(-50%) scale(1.1);
-}
-
-.searchIconBtn:active {
-  @apply scale-95;
-  transform: translateY(-50%) scale(0.95);
-}
-
-.searchIconBtn:focus-visible {
-  @apply outline-none ring-2 ring-indigo-400/70;
-}
-
-:global(html.dark) .searchIconBtn {
-  @apply bg-gradient-to-r from-indigo-600 to-indigo-700 text-white;
-}
-
-:global(html.dark) .searchIconBtn:hover {
-  @apply shadow-xl;
-}
-
-/* Clear (x) button inside search */
-.clearBtn {
-  @apply absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-600 shadow-sm transition-all duration-150;
-}
-
-.clearBtn:hover {
-  @apply bg-gray-100 text-gray-800;
-}
-
-:global(html.dark) .clearBtn {
-  @apply bg-gray-700/80 text-gray-200;
-}
-
-.clearIcon {
-  @apply h-4 w-4;
-}
-
-/* ============ Action Buttons (chips under search) ============ */
-
-.actions {
-  @apply mb-8 flex flex-wrap gap-3;
-}
-
-.actionBtn {
-  @apply inline-flex items-center gap-2 rounded-full border-0 bg-gradient-to-r from-indigo-500 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-300;
-}
-
-.actionBtn:hover {
-  @apply shadow-xl;
-  transform: translateY(-2px);
-}
-
-.actionBtn:active {
-  @apply scale-95;
-}
-
-.actionBtn:focus-visible {
-  @apply outline-none ring-2 ring-indigo-400/70;
-}
-
-.actionPrimary {
-  @apply bg-gradient-to-r from-rose-500 to-pink-500 px-6 text-white;
-  box-shadow: 0 10px 30px rgba(236, 72, 153, 0.18);
-}
-
-:global(html.dark) .actionPrimary {
-  @apply bg-gradient-to-r from-rose-600 to-pink-600 text-white;
-}
-
-:global(html.dark) .actionBtn {
-  @apply bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg;
-}
-
-:global(html.dark) .actionBtn:hover {
-  @apply shadow-xl;
-}
-
-/* ============ Sections ============ */
-
-.section {
-  @apply mb-16;
-}
-
-.sectionHeaderRow {
-  @apply mb-6 flex items-center justify-between gap-3;
-}
-
-.sectionHeader {
-  @apply bg-gradient-to-r from-gray-900 via-indigo-700 to-gray-900 bg-clip-text text-2xl font-bold text-transparent;
-}
-
-:global(html.dark) .sectionHeader {
-  @apply bg-gradient-to-r from-gray-100 via-indigo-300 to-gray-100 bg-clip-text text-transparent;
-}
-
-/* ============ Cards Grid ============ */
-
-.cardsGrid {
-  @apply flex gap-6 overflow-x-auto pb-2;
-}
-
-@media (min-width: 1280px) {
-  .cardsGrid {
-    justify-content: flex-start;
-  }
-}
-
-/* ============ DocCard ============ */
-
-.card {
-  @apply relative flex h-96 w-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white px-4 pb-4 pt-3 text-sm text-gray-800 shadow-lg transition-all duration-300;
-  transform: translateY(0);
-}
-
-/* Responsive width similar behaviour */
-@media (min-width: 1024px) {
-  .card {
-    flex: 0 0 calc((100% - 3rem) / 4);
-    max-width: 280px;
-  }
-}
-
-@media (max-width: 1024px) and (min-width: 768px) {
-  .card {
-    flex: 0 0 calc((100% - 2rem) / 3);
-    max-width: 260px;
-  }
-}
-
-@media (max-width: 768px) and (min-width: 480px) {
-  .card {
-    flex: 0 0 calc((100% - 1rem) / 2);
-    max-width: 240px;
-  }
-}
-
-@media (max-width: 480px) {
-  .card {
-    min-width: 200px;
-    max-width: 220px;
-  }
-}
-
-/* Thumbnail inside doc card */
-.thumb {
-  @apply relative mb-4 h-40 w-full overflow-hidden rounded-xl bg-gradient-to-br from-gray-100 to-gray-200;
-}
-
-:global(html.dark) .thumb {
-  @apply bg-gradient-to-br from-slate-700 to-slate-800;
-}
-
-.thumbImg {
-  @apply object-cover transition-transform duration-300;
-}
-
-/* Overlay on thumbnail: specialization label + premium badge */
-.thumbOverlay {
-  @apply absolute bottom-3 left-3 flex items-center gap-2 rounded-full px-3 py-1 backdrop-blur;
-  background: linear-gradient(90deg, rgba(2, 6, 23, 0.6), rgba(2, 6, 23, 0.18));
-}
-
-:global(html.dark) .thumbOverlay {
-  background: linear-gradient(90deg, rgba(2, 6, 23, 0.7), rgba(2, 6, 23, 0.2));
-}
-
-.overlayLabel {
-  @apply text-xs font-semibold text-white;
-}
-
-.pointsBadge {
-  @apply ml-2 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800;
-}
-
-:global(html.dark) .pointsBadge {
-  @apply bg-yellow-600 text-yellow-100;
-}
-
-/* Hover states */
-.card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow:
-    0 20px 40px rgba(15, 23, 42, 0.15),
-    0 0 1px rgba(99, 102, 241, 0.5);
-  border-color: rgb(129, 140, 248);
+.main::after {
+  content: "";
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-radius: 50%;
+  top: 60%;
+  left: -30px;
+  opacity: 0.35;
+  z-index: -1;
+  pointer-events: none;
 }
 
-.card:focus-within {
-  @apply ring-2 ring-indigo-400/70;
+:global(html.dark) .main::before {
+  background: linear-gradient(135deg, #854d0e 0%, #a16207 100%);
+  opacity: 0.15;
 }
 
-:global(html.dark) .card {
-  @apply border-gray-700 bg-gray-800/90 text-gray-100 shadow-xl;
+:global(html.dark) .main::after {
+  background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+  opacity: 0.15;
 }
 
-:global(html.dark) .card:hover {
-  box-shadow:
-    0 20px 40px rgba(15, 23, 42, 0.8),
-    0 0 1px rgba(99, 102, 241, 0.7);
-  border-color: rgb(129, 140, 248);
-}
-
-/* Thumbnail */
-.thumb {
-  @apply relative mb-3 h-32 w-full overflow-hidden rounded-xl bg-gray-100;
-}
-
-.thumbImg {
-  @apply object-cover transition-transform duration-300;
-}
-
-/* Save button on thumbnail */
-.saveBtn {
-  @apply absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border-0 bg-white/95 text-gray-700 shadow-lg transition-all duration-300;
-  @apply backdrop-blur;
-}
-
-.saveBtn:hover {
-  @apply scale-110 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-xl;
-}
-
-.saveBtn:active {
-  @apply scale-95;
-}
-
-.saveBtn:focus-visible {
-  @apply outline-none ring-2 ring-indigo-300/70;
-}
-
-.saveIcon {
-  @apply h-4 w-4;
-}
-
-:global(html.dark) .saveBtn {
-  @apply bg-gray-700/90 text-gray-100 shadow-lg;
-}
-
-:global(html.dark) .saveBtn:hover {
-  @apply bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-xl;
-}
-
-.card:hover .thumbImg {
-  transform: scale(1.05);
-}
-
-/* Title */
-.cardTitle {
-  @apply mb-2 line-clamp-2 text-base font-bold leading-snug text-gray-900;
-}
-
-:global(html.dark) .cardTitle {
-  @apply text-gray-50;
-}
-
-/* Meta info: views, org, year */
-.meta {
-  @apply mb-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-medium text-gray-500;
-}
-
-:global(html.dark) .meta {
-  @apply text-gray-400;
-}
-
-/* Votes */
-.votesRow {
-  @apply mb-2 flex items-center justify-between text-[11px];
-}
-
-.voteUp {
-  @apply inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700;
-}
-
-.voteDown {
-  @apply inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700;
-}
-
-:global(html.dark) .voteUp {
-  @apply bg-emerald-900/30 text-emerald-300;
-}
-
-:global(html.dark) .voteDown {
-  @apply bg-rose-900/30 text-rose-300;
-}
-
-/* Specialization chip row */
-.specRow {
-  @apply mb-2 flex flex-wrap gap-2;
-}
-
-.specChip {
-  @apply inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-medium text-indigo-700;
-}
-
-:global(html.dark) .specChip {
-  @apply bg-indigo-900/40 text-indigo-200;
-}
-
-/* Uploader text */
-.uploader {
-  @apply mt-auto text-[11px] text-gray-500;
-}
-
-:global(html.dark) .uploader {
-  @apply text-gray-400;
-}
-
-/* ============ Specializations Block ============ */
-
-.specBlock {
-  @apply mb-10 rounded-2xl border border-indigo-100 bg-gradient-to-br from-white to-indigo-50/50 p-6 shadow-lg;
-}
-
-.specTitle {
-  @apply mb-4 text-lg font-bold text-gray-900;
-}
-
-:global(html.dark) .specBlock {
-  @apply border-indigo-900/40 bg-gradient-to-br from-slate-800 to-slate-900;
-}
-
-:global(html.dark) .specTitle {
-  @apply text-gray-50;
-}
-
-/* ============ Pager (bottom control) ============ */
-
-.footerPager {
-  @apply mt-10 flex flex-col items-center justify-between gap-4 border-t border-gray-100 pt-5 text-sm text-gray-600 md:flex-row;
-}
-
-:global(html.dark) .footerPager {
-  @apply border-gray-800 text-gray-300;
-}
-
-/* Select groups per page */
-.pageSizeWrap {
-  @apply flex items-center gap-3;
-}
-
-.pageSizeLabel {
-  @apply text-xs font-medium text-gray-500;
-}
-
-.pageSizeSelect {
-  @apply rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-800 shadow-sm outline-none transition;
-}
-
-.pageSizeSelect:focus-visible {
-  @apply ring-2 ring-indigo-300/70;
-}
-
-:global(html.dark) .pageSizeSelect {
-  @apply border-gray-700 bg-gray-900 text-gray-100;
-}
-
-/* Pager buttons & text */
-.pager {
-  @apply inline-flex items-center gap-2 rounded-full bg-gray-50 px-2 py-1;
-}
-
-:global(html.dark) .pager {
-  @apply bg-gray-800;
-}
-
-.pagerBtn {
-  @apply inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold text-gray-600 transition;
-}
-
-.pagerBtn:hover:enabled {
-  @apply bg-white text-indigo-600 shadow-sm;
-}
-
-.pagerBtn:disabled {
-  @apply cursor-not-allowed opacity-40;
-}
-
-.pagerBtn:focus-visible {
-  @apply outline-none ring-2 ring-indigo-300/70;
-}
-
-:global(html.dark) .pagerBtn {
-  @apply text-gray-300;
-}
-
-.pagerText {
-  @apply px-2 text-xs font-medium text-gray-500;
-}
-
-:global(html.dark) .pagerText {
-  @apply text-gray-400;
-}
+/* ============ Search Section ============ */
 
-/* ============ Misc / Root ============ */
-.module {
-  @apply w-full;
+.searchSection {
+  @apply mb-8 max-w-xl;
 }
 
-/* ============ Hero ============ */
+/* ============ Hero Section ============ */
 
 .heroRow {
-  @apply mb-12 grid gap-8 rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 p-8 shadow-xl;
-  @apply lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)];
+  @apply relative mb-8 grid gap-6 overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm lg:grid-cols-[1fr_320px] lg:p-8;
 }
 
 :global(html.dark) .heroRow {
-  @apply border-indigo-900/40 bg-gradient-to-br from-slate-800 via-indigo-900/20 to-slate-800;
+  @apply border-gray-700 bg-dark-2;
+}
+
+/* Decorative circles */
+.heroRow::before {
+  content: "";
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+  border-radius: 50%;
+  top: -30px;
+  left: -30px;
+  opacity: 0.8;
+  z-index: 0;
+}
+
+.heroRow::after {
+  content: "";
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+  border-radius: 50%;
+  bottom: 20px;
+  left: 60px;
+  opacity: 0.6;
+  z-index: 0;
+}
+
+:global(html.dark) .heroRow::before,
+:global(html.dark) .heroRow::after {
+  background: linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%);
+  opacity: 0.3;
 }
 
 .heroMain {
-  @apply flex flex-col gap-6;
+  @apply relative z-10 flex flex-col gap-4;
 }
 
 .heroTitle {
-  @apply text-4xl font-extrabold tracking-tight text-gray-900 md:text-5xl;
+  @apply text-2xl font-bold text-dark md:text-3xl lg:text-4xl;
 }
 
 :global(html.dark) .heroTitle {
@@ -470,49 +113,175 @@
 }
 
 .heroSubtitle {
-  @apply max-w-2xl text-lg text-gray-600 md:text-lg;
+  @apply text-base text-gray-500;
 }
 
 :global(html.dark) .heroSubtitle {
-  @apply text-gray-300;
+  @apply text-gray-400;
 }
 
 .heroSearchRow {
-  @apply mt-2;
+  @apply mt-3;
 }
 
 .heroAside {
-  @apply flex items-stretch justify-center;
+  @apply relative z-10 hidden lg:flex;
 }
 
-/* ============ Stats strip ============ */
+/* Extra decorative element on right side */
+.heroDecorRight {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 50%;
+  top: -20px;
+  right: -20px;
+  opacity: 0.5;
+  z-index: 0;
+}
+
+:global(html.dark) .heroDecorRight {
+  background: linear-gradient(135deg, #854d0e 0%, #a16207 100%);
+  opacity: 0.2;
+}
+
+/* ============ Search Bar ============ */
+
+.searchWrap {
+  @apply relative w-full max-w-2xl;
+}
+
+.search {
+  @apply w-full rounded-full border border-gray-200 bg-white py-3 pl-12 pr-14 text-sm text-gray-900 shadow-sm outline-none transition-all placeholder:text-gray-400;
+}
+
+.search:focus {
+  @apply border-primary shadow-md ring-2 ring-primary/10;
+}
+
+:global(html.dark) .search {
+  @apply border-gray-700 bg-dark-2 text-gray-100 placeholder:text-gray-500;
+}
+
+:global(html.dark) .search:focus {
+  @apply border-primary ring-primary/20;
+}
+
+.searchIconLeft {
+  @apply absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400;
+}
+
+:global(html.dark) .searchIconLeft {
+  @apply text-gray-500;
+}
+
+.searchIconBtn {
+  @apply absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-white shadow-sm transition-all;
+}
+
+.searchIconBtn:hover {
+  @apply bg-primary/90 shadow-md;
+}
+
+:global(html.dark) .searchIconBtn {
+  @apply bg-primary;
+}
+
+.clearBtn {
+  @apply absolute right-14 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors;
+}
+
+.clearBtn:hover {
+  @apply bg-gray-200 text-gray-700;
+}
+
+:global(html.dark) .clearBtn {
+  @apply bg-gray-700 text-gray-400;
+}
+
+:global(html.dark) .clearBtn:hover {
+  @apply bg-gray-600 text-gray-300;
+}
+
+.clearIcon {
+  @apply h-3.5 w-3.5;
+}
+
+/* ============ Action Buttons ============ */
+
+.actions {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.actionBtn {
+  @apply inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition-all;
+}
+
+.actionBtn:hover {
+  @apply border-gray-300 bg-gray-50;
+}
+
+:global(html.dark) .actionBtn {
+  @apply border-gray-600 bg-dark-2 text-gray-300;
+}
+
+:global(html.dark) .actionBtn:hover {
+  @apply border-gray-500 bg-dark-3;
+}
+
+.actionPrimary {
+  @apply border-primary bg-primary text-white shadow-sm;
+}
+
+.actionPrimary:hover {
+  @apply bg-primary/90 shadow-md;
+}
+
+/* ============ Stats Strip ============ */
 
 .statsStrip {
-  @apply flex h-full flex-col justify-between gap-4 rounded-2xl bg-gradient-to-br from-white to-indigo-50 p-4 shadow-lg;
+  @apply flex h-full flex-col justify-between gap-4 rounded-2xl bg-transparent p-0;
 }
 
 :global(html.dark) .statsStrip {
-  @apply bg-gradient-to-br from-slate-800 to-slate-900;
+  @apply bg-transparent;
+}
+
+.statsCardsRow {
+  @apply grid grid-cols-3 gap-3;
 }
 
 .statsCard {
-  @apply flex flex-col gap-2 rounded-xl border-l-4 border-indigo-500 bg-white/70 px-4 py-3 shadow-sm;
+  @apply relative flex flex-col items-start gap-1 rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm;
 }
 
 :global(html.dark) .statsCard {
-  @apply border-indigo-400 bg-slate-700/60;
+  @apply border-gray-700 bg-dark-3;
+}
+
+/* Curved border on left side */
+.statsCard::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 15%;
+  bottom: 15%;
+  width: 4px;
+  background: #6366f1;
+  border-radius: 0 4px 4px 0;
 }
 
 .statsLabel {
-  @apply text-xs font-bold uppercase tracking-wider text-indigo-600;
+  @apply text-xs font-bold uppercase tracking-wide text-primary;
 }
 
 :global(html.dark) .statsLabel {
-  @apply text-indigo-300;
+  @apply text-primary;
 }
 
 .statsValue {
-  @apply text-3xl font-extrabold text-gray-900;
+  @apply text-2xl font-black text-dark;
 }
 
 :global(html.dark) .statsValue {
@@ -520,104 +289,522 @@
 }
 
 .statsSub {
-  @apply text-xs text-gray-500;
+  @apply text-xs leading-snug text-gray-500;
 }
 
 :global(html.dark) .statsSub {
   @apply text-gray-400;
 }
 
-/* ============ Doc card tags ============ */
-
-.cardTags {
-  @apply mt-2 flex flex-wrap gap-1;
+.statsActivity {
+  @apply text-center text-xs text-gray-500;
 }
 
+:global(html.dark) .statsActivity {
+  @apply text-gray-400;
+}
+
+/* Stats Badges */
+.statsBadgePurple {
+  @apply mt-2 inline-block rounded-full bg-purple-500 px-2.5 py-1 text-[10px] font-semibold text-white;
+}
+
+.statsBadgeGreen {
+  @apply mt-2 inline-block rounded-full bg-emerald-500 px-2.5 py-1 text-[10px] font-semibold text-white;
+}
+
+.statsBadgePink {
+  @apply mt-2 inline-block rounded-full bg-pink-400 px-2.5 py-1 text-[10px] font-semibold text-white;
+}
+
+:global(html.dark) .statsBadgePurple {
+  @apply bg-purple-600;
+}
+
+:global(html.dark) .statsBadgeGreen {
+  @apply bg-emerald-600;
+}
+
+:global(html.dark) .statsBadgePink {
+  @apply bg-pink-500;
+}
+
+/* ============ Section ============ */
+
+.section {
+  @apply relative mb-10;
+  isolation: isolate;
+}
+
+/* Decorative element for sections - right side */
+.section::before {
+  content: "";
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #ddd6fe 0%, #93a9d5 100%);
+  border-radius: 50%;
+  top: -10px;
+  right: 10%;
+  opacity: 0.4;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Decorative element for sections - left side */
+.section::after {
+  content: "";
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+  border-radius: 50%;
+  top: 50%;
+  left: -20px;
+  opacity: 0.35;
+  z-index: -1;
+  pointer-events: none;
+}
+
+:global(html.dark) .section::before {
+  background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%);
+  opacity: 0.2;
+}
+
+:global(html.dark) .section::after {
+  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
+  opacity: 0.2;
+}
+
+.sectionHeaderRow {
+  @apply relative z-10 mb-5 flex items-center justify-between border-b-2 border-gray-300 pb-3;
+  isolation: isolate;
+}
+
+:global(html.dark) .sectionHeaderRow {
+  @apply border-gray-500;
+}
+
+.sectionHeader {
+  @apply text-xl font-bold text-dark;
+  position: relative;
+  z-index: 10;
+}
+
+.sectionHeader::after {
+  content: "";
+  position: absolute;
+  bottom: -13px;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 2px;
+  z-index: 10;
+}
+
+:global(html.dark) .sectionHeader {
+  @apply text-white;
+}
+
+/* ============ Cards Grid - Horizontal Scroll ============ */
+
+.cardsGrid {
+  @apply relative flex gap-4 overflow-x-auto pb-2;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  isolation: isolate;
+}
+
+/* Decorative element on left side of card grids */
+.cardsGrid::before {
+  content: "";
+  position: absolute;
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  border-radius: 50%;
+  top: 30%;
+  left: -15px;
+  opacity: 0.3;
+  z-index: -1;
+  pointer-events: none;
+}
+
+:global(html.dark) .cardsGrid::before {
+  background: linear-gradient(135deg, #312e81 0%, #3730a3 100%);
+  opacity: 0.2;
+}
+
+.cardsGrid::-webkit-scrollbar {
+  height: 6px;
+}
+
+.cardsGrid::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.cardsGrid::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-gray-300;
+}
+
+:global(html.dark) .cardsGrid::-webkit-scrollbar-thumb {
+  @apply bg-gray-600;
+}
+
+/* Scroll arrow button */
+.scrollArrow {
+  @apply absolute top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-md transition-colors;
+}
+
+.scrollArrow:hover {
+  @apply bg-gray-50;
+}
+
+.scrollArrowLeft {
+  @apply left-0;
+}
+
+.scrollArrowRight {
+  @apply right-0;
+}
+
+:global(html.dark) .scrollArrow {
+  @apply border-gray-700 bg-dark-2 text-gray-300;
+}
+
+/* ============ DocCard - Simple Clean Design ============ */
+
+.card {
+  @apply relative flex h-[320px] w-44 flex-shrink-0 cursor-pointer flex-col rounded-lg border border-gray-200 bg-white transition-all duration-300 hover:shadow-xl;
+}
+
+.card:hover {
+  transform: translateY(-8px);
+  border-color: #6366f1;
+}
+
+:global(html.dark) .card {
+  @apply border-gray-700 bg-dark-2;
+}
+
+:global(html.dark) .card:hover {
+  border-color: #8b5cf6;
+}
+
+/* Thumbnail */
+.thumb {
+  @apply relative h-52 w-full overflow-hidden rounded-t-lg bg-gray-100;
+}
+
+:global(html.dark) .thumb {
+  @apply bg-dark-3;
+}
+
+.thumbImg {
+  @apply h-full w-full object-cover;
+}
+
+/* PDF Badge - always show */
+.pdfBadge {
+  @apply absolute left-1.5 top-1.5 rounded bg-gray-700/90 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm;
+}
+
+:global(html.dark) .pdfBadge {
+  @apply bg-gray-600/90;
+}
+
+.premiumBadge {
+  @apply absolute left-1.5 top-1.5 rounded bg-gray-800/80 px-1.5 py-0.5 text-[10px] font-semibold text-white;
+}
+
+:global(html.dark) .premiumBadge {
+  @apply bg-gray-700/90;
+}
+
+/* Card Body */
 .cardBody {
-  @apply px-1;
+  @apply flex flex-1 flex-col p-2.5;
 }
 
+.cardTitle {
+  @apply mb-0.5 line-clamp-2 h-9 text-xs font-semibold leading-tight text-dark;
+}
+
+:global(html.dark) .cardTitle {
+  @apply text-white;
+}
+
+.cardUploader {
+  @apply mb-0.5 truncate text-[10px] text-gray-500;
+}
+
+:global(html.dark) .cardUploader {
+  @apply text-gray-400;
+}
+
+/* Card Stats */
+.cardStats {
+  @apply flex items-center gap-1 text-[10px] text-gray-500;
+}
+
+:global(html.dark) .cardStats {
+  @apply text-gray-400;
+}
+
+.cardViews {
+  @apply truncate;
+}
+
+.cardDot {
+  @apply text-gray-400;
+}
+
+.cardLikes {
+  @apply flex items-center gap-1;
+}
+
+/* Card Footer */
 .cardFooter {
-  @apply mt-3 flex items-center justify-between;
+  @apply mt-auto flex items-center justify-end;
 }
 
-.tagPill {
-  @apply inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-600;
+.cardRatings {
+  @apply flex items-center gap-1 text-xs text-gray-500;
 }
 
-:global(html.dark) .tagPill {
-  @apply bg-slate-800 text-indigo-300;
+:global(html.dark) .cardRatings {
+  @apply text-gray-400;
 }
 
-/* ============ Horizontal strips ============ */
-
-.horizontalScroll {
-  @apply flex gap-4 overflow-x-auto pb-1;
+.ratingIcon {
+  @apply h-3 w-3;
 }
 
-.horizontalCardWrap {
-  @apply min-w-[260px] max-w-xs flex-shrink-0;
+/* Menu */
+.menuWrapper {
+  @apply relative;
 }
 
-/* ============ Trending specs ============ */
+.menuBtn {
+  @apply flex h-7 w-7 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-100;
+}
+
+:global(html.dark) .menuBtn {
+  @apply text-gray-400 hover:bg-dark-3;
+}
+
+.menuIcon {
+  @apply h-4 w-4;
+}
+
+.menuDropdown {
+  @apply absolute bottom-full right-0 z-20 mb-1 min-w-[140px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg;
+}
+
+:global(html.dark) .menuDropdown {
+  @apply border-gray-700 bg-dark-2;
+}
+
+.menuItem {
+  @apply flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50;
+}
+
+:global(html.dark) .menuItem {
+  @apply text-gray-300 hover:bg-dark-3;
+}
+
+.menuItemIcon {
+  @apply h-4 w-4;
+}
+
+/* ============ Trending Specs ============ */
 
 .trendingRow {
-  @apply mb-6 flex flex-wrap items-center gap-3 text-xs text-gray-600;
+  @apply relative mb-8 flex flex-wrap items-center gap-3;
 }
 
-:global(html.dark) .trendingRow {
-  @apply text-gray-300;
+/* Small decorative dot - left */
+.trendingRow::before {
+  content: "";
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
+  border-radius: 50%;
+  top: -10px;
+  left: -10px;
+  opacity: 0.4;
+  z-index: -1;
+}
+
+/* Additional decorative dot - left middle */
+.trendingRow::after {
+  content: "";
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+  border-radius: 50%;
+  bottom: -5px;
+  left: 5%;
+  opacity: 0.35;
+  z-index: -1;
+  pointer-events: none;
+}
+
+:global(html.dark) .trendingRow::before {
+  background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+  opacity: 0.3;
+}
+
+:global(html.dark) .trendingRow::after {
+  background: linear-gradient(135deg, #7c2d12 0%, #9a3412 100%);
+  opacity: 0.2;
 }
 
 .trendingLabel {
-  @apply font-bold uppercase tracking-wider;
+  @apply relative z-10 text-sm font-bold text-gray-700;
+}
+
+:global(html.dark) .trendingLabel {
+  @apply text-gray-300;
 }
 
 .trendingPills {
-  @apply flex flex-wrap gap-2;
+  @apply relative z-10 flex flex-wrap gap-2;
 }
 
 .trendingPill {
-  @apply rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-700 transition-all duration-300 hover:border-indigo-400 hover:bg-indigo-100 hover:shadow-md;
+  @apply rounded-full border border-gray-200 bg-white px-4 py-1.5 text-sm text-gray-600 transition-all;
+}
+
+.trendingPill:hover {
+  @apply border-primary/50 bg-primary/5 text-primary;
 }
 
 :global(html.dark) .trendingPill {
-  @apply border-indigo-700/50 bg-indigo-900/30 text-indigo-300 hover:border-indigo-600 hover:bg-indigo-900/50;
+  @apply border-gray-600 bg-dark-2 text-gray-300;
 }
 
-/* ============ Orgs section ============ */
+:global(html.dark) .trendingPill:hover {
+  @apply border-primary/50 bg-primary/10 text-primary;
+}
+
+/* ============ Specializations Block ============ */
+
+.specBlock {
+  @apply relative mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white p-5;
+}
+
+/* Decorative gradient background */
+.specBlock::before {
+  content: "";
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 50%;
+  top: -100px;
+  right: -50px;
+  opacity: 0.3;
+  z-index: 0;
+}
+
+
+:global(html.dark) .specBlock {
+  @apply border-gray-700 bg-dark-2;
+}
+
+:global(html.dark) .specBlock::before {
+  background: linear-gradient(135deg, #854d0e 0%, #a16207 100%);
+  opacity: 0.15;
+}
+
+:global(html.dark) .specBlock::after {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+  opacity: 0.15;
+}
+
+.specTitle {
+  @apply relative z-10 mb-4 text-base font-semibold text-dark;
+}
+
+:global(html.dark) .specTitle {
+  @apply text-white;
+}
+
+/* ============ Org Section ============ */
+
+.orgSection {
+  @apply relative mb-8;
+}
+
+/* Decorative elements for org section */
+.orgSection::after {
+  content: "";
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+  border-radius: 50%;
+  bottom: 20px;
+  right: 5%;
+  opacity: 0.4;
+  z-index: -1;
+  pointer-events: none;
+}
+
+:global(html.dark) .orgSection::after {
+  background: linear-gradient(135deg, #831843 0%, #9f1239 100%);
+  opacity: 0.2;
+}
 
 .orgGrid {
-  @apply grid gap-4 md:grid-cols-2;
+  @apply relative z-10 grid gap-4 md:grid-cols-2;
 }
 
 .orgColumn {
-  @apply rounded-2xl border border-stroke bg-white/80 p-4 shadow-sm;
+  @apply relative overflow-hidden rounded-lg border border-gray-200 bg-white p-4;
+}
+
+/* Subtle gradient overlay for org cards */
+.orgColumn::before {
+  content: "";
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  border-radius: 50%;
+  top: -40px;
+  right: -40px;
+  opacity: 0.3;
+  z-index: 0;
 }
 
 :global(html.dark) .orgColumn {
-  @apply border-stroke-dark bg-slate-900/70;
+  @apply border-gray-700 bg-dark-2;
+}
+
+:global(html.dark) .orgColumn::before {
+  background: linear-gradient(135deg, #312e81 0%, #3730a3 100%);
+  opacity: 0.2;
 }
 
 .orgTitle {
-  @apply mb-3 text-sm font-semibold text-gray-800;
+  @apply relative z-10 mb-3 text-sm font-semibold text-dark;
 }
 
 :global(html.dark) .orgTitle {
-  @apply text-gray-100;
+  @apply text-white;
 }
 
 .orgCards {
-  @apply flex flex-col gap-3;
+  @apply relative z-10 flex flex-col gap-3;
 }
 
-.orgSection {
-  @apply mb-8;
-}
-
-/* Org showcase header and row styles */
 .orgHeaderRow {
-  @apply mb-3 flex items-center justify-between gap-3;
+  @apply relative z-10 mb-3 flex items-center justify-between;
 }
 
 .orgHeaderLeft {
@@ -625,67 +812,61 @@
 }
 
 .orgLogo {
-  @apply flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 text-sm font-bold text-white shadow-md;
+  @apply flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-white;
+}
+
+.orgLogoImg {
+  @apply h-10 w-10 flex-shrink-0 rounded-lg object-cover;
 }
 
 .orgMeta {
   @apply text-xs text-gray-500;
 }
 
-.viewAllBtn {
-  @apply text-sm font-medium text-indigo-600 hover:text-indigo-700;
-}
-
-.orgCardsRow {
-  @apply flex gap-4 overflow-x-auto pb-2;
-}
-
 :global(html.dark) .orgMeta {
   @apply text-gray-400;
 }
 
+.viewAllBtn {
+  @apply text-sm font-medium text-primary hover:underline;
+}
+
+.orgCardsRow {
+  @apply relative z-10 flex gap-3 overflow-x-auto pb-2;
+}
+
 .sectionSub {
-  @apply mt-1 text-xs text-gray-500;
+  @apply mt-1 text-sm text-gray-600;
 }
 
 :global(html.dark) .sectionSub {
   @apply text-gray-400;
 }
 
-/* ============ Stats strip enhancements ============ */
-
-.statsCardsRow {
-  @apply grid gap-3 sm:grid-cols-3;
-}
-
-.statsActivity {
-  @apply mt-3 text-xs text-gray-500;
-}
-
-:global(html.dark) .statsActivity {
-  @apply text-gray-400;
-}
-
-/* ============ Empty state ============ */
+/* ============ Empty State ============ */
 
 .emptyState {
-  @apply flex flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-stroke bg-white/70 px-6 py-8 text-center text-sm text-gray-600;
+  @apply flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center;
 }
 
 :global(html.dark) .emptyState {
-  @apply border-stroke-dark bg-slate-900/40 text-gray-300;
+  @apply border-gray-600 bg-dark-3;
 }
 
 .emptyIcon {
-  @apply mb-1 text-2xl;
+  @apply text-3xl;
 }
 
 .emptyTitle {
-  @apply font-semibold;
+  @apply font-semibold text-dark;
+}
+
+:global(html.dark) .emptyTitle {
+  @apply text-white;
 }
 
 .emptyDesc {
-  @apply text-xs text-gray-500;
+  @apply text-sm text-gray-500;
 }
 
 :global(html.dark) .emptyDesc {
@@ -695,27 +876,27 @@
 /* ============ Skeleton ============ */
 
 .skelTitle {
-  @apply mb-2 h-6 w-3/4 animate-pulse rounded-lg bg-gray-200;
+  @apply mb-2 h-6 w-3/4 animate-pulse rounded bg-gray-200;
 }
 
 :global(html.dark) .skelTitle {
-  @apply bg-slate-700;
+  @apply bg-gray-700;
 }
 
 .skelText {
-  @apply mb-4 h-4 w-5/6 animate-pulse rounded-lg bg-gray-200;
+  @apply mb-4 h-4 w-5/6 animate-pulse rounded bg-gray-200;
 }
 
 :global(html.dark) .skelText {
-  @apply bg-slate-700;
+  @apply bg-gray-700;
 }
 
 .skelSearch {
-  @apply mb-3 h-10 w-full max-w-md animate-pulse rounded-xl bg-gray-200;
+  @apply mb-3 h-10 w-full max-w-md animate-pulse rounded-lg bg-gray-200;
 }
 
 :global(html.dark) .skelSearch {
-  @apply bg-slate-700;
+  @apply bg-gray-700;
 }
 
 .skelButtons {
@@ -723,19 +904,19 @@
 }
 
 .skelBtn {
-  @apply h-9 w-24 animate-pulse rounded-full bg-gray-200;
+  @apply h-8 w-20 animate-pulse rounded-md bg-gray-200;
 }
 
 :global(html.dark) .skelBtn {
-  @apply bg-slate-700;
+  @apply bg-gray-700;
 }
 
 .skelStats {
-  @apply h-32 w-full animate-pulse rounded-2xl bg-gray-200;
+  @apply h-32 w-full animate-pulse rounded-lg bg-gray-200;
 }
 
 :global(html.dark) .skelStats {
-  @apply bg-slate-800;
+  @apply bg-gray-700;
 }
 
 .skelSectionRow {
@@ -743,11 +924,11 @@
 }
 
 .skelSectionHeader {
-  @apply mb-3 h-5 w-40 animate-pulse rounded-lg bg-gray-200;
+  @apply mb-3 h-5 w-40 animate-pulse rounded bg-gray-200;
 }
 
 :global(html.dark) .skelSectionHeader {
-  @apply bg-slate-700;
+  @apply bg-gray-700;
 }
 
 .skelCardsRow {
@@ -755,21 +936,29 @@
 }
 
 .skelCard {
-  @apply h-40 w-56 animate-pulse rounded-2xl bg-gray-200;
+  @apply h-[320px] w-44 animate-pulse rounded-lg bg-gray-200;
 }
 
 :global(html.dark) .skelCard {
-  @apply bg-slate-800;
+  @apply bg-gray-700;
+}
+
+.skelCard {
+  @apply h-[400px] w-56 animate-pulse rounded-lg bg-gray-200;
+}
+
+:global(html.dark) .skelCard {
+  @apply bg-gray-700;
 }
 
 /* ============ Footer ============ */
 
 .footer {
-  @apply mt-10 border-t border-stroke bg-white/80 px-4 py-6 text-xs text-gray-600;
+  @apply mt-10 border-t border-gray-200 bg-white px-4 py-6 text-xs text-gray-600;
 }
 
 :global(html.dark) .footer {
-  @apply border-stroke-dark bg-slate-950 text-gray-400;
+  @apply border-gray-700 bg-dark-2 text-gray-400;
 }
 
 .footerInner {
@@ -781,7 +970,7 @@
 }
 
 .footerLogo {
-  @apply text-lg font-extrabold tracking-tight text-gray-900;
+  @apply text-lg font-bold text-dark;
 }
 
 :global(html.dark) .footerLogo {
@@ -813,19 +1002,19 @@
 }
 
 .footerLink {
-  @apply inline-flex cursor-pointer items-center rounded-md px-0 py-1 text-left text-xs text-gray-600 transition hover:text-indigo-600;
+  @apply block py-1 text-xs text-gray-600 transition-colors hover:text-primary;
 }
 
 :global(html.dark) .footerLink {
-  @apply text-gray-300 hover:text-indigo-300;
+  @apply text-gray-300 hover:text-primary;
 }
 
 .footerBottom {
-  @apply mx-auto mt-4 flex w-full max-w-6xl flex-col items-start justify-between gap-2 border-t border-dashed border-stroke pt-3 text-[11px] text-gray-500 md:flex-row md:items-center;
+  @apply mx-auto mt-4 flex w-full max-w-6xl flex-col items-start justify-between gap-2 border-t border-dashed border-gray-200 pt-3 text-[11px] text-gray-500 md:flex-row md:items-center;
 }
 
 :global(html.dark) .footerBottom {
-  @apply border-stroke-dark text-gray-400;
+  @apply border-gray-700 text-gray-400;
 }
 
 .footerCopy {
@@ -834,4 +1023,164 @@
 
 .footerBottomLinks {
   @apply flex gap-3;
+}
+
+/* ============ Pager ============ */
+
+.footerPager {
+  @apply mt-6 flex flex-col items-center justify-between gap-4 border-t border-gray-200 pt-4 text-sm md:flex-row;
+}
+
+:global(html.dark) .footerPager {
+  @apply border-gray-700;
+}
+
+.pageSizeWrap {
+  @apply flex items-center gap-2;
+}
+
+.pageSizeLabel {
+  @apply text-xs text-gray-500;
+}
+
+:global(html.dark) .pageSizeLabel {
+  @apply text-gray-400;
+}
+
+.pageSizeSelect {
+  @apply rounded-md border border-gray-300 bg-white px-2 py-1 text-xs;
+}
+
+:global(html.dark) .pageSizeSelect {
+  @apply border-gray-600 bg-dark-2 text-gray-300;
+}
+
+.pager {
+  @apply flex items-center gap-1;
+}
+
+.pagerBtn {
+  @apply flex h-8 w-8 items-center justify-center rounded-md text-sm text-gray-600 transition-colors hover:bg-gray-100;
+}
+
+.pagerBtn:disabled {
+  @apply cursor-not-allowed opacity-40;
+}
+
+:global(html.dark) .pagerBtn {
+  @apply text-gray-300 hover:bg-dark-3;
+}
+
+.pagerText {
+  @apply px-2 text-xs text-gray-500;
+}
+
+:global(html.dark) .pagerText {
+  @apply text-gray-400;
+}
+
+/* ============ Horizontal Scroll Helpers ============ */
+
+.horizontalScroll {
+  @apply flex gap-4 overflow-x-auto pb-2;
+}
+
+.horizontalCardWrap {
+  @apply flex-shrink-0;
+}
+
+/* ============ Stats Cards Row ============ */
+
+.statsCardsRow {
+  @apply grid gap-3 sm:grid-cols-3;
+}
+
+.statsActivity {
+  @apply mt-3 text-xs text-gray-500;
+}
+
+:global(html.dark) .statsActivity {
+  @apply text-gray-400;
+}
+
+/* ============ Legacy support - keeping for compatibility ============ */
+
+.topRow {
+  @apply mb-6 flex items-center gap-4;
+}
+
+.meta {
+  @apply flex flex-wrap gap-x-2 text-xs text-gray-500;
+}
+
+:global(html.dark) .meta {
+  @apply text-gray-400;
+}
+
+.votesRow {
+  @apply flex items-center gap-2 text-xs;
+}
+
+.voteUp {
+  @apply inline-flex items-center gap-1 rounded bg-green-50 px-1.5 py-0.5 text-green-700;
+}
+
+:global(html.dark) .voteUp {
+  @apply bg-green-900/30 text-green-400;
+}
+
+.voteDown {
+  @apply inline-flex items-center gap-1 rounded bg-red-50 px-1.5 py-0.5 text-red-700;
+}
+
+:global(html.dark) .voteDown {
+  @apply bg-red-900/30 text-red-400;
+}
+
+.cardTags {
+  @apply flex flex-wrap gap-1;
+}
+
+.tagPill {
+  @apply rounded bg-blue-50 px-1.5 py-0.5 text-xs text-blue-700;
+}
+
+:global(html.dark) .tagPill {
+  @apply bg-blue-900/30 text-blue-400;
+}
+
+.uploader {
+  @apply text-xs text-gray-500;
+}
+
+:global(html.dark) .uploader {
+  @apply text-gray-400;
+}
+
+.thumbOverlay {
+  @apply absolute bottom-2 left-2 flex items-center gap-1 rounded bg-dark/80 px-2 py-1;
+}
+
+:global(html.dark) .thumbOverlay {
+  @apply bg-dark-2/90;
+}
+
+.overlayLabel {
+  @apply text-xs font-medium text-white;
+}
+
+.pointsBadge {
+  @apply rounded bg-yellow-500 px-1.5 py-0.5 text-xs font-semibold text-white;
+}
+
+.saveBtn {
+  @apply absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-md bg-white/90 text-gray-600 transition-colors hover:bg-primary hover:text-white;
+}
+
+:global(html.dark) .saveBtn {
+  @apply bg-dark-2/90 text-gray-300 hover:bg-primary hover:text-white;
+}
+
+.saveIcon {
+  @apply h-4 w-4;
 }

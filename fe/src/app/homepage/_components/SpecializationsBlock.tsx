@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import styles from "../styles.module.css";
 import EmptyState from "./EmptyState";
 import DocCard from "./DocCard";
+import HorizontalScroll from "./HorizontalScroll";
 import { useHomepage } from "../provider";
 import { useModalPreview } from "@/components/ModalPreview";
 import type { DocumentItem as BaseDoc } from "@/types/document-homepage";
@@ -14,7 +15,7 @@ type GroupNormalized = { name: string; items: BaseDoc[] };
 export default function SpecializationsBlock({
   groups,
   defaultGroupsPerPage = 2,
-  maxItemsPerGroup = 8,
+  maxItemsPerGroup = 12,
   disablePager = false,
 }: {
   groups: GroupInput[];
@@ -81,15 +82,15 @@ export default function SpecializationsBlock({
 
         {filtered.map((g) => (
           <div key={g.name} className={styles.specBlock}>
-            <div className={styles.specTitle}>Specialization: {g.name}</div>
-            <div className={styles.cardsGrid}>
+            <div className={styles.specTitle}>{g.name}</div>
+            <HorizontalScroll>
               {(maxItemsPerGroup > 0
                 ? g.items.slice(0, maxItemsPerGroup)
                 : g.items
               ).map((d) => (
                 <DocCard key={d.id} {...d} onPreview={() => open(d)} />
               ))}
-            </div>
+            </HorizontalScroll>
           </div>
         ))}
       </section>
@@ -181,15 +182,15 @@ export default function SpecializationsBlock({
 
       {visibleGroups.map((g) => (
         <div key={g.name} className={styles.specBlock}>
-          <div className={styles.specTitle}>Specialization: {g.name}</div>
-          <div className={styles.cardsGrid}>
+          <div className={styles.specTitle}>{g.name}</div>
+          <HorizontalScroll>
             {(maxItemsPerGroup > 0
               ? g.items.slice(0, maxItemsPerGroup)
               : g.items
             ).map((d) => (
               <DocCard key={d.id} {...d} onPreview={() => open(d)} />
             ))}
-          </div>
+          </HorizontalScroll>
         </div>
       ))}
     </section>

@@ -52,10 +52,13 @@
   @apply mt-3 flex flex-wrap items-center gap-3;
 }
 .stat {
-  @apply inline-flex items-center rounded-lg border border-gray-200 px-3 py-1 text-sm text-gray-700;
+  @apply inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1 text-sm text-gray-700;
 }
 :global(html.dark) .stat {
   @apply border-white/10 text-gray-400;
+}
+.statIcon {
+  @apply h-4 w-4;
 }
 .uploader {
   @apply text-sm text-gray-600;

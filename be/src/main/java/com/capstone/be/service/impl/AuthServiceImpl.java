@@ -166,6 +166,18 @@ public class AuthServiceImpl implements AuthService {
       if (user.getRole() == UserRole.READER) {
         user.setStatus(UserStatus.ACTIVE);
         log.info("Reader {} email verified successfully - account activated", email);
+        
+        // Add 500 welcome points for new reader
+        ReaderProfile readerProfile = readerProfileRepository.findByUserId(user.getId())
+            .orElse(null);
+        if (readerProfile != null) {
+          int currentPoints = readerProfile.getPoint() != null ? readerProfile.getPoint() : 0;
+          readerProfile.setPoint(currentPoints + 500);
+          readerProfileRepository.save(readerProfile);
+          log.info("Added 500 welcome points to reader {} - total points: {}", 
+              email, readerProfile.getPoint());
+        }
+        
         // Send welcome email (async, non-blocking)
         emailService.sendWelcomeEmail(user.getEmail(), user.getFullName());
       } else if (user.getRole() == UserRole.REVIEWER
@@ -230,8 +242,41 @@ public class AuthServiceImpl implements AuthService {
         throw UnauthorizedException.invalidCredentials();
       }
 
+      // Check account status and throw appropriate exception
+      if (principal.getStatus() == UserStatus.PENDING_EMAIL_VERIFY) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("email", request.getEmail());
+        details.put("reason", "Email not verified");
+        auditLogService.logFailedAction(
+            LogAction.USER_LOGIN_FAILED,
+            principal,
+            details,
+            "Email not verified",
+            ipAddress,
+            userAgent,
+            401
+        );
+        throw UnauthorizedException.emailNotVerified();
+      }
+
+      if (principal.getStatus() == UserStatus.PENDING_APPROVE) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("email", request.getEmail());
+        details.put("reason", "Account pending approval");
+        auditLogService.logFailedAction(
+            LogAction.USER_LOGIN_FAILED,
+            principal,
+            details,
+            "Account pending admin approval",
+            ipAddress,
+            userAgent,
+            401
+        );
+        throw UnauthorizedException.accountPendingApproval();
+      }
+
       if (!principal.isEnabled()) {
-        // Log failed login - account disabled
+        // Log failed login - account disabled (INACTIVE, DELETED, REJECTED, etc.)
         Map<String, Object> details = new HashMap<>();
         details.put("email", request.getEmail());
         details.put("reason", "Account disabled");

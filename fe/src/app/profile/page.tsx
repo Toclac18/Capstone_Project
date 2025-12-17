@@ -30,6 +30,8 @@ import {
   Camera,
   GraduationCap,
   Bell,
+  FileText,
+  ExternalLink,
 } from "lucide-react";
 import ChangeEmailModal from "./_components/ChangeEmailModal";
 import ChangePasswordModal from "./_components/ChangePasswordModal";
@@ -42,6 +44,7 @@ import { getPendingInvitations } from "@/services/enrollments.service";
 import styles from "@/app/profile/styles.module.css";
 
 const AVATAR_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/avatars/";
+const CREDENTIAL_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/reviewer-credentials/";
 
 export default function Page() {
   const { role, loading: authLoading, isAuthenticated } = useReader();
@@ -662,6 +665,43 @@ export default function Page() {
                     </div>
                   )}
 
+                  {/* Credential Files */}
+                  {(profile as ReviewerProfileResponse & { role: "REVIEWER" })?.credentialFileUrls && 
+                   (profile as ReviewerProfileResponse & { role: "REVIEWER" }).credentialFileUrls.length > 0 && (
+                    <div className={`${styles["profile-detail-item"]} ${styles["profile-detail-item-full-width"]}`}>
+                      <div
+                        className={`${styles["profile-detail-icon-wrapper"]} ${styles["green"]}`}
+                      >
+                        <FileText
+                          className={`${styles["profile-detail-icon"]} ${styles["green"]}`}
+                        />
+                      </div>
+                      <div className={styles["credential-files-container"]}>
+                        <p className={styles["profile-detail-label"]}>Credential Files</p>
+                        <div className={styles["credential-files-list"]}>
+                          {(profile as ReviewerProfileResponse & { role: "REVIEWER" }).credentialFileUrls.map((fileKey, index) => {
+                            // Build full URL from base URL and file key
+                            const fullUrl = fileKey.startsWith('http') 
+                              ? fileKey 
+                              : `${CREDENTIAL_BASE_URL}${fileKey}`;
+                            return (
+                              <a
+                                key={index}
+                                href={fullUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={styles["credential-file-link"]}
+                              >
+                                <FileText className={styles["credential-file-icon"]} />
+                                <span className={styles["credential-file-name"]}>Certificate {index + 1}</span>
+                                <ExternalLink className={styles["credential-file-external"]} />
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>

@@ -99,10 +99,17 @@ public class SavedListServiceImpl implements SavedListService {
     ReaderProfile reader = readerProfileRepository.findByUserId(readerId)
         .orElseThrow(() -> new ResourceNotFoundException("ReaderProfile", "userId", readerId));
 
+    // Check for duplicate name
+    String trimmedName = request.getName().trim();
+    if (savedListRepository.existsByReaderIdAndName(reader.getId(), trimmedName)) {
+      log.warn("SavedList with name '{}' already exists for reader: {}", trimmedName, readerId);
+      throw new DuplicateResourceException("SavedList", "name", trimmedName);
+    }
+
     // Create SavedList
     SavedList savedList = SavedList.builder()
         .reader(reader)
-        .name(request.getName())
+        .name(trimmedName)
         .build();
 
     SavedList createdList = savedListRepository.save(savedList);
@@ -194,10 +201,21 @@ public class SavedListServiceImpl implements SavedListService {
       throw new ForbiddenException("You don't have permission to modify this SavedList");
     }
 
-    // Update name
-    savedList.setName(request.getName());
+    // Check if name is different
+    String trimmedName = request.getName().trim();
+    if (!savedList.getName().equals(trimmedName)) {
+      // Check for duplicate name (excluding current list)
+      if (savedListRepository.existsByReaderIdAndNameAndIdNot(reader.getId(), trimmedName, savedListId)) {
+        log.warn("SavedList with name '{}' already exists for reader: {}", trimmedName, readerId);
+        throw new DuplicateResourceException("SavedList", "name", trimmedName);
+      }
+
+      // Update name
+      savedList.setName(trimmedName);
+    }
+
     savedList = savedListRepository.save(savedList);
-    log.info("Updated SavedList: {} with new name: {}", savedListId, request.getName());
+    log.info("Updated SavedList: {} with new name: {}", savedListId, trimmedName);
 
     return savedListMapper.toResponse(savedList);
   }

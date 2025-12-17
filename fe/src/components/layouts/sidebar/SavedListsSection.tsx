@@ -101,12 +101,18 @@ export function SavedListsSection({ isAuthenticated, role }: SavedListsSectionPr
       });
       // Reload to get fresh data from server
       reloadLists();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create saved list:", error);
+      const errorMessage = 
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Failed to create saved list. Please try again.";
+      
       showToast?.({
         type: "error",
         title: "Error",
-        message: "Failed to create saved list. Please try again.",
+        message: errorMessage,
         duration: 5000,
       });
     } finally {
@@ -131,9 +137,15 @@ export function SavedListsSection({ isAuthenticated, role }: SavedListsSectionPr
       setEditingId(null);
       setEditName("");
       reloadLists();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to rename list:", error);
-      showToast?.({ type: "error", title: "Error", message: "Failed to rename list", duration: 5000 });
+      const errorMessage = 
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Failed to rename list";
+      
+      showToast?.({ type: "error", title: "Error", message: errorMessage, duration: 5000 });
     }
   };
 

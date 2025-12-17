@@ -145,6 +145,43 @@ public class NotificationHelper {
     notificationService.createNotification(user.getId(), type, title, summary);
   }
 
+  // ========== Generic Type-Based Notification Methods ==========
+
+  /**
+   * Send INFO notification to a user
+   */
+  public void sendInfoNotification(User user, String title, String summary) {
+    notificationService.createNotification(user.getId(), NotificationType.INFO, title, summary);
+  }
+
+  /**
+   * Send SUCCESS notification to a user
+   */
+  public void sendSuccessNotification(User user, String title, String summary) {
+    notificationService.createNotification(user.getId(), NotificationType.SUCCESS, title, summary);
+  }
+
+  /**
+   * Send WARNING notification to a user
+   */
+  public void sendWarningNotification(User user, String title, String summary) {
+    notificationService.createNotification(user.getId(), NotificationType.WARNING, title, summary);
+  }
+
+  /**
+   * Send DOCUMENT notification to a user
+   */
+  public void sendDocumentNotification(User user, String title, String summary) {
+    notificationService.createNotification(user.getId(), NotificationType.DOCUMENT, title, summary);
+  }
+
+  /**
+   * Send SYSTEM notification to a user
+   */
+  public void sendSystemNotification(User user, String title, String summary) {
+    notificationService.createNotification(user.getId(), NotificationType.SYSTEM, title, summary);
+  }
+
   // ========== Admin Notification Methods ==========
 
   /**
@@ -256,12 +293,17 @@ public class NotificationHelper {
 
     log.info("Sending notification to {} business admins: {}", businessAdmins.size(), title);
 
+    if (businessAdmins.isEmpty()) {
+      log.warn("No active Business Admin found. Skipping notification: {}", title);
+      return;
+    }
+
     for (User admin : businessAdmins) {
       try {
         notificationService.createNotification(admin.getId(), type, title, summary);
-        log.debug("Sent notification to business admin: {}", admin.getEmail());
+        log.info("Sent notification to BA: {} ({})", admin.getEmail(), admin.getId());
       } catch (Exception e) {
-        log.error("Failed to send notification to business admin {}: {}", admin.getEmail(), e.getMessage());
+        log.error("Failed to send notification to BA {}: {}", admin.getEmail(), e.getMessage(), e);
       }
     }
   }

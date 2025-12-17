@@ -515,11 +515,15 @@
 }
 
 .premiumBadge {
-  @apply absolute left-1.5 top-1.5 rounded bg-gray-800/80 px-1.5 py-0.5 text-[10px] font-semibold text-white;
+  @apply absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 shadow-md;
 }
 
 :global(html.dark) .premiumBadge {
-  @apply bg-gray-700/90;
+  @apply from-yellow-500 to-amber-600;
+}
+
+.premiumIcon {
+  @apply h-3.5 w-3.5 text-white;
 }
 
 /* Card Body */

@@ -5,7 +5,7 @@ import styles from "../styles.module.css";
 import type { DocumentItem } from "@/types/document-homepage";
 import SaveListModal from "@/components/SaveListModal/SaveListModal";
 import { sanitizeImageUrl } from "@/utils/imageUrl";
-import { MoreVertical, ThumbsUp, Bookmark, Share2 } from "lucide-react";
+import { MoreVertical, ThumbsUp, Bookmark, Share2, Crown } from "lucide-react";
 
 const THUMBNAIL_BASE_URL =
   "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/doc-thumbs/";
@@ -95,6 +95,11 @@ export default function DocCard(props: Props) {
         {/* Thumbnail */}
         <div className={styles.thumb}>
           <span className={styles.pdfBadge}>PDF</span>
+          {isPremium && (
+            <span className={styles.premiumBadge}>
+              <Crown className={styles.premiumIcon} />
+            </span>
+          )}
           <img
             src={thumbnailUrl}
             alt={title}

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ThumbsUp, ThumbsDown, Eye } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Eye, Crown } from "lucide-react";
 import styles from "./styles.module.css";
 import { useModalPreview } from "./Provider";
 import { sanitizeImageUrl } from "@/utils/imageUrl";
@@ -56,8 +56,13 @@ export default function ModalPreview() {
       <div className={styles.modal}>
         <div className={styles.header}>
           <div className={styles.thumbWrap}>
+            {doc.isPremium && (
+              <span className={styles.premiumBadge}>
+                <Crown className={styles.premiumIcon} />
+              </span>
+            )}
             <Image
-              src={thumbnailUrl}
+              src={thumbnailUrl || "/placeholder-thumbnail.png"}
               alt={doc.title || "Document thumbnail"}
               fill
               sizes="160px"

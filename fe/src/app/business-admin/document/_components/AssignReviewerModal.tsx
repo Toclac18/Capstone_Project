@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { X, Search, User, Check } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { X, Search, User, Check, ChevronDown } from "lucide-react";
 import { apiClient } from "@/services/http";
 import { assignReviewer } from "@/services/review-request.service";
 import { useToast, toast } from "@/components/ui/toast";
@@ -26,6 +26,19 @@ interface ReviewerItem {
   organizationName?: string | null;
   educationLevel?: string | null;
   point?: number;
+  domains?: Array<{
+    id: string;
+    name: string;
+  }>;
+  specializations?: Array<{
+    id: string;
+    name: string;
+    domain?: {
+      id: string;
+      name: string;
+    } | null;
+  }>;
+  // Legacy single domain/specialization (for backward compatibility)
   domain?: {
     id: string;
     name: string;
@@ -58,12 +71,38 @@ export function AssignReviewerModal({
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null);
+  const [selectedSpecializationId, setSelectedSpecializationId] = useState<string | null>(null);
+  const [domainDropdownOpen, setDomainDropdownOpen] = useState(false);
+  const [specializationDropdownOpen, setSpecializationDropdownOpen] = useState(false);
+  const domainDropdownRef = useRef<HTMLDivElement>(null);
+  const specializationDropdownRef = useRef<HTMLDivElement>(null);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [itemsPerPage] = useState(20); // Show 20 reviewers per page
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (domainDropdownRef.current && !domainDropdownRef.current.contains(event.target as Node)) {
+        setDomainDropdownOpen(false);
+      }
+      if (specializationDropdownRef.current && !specializationDropdownRef.current.contains(event.target as Node)) {
+        setSpecializationDropdownOpen(false);
+      }
+    };
+
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [open]);
 
   // Fetch reviewers
   useEffect(() => {
@@ -145,8 +184,64 @@ export function AssignReviewerModal({
   };
 
 
-  // No need for client-side filtering since we're doing server-side search
-  const filteredReviewers = reviewers;
+  // Get unique domains and specializations from reviewers
+  const availableDomains = useMemo(() => {
+    const domainMap = new Map<string, { id: string; name: string }>();
+    reviewers.forEach(reviewer => {
+      // Check both domains array and legacy single domain
+      const domains = reviewer.domains || (reviewer.domain ? [reviewer.domain] : []);
+      domains.forEach(domain => {
+        if (domain && !domainMap.has(domain.id)) {
+          domainMap.set(domain.id, { id: domain.id, name: domain.name });
+        }
+      });
+    });
+    return Array.from(domainMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [reviewers]);
+
+  const availableSpecializations = useMemo(() => {
+    const specMap = new Map<string, { id: string; name: string; domainId: string; domainName: string }>();
+    reviewers.forEach(reviewer => {
+      // Check both specializations array and legacy single specialization
+      const specializations = reviewer.specializations || (reviewer.specialization ? [reviewer.specialization] : []);
+      specializations.forEach(spec => {
+        if (spec && !specMap.has(spec.id)) {
+          specMap.set(spec.id, {
+            id: spec.id,
+            name: spec.name,
+            domainId: spec.domain?.id || "",
+            domainName: spec.domain?.name || "",
+          });
+        }
+      });
+    });
+    // Filter by selected domain if any
+    const filtered = selectedDomainId
+      ? Array.from(specMap.values()).filter(spec => spec.domainId === selectedDomainId)
+      : Array.from(specMap.values());
+    return filtered.sort((a, b) => a.name.localeCompare(b.name));
+  }, [reviewers, selectedDomainId]);
+
+  // Filter reviewers by domain and specialization
+  const filteredReviewers = useMemo(() => {
+    return reviewers.filter(reviewer => {
+      // Filter by domain
+      if (selectedDomainId) {
+        const domains = reviewer.domains || (reviewer.domain ? [reviewer.domain] : []);
+        const hasDomain = domains.some(d => d && d.id === selectedDomainId);
+        if (!hasDomain) return false;
+      }
+
+      // Filter by specialization
+      if (selectedSpecializationId) {
+        const specializations = reviewer.specializations || (reviewer.specialization ? [reviewer.specialization] : []);
+        const hasSpecialization = specializations.some(s => s && s.id === selectedSpecializationId);
+        if (!hasSpecialization) return false;
+      }
+
+      return true;
+    });
+  }, [reviewers, selectedDomainId, selectedSpecializationId]);
 
   const selectedReviewer = useMemo(() => {
     if (!selectedReviewerId) return null;
@@ -190,6 +285,10 @@ export function AssignReviewerModal({
     setSelectedReviewerId(null);
     setNote("");
     setSearchTerm("");
+    setSelectedDomainId(null);
+    setSelectedSpecializationId(null);
+    setDomainDropdownOpen(false);
+    setSpecializationDropdownOpen(false);
     setShowConfirm(false);
     onClose();
   };
@@ -226,7 +325,8 @@ export function AssignReviewerModal({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {/* Filters */}
-          <div className="mb-4">
+          <div className="mb-4 space-y-3">
+            {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
@@ -237,12 +337,139 @@ export function AssignReviewerModal({
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
                 disabled={loading || submitting}
               />
-              {totalItems > 0 && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Showing {reviewers.length} of {totalItems} reviewers
-                </p>
-              )}
             </div>
+
+            {/* Domain and Specialization Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Domain Filter */}
+              <div className="relative" ref={domainDropdownRef}>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Domain
+                </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setDomainDropdownOpen(!domainDropdownOpen)}
+                    disabled={loading || submitting}
+                    className="w-full px-3 py-2 text-left border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="truncate">
+                      {selectedDomainId
+                        ? availableDomains.find((d) => d.id === selectedDomainId)?.name || "All Domains"
+                        : "All Domains"}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform ${domainDropdownOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {domainDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedDomainId(null);
+                          setSelectedSpecializationId(null);
+                          setDomainDropdownOpen(false);
+                        }}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 ${
+                          !selectedDomainId ? "bg-primary/10 text-primary" : "text-gray-900 dark:text-white"
+                        }`}
+                      >
+                        All Domains
+                      </button>
+                      {availableDomains.map((domain) => (
+                        <button
+                          key={domain.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedDomainId(domain.id);
+                            setSelectedSpecializationId(null);
+                            setDomainDropdownOpen(false);
+                          }}
+                          className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 truncate ${
+                            selectedDomainId === domain.id
+                              ? "bg-primary/10 text-primary"
+                              : "text-gray-900 dark:text-white"
+                          }`}
+                          title={domain.name}
+                        >
+                          {domain.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Specialization Filter */}
+              <div className="relative" ref={specializationDropdownRef}>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Specialization
+                </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setSpecializationDropdownOpen(!specializationDropdownOpen)}
+                    disabled={loading || submitting || !!(selectedDomainId && availableSpecializations.length === 0)}
+                    className="w-full px-3 py-2 text-left border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="truncate">
+                      {selectedSpecializationId
+                        ? (() => {
+                            const spec = availableSpecializations.find((s) => s.id === selectedSpecializationId);
+                            return spec
+                              ? `${spec.name}${spec.domainName ? ` (${spec.domainName})` : ""}`
+                              : "All Specializations";
+                          })()
+                        : "All Specializations"}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform ${specializationDropdownOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {specializationDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedSpecializationId(null);
+                          setSpecializationDropdownOpen(false);
+                        }}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 ${
+                          !selectedSpecializationId ? "bg-primary/10 text-primary" : "text-gray-900 dark:text-white"
+                        }`}
+                      >
+                        All Specializations
+                      </button>
+                      {availableSpecializations.map((spec) => {
+                        const fullText = `${spec.name}${spec.domainName ? ` (${spec.domainName})` : ""}`;
+                        return (
+                          <button
+                            key={spec.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedSpecializationId(spec.id);
+                              setSpecializationDropdownOpen(false);
+                            }}
+                            className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 truncate ${
+                              selectedSpecializationId === spec.id
+                                ? "bg-primary/10 text-primary"
+                                : "text-gray-900 dark:text-white"
+                            }`}
+                            title={fullText}
+                          >
+                            {fullText}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {totalItems > 0 && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Showing {filteredReviewers.length} of {totalItems} reviewers
+                {(selectedDomainId || selectedSpecializationId) && " (filtered)"}
+              </p>
+            )}
           </div>
 
           {/* Reviewers List */}
@@ -277,46 +504,84 @@ export function AssignReviewerModal({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      {/* Name and Email */}
+                      <div className="flex items-center gap-2 mb-2">
                         <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                        <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                        <h3 className="font-bold text-base text-gray-900 dark:text-white truncate">
                           {reviewer.fullName}
                         </h3>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 truncate">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 truncate">
                         {reviewer.email}
                       </p>
+                      
+                      {/* Organization */}
                       {reviewer.organizationName && (
-                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                          {reviewer.organizationName}
-                        </p>
+                        <div className="mb-2">
+                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Organization: </span>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">{reviewer.organizationName}</span>
+                        </div>
                       )}
+                      
+                      {/* Education */}
                       {reviewer.educationLevel && (
-                        <p className="text-xs text-gray-500 dark:text-gray-500">
-                          Education: {reviewer.educationLevel}
-                        </p>
+                        <div className="mb-2">
+                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Education: </span>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">{reviewer.educationLevel}</span>
+                        </div>
                       )}
-                      {reviewer.domain && (
-                        <p className="text-xs text-gray-500 dark:text-gray-500">
-                          Domain: {reviewer.domain.name}
-                        </p>
+                      
+                      {/* Domains */}
+                      {reviewer.domains && reviewer.domains.length > 0 && (
+                        <div className="mb-2">
+                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Domains: </span>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">
+                            {reviewer.domains.map(d => d.name).join(", ")}
+                          </span>
+                        </div>
                       )}
-                      {reviewer.specialization && (
-                        <p className="text-xs text-gray-500 dark:text-gray-500">
-                          Specialization: {reviewer.specialization.name}
-                          {reviewer.specialization.domain && (
-                            <span className="text-gray-400"> ({reviewer.specialization.domain.name})</span>
-                          )}
-                        </p>
+                      {!reviewer.domains && reviewer.domain && (
+                        <div className="mb-2">
+                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Domain: </span>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">{reviewer.domain.name}</span>
+                        </div>
                       )}
+                      
+                      {/* Specializations */}
+                      {reviewer.specializations && reviewer.specializations.length > 0 && (
+                        <div className="mb-2">
+                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Specializations: </span>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">
+                            {reviewer.specializations.map(s => 
+                              s.name + (s.domain ? ` (${s.domain.name})` : "")
+                            ).join(", ")}
+                          </span>
+                        </div>
+                      )}
+                      {!reviewer.specializations && reviewer.specialization && (
+                        <div className="mb-2">
+                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Specialization: </span>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">
+                            {reviewer.specialization.name}
+                            {reviewer.specialization.domain && (
+                              <span className="text-gray-500 dark:text-gray-500"> ({reviewer.specialization.domain.name})</span>
+                            )}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Points */}
                       {reviewer.point !== undefined && reviewer.point !== null && (
-                        <p className="text-xs text-gray-500 dark:text-gray-500">
-                          Points: {reviewer.point}
-                        </p>
+                        <div className="mb-2">
+                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Points: </span>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">{reviewer.point}</span>
+                        </div>
                       )}
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      
+                      {/* Status Badge */}
+                      <div className="flex items-center gap-2 mt-3 flex-wrap">
                         <span
-                          className={`inline-block px-2 py-1 text-xs rounded ${
+                          className={`inline-block px-2 py-1 text-xs font-medium rounded ${
                             reviewer.status === "ACTIVE"
                               ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                               : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
@@ -336,7 +601,7 @@ export function AssignReviewerModal({
           {!loading && filteredReviewers.length > 0 && totalPages > 1 && (
             <div className="mt-6 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-4">
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                Page {currentPage} of {totalPages} ({totalItems} total reviewers)
+                Page {currentPage} of {totalPages} ({filteredReviewers.length} shown, {totalItems} total reviewers)
               </div>
               <div className="flex gap-2">
                 <button

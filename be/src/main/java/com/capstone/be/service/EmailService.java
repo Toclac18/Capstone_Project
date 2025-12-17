@@ -2,6 +2,7 @@ package com.capstone.be.service;
 
 import java.util.UUID;
 import com.capstone.be.domain.enums.DocStatus;
+import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.domain.enums.UserStatus;
 
 /**
@@ -135,6 +136,23 @@ public interface EmailService {
   void sendOrganizationStatusUpdateEmail(String email, String fullName, UserStatus newStatus, String reason);
 
   /**
+   * Send notification to organization members when organization status is changed.
+   *
+   * @param email         Member email
+   * @param fullName      Member full name (optional)
+   * @param organizationName Organization name
+   * @param newStatus     New organization status
+   * @param reason        Optional reason from admin
+   */
+  void sendOrganizationMemberStatusUpdateEmail(
+      String email,
+      String fullName,
+      String organizationName,
+      UserStatus newStatus,
+      String reason
+  );
+
+  /**
    * Send notification when a document status is changed by Business Admin.
    *
    * @param email         Uploader email
@@ -148,6 +166,23 @@ public interface EmailService {
       String fullName,
       String documentTitle,
       DocStatus newStatus,
+      String reason
+  );
+
+  /**
+   * Send notification when a user's role is changed by System Admin.
+   *
+   * @param email      User email
+   * @param fullName   User full name (optional)
+   * @param oldRole    Previous role
+   * @param newRole    New role
+   * @param reason     Optional reason from admin
+   */
+  void sendUserRoleChangeEmail(
+      String email,
+      String fullName,
+      UserRole oldRole,
+      UserRole newRole,
       String reason
   );
 }

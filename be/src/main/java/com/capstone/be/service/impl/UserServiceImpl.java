@@ -22,12 +22,18 @@ import com.capstone.be.exception.DuplicateResourceException;
 import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.exception.UnauthorizedException;
+import com.capstone.be.domain.entity.OrgEnrollment;
+import com.capstone.be.domain.entity.OrganizationProfile;
+import com.capstone.be.domain.enums.OrgEnrollStatus;
 import com.capstone.be.repository.EmailChangeRequestRepository;
+import com.capstone.be.repository.OrgEnrollmentRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.PasswordResetRequestRepository;
 import com.capstone.be.repository.PasswordResetTokenRepository;
 import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.repository.ReviewerProfileRepository;
+import com.capstone.be.repository.ReviewerDomainLinkRepository;
+import com.capstone.be.repository.ReviewerSpecLinkRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.repository.specification.UserSpecification;
 import com.capstone.be.service.EmailService;
@@ -43,6 +49,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -60,7 +67,10 @@ public class UserServiceImpl implements UserService {
   private final PasswordEncoder passwordEncoder;
   private final ReaderProfileRepository readerProfileRepository;
   private final ReviewerProfileRepository reviewerProfileRepository;
+  private final ReviewerDomainLinkRepository reviewerDomainLinkRepository;
+  private final ReviewerSpecLinkRepository reviewerSpecLinkRepository;
   private final OrganizationProfileRepository organizationProfileRepository;
+  private final OrgEnrollmentRepository orgEnrollmentRepository;
   private final EmailChangeRequestRepository emailChangeRequestRepository;
   private final PasswordResetRequestRepository passwordResetRequestRepository;
   private final PasswordResetTokenRepository passwordResetTokenRepository;
@@ -796,6 +806,9 @@ public class UserServiceImpl implements UserService {
       log.warn("Failed to send organization status update email for user {}: {}", userId, e.getMessage());
     }
 
+    // Notify all organization members about status change (best-effort)
+    notifyOrganizationMembers(user, request.getStatus(), request.getReason());
+
     return buildAdminOrganizationResponse(user);
   }
 
@@ -859,6 +872,19 @@ public class UserServiceImpl implements UserService {
     log.info("User role changed successfully - user: {}, oldRole: {}, newRole: {}, changedBy: {}, reason: {}",
         userId, oldRole, request.getRole(), changedBy, request.getReason());
 
+    // Notify user about role change (best-effort)
+    try {
+      emailService.sendUserRoleChangeEmail(
+          user.getEmail(),
+          user.getFullName(),
+          oldRole,
+          request.getRole(),
+          request.getReason()
+      );
+    } catch (Exception e) {
+      log.warn("Failed to send user role change email for user {}: {}", userId, e.getMessage());
+    }
+
     // TODO: Add audit logging here when audit log service is available
     // auditLogService.logRoleChange(userId, oldRole, request.getRole(), changedBy, request.getReason());
 
@@ -904,13 +930,47 @@ public class UserServiceImpl implements UserService {
       // Force initialize lazy collection
       profile.getCredentialFileUrls().size();
 
+      // Get domains
+      List<com.capstone.be.domain.entity.Domain> domains = reviewerDomainLinkRepository
+          .findByReviewerId(profile.getId())
+          .stream()
+          .map(link -> link.getDomain())
+          .toList();
+
+      // Get specializations
+      List<com.capstone.be.domain.entity.Specialization> specializations = reviewerSpecLinkRepository
+          .findByReviewerId(profile.getId())
+          .stream()
+          .map(link -> link.getSpecialization())
+          .toList();
+
+      // Map domains to DomainInfo
+      List<AdminReviewerResponse.DomainInfo> domainInfos = domains.stream()
+          .map(domain -> AdminReviewerResponse.DomainInfo.builder()
+              .id(domain.getId())
+              .name(domain.getName())
+              .build())
+          .toList();
+
+      // Map specializations to SpecializationInfo
+      List<AdminReviewerResponse.SpecializationInfo> specializationInfos = specializations.stream()
+          .map(spec -> AdminReviewerResponse.SpecializationInfo.builder()
+              .id(spec.getId())
+              .name(spec.getName())
+              .domainId(spec.getDomain() != null ? spec.getDomain().getId() : null)
+              .domainName(spec.getDomain() != null ? spec.getDomain().getName() : null)
+              .build())
+          .toList();
+
       builder
           .dateOfBirth(profile.getDateOfBirth())
           .ordid(profile.getOrdid())
           .educationLevel(profile.getEducationLevel())
           .organizationName(profile.getOrganizationName())
           .organizationEmail(profile.getOrganizationEmail())
-          .credentialFileUrls(profile.getCredentialFileUrls());
+          .credentialFileUrls(profile.getCredentialFileUrls())
+          .domains(domainInfos)
+          .specializations(specializationInfos);
     });
 
     return builder.build();
@@ -942,6 +1002,72 @@ public class UserServiceImpl implements UserService {
     });
 
     return builder.build();
+  }
+
+  /**
+   * Notify all organization members about organization status change.
+   * Only sends to members with JOINED status.
+   * Pattern similar to processInvitations in OrgEnrollmentServiceImpl.
+   */
+  private void notifyOrganizationMembers(User organizationAdmin, UserStatus newStatus, String reason) {
+    try {
+      // Get organization profile
+      OrganizationProfile organization = organizationProfileRepository
+          .findByAdminId(organizationAdmin.getId())
+          .orElse(null);
+
+      if (organization == null) {
+        log.warn("Organization profile not found for admin: {}", organizationAdmin.getId());
+        return;
+      }
+
+      // Get all members with JOINED status (pagination to get all)
+      int pageSize = 100;
+      int page = 0;
+      boolean hasMore = true;
+      int totalNotified = 0;
+
+      while (hasMore) {
+        Pageable pageable = PageRequest.of(page, pageSize);
+        
+        Page<OrgEnrollment> enrollments = 
+            orgEnrollmentRepository.findByOrganizationAndStatus(
+                organization, 
+                OrgEnrollStatus.JOINED, 
+                pageable
+            );
+
+        // Send email to each member (similar to processInvitations pattern)
+        for (OrgEnrollment enrollment : enrollments.getContent()) {
+          if (enrollment.getMember() != null && enrollment.getMember().getEmail() != null) {
+            try {
+              emailService.sendOrganizationMemberStatusUpdateEmail(
+                  enrollment.getMember().getEmail(),
+                  enrollment.getMember().getFullName(),
+                  organization.getName(),
+                  newStatus,
+                  reason
+              );
+              totalNotified++;
+            } catch (Exception e) {
+              log.warn("Failed to send organization member status update email to {}: {}", 
+                  enrollment.getMember().getEmail(), e.getMessage());
+              // Don't throw - continue with other members
+            }
+          }
+        }
+
+        hasMore = enrollments.hasNext();
+        page++;
+      }
+
+      log.info("Notified {} organization members about status change for organization: {}", 
+          totalNotified, organization.getName());
+
+    } catch (Exception e) {
+      log.warn("Failed to notify organization members about status change: {}", e.getMessage());
+      // Don't throw - this is best-effort notification
+    }
   }
 
   private UserManagementResponse buildUserManagementResponse(User user) {

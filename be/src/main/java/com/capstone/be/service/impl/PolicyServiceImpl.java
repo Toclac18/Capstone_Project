@@ -8,6 +8,7 @@ import com.capstone.be.exception.BusinessException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.repository.PolicyRepository;
 import com.capstone.be.service.PolicyService;
+import com.capstone.be.util.HtmlSanitizerUtil;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -67,11 +68,14 @@ public class PolicyServiceImpl implements PolicyService {
       );
     }
 
+    // Sanitize HTML content to prevent XSS attacks
+    String sanitizedContent = HtmlSanitizerUtil.sanitizePolicyContent(request.getContent());
+    
     // Create new policy with isActive = false by default
     Policy policy = Policy.builder()
         .version(request.getVersion().trim())
         .title(request.getTitle().trim())
-        .content(request.getContent())
+        .content(sanitizedContent)
         .isActive(false) // New policies are inactive by default
         .build();
 
@@ -114,7 +118,9 @@ public class PolicyServiceImpl implements PolicyService {
       policy.setTitle(request.getTitle().trim());
     }
     if (hasContent) {
-      policy.setContent(request.getContent());
+      // Sanitize HTML content to prevent XSS attacks
+      String sanitizedContent = HtmlSanitizerUtil.sanitizePolicyContent(request.getContent());
+      policy.setContent(sanitizedContent);
     }
 
     // Version and isActive cannot be updated here

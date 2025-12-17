@@ -32,6 +32,7 @@ import com.capstone.be.repository.UserRepository;
 import com.capstone.be.repository.spec.ReviewResultSpecification;
 import com.capstone.be.service.DocumentConversionService;
 import com.capstone.be.service.EmailService;
+import com.capstone.be.service.SystemConfigService;
 import com.capstone.be.service.FileStorageService;
 import com.capstone.be.service.ReviewRequestService;
 import com.capstone.be.util.ByteArrayMultipartFile;
@@ -69,9 +70,17 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
   private final DocumentTagLinkRepository documentTagLinkRepository;
   private final DocumentConversionService documentConversionService;
   private final EmailService emailService;
+  private final SystemConfigService systemConfigService;
 
   @Value("${app.document.points.ba-approval:100}")
-  private int baApprovalPoints;
+  private int baApprovalPointsFallback;
+
+  /**
+   * Get BA approval points from SystemConfig, fallback to @Value
+   */
+  private int getBaApprovalPoints() {
+    return systemConfigService.getIntValue("document.points.baApproval", baApprovalPointsFallback);
+  }
 
   private static final int RESPONSE_DEADLINE_DAYS = 1;
   private static final int REVIEW_DEADLINE_DAYS = 2;
@@ -811,7 +820,8 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
         log.info("Review result approved. Document {} is now ACTIVE", document.getId());
 
         // Award points to uploader for premium document approval
-        awardPointsToUploader(uploader, baApprovalPoints, document.getId());
+        int points = getBaApprovalPoints();
+        awardPointsToUploader(uploader, points, document.getId());
 
         // Send approval email to uploader
         try {
@@ -820,7 +830,7 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
               uploaderName,
               document.getTitle(),
               DocStatus.ACTIVE,
-              "Your premium document has been reviewed and approved. You have been awarded " + baApprovalPoints + " points!"
+              "Your premium document has been reviewed and approved. You have been awarded " + points + " points!"
           );
         } catch (Exception e) {
           log.error("Failed to send document approval email to {}: {}", uploaderEmail, e.getMessage());

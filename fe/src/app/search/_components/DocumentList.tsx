@@ -5,6 +5,12 @@ import { useSearch } from "../provider";
 import styles from "../styles.module.css";
 import { useModalPreview } from "@/components/ModalPreview/Provider";
 import type { DocumentSearchItem } from "@/types/document-search";
+import { sanitizeImageUrl } from "@/utils/imageUrl";
+import { Crown, Eye, ThumbsUp, Calendar, User, SearchX } from "lucide-react";
+
+const THUMBNAIL_BASE_URL =
+  "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/doc-thumbs/";
+const DEFAULT_THUMBNAIL = "/images/document.jpg";
 
 /**
  * Map DocumentSearchItem → ModalPreviewDoc
@@ -55,7 +61,12 @@ export default function DocumentList() {
   if (!items || items.length === 0) {
     return (
       <div className={styles.listWrapper}>
-        <p className={styles.empty}>No document found!!!</p>
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>
+            <SearchX size={48} />
+          </div>
+          <h3 className={styles.emptyTitle}>No documents found</h3>
+        </div>
       </div>
     );
   }
@@ -64,9 +75,6 @@ export default function DocumentList() {
     <div className={styles.listWrapper}>
       <ul className={styles.cardGrid}>
         {items.map((doc) => {
-          const thumb = doc.thumbnailUrl || null;
-          const firstLetter = doc.title?.trim().charAt(0).toUpperCase() || "?";
-
           const description = doc.description;
 
           const createdAt = useMemo(() => {
@@ -82,9 +90,13 @@ export default function DocumentList() {
           }, [doc.createdAt]);
 
           const isPremium = doc.isPremium;
-          const priceLabel = isPremium
-            ? `${doc.price?.toLocaleString?.() ?? doc.price} pts`
-            : "PUBLIC";
+
+          // Get sanitized thumbnail URL
+          const thumbnailUrl = sanitizeImageUrl(
+            doc.thumbnailUrl,
+            THUMBNAIL_BASE_URL,
+            DEFAULT_THUMBNAIL
+          );
 
           const handleOpen = () => {
             open(toModalPreviewDoc(doc));
@@ -108,17 +120,23 @@ export default function DocumentList() {
             >
               {/* Thumbnail bên trái */}
               <div className={styles.cardThumbWrapper}>
-                {thumb ? (
-                  // dùng <img> thường để tránh ràng buộc của next/image trong list đơn giản
-                  <img
-                    src={thumb}
-                    alt={doc.title}
-                    loading="lazy"
-                    className={styles.cardThumb}
-                  />
-                ) : (
-                  <div className={styles.cardThumbFallback}>{firstLetter}</div>
+                {isPremium && (
+                  <span className={styles.premiumIcon}>
+                    <Crown size={14} />
+                  </span>
                 )}
+                <img
+                  src={thumbnailUrl || DEFAULT_THUMBNAIL}
+                  alt={doc.title}
+                  loading="lazy"
+                  className={styles.cardThumb}
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    if (target.src !== DEFAULT_THUMBNAIL) {
+                      target.src = DEFAULT_THUMBNAIL;
+                    }
+                  }}
+                />
               </div>
 
               {/* Khối nội dung chính */}
@@ -133,7 +151,7 @@ export default function DocumentList() {
                         isPremium ? styles.priceBadge : styles.freeBadge
                       }
                     >
-                      {priceLabel}
+                      {isPremium ? "Premium" : "Free"}
                     </span>
                     <span className={styles.badge}>{doc.docTypeName}</span>
                   </div>
@@ -177,21 +195,21 @@ export default function DocumentList() {
 
                 {/* Footer: uploader + stats */}
                 <div className={styles.cardFooterRow}>
-                  <span className={styles.metaValue}>
-                    <span className={styles.metaLabel}>Uploader:</span>{" "}
+                  <span className={styles.footerItem}>
+                    <User size={14} className={styles.footerIcon} />
                     {doc.uploader.fullName}
                   </span>
-                  <span className={styles.metaValue}>
-                    <span className={styles.metaLabel}>Upload date:</span>{" "}
+                  <span className={styles.footerItem}>
+                    <Calendar size={14} className={styles.footerIcon} />
                     {createdAt}
                   </span>
-                  <span className={styles.metaValue}>
-                    <span className={styles.metaLabel}>Total view(s):</span>{" "}
-                    {doc.viewCount}
+                  <span className={styles.footerItem}>
+                    <Eye size={14} className={styles.footerIcon} />
+                    {doc.viewCount} views
                   </span>
-                  <span className={styles.metaValue}>
-                    <span className={styles.metaLabel}>Upvote:</span>{" "}
-                    {doc.upvoteCount}
+                  <span className={styles.footerItem}>
+                    <ThumbsUp size={14} className={styles.footerIcon} />
+                    {doc.upvoteCount} likes
                   </span>
                 </div>
               </div>

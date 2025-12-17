@@ -45,9 +45,7 @@ async function handleGET() {
   const text = await upstream.text();
   let data;
   try {
-    const json = JSON.parse(text);
-    // Extract data from { success, data, timestamp } format
-    data = json.data || json;
+    data = JSON.parse(text);
   } catch {
     data = text;
   }

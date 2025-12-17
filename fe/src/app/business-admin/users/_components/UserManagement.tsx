@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import type { User, UserResponse, UserQueryParams } from "../api";
 import { getReaders, getReviewers, updateReaderStatus, updateReviewerStatus } from "../api";
 import { UserFilters } from "./UserFilters";
@@ -14,8 +15,11 @@ import styles from "../styles.module.css";
 type UserType = "readers" | "reviewers";
 
 export function UserManagement() {
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<UserType>("readers");
+  // Get initial tab from URL query param, default to "readers"
+  const initialTab = (searchParams?.get("tab") as UserType) || "readers";
+  const [activeTab, setActiveTab] = useState<UserType>(initialTab);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +73,14 @@ export function UserManagement() {
     }
   }, [itemsPerPage]);
 
+  // Sync activeTab with URL query param
+  useEffect(() => {
+    const tabFromUrl = (searchParams?.get("tab") as UserType) || "readers";
+    if (tabFromUrl !== activeTab && (tabFromUrl === "readers" || tabFromUrl === "reviewers")) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams, activeTab]);
+
   // Fetch users when tab or filters change
   useEffect(() => {
     fetchUsers(filters, activeTab);
@@ -96,6 +108,8 @@ export function UserManagement() {
     const resetFilters = { ...filters, page: 1 };
     setFilters(resetFilters);
     fetchUsers(resetFilters, tab);
+    // Update URL with tab query param
+    window.history.pushState({}, "", `/business-admin/users?tab=${tab}`);
   };
 
   const handleActivate = async () => {
@@ -126,7 +140,7 @@ export function UserManagement() {
 
   const handleDetail = (userId: string) => {
     const userType = activeTab === "readers" ? "readers" : "reviewers";
-    window.location.href = `/business-admin/users/${userType}/${userId}`;
+    window.location.href = `/business-admin/users/${userType}/${userId}?tab=${activeTab}`;
   };
 
   const getStatusBadgeClass = (status?: string) => {

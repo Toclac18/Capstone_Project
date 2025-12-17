@@ -31,4 +31,28 @@ public class AdminReviewerResponse {
   private List<String> credentialFileUrls;
   private Instant createdAt;
   private Instant updatedAt;
+  
+  // Domain and specialization info
+  private List<DomainInfo> domains;
+  private List<SpecializationInfo> specializations;
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class DomainInfo {
+    private UUID id;
+    private String name;
+  }
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class SpecializationInfo {
+    private UUID id;
+    private String name;
+    private UUID domainId;
+    private String domainName;
+  }
 }

@@ -96,6 +96,19 @@ async function handleGET(request: Request) {
     organizationName: user.organizationName || null,
     organizationEmail: user.organizationEmail || null,
     credentialFileUrls: user.credentialFileUrls || [],
+    // Map domains and specializations
+    domains: (user.domains || []).map((d: any) => ({
+      id: d.id,
+      name: d.name,
+    })),
+    specializations: (user.specializations || []).map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      domain: s.domainId ? {
+        id: s.domainId,
+        name: s.domainName || "",
+      } : null,
+    })),
     createdAt: user.createdAt || new Date().toISOString(),
     updatedAt: user.updatedAt || new Date().toISOString(),
   }));

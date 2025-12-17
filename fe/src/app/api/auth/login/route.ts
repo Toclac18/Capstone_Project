@@ -1,7 +1,7 @@
 // app/api/auth/login/route.ts
 import { cookies } from "next/headers";
 import { BE_BASE, COOKIE_NAME } from "@/server/config";
-import { jsonResponse, parseError, badRequest } from "@/server/response";
+import { jsonResponse, badRequest } from "@/server/response";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
 
 async function handlePOST(req: Request) {
@@ -25,10 +25,7 @@ async function handlePOST(req: Request) {
 
   if (!upstream.ok) {
     const text = await upstream.text();
-    return jsonResponse(
-      { error: parseError(text, "Login failed") },
-      { status: upstream.status },
-    );
+    return jsonResponse(JSON.parse(text), { status: upstream.status });
   }
 
   // Parse response from backend

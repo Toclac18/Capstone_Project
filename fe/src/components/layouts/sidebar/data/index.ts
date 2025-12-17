@@ -24,6 +24,11 @@ export const READER_NAV_DATA = [
     label: "READER",
     items: [
       {
+        title: "Home",
+        icon: Icons.HomeIcon,
+        url: "/homepage",
+      },
+      {
         title: "Search Document",
         icon: Icons.SearchIcon,
         url: "/search",
@@ -67,6 +72,11 @@ export const REVIEWER_NAV_DATA = [
   {
     label: "REVIEWER",
     items: [
+      {
+        title: "Home",
+        icon: Icons.HomeIcon,
+        url: "/homepage",
+      },
       {
         title: "View Review List",
         icon: Icons.ClipboardCheckIcon,

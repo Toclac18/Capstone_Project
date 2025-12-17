@@ -80,22 +80,20 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+// Hàm lấy message từ BE
 const getErrorMessage = (error: AxiosError): string => {
-  const status = error.response?.status ?? null;
   const payload = error.response?.data as any;
 
-  if (payload?.message) return String(payload.message);
+  // 1. Ưu tiên cao nhất: Message từ Backend trả về (Format: ApiResponse hoặc PageResponse ....)
+  // Backend return structure { success, message, ... }.
+  if (payload?.message) {
+    return String(payload.message);
+  }
 
-  if (error.code === "ECONNABORTED") return "REQUEST TIMEOUT.";
-  if (!error.response) return "CANNOT CONNECT TO SERVER.";
-
-  if (status === 401) return error.message || "SESSION EXPIRED.";
-  if (status === 403) return error.message || "PERMISSION DENIED.";
-  if (status === 404) return error.message || "RESOURCE NOT FOUND.";
-  if (status === 409) return error.message || "CONFLICT ERROR.";
-  if (status === 500) return error.message || "SERVER ERROR";
-
-  return error.message || "REQUEST ERROR.";
+  // 2. Xử lý các lỗi mạng/hạ tầng (Không có response từ BE)
+  if (error.code === "ECONNABORTED") return "Request Timeout.";
+  if (!error.response) return "Cannot connect to server.";
+  return error.message || "Unexpected error occured.";
 };
 
 apiClient.interceptors.response.use(
@@ -119,7 +117,6 @@ apiClient.interceptors.response.use(
     if (apiClientErrorHandler) {
       try {
         apiClientErrorHandler(apiError);
-        apiError.isHandledGlobally = true;
       } catch (e) {
         console.error("[apiClient] error handler failed:", e);
       }

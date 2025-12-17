@@ -55,7 +55,7 @@ export function ReviewManagement() {
         };
       case "pending":
         // Documents with review request status = PENDING
-        // Don't filter by document status - will filter by review request status in component
+        // Fetch all premium documents (any status) - will filter by review request status in component
         return {
           ...baseFilters,
           // No status filter - fetch all premium documents and filter by review request status
@@ -67,11 +67,11 @@ export function ReviewManagement() {
           status: "REVIEWING",
         };
       case "completed":
-        // Documents that have been reviewed (có review request status = COMPLETED)
-        // Will filter by review request status in the component
+        // Documents that have been reviewed (status = ACTIVE or REJECTED after review)
+        // Only fetch premium documents with ACTIVE or REJECTED status
         return {
           ...baseFilters,
-          // No status filter - will filter by review request status
+          // Will filter by status in component - fetch all premium first
         };
       case "all":
         return {
@@ -89,16 +89,6 @@ export function ReviewManagement() {
       // Fetch all review requests (use large page size to get all)
       const response = await getAllReviewRequests(0, 10000); // Get all for mapping
       const allRequests = response.content || [];
-      const completedRequests = allRequests.filter(req => req.status === "COMPLETED");
-      console.log("Fetched review requests:", {
-        total: allRequests.length,
-        completed: completedRequests.length,
-        completedSample: completedRequests.slice(0, 3).map(req => ({
-          id: req.id,
-          documentId: req.document?.id,
-          status: req.status,
-        })),
-      });
       setReviewRequests(allRequests);
     } catch (e) {
       console.error("Failed to fetch review requests:", e);
@@ -112,14 +102,28 @@ export function ReviewManagement() {
     setError(null);
 
     try {
+      // For tabs that need client-side filtering (pending, completed, all),
+      // fetch with larger page size to get more results, then filter client-side
       const filters = getFiltersForTab(tab);
       if (searchTerm) {
         filters.search = searchTerm;
       }
+      
+      // For tabs that filter client-side, fetch more items to account for filtering
+      if (tab === "pending" || tab === "completed" || tab === "all") {
+        filters.limit = 100; // Fetch more to account for client-side filtering
+      }
+      
       const response: DocumentListResponse = await getDocuments(filters);
       
       setDocuments(response.documents);
-      setTotalItems(response.total);
+      // For tabs with client-side filtering, we'll calculate total from filtered results
+      // For other tabs, use backend total
+      if (tab === "pending" || tab === "completed" || tab === "all") {
+        setTotalItems(response.documents.length); // Will be updated after filtering
+      } else {
+        setTotalItems(response.total);
+      }
       setCurrentPage(response.page);
     } catch (e: unknown) {
       const errorMessage =
@@ -211,7 +215,7 @@ export function ReviewManagement() {
   }, [documents]);
 
   // Filter and sort documents by priority
-  const sortedDocuments = useMemo(() => {
+  const filteredAndSortedDocuments = useMemo(() => {
     let filtered = [...documents];
     
     // Filter by reviewer
@@ -272,25 +276,21 @@ export function ReviewManagement() {
         return req && req.status === "ACCEPTED";
       });
     } else if (activeTab === "completed") {
-      // Documents có review request status = COMPLETED
-      // Must find COMPLETED review request specifically (not use getReviewRequestForDocument which prioritizes active)
+      // Documents that have been reviewed (status = ACTIVE or REJECTED)
+      // These are documents that went through review process and got final decision
       filtered = filtered.filter((doc) => {
-        if (!reviewRequests || reviewRequests.length === 0) {
+        // Only show documents with ACTIVE or REJECTED status (final review decisions)
+        // Must have at least one review request (to ensure it went through review process)
+        if (doc.status !== "ACTIVE" && doc.status !== "REJECTED") {
           return false;
         }
+        // Check if document has any review request (to ensure it went through review)
         const docIdStr = String(doc.id);
-        const completedRequest = reviewRequests.find(req => {
+        const hasReviewRequest = reviewRequests.some(req => {
           const reqDocId = String(req.document?.id || "");
-          return reqDocId === docIdStr && req.status === "COMPLETED";
+          return reqDocId === docIdStr;
         });
-        if (completedRequest) {
-          console.log(`[Completed Tab] Document ${doc.id} has COMPLETED review request:`, {
-            documentId: doc.id,
-            reviewRequestId: completedRequest.id,
-            status: completedRequest.status,
-          });
-        }
-        return !!completedRequest;
+        return hasReviewRequest;
       });
     }
     // "all" tab shows all documents
@@ -311,9 +311,11 @@ export function ReviewManagement() {
         if (!reqA && reqB) return -1;
         if (reqA && !reqB) return 1;
         if (reqA && reqB) {
-          // REJECTED/EXPIRED before COMPLETED
-          if ((reqA.status === "REJECTED" || reqA.status === "EXPIRED") && reqB.status === "COMPLETED") return -1;
-          if ((reqB.status === "REJECTED" || reqB.status === "EXPIRED") && reqA.status === "COMPLETED") return 1;
+          // REJECTED/EXPIRED before others
+          if ((reqA.status === "REJECTED" || reqA.status === "EXPIRED") && 
+              (reqB.status !== "REJECTED" && reqB.status !== "EXPIRED")) return -1;
+          if ((reqB.status === "REJECTED" || reqB.status === "EXPIRED") && 
+              (reqA.status !== "REJECTED" && reqA.status !== "EXPIRED")) return 1;
         }
       }
       
@@ -349,10 +351,10 @@ export function ReviewManagement() {
         }
       }
       
-      // For "completed" tab: sort by completion date (newest first)
-      if (activeTab === "completed" && reqA && reqB) {
-        const dateA = new Date(reqA.updatedAt || reqA.createdAt).getTime();
-        const dateB = new Date(reqB.updatedAt || reqB.createdAt).getTime();
+      // For "completed" tab: sort by document updated date (newest first)
+      if (activeTab === "completed") {
+        const dateA = new Date(a.updatedAt || a.createdAt).getTime();
+        const dateB = new Date(b.updatedAt || b.createdAt).getTime();
         return dateB - dateA;
       }
       
@@ -381,7 +383,25 @@ export function ReviewManagement() {
       const dateB = new Date(b.createdAt).getTime();
       return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
     });
-  }, [documents, activeTab, getReviewRequestForDocument, selectedReviewerId, selectedDomainId, sortBy, sortOrder]);
+  }, [documents, activeTab, getReviewRequestForDocument, selectedReviewerId, selectedDomainId, sortBy, sortOrder, reviewRequests]);
+
+  // Paginate filtered documents for tabs that filter client-side
+  const sortedDocuments = useMemo(() => {
+    const needsClientSidePagination = activeTab === "pending" || activeTab === "completed" || activeTab === "all";
+    if (!needsClientSidePagination) {
+      return filteredAndSortedDocuments;
+    }
+    // Paginate client-side
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredAndSortedDocuments.slice(startIndex, endIndex);
+  }, [filteredAndSortedDocuments, activeTab, currentPage, itemsPerPage]);
+
+  // Calculate total for pagination
+  const paginationTotal = useMemo(() => {
+    const needsClientSidePagination = activeTab === "pending" || activeTab === "completed" || activeTab === "all";
+    return needsClientSidePagination ? filteredAndSortedDocuments.length : totalItems;
+  }, [filteredAndSortedDocuments.length, activeTab, totalItems]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -397,7 +417,7 @@ export function ReviewManagement() {
 
   const handleViewDetail = (doc: DocumentListItem, reviewRequest: ReviewRequestResponse | null) => {
     // If in completed tab and has review request, show review detail modal
-    if (activeTab === "completed" && reviewRequest && reviewRequest.status === "COMPLETED") {
+    if (activeTab === "completed" && reviewRequest) {
       setSelectedReviewRequestId(reviewRequest.id);
       setShowReviewDetailModal(true);
     } else {
@@ -651,16 +671,24 @@ export function ReviewManagement() {
                       )[0];
                     }
                   } else if (activeTab === "completed") {
-                    // For completed tab, get the COMPLETED request specifically
-                    const completedRequests = reviewRequests.filter(req => {
+                    // For completed tab, get the most recent review request (any status)
+                    // Prioritize ACCEPTED requests (most recent review)
+                    const allDocRequests = reviewRequests.filter(req => {
                       const reqDocId = String(req.document?.id || "");
-                      return reqDocId === docIdStr && req.status === "COMPLETED";
+                      return reqDocId === docIdStr;
                     });
-                    if (completedRequests.length > 0) {
-                      // Get the most recent COMPLETED request
-                      reviewRequest = completedRequests.sort((a, b) => 
-                        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                      )[0];
+                    if (allDocRequests.length > 0) {
+                      // Prioritize ACCEPTED, then get most recent
+                      const acceptedRequests = allDocRequests.filter(req => req.status === "ACCEPTED");
+                      if (acceptedRequests.length > 0) {
+                        reviewRequest = acceptedRequests.sort((a, b) => 
+                          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                        )[0];
+                      } else {
+                        reviewRequest = allDocRequests.sort((a, b) => 
+                          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                        )[0];
+                      }
                     }
                   } else {
                     // For other tabs, use the standard logic
@@ -731,8 +759,6 @@ export function ReviewManagement() {
                                 ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
                                 : reviewRequest.status === "ACCEPTED"
                                 ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                                : reviewRequest.status === "COMPLETED"
-                                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                                 : reviewRequest.status === "REJECTED"
                                 ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
                                 : reviewRequest.status === "EXPIRED"
@@ -742,7 +768,6 @@ export function ReviewManagement() {
                           >
                             {reviewRequest.status === "PENDING" && <Clock className="w-3 h-3" />}
                             {reviewRequest.status === "ACCEPTED" && <Clock className="w-3 h-3" />}
-                            {reviewRequest.status === "COMPLETED" && <CheckCircle className="w-3 h-3" />}
                             {reviewRequest.status === "REJECTED" && <XCircle className="w-3 h-3" />}
                             {reviewRequest.status === "EXPIRED" && <AlertCircle className="w-3 h-3" />}
                             <span>{reviewRequest.status}</span>
@@ -841,11 +866,11 @@ export function ReviewManagement() {
           </table>
         </div>
 
-        {/* Pagination */}
+        {/* Pagination - use filtered count for tabs that filter client-side */}
         <Pagination
           currentPage={currentPage}
-          totalPages={Math.ceil(totalItems / itemsPerPage)}
-          totalItems={totalItems}
+          totalPages={Math.ceil(paginationTotal / itemsPerPage)}
+          totalItems={paginationTotal}
           itemsPerPage={itemsPerPage}
           onPageChange={handlePageChange}
           loading={loading}

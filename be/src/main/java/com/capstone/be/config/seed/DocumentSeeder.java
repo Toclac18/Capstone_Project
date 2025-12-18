@@ -198,13 +198,16 @@ public class DocumentSeeder {
    * Determine document status based on seed and premium flag
    * 
    * Distribution for 30 documents:
-   * - Free documents (10): All ACTIVE
-   * - Premium documents (20):
-   *   - 5 PENDING_REVIEW (waiting for reviewer assignment)
-   *   - 5 REVIEWING (reviewer accepted, working on review)
-   *   - 3 PENDING_APPROVE (reviewer submitted, waiting BA approval)
-   *   - 5 ACTIVE (review approved)
+   * - Free documents (10): All ACTIVE (seed % 3 == 0)
+   * - Premium documents (20): Various statuses based on premium index
+   *   - 3 PENDING_REVIEW (waiting for reviewer assignment)
+   *   - 3 REVIEWING (reviewer accepted, working on review)
+   *   - 2 PENDING_APPROVE (reviewer submitted, waiting BA approval)
+   *   - 10 ACTIVE (review approved) - for trending reviewers
    *   - 2 REJECTED (review rejected)
+   * 
+   * Premium documents are: seed 1,2,4,5,7,8,10,11,13,14,16,17,19,20,22,23,25,26,28,29
+   * We calculate premium index based on seed position
    */
   private DocStatus determineDocumentStatus(int seed, boolean isPremium) {
     if (!isPremium) {
@@ -212,20 +215,32 @@ public class DocumentSeeder {
       return DocStatus.ACTIVE;
     }
     
-    // Premium documents have various statuses
-    int premiumIndex = seed / 3; // 0, 1, 2, 3, ... for premium docs
-    
-    if (premiumIndex < 5) {
-      return DocStatus.PENDING_REVIEW; // 5 docs waiting for reviewer
-    } else if (premiumIndex < 10) {
-      return DocStatus.REVIEWING; // 5 docs being reviewed
-    } else if (premiumIndex < 13) {
-      return DocStatus.PENDING_APPROVE; // 3 docs waiting BA approval
-    } else if (premiumIndex < 18) {
-      return DocStatus.ACTIVE; // 5 docs approved
-    } else {
-      return DocStatus.REJECTED; // 2 docs rejected
+    // Calculate premium document index based on seed
+    // For seed values: 1,2,4,5,7,8,10,11,13,14,16,17,19,20,22,23,25,26,28,29
+    // Premium index = (seed / 3) * 2 + (seed % 3) - 1 when seed % 3 != 0
+    // Simpler: count how many premium docs came before this seed
+    int premiumIdx = 0;
+    for (int i = 0; i < seed; i++) {
+      if (i % 3 != 0) {
+        premiumIdx++;
+      }
     }
+    
+    DocStatus status;
+    if (premiumIdx < 3) {
+      status = DocStatus.PENDING_REVIEW; // 3 docs waiting for reviewer
+    } else if (premiumIdx < 6) {
+      status = DocStatus.REVIEWING; // 3 docs being reviewed
+    } else if (premiumIdx < 8) {
+      status = DocStatus.PENDING_APPROVE; // 2 docs waiting BA approval
+    } else if (premiumIdx < 18) {
+      status = DocStatus.ACTIVE; // 10 docs approved - for trending reviewers
+    } else {
+      status = DocStatus.REJECTED; // 2 docs rejected
+    }
+    
+    log.debug("Premium doc seed={}, premiumIdx={}, status={}", seed, premiumIdx, status);
+    return status;
   }
 
   /**

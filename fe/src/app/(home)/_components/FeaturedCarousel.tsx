@@ -6,7 +6,7 @@ import { TrendingDocument } from "@/services/homepage.service";
 import { sanitizeImageUrl } from "@/utils/imageUrl";
 import Link from "next/link";
 
-const THUMBNAIL_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/document-thumbnails/";
+const THUMBNAIL_BASE_URL = "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/doc-thumbs/";
 
 interface FeaturedCard {
   id: string;

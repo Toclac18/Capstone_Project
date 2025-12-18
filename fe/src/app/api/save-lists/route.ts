@@ -3,37 +3,27 @@ import {
   mockCreateSaveListAndAddDoc,
   mockFetchSaveLists,
 } from "@/mock/save-list.mock";
-import { jsonResponse, proxyJsonResponse } from "@/server/response";
+import { jsonResponse, proxyJsonResponse, badRequest } from "@/server/response";
 import { BE_BASE, USE_MOCK } from "@/server/config";
-import { badRequest } from "@/server/response";
 import { getAuthHeader } from "@/server/auth";
+
 /**
- * GET /api/save-lists?readerId=...
+ * GET /api/save-lists
  * - Mock: lấy danh sách savelist từ mock
- * - Real: forward sang {BE_BASE}/api/save-lists
+ * - Real: forward sang {BE_BASE}/api/save-lists (backend lấy readerId từ auth token)
  */
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const readerId = url.searchParams.get("id");
-
-  if (!readerId) {
-    return badRequest("Missing query param");
-  }
-
+export async function GET() {
   // ---- MOCK MODE ----
   if (USE_MOCK) {
-    const items = mockFetchSaveLists(readerId);
+    const items = mockFetchSaveLists("mock-reader-id");
 
-    return jsonResponse(
-      { saveLists: items },
-      {
-        status: 200,
-        headers: {
-          "content-type": "application/json",
-          "x-mode": "mock",
-        },
+    return jsonResponse(items, {
+      status: 200,
+      headers: {
+        "content-type": "application/json",
+        "x-mode": "mock",
       },
-    );
+    });
   }
 
   // ---- REAL MODE ----
@@ -44,23 +34,20 @@ export async function GET(req: Request) {
     fh.set("Authorization", bearerToken);
   }
 
-  const upstream = await fetch(
-    `${BE_BASE}/api/save-lists?id=${encodeURIComponent(readerId)}`,
-    {
-      method: "GET",
-      headers: fh,
-      cache: "no-store",
-    },
-  );
+  const upstream = await fetch(`${BE_BASE}/api/save-lists`, {
+    method: "GET",
+    headers: fh,
+    cache: "no-store",
+  });
 
   return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 /**
  * POST /api/save-lists
- * body: { readerId: string; name: string; documentId: string }
+ * body: { name: string; documentId?: string }
  * - Mock: tạo savelist mới + add doc vào (mockCreateSaveListAndAddDoc)
- * - Real: forward sang {BE_BASE}/api/save-lists
+ * - Real: forward sang {BE_BASE}/api/save-lists (backend lấy readerId từ auth token)
  */
 export async function POST(req: Request) {
   let body: any;
@@ -70,17 +57,17 @@ export async function POST(req: Request) {
     return badRequest("Invalid JSON body");
   }
 
-  const { readerId, name, documentId } = body || {};
-  if (!readerId || !name || String(name).trim() === "" || !documentId) {
-    return badRequest('Fields "readerId", "name", "documentId" are required');
+  const { name } = body || {};
+  if (!name || String(name).trim() === "") {
+    return badRequest('Field "name" is required');
   }
 
   // ---- MOCK MODE ----
   if (USE_MOCK) {
     const created = mockCreateSaveListAndAddDoc({
-      readerId: String(readerId),
+      readerId: "mock-reader-id",
       name: String(name),
-      documentId: String(documentId),
+      documentId: body.documentId || "mock-doc-id",
     });
 
     return jsonResponse(created, {
@@ -103,7 +90,7 @@ export async function POST(req: Request) {
   const upstream = await fetch(`${BE_BASE}/api/save-lists`, {
     method: "POST",
     headers: fh,
-    body: JSON.stringify(body),
+    body: JSON.stringify({ name, documentId: body.documentId }),
     cache: "no-store",
   });
 

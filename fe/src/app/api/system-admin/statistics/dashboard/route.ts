@@ -113,10 +113,8 @@ async function handleGET(request: Request) {
   }
 
   const responseData = await response.json();
-  // Handle response that might have data wrapped in 'data' field
-  const data = responseData?.data || responseData;
 
-  return jsonResponse(data, {
+  return jsonResponse(responseData, {
     status: 200,
     headers: {
       "content-type": "application/json",
@@ -130,4 +128,3 @@ export async function GET(request: Request) {
     context: "api/system-admin/statistics/dashboard/route.ts/GET",
   });
 }
-

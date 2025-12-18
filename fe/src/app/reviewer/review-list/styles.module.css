@@ -101,7 +101,7 @@
 }
 
 .table-container {
-  @apply rounded-xl border border-stroke shadow-lg overflow-hidden bg-white;
+  @apply rounded-xl border border-stroke shadow-lg overflow-x-auto bg-white;
 }
 :global(html.dark) .table-container {
   @apply border-stroke-dark bg-dark-2;

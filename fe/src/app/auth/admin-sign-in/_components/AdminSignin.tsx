@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/toast";
 import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
 import styles from "../../sign-in/styles.module.css";
+import { ApiError } from "@/services/http";
 
 type FormValues = {
   email: string;
@@ -72,13 +73,16 @@ export default function AdminSignin() {
 
       // Refresh router to update server-side auth state
       router.refresh();
-      
+
       // Navigate to target route
       setTimeout(() => {
         router.push(targetRoute);
       }, 100);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Invalid email or password";
+    } catch (e: any) {
+      const msg =
+        e instanceof ApiError && !e.isHandledGlobally
+          ? e.message
+          : "Invalid email or password";
       showToast({
         type: "error",
         title: "Login Failed",
@@ -110,7 +114,7 @@ export default function AdminSignin() {
 
       {/* Admin Portal Header */}
       <div className="mb-6 text-center">
-        <h1 className="text-2xl font-bold text-dark dark:text-white mb-2">
+        <h1 className="mb-2 text-2xl font-bold text-dark dark:text-white">
           Admin Portal
         </h1>
         <p className="text-sm text-dark-5 dark:text-dark-6">

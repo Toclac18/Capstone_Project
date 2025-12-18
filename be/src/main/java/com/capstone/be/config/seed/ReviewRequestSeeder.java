@@ -50,10 +50,17 @@ public class ReviewRequestSeeder {
   public void run() {
     log.info("🌱 Start seeding ReviewRequest & ReviewResult");
 
-    if (reviewRequestRepository.count() > 0) {
-      log.warn("ReviewRequest already exist → skip seeding.");
+    // Only skip if we already have review results
+    long existingResults = reviewResultRepository.count();
+    long existingRequests = reviewRequestRepository.count();
+    log.info("📊 Current data: {} review requests, {} review results", existingRequests, existingResults);
+    
+    if (existingResults > 0) {
+      log.warn("⚠️ ReviewResult already has {} records → skip seeding. Delete review_result table data and restart to re-seed.", existingResults);
       return;
     }
+    
+    log.info("✅ No existing review results found. Proceeding with seeding...");
 
     // Get users
     User businessAdmin = userRepository.findByEmail("business1@capstone.com").orElse(null);
@@ -171,21 +178,38 @@ public class ReviewRequestSeeder {
       requestIndex++;
     }
 
-    // 4. ACTIVE documents (premium only) → Create completed review flow
-    List<Document> activePremiumDocs = documentRepository.findAll().stream()
+    // 4. ACTIVE premium documents → Create completed review flow (distribute among reviewers)
+    List<Document> allDocs = documentRepository.findAll();
+    log.info("Total documents in DB: {}", allDocs.size());
+    
+    // Debug: count documents by status
+    long pendingReviewCount = allDocs.stream().filter(d -> d.getStatus() == DocStatus.PENDING_REVIEW).count();
+    long reviewingCount = allDocs.stream().filter(d -> d.getStatus() == DocStatus.REVIEWING).count();
+    long pendingApproveCount = allDocs.stream().filter(d -> d.getStatus() == DocStatus.PENDING_APPROVE).count();
+    long activeCount = allDocs.stream().filter(d -> d.getStatus() == DocStatus.ACTIVE).count();
+    long rejectedCount = allDocs.stream().filter(d -> d.getStatus() == DocStatus.REJECTED).count();
+    long activePremiumCount = allDocs.stream().filter(d -> d.getStatus() == DocStatus.ACTIVE && Boolean.TRUE.equals(d.getIsPremium())).count();
+    
+    log.info("Document status distribution: PENDING_REVIEW={}, REVIEWING={}, PENDING_APPROVE={}, ACTIVE={} (premium={}), REJECTED={}", 
+        pendingReviewCount, reviewingCount, pendingApproveCount, activeCount, activePremiumCount, rejectedCount);
+    
+    List<Document> activeDocs = allDocs.stream()
         .filter(d -> d.getStatus() == DocStatus.ACTIVE && Boolean.TRUE.equals(d.getIsPremium()))
         .toList();
     
-    log.info("Creating completed reviews for {} ACTIVE premium documents", activePremiumDocs.size());
-    for (int i = 0; i < activePremiumDocs.size(); i++) {
-      Document doc = activePremiumDocs.get(i);
-      User reviewer = reviewers.get(reviewerIndex % reviewers.size());
-      reviewerIndex++;
+    log.info("Creating completed reviews for {} ACTIVE premium documents", activeDocs.size());
+    for (int i = 0; i < activeDocs.size(); i++) {
+      Document doc = activeDocs.get(i);
+      // Distribute documents evenly among reviewers
+      User reviewer = reviewers.get(i % reviewers.size());
       
-      Instant submittedAt = now.minus(i + 1, ChronoUnit.DAYS);
+      // Vary the submission time within last 7 days for trending calculation
+      int daysAgo = (i % 7) + 1;
+      int hoursOffset = (i % 12);
+      Instant submittedAt = now.minus(daysAgo, ChronoUnit.DAYS).minus(hoursOffset, ChronoUnit.HOURS);
       
       ReviewRequest request = ReviewRequest.builder()
-          .id(SeedUtil.generateUUID("review-request-" + requestIndex))
+          .id(SeedUtil.generateUUID("review-request-active-" + i))
           .document(doc)
           .reviewer(reviewer)
           .assignedBy(businessAdmin)
@@ -200,12 +224,12 @@ public class ReviewRequestSeeder {
       
       // Create APPROVED ReviewResult
       ReviewResult review = ReviewResult.builder()
-          .id(SeedUtil.generateUUID("review-result-approved-" + i))
+          .id(SeedUtil.generateUUID("review-result-active-" + i))
           .reviewRequest(savedRequest)
           .document(doc)
           .reviewer(reviewer)
           .comment("This document has been thoroughly reviewed. The content is accurate and well-structured. Approved for publication.")
-          .reportFilePath("reviews/review-report-approved-" + i + ".docx")
+          .reportFilePath("reviews/review-report-active-" + i + ".docx")
           .decision(ReviewDecision.APPROVED)
           .status(ReviewResultStatus.APPROVED)
           .submittedAt(submittedAt)
@@ -214,7 +238,8 @@ public class ReviewRequestSeeder {
           .build();
 
       reviewResultRepository.save(review);
-      log.info("✅ Created APPROVED review: '{}' → ACTIVE", doc.getTitle());
+      log.info("✅ Created APPROVED review: '{}' → Reviewer '{}' (submitted {} days ago)", 
+          doc.getTitle(), reviewer.getEmail(), daysAgo);
       requestIndex++;
     }
 

@@ -20,7 +20,7 @@ export interface ReviewRequestResponse {
     email: string;
     fullName: string;
   };
-  status: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED" | "COMPLETED";
+  status: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
   responseDeadline?: string | null;
   reviewDeadline?: string | null;
   respondedAt?: string | null;

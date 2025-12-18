@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getReader, getReviewer, updateReaderStatus, updateReviewerStatus } from "../../api";
 import type { User } from "../../api";
 import { useToast, toast } from "@/components/ui/toast";
@@ -12,9 +12,11 @@ import styles from "../../styles.module.css";
 export default function UserDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const type = params?.type as string;
   const id = params?.id as string;
+  const tab = searchParams?.get("tab") || type; // Get tab from query param, fallback to type
 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -202,7 +204,7 @@ export default function UserDetailPage() {
     return (
       <div className={styles["container"]}>
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push(`/business-admin/users?tab=${tab}`)}
           className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -223,11 +225,11 @@ export default function UserDetailPage() {
     <div className={styles["container"]}>
       {/* Back Button */}
       <button
-        onClick={() => router.back()}
+        onClick={() => router.push(`/business-admin/users?tab=${tab}`)}
         className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to {type === "readers" ? "Readers" : "Reviewers"}
+        Back to {tab === "readers" ? "Readers" : "Reviewers"}
       </button>
 
       {/* Header */}

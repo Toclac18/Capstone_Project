@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Bold, Italic, Underline, List, ListOrdered, Link, Eye, Code } from "lucide-react";
+import { sanitizeHtml } from "@/utils/htmlSanitizer";
 import styles from "./styles.module.css";
 
 interface PolicyEditorProps {
@@ -186,7 +187,7 @@ export function PolicyEditor({
         {showPreview ? (
           <div
             className={`${styles.editorPreview} ${error ? styles.editorError : ""}`}
-            dangerouslySetInnerHTML={{ __html: value || "<p>No content</p>" }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(value || "<p>No content</p>") }}
           />
         ) : (
           <textarea

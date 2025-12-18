@@ -47,7 +47,6 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
   const routerRef = useRef(router);
   const pathnameRef = useRef(pathname);
 
-  // Update refs after render to avoid mutating refs during render phase
   useEffect(() => {
     routerRef.current = router;
     pathnameRef.current = pathname;
@@ -74,34 +73,47 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
   );
 
   // ─────────────────────────────────────────────────────────────
-  // Xử lý lỗi theo Status Code
+  // Xử lý lỗi từ Axios (Global Handler)
   // ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    console.log("🛠️ [AlertDialogProvider] Connecting to Axios...");
+    console.log("[AlertDialogProvider] Connecting to Axios...");
 
     const handleAxiosError = (error: ApiError) => {
-      console.log("⚡ [GlobalHandler] Received error:", error.status);
+      console.log("[GlobalHandler] Received error status:", error.status);
 
       const { status } = error;
-      const serverDialog = error.dialog as ErrorDialogPayload | undefined;
       const currentPath = pathnameRef.current;
       const currentRouter = routerRef.current;
 
-      // Cấu hình Dialog cơ bản (Fallback)
+      // KHÔNG hiện Dialog, mà để cho Component tự xử lý (Show Toast/Inline).
+      // 400: Bad Request (Lỗi logic, sai pass...)
+      // 422: Validation Failed (Sai form...)
+      // 409: Conflict (Trùng email, trùng tên...) -> dùng showToast thay vì dialog
+      if (status === 400 || status === 422 || status === 409) {
+        // Đánh dấu là chưa được xử lý bởi Global Dialog -> Để Component biết đường show Toast
+        error.isHandledGlobally = false;
+        return;
+      }
+
+      // Đánh dấu là đã xử lý (để Component không show Toast chồng lên Dialog)
+      error.isHandledGlobally = true;
+
+      // Các lỗi dùng Alert Dialog và message hardcode
+      const serverDialog = error.dialog as ErrorDialogPayload | undefined;
       const baseConfig: ShowAlertOptions = {
         variant: serverDialog?.variant ?? "error",
         title: serverDialog?.title ?? "ERROR OCCURRED",
-        description: serverDialog?.description ?? error.message,
+        description: serverDialog?.description ?? error.message, // Fallback message
         primaryActionLabel: serverDialog?.primaryActionLabel ?? "OK",
-        onPrimaryAction: hideAlert, // Mặc định là đóng dialog
+        onPrimaryAction: hideAlert,
       };
 
       switch (status) {
-        // Unauthorized -> Login
+        // 401: Hết phiên -> Login
         case 401:
-          // Nếu đang ở trang login rồi thì không hiện nữa
-          if (currentPath?.includes("/auth/sign-in")) return;
-
+          if (currentPath?.startsWith("/auth/")) {
+            return;
+          }
           showAlert({
             title: "SESSION EXPIRED",
             description: "Your session has expired. Please sign in again.",
@@ -113,27 +125,17 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
           });
           break;
 
-        // Bad Request -> Đóng dialog
-        case 400:
-          showAlert({
-            title: "ERROR REQUEST",
-            description: "There was an error with your request.",
-            primaryActionLabel: "OK",
-            onPrimaryAction: hideAlert, // Chỉ đóng dialog
-          });
-          break;
-
-        // Forbidden -> Đóng dialog
+        // 403: Không có quyền
         case 403:
           showAlert({
             title: "ACCESS DENIED",
             description: "You do not have permission to perform this action.",
             primaryActionLabel: "OK",
-            onPrimaryAction: hideAlert, // Chỉ đóng dialog
+            onPrimaryAction: hideAlert,
           });
           break;
 
-        // Not Found -> Homepage
+        // 404: Không tìm thấy -> Home
         case 404:
           showAlert({
             title: "NOT FOUND",
@@ -146,18 +148,7 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
           });
           break;
 
-        // Conflict Error -> Đóng dialog
-        case 409:
-          showAlert({
-            title: "CONFLICT ERROR",
-            description:
-              "The request could not be completed due to a conflict. Please try again.",
-            primaryActionLabel: "OK",
-            onPrimaryAction: hideAlert, // Chỉ đóng dialog
-          });
-          break;
-
-        // Server Error -> Error Page
+        // 500: Lỗi server
         case 500:
           showAlert({
             title: "INTERNAL SERVER ERROR",
@@ -171,17 +162,14 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
           });
           break;
 
-        // Default: Các lỗi khác -> Đóng dialog
+        // Default (Lỗi mạng, timeout...)
         default:
           showAlert(baseConfig);
           break;
       }
     };
 
-    // Đăng ký handler
     setApiClientErrorHandler(handleAxiosError);
-
-    // Cleanup
     return () => setApiClientErrorHandler(null);
   }, [showAlert, hideAlert]);
 
@@ -205,7 +193,6 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
   );
 };
 
-// --- Hook ---
 export function useAlertDialog(): AlertDialogContextValue {
   const ctx = useContext(AlertDialogContext);
   if (!ctx) {

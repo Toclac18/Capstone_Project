@@ -32,6 +32,7 @@ import com.capstone.be.repository.UserRepository;
 import com.capstone.be.repository.spec.ReviewResultSpecification;
 import com.capstone.be.service.DocumentConversionService;
 import com.capstone.be.service.EmailService;
+import com.capstone.be.service.SystemConfigService;
 import com.capstone.be.service.FileStorageService;
 import com.capstone.be.service.ReviewRequestService;
 import com.capstone.be.util.ByteArrayMultipartFile;
@@ -69,9 +70,18 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
   private final DocumentTagLinkRepository documentTagLinkRepository;
   private final DocumentConversionService documentConversionService;
   private final EmailService emailService;
+  private final SystemConfigService systemConfigService;
+  private final com.capstone.be.service.helper.NotificationHelper notificationHelper;
 
   @Value("${app.document.points.ba-approval:100}")
-  private int baApprovalPoints;
+  private int baApprovalPointsFallback;
+
+  /**
+   * Get BA approval points from SystemConfig, fallback to @Value
+   */
+  private int getBaApprovalPoints() {
+    return systemConfigService.getIntValue("document.points.baApproval", baApprovalPointsFallback);
+  }
 
   private static final int RESPONSE_DEADLINE_DAYS = 1;
   private static final int REVIEW_DEADLINE_DAYS = 2;
@@ -166,10 +176,18 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
       existingRequest.setRespondedAt(null);
       
       ReviewRequest updatedRequest = reviewRequestRepository.save(existingRequest);
-      
-      log.info("Successfully changed reviewer for review request {} from {} to {} for document {}", 
+
+      log.info("Successfully changed reviewer for review request {} from {} to {} for document {}",
           updatedRequest.getId(), oldReviewerId, request.getReviewerId(), documentId);
-      
+
+      // Send notification to new Reviewer
+      notificationHelper.sendDocumentNotification(
+          reviewer,
+          "Review Request Reassigned",
+          String.format("You have been reassigned to review '%s' by %s. Please respond within 1 day.",
+              document.getTitle(), businessAdmin.getFullName())
+      );
+
       // Load tags for the document
       List<Tag> tags = documentTagLinkRepository.findByDocument_Id(updatedRequest.getDocument().getId())
           .stream()
@@ -202,6 +220,14 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
     // Document status remains PENDING_REVIEW until reviewer accepts
     // Will be updated to REVIEWING when reviewer accepts the request
     log.info("Successfully assigned reviewer {} to document {}. Review request created with PENDING status", request.getReviewerId(), documentId);
+
+    // Send notification to Reviewer
+    notificationHelper.sendDocumentNotification(
+        reviewer,
+        "New Review Request",
+        String.format("You have been assigned to review '%s' by %s. Please respond within 1 day.",
+            document.getTitle(), businessAdmin.getFullName())
+    );
 
     // Load tags for the document
     List<Tag> tags = documentTagLinkRepository.findByDocument_Id(reviewRequest.getDocument().getId())
@@ -313,18 +339,53 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
       // Calculate review deadline (2 days from acceptance)
       Instant reviewDeadline = calculateDeadline(respondedAt, REVIEW_DEADLINE_DAYS);
       reviewRequest.setReviewDeadline(reviewDeadline);
-      
+
       // Update document status to REVIEWING when reviewer accepts
       document.setStatus(DocStatus.REVIEWING);
       documentRepository.save(document);
-      
+
       log.info("Reviewer {} accepted review request {}. Document status updated to REVIEWING. Review deadline: {}", reviewerId, reviewRequestId, reviewDeadline);
+
+      // Send notification to Reader (document uploader)
+      notificationHelper.sendInfoNotification(
+          document.getUploader(),
+          "Review Request Accepted",
+          String.format("Reviewer %s has accepted to review your document '%s'.",
+              reviewer.getFullName(), document.getTitle())
+      );
+
+      // Send notification to all Business Admins
+      notificationHelper.sendNotificationToBusinessAdmins(
+          com.capstone.be.domain.enums.NotificationType.INFO,
+          "Review Request Accepted",
+          String.format("Reviewer %s has accepted the review request for document '%s'.",
+              reviewer.getFullName(), document.getTitle())
+      );
     } else {
       reviewRequest.setStatus(ReviewRequestStatus.REJECTED);
       reviewRequest.setRejectionReason(request.getRejectionReason());
       // Document status remains PENDING_REVIEW if reviewer rejects
       // Business admin can assign another reviewer
       log.info("Reviewer {} rejected review request {}", reviewerId, reviewRequestId);
+
+      // Send notification to Reader (document uploader)
+      String reasonText = (request.getRejectionReason() != null && !request.getRejectionReason().isBlank())
+          ? " Reason: " + request.getRejectionReason()
+          : "";
+      notificationHelper.sendWarningNotification(
+          document.getUploader(),
+          "Review Request Rejected",
+          String.format("Reviewer %s has declined to review your document '%s'.%s",
+              reviewer.getFullName(), document.getTitle(), reasonText)
+      );
+
+      // Send notification to all Business Admins
+      notificationHelper.sendNotificationToBusinessAdmins(
+          com.capstone.be.domain.enums.NotificationType.WARNING,
+          "Review Request Rejected",
+          String.format("Reviewer %s has rejected the review request for document '%s'.%s",
+              reviewer.getFullName(), document.getTitle(), reasonText)
+      );
     }
 
     reviewRequest = reviewRequestRepository.save(reviewRequest);
@@ -550,6 +611,22 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
     // ReviewRequest status remains ACCEPTED (not COMPLETED)
     // It will be used to track the review process
     log.info("Review submitted. Document status changed to PENDING_APPROVE, waiting for BA approval");
+
+//    // Send notification to Reader (document uploader)
+//    notificationHelper.sendInfoNotification(
+//        document.getUploader(),
+//        "Review Submitted",
+//        String.format("Reviewer %s has completed the review of your document '%s'. Awaiting admin approval.",
+//            reviewer.getFullName(), document.getTitle())
+//    );
+
+    // Send notification to all Business Admins
+    notificationHelper.sendNotificationToBusinessAdmins(
+        com.capstone.be.domain.enums.NotificationType.INFO,
+        "Review Submitted - Pending Approval",
+        String.format("Reviewer %s has submitted a review for document '%s'. Please review and approve.",
+            reviewer.getFullName(), document.getTitle())
+    );
 
     log.info("Successfully submitted review for document {}", document.getId());
 
@@ -811,7 +888,8 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
         log.info("Review result approved. Document {} is now ACTIVE", document.getId());
 
         // Award points to uploader for premium document approval
-        awardPointsToUploader(uploader, baApprovalPoints, document.getId());
+        int points = getBaApprovalPoints();
+        awardPointsToUploader(uploader, points, document.getId());
 
         // Send approval email to uploader
         try {
@@ -820,11 +898,27 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
               uploaderName,
               document.getTitle(),
               DocStatus.ACTIVE,
-              "Your premium document has been reviewed and approved. You have been awarded " + baApprovalPoints + " points!"
+              "Your premium document has been reviewed and approved. You have been awarded " + points + " points!"
           );
         } catch (Exception e) {
           log.error("Failed to send document approval email to {}: {}", uploaderEmail, e.getMessage());
         }
+
+        // Send notification to Reader (uploader)
+        notificationHelper.sendSuccessNotification(
+            uploader,
+            "Document Approved!",
+            String.format("Your premium document '%s' has been approved! You earned %d points.",
+                document.getTitle(), points)
+        );
+
+        // Send notification to Reviewer
+        notificationHelper.sendSuccessNotification(
+            reviewResult.getReviewer(),
+            "Review Approved",
+            String.format("Your review for document '%s' has been approved by Business Admin. The document is now active.",
+                document.getTitle())
+        );
       } else {
         document.setStatus(DocStatus.REJECTED);
         log.info("Review result approved. Document {} is now REJECTED", document.getId());
@@ -842,6 +936,23 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
         } catch (Exception e) {
           log.error("Failed to send document rejection email to {}: {}", uploaderEmail, e.getMessage());
         }
+
+        // Send notification to Reader (uploader)
+        String reason = reviewResult.getComment() != null ? reviewResult.getComment() : "Document did not meet our quality standards";
+        notificationHelper.sendWarningNotification(
+            uploader,
+            "Document Rejected",
+            String.format("Your document '%s' has been rejected. Reason: %s",
+                document.getTitle(), reason)
+        );
+
+        // Send notification to Reviewer
+        notificationHelper.sendSuccessNotification(
+            reviewResult.getReviewer(),
+            "Review Approved",
+            String.format("Your review for document '%s' has been approved by Business Admin. The document has been rejected.",
+                document.getTitle())
+        );
       }
     } else {
       // BA rejects the review result - reviewer must re-review
@@ -862,8 +973,16 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
       reviewRequest.setReviewDeadline(newReviewDeadline);
       reviewRequestRepository.save(reviewRequest);
 
-      log.info("Review result rejected. Document {} is back to REVIEWING. Reviewer must re-review by {}", 
+      log.info("Review result rejected. Document {} is back to REVIEWING. Reviewer must re-review by {}",
           document.getId(), newReviewDeadline);
+
+      // Send notification to Reviewer (must re-review)
+      notificationHelper.sendWarningNotification(
+          reviewResult.getReviewer(),
+          "Review Result Rejected - Re-review Required",
+          String.format("Your review for document '%s' needs revision. Reason: %s. Please re-review the document.",
+              document.getTitle(), request.getRejectionReason())
+      );
     }
 
     documentRepository.save(document);

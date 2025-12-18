@@ -40,6 +40,8 @@ import com.capstone.be.service.DocumentService;
 import com.capstone.be.service.DocumentThumbnailService;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.service.FileStorageService;
+import com.capstone.be.service.helper.NotificationHelper;
+import com.capstone.be.service.SystemConfigService;
 import com.capstone.be.util.StringUtil;
 
 import java.time.Instant;
@@ -87,14 +89,30 @@ public class DocumentServiceImpl implements DocumentService {
   private final DocumentAccessService documentAccessService;
   private final OrgEnrollmentRepository orgEnrollmentRepository;
   private final AiDocumentModerationAndSummarizationService aiModerationService;
+  private final NotificationHelper notificationHelper;
   private final EmailService emailService;
   private final com.capstone.be.service.DocumentConversionService documentConversionService;
+  private final SystemConfigService systemConfigService;
 
   @Value("${app.document.defaultPremiumPrice:100}")
-  private Integer premiumDocPrice;
+  private Integer defaultPremiumPriceFallback;
 
   @Value("${app.s3.document.presignedExpInMinutes:60}")
-  private Integer presignedUrlExpirationMinutes;
+  private Integer presignedUrlExpirationMinutesFallback;
+
+  /**
+   * Get premium document price from SystemConfig, fallback to @Value
+   */
+  private Integer getPremiumDocPrice() {
+    return systemConfigService.getIntValue("document.defaultPremiumPrice", defaultPremiumPriceFallback);
+  }
+
+  /**
+   * Get presigned URL expiration minutes from SystemConfig, fallback to @Value
+   */
+  private Integer getPresignedUrlExpirationMinutes() {
+    return systemConfigService.getIntValue("s3.document.presignedExpInMinutes", presignedUrlExpirationMinutesFallback);
+  }
 
   @Override
   @Transactional
@@ -173,6 +191,36 @@ public class DocumentServiceImpl implements DocumentService {
     saveDocumentTagLinks(document, allTags);
     log.info("Saved {} document-tag relationships", allTags.size());
 
+    // Notify BUSINESS_ADMIN if document needs reviewer assignment
+    // (Documents with status VERIFYING need reviewer assignment)
+    if (document.getStatus() == DocStatus.REVIEWING) {
+      notificationHelper.sendNotificationToBusinessAdmins(
+          com.capstone.be.domain.enums.NotificationType.INFO,
+          "New Document Needs Review",
+          String.format("A new document '%s' uploaded by %s needs reviewer assignment", 
+              document.getTitle(), uploader.getFullName())
+      );
+    }
+
+    // Notify BUSINESS_ADMIN if document needs reviewer assignment
+    // (Documents with status VERIFYING need reviewer assignment)
+    if (document.getStatus() == DocStatus.AI_VERIFYING) {
+      notificationHelper.sendNotificationToBusinessAdmins(
+          com.capstone.be.domain.enums.NotificationType.INFO,
+          "New Document Needs Review",
+          String.format("A new document '%s' uploaded by %s needs AI verification", 
+              document.getTitle(), uploader.getFullName())
+      );
+    }
+
+    // Send notification to Reader (uploader)
+    notificationHelper.sendSuccessNotification(
+        uploader,
+        "Document Uploaded Successfully",
+        String.format("Your document '%s' has been uploaded and is being processed.",
+            document.getTitle())
+    );
+
     // Trigger async AI processing (will update document status and summaries after completion)
     UUID documentId = document.getId();
     aiModerationService.processDocumentAsync(documentId, fileToUpload)
@@ -220,10 +268,21 @@ public class DocumentServiceImpl implements DocumentService {
             .document(document)
             .build();
 
-    reader.setPoint(reader.getPoint() - document.getPrice());
+    int pointsDeducted = document.getPrice();
+    reader.setPoint(reader.getPoint() - pointsDeducted);
     readerProfileRepository.save(reader);
 
     documentRedemptionRepository.save(redemption);
+
+    // Send notification to Reader about points deduction
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    notificationHelper.sendInfoNotification(
+        user,
+        "Document Redeemed",
+        String.format("You redeemed '%s' for %d points. Remaining balance: %d points.",
+            document.getTitle(), pointsDeducted, reader.getPoint())
+    );
   }
 
   /**
@@ -419,6 +478,17 @@ public class DocumentServiceImpl implements DocumentService {
           allTags.addAll(savedNewTags);
           log.info("Created {} new tags with PENDING status for admin approval",
               savedNewTags.size());
+          
+          // Notify BUSINESS_ADMIN about new tags
+          String tagNames = savedNewTags.stream()
+              .map(Tag::getName)
+              .collect(Collectors.joining(", "));
+          notificationHelper.sendNotificationToBusinessAdmins(
+              com.capstone.be.domain.enums.NotificationType.INFO,
+              "New Tags Created",
+              String.format("User has created %d new tag(s) that need approval: %s", 
+                  savedNewTags.size(), tagNames)
+          );
         }
       }
     }
@@ -438,7 +508,7 @@ public class DocumentServiceImpl implements DocumentService {
       String fileUrl) {
 
     // Determine price: use configured premium price or 0
-    Integer price = Boolean.TRUE.equals(request.getIsPremium()) ? premiumDocPrice : 0;
+    Integer price = Boolean.TRUE.equals(request.getIsPremium()) ? getPremiumDocPrice() : 0;
 
     return Document.builder()
         .title(request.getTitle())
@@ -519,17 +589,18 @@ public class DocumentServiceImpl implements DocumentService {
     log.info("Incremented view count for document {} to {}", documentId, currentViewCount + 1);
 
     // Generate presigned URL
+    Integer expirationMinutes = getPresignedUrlExpirationMinutes();
     String presignedUrl = fileStorageService.generatePresignedUrl(
         FileStorage.DOCUMENT_FOLDER,
         document.getFileKey(),
-        presignedUrlExpirationMinutes
+        expirationMinutes
     );
 
     log.info("Generated presigned URL for document {} for user {}", documentId, userId);
 
     return DocumentPresignedUrlResponse.builder()
         .presignedUrl(presignedUrl)
-        .expiresInMinutes(presignedUrlExpirationMinutes)
+        .expiresInMinutes(expirationMinutes)
         .build();
   }
 
@@ -729,7 +800,7 @@ public class DocumentServiceImpl implements DocumentService {
     document.setOrganization(organization);
 
     // Update price based on premium status
-    Integer price = Boolean.TRUE.equals(request.getIsPremium()) ? premiumDocPrice : 0;
+    Integer price = Boolean.TRUE.equals(request.getIsPremium()) ? getPremiumDocPrice() : 0;
     document.setPrice(price);
 
     document = documentRepository.save(document);
@@ -768,6 +839,16 @@ public class DocumentServiceImpl implements DocumentService {
     documentRepository.save(document);
 
     log.info("Soft deleted document with ID: {} (status changed to DELETED)", documentId);
+
+    // Notify BUSINESS_ADMIN about document deletion
+    notificationHelper.sendNotificationToBusinessAdmins(
+        com.capstone.be.domain.enums.NotificationType.WARNING,
+        "Document Deleted",
+        String.format("Reader %s (%s) has deleted document: %s", 
+            document.getUploader().getFullName(), 
+            document.getUploader().getEmail(), 
+            document.getTitle())
+    );
   }
 
   @Override
@@ -1229,7 +1310,7 @@ public class DocumentServiceImpl implements DocumentService {
         presignedUrl = fileStorageService.generatePresignedUrl(
                 FileStorage.DOCUMENT_FOLDER,
                 document.getFileKey(),
-                presignedUrlExpirationMinutes
+                getPresignedUrlExpirationMinutes()
         );
       }
       response.setPresignedUrl(presignedUrl);
@@ -1254,7 +1335,7 @@ public class DocumentServiceImpl implements DocumentService {
         presignedUrl = fileStorageService.generatePresignedUrl(
                 FileStorage.DOCUMENT_FOLDER,
                 document.getFileKey(),
-                presignedUrlExpirationMinutes
+                getPresignedUrlExpirationMinutes()
         );
       }
       response.setPresignedUrl(presignedUrl);

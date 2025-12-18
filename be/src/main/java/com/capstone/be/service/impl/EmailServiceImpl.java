@@ -1,6 +1,7 @@
 package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.enums.DocStatus;
+import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.domain.enums.UserStatus;
 import com.capstone.be.exception.EmailException;
 import com.capstone.be.service.EmailService;
@@ -1086,6 +1087,189 @@ public class EmailServiceImpl implements EmailService {
         frontendBaseUrl,
         headerColor
     );
+  }
+
+  @Override
+  @Async
+  public void sendUserRoleChangeEmail(
+      String email,
+      String fullName,
+      UserRole oldRole,
+      UserRole newRole,
+      String reason
+  ) {
+    try {
+      String subject = "Account Role Changed - Capstone Platform";
+      String htmlContent = buildUserRoleChangeEmailHtml(fullName, oldRole, newRole, reason);
+
+      sendHtmlEmail(email, subject, htmlContent);
+      log.info("Sent user role change email to: {} from role: {} to role: {}", email, oldRole, newRole);
+    } catch (Exception e) {
+      log.error("Failed to send user role change email to: {}", email, e);
+    }
+  }
+
+  private String buildUserRoleChangeEmailHtml(
+      String fullName,
+      UserRole oldRole,
+      UserRole newRole,
+      String reason
+  ) {
+    String displayName = (fullName != null && !fullName.isBlank()) ? fullName : "User";
+    String oldRoleLabel = oldRole != null ? oldRole.getDisplayName() : "Previous Role";
+    String newRoleLabel = newRole != null ? newRole.getDisplayName() : "New Role";
+
+    String reasonSection = (reason != null && !reason.trim().isEmpty())
+        ? """
+            <div class="reason-box">
+                <h3>Admin Note:</h3>
+                <p>%s</p>
+            </div>
+            """.formatted(reason)
+        : "";
+
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #9C27B0; color: white; padding: 20px; text-align: center; }
+                .content { padding: 20px; background-color: #f9f9f9; }
+                .role-box { background-color: #f3e5f5; border-left: 4px solid #9C27B0;
+                              padding: 15px; margin: 20px 0; }
+                .role-change { display: flex; align-items: center; justify-content: space-between; margin: 10px 0; }
+                .role-old { color: #666; text-decoration: line-through; }
+                .role-new { color: #9C27B0; font-weight: bold; }
+                .arrow { margin: 0 15px; color: #9C27B0; font-size: 20px; }
+                .reason-box { background-color: #fff3cd; border-left: 4px solid #ffc107;
+                              padding: 15px; margin: 20px 0; }
+                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Account Role Changed</h1>
+                </div>
+                <div class="content">
+                    <h2>Hello %s,</h2>
+                    <p>Your account role on the Capstone Platform has been changed by a System Administrator.</p>
+                    <div class="role-box">
+                        <div class="role-change">
+                            <span class="role-old">%s</span>
+                            <span class="arrow">→</span>
+                            <span class="role-new">%s</span>
+                        </div>
+                    </div>
+                    %s
+                    <p>This change may affect your access permissions and available features. If you have any questions about this change, please contact our support team.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; 2025 Capstone Platform. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(displayName, oldRoleLabel, newRoleLabel, reasonSection);
+  }
+
+  @Override
+  @Async
+  public void sendOrganizationMemberStatusUpdateEmail(
+      String email,
+      String fullName,
+      String organizationName,
+      UserStatus newStatus,
+      String reason
+  ) {
+    try {
+      String subject = "Organization Status Update - Capstone Platform";
+      String htmlContent = buildOrganizationMemberStatusUpdateEmailHtml(fullName, organizationName, newStatus, reason);
+
+      sendHtmlEmail(email, subject, htmlContent);
+      log.info("Sent organization member status update email to: {} for organization: {} with status: {}", 
+          email, organizationName, newStatus);
+    } catch (Exception e) {
+      log.error("Failed to send organization member status update email to: {} for organization: {}", 
+          email, organizationName, e);
+    }
+  }
+
+  private String buildOrganizationMemberStatusUpdateEmailHtml(
+      String fullName,
+      String organizationName,
+      UserStatus newStatus,
+      String reason
+  ) {
+    String displayName = (fullName != null && !fullName.isBlank()) ? fullName : "Member";
+    String orgName = (organizationName != null && !organizationName.isBlank()) ? organizationName : "Your Organization";
+    String statusLabel = newStatus != null ? newStatus.name() : "UPDATED";
+
+    // Determine message and color based on status
+    String statusMessage;
+    String headerColor;
+    if (newStatus == UserStatus.ACTIVE) {
+      statusMessage = "Your organization has been activated. You can now access all organization features and documents.";
+      headerColor = "#4CAF50"; // Green
+    } else if (newStatus == UserStatus.INACTIVE) {
+      statusMessage = "Your organization has been deactivated. Access to organization features may be limited.";
+      headerColor = "#FF9800"; // Orange
+    } else {
+      statusMessage = "The status of your organization has been updated.";
+      headerColor = "#2196F3"; // Blue
+    }
+
+    String reasonSection = (reason != null && !reason.trim().isEmpty())
+        ? """
+            <div class="reason-box">
+                <h3>Admin Note:</h3>
+                <p>%s</p>
+            </div>
+            """.formatted(reason)
+        : "";
+
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: %s; color: white; padding: 20px; text-align: center; }
+                .content { padding: 20px; background-color: #f9f9f9; }
+                .status-box { background-color: #e3f2fd; border-left: 4px solid %s;
+                              padding: 15px; margin: 20px 0; }
+                .reason-box { background-color: #fff3cd; border-left: 4px solid #ffc107;
+                              padding: 15px; margin: 20px 0; }
+                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Organization Status Update</h1>
+                </div>
+                <div class="content">
+                    <h2>Hello %s,</h2>
+                    <p>The status of <strong>%s</strong> on the Capstone Platform has been updated.</p>
+                    <div class="status-box">
+                        <p style="margin: 0;"><strong>New Status:</strong> %s</p>
+                    </div>
+                    <p>%s</p>
+                    %s
+                    <p>If you have any questions about this change, please contact your organization admin or our support team.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; 2025 Capstone Platform. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(headerColor, headerColor, displayName, orgName, statusLabel, statusMessage, reasonSection);
   }
 }
 

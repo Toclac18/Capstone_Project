@@ -14,24 +14,34 @@ export async function PUT(
     const body = (await request.json()) as UpdateTypeRequest;
     try {
       const result = mockTypesDB.update(id, body);
-      return jsonResponse(result, {
-        status: 200,
-        headers: {
-          "content-type": "application/json",
-          "x-mode": "mock",
+      return jsonResponse(
+        {
+          success: true,
+          message: "Update successful (Mock)",
+          data: result,
+          timestamp: new Date().toISOString(),
         },
-      });
+        {
+          status: 200,
+          headers: { "content-type": "application/json", "x-mode": "mock" },
+        },
+      );
     } catch (error: any) {
-      return jsonResponse({ message: error.message }, {
-        status: 400,
-        headers: { "content-type": "application/json", "x-mode": "mock" },
-      });
+      return jsonResponse(
+        {
+          success: false,
+          message: error.message,
+        },
+        {
+          status: 400,
+          headers: { "content-type": "application/json", "x-mode": "mock" },
+        },
+      );
     }
   }
 
-  // Get authentication from cookie
+  // 2. Real Backend Logic
   const bearerToken = await getAuthHeader();
-
   const fh = new Headers({ "Content-Type": "application/json" });
   if (bearerToken) {
     fh.set("Authorization", bearerToken);
@@ -39,7 +49,6 @@ export async function PUT(
 
   const url = `${BE_BASE}/api/admin/doc-types/${id}`;
 
-  // Read and stringify request body to avoid duplex option error
   let body: string;
   try {
     const jsonBody = await request.json();
@@ -54,25 +63,5 @@ export async function PUT(
     body,
     cache: "no-store",
   });
-
-  // Backend returns ApiResponse<DocTypeDetailResponse>, extract data
-  if (!upstream.ok) {
-    return proxyJsonResponse(upstream, { mode: "real" });
-  }
-
-  const text = await upstream.text();
-  try {
-    const apiResponse = JSON.parse(text);
-    // Extract data from { success, data, timestamp } format
-    const data = apiResponse.data || apiResponse;
-    return jsonResponse(data, {
-      status: upstream.status,
-      headers: {
-        "content-type": "application/json",
-        "x-mode": "real",
-      },
-    });
-  } catch {
-    return proxyJsonResponse(upstream, { mode: "real" });
-  }
+  return proxyJsonResponse(upstream, { mode: "real" });
 }

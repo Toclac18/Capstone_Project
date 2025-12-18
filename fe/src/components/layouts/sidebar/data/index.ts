@@ -11,7 +11,7 @@ export const NAV_DATA = [
       },
       {
         title: "Contact Admin",
-        icon: Icons.HeadphonesIcon,
+        icon: Icons.PhoneIcon,
         url: "/contact-admin",
       },
     ],
@@ -60,7 +60,7 @@ export const READER_NAV_DATA = [
       },     
       {
         title: "Contact Admin",
-        icon: Icons.HeadphonesIcon,
+        icon: Icons.PhoneIcon,
         url: "/contact-admin",
       },
     ],
@@ -84,7 +84,7 @@ export const REVIEWER_NAV_DATA = [
       },
       {
         title: "Contact Admin",
-        icon: Icons.HeadphonesIcon,
+        icon: Icons.PhoneIcon,
         url: "/contact-admin",
       },
     ],
@@ -187,7 +187,7 @@ export const BUSINESS_ADMIN_NAV_DATA = [
       },
       {
         title: "Contact Tickets",
-        icon: Icons.HeadphonesIcon,
+        icon: Icons.PhoneIcon,
         url: "/business-admin/tickets",
       },
     ],

@@ -36,18 +36,22 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-stroke bg-white px-4 py-5 shadow-1 dark:border-stroke-dark dark:bg-gray-dark md:px-5 2xl:px-10">
-      <button
-        onClick={toggleSidebar}
-        className="group flex items-center justify-center rounded-lg p-2 transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-      >
-        <AnimatedMenuIcon
-          isOpen={isOpen}
-          className="text-gray-700 group-hover:text-gray-900 dark:text-gray-300 dark:group-hover:text-white"
-        />
-        <span className="sr-only">Toggle Sidebar</span>
-      </button>
+      {/* Only show sidebar toggle for authenticated users */}
+      {!isGuest && (
+        <button
+          onClick={toggleSidebar}
+          className="group flex items-center justify-center rounded-lg p-2 transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+        >
+          <AnimatedMenuIcon
+            isOpen={isOpen}
+            className="text-gray-700 group-hover:text-gray-900 dark:text-gray-300 dark:group-hover:text-white"
+          />
+          <span className="sr-only">Toggle Sidebar</span>
+        </button>
+      )}
 
-      {!isOpen && (
+      {/* Show logo for guests or when sidebar is closed */}
+      {(isGuest || !isOpen) && (
         <div className="ml-4 flex items-center max-xl:hidden">
           <Link href="/" className="flex h-8 items-center">
             <Logo />

@@ -2,6 +2,7 @@ package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.Document;
 import com.capstone.be.domain.entity.DocumentSummarization;
+import com.capstone.be.domain.entity.DocumentViolation;
 import com.capstone.be.domain.entity.ReaderProfile;
 import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.DocStatus;
@@ -9,6 +10,7 @@ import com.capstone.be.dto.ai.AiModerationResponse;
 import com.capstone.be.exception.BusinessException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.repository.DocumentRepository;
+import com.capstone.be.repository.DocumentViolationRepository;
 import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.service.AiDocumentModerationAndSummarizationService;
 import com.capstone.be.service.EmailService;
@@ -43,6 +45,7 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
     AiDocumentModerationAndSummarizationService {
 
   private final DocumentRepository documentRepository;
+  private final DocumentViolationRepository documentViolationRepository;
   private final ReaderProfileRepository readerProfileRepository;
   private final EmailService emailService;
   private final RestTemplate restTemplate;
@@ -200,11 +203,12 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
       log.warn("Document ID: {} rejected by AI moderation. Violations: {}",
           documentId, response.getViolations());
 
+      // Save violations to database
+      saveViolations(document, response);
+
       // Send rejection email to uploader
       try {
-        String violationsText = response.getViolations() != null 
-            ? String.join(", ", response.getViolations()) 
-            : "Content policy violation";
+        String violationsText = buildViolationsEmailText(response);
         emailService.sendDocumentStatusUpdateEmail(
             uploaderEmail,
             uploaderName,
@@ -258,5 +262,63 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
       log.error("Failed to update document status after AI processing error for document ID: {}",
           documentId, ex);
     }
+  }
+
+  /**
+   * Save violations to database
+   */
+  private void saveViolations(Document document, AiModerationResponse response) {
+    if (response.getViolations() == null || response.getViolations().isEmpty()) {
+      log.info("No violations to save for document ID: {}", document.getId());
+      return;
+    }
+
+    try {
+      for (AiModerationResponse.Violation violation : response.getViolations()) {
+        DocumentViolation documentViolation = DocumentViolation.builder()
+            .document(document)
+            .type(violation.getType())
+            .snippet(violation.getSnippet())
+            .page(violation.getPage())
+            .prediction(violation.getPrediction())
+            .confidence(violation.getConfidence())
+            .build();
+
+        documentViolationRepository.save(documentViolation);
+      }
+
+      log.info("Saved {} violations for document ID: {}",
+          response.getViolations().size(), document.getId());
+    } catch (Exception e) {
+      log.error("Failed to save violations for document ID: {}", document.getId(), e);
+    }
+  }
+
+  /**
+   * Build violations text for email notification
+   */
+  private String buildViolationsEmailText(AiModerationResponse response) {
+    if (response.getViolations() == null || response.getViolations().isEmpty()) {
+      return "Content policy violation";
+    }
+
+    StringBuilder sb = new StringBuilder();
+    sb.append("Your document contains ").append(response.getViolations().size())
+        .append(" violation(s):\n");
+
+    for (int i = 0; i < response.getViolations().size(); i++) {
+      AiModerationResponse.Violation v = response.getViolations().get(i);
+      sb.append("\n").append(i + 1).append(". ");
+      sb.append("Type: ").append(v.getType());
+      sb.append(", Page: ").append(v.getPage());
+      if (v.getSnippet() != null && !v.getSnippet().isEmpty()) {
+        String snippet = v.getSnippet().length() > 50
+            ? v.getSnippet().substring(0, 50) + "..."
+            : v.getSnippet();
+        sb.append(", Snippet: \"").append(snippet).append("\"");
+      }
+    }
+
+    return sb.toString();
   }
 }

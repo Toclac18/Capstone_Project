@@ -18,15 +18,20 @@ import com.capstone.be.exception.ForbiddenException;
 import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.mapper.DocumentMapper;
+import com.capstone.be.repository.CommentRepository;
 import com.capstone.be.repository.DocTypeRepository;
 import com.capstone.be.repository.DocumentReadHistoryRepository;
 import com.capstone.be.repository.DocumentRedemptionRepository;
+import com.capstone.be.repository.DocumentReportRepository;
 import com.capstone.be.repository.DocumentRepository;
 import com.capstone.be.repository.DocumentTagLinkRepository;
+import com.capstone.be.repository.DocumentViolationRepository;
 import com.capstone.be.repository.OrgEnrollmentRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.repository.ReviewRequestRepository;
+import com.capstone.be.repository.ReviewResultRepository;
+import com.capstone.be.repository.SavedListDocumentRepository;
 import com.capstone.be.repository.SpecializationRepository;
 import com.capstone.be.repository.TagRepository;
 import com.capstone.be.repository.UserRepository;
@@ -36,6 +41,7 @@ import com.capstone.be.repository.specification.DocumentSpecification;
 import com.capstone.be.repository.specification.DocumentUploadHistorySpecification;
 import com.capstone.be.service.AiDocumentModerationAndSummarizationService;
 import com.capstone.be.service.DocumentAccessService;
+import com.capstone.be.service.DocumentConversionService;
 import com.capstone.be.service.DocumentService;
 import com.capstone.be.service.DocumentThumbnailService;
 import com.capstone.be.service.EmailService;
@@ -79,10 +85,11 @@ public class DocumentServiceImpl implements DocumentService {
   private final DocumentRedemptionRepository documentRedemptionRepository;
   private final DocumentReadHistoryRepository documentReadHistoryRepository;
   private final ReviewRequestRepository reviewRequestRepository;
-  private final com.capstone.be.repository.ReviewResultRepository reviewResultRepository;
-  private final com.capstone.be.repository.CommentRepository commentRepository;
-  private final com.capstone.be.repository.SavedListDocumentRepository savedListDocumentRepository;
-  private final com.capstone.be.repository.DocumentReportRepository documentReportRepository;
+  private final ReviewResultRepository reviewResultRepository;
+  private final CommentRepository commentRepository;
+  private final SavedListDocumentRepository savedListDocumentRepository;
+  private final DocumentReportRepository documentReportRepository;
+  private final DocumentViolationRepository documentViolationRepository;
   private final FileStorageService fileStorageService;
   private final DocumentThumbnailService documentThumbnailService;
   private final DocumentMapper documentMapper;
@@ -91,7 +98,7 @@ public class DocumentServiceImpl implements DocumentService {
   private final AiDocumentModerationAndSummarizationService aiModerationService;
   private final NotificationHelper notificationHelper;
   private final EmailService emailService;
-  private final com.capstone.be.service.DocumentConversionService documentConversionService;
+  private final DocumentConversionService documentConversionService;
   private final SystemConfigService systemConfigService;
 
   @Value("${app.document.defaultPremiumPrice:100}")
@@ -1569,6 +1576,42 @@ public class DocumentServiceImpl implements DocumentService {
         .documentsUploadedLast30Days(documentsUploadedLast30Days)
         .documentsActivatedLast30Days(documentsActivatedLast30Days)
         .build();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<DocumentViolationResponse> getDocumentViolations(UUID userId, UUID documentId) {
+    // Fetch document
+    Document document = documentRepository.findById(documentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+
+    // Fetch user
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+    // Authorization: Only uploader or admin can view violations
+    boolean isUploader = document.getUploader().getId().equals(userId);
+    boolean isAdmin = user.getRole().name().contains("ADMIN");
+
+    if (!isUploader && !isAdmin) {
+      throw new ForbiddenException("You are not authorized to view violations for this document");
+    }
+
+    // Fetch violations
+    List<DocumentViolation> violations = documentViolationRepository.findByDocumentId(documentId);
+
+    // Map to DTO
+    return violations.stream()
+        .map(v -> DocumentViolationResponse.builder()
+            .id(v.getId())
+            .type(v.getType())
+            .snippet(v.getSnippet())
+            .page(v.getPage())
+            .prediction(v.getPrediction())
+            .confidence(v.getConfidence())
+            .createdAt(v.getCreatedAt())
+            .build())
+        .collect(Collectors.toList());
   }
 
 }

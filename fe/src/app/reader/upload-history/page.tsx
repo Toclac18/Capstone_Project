@@ -15,8 +15,10 @@ import { fetchUploadHistory, type DocumentHistory, type UploadHistoryQueryParams
 import { Pagination } from "@/components/ui/pagination";
 import { UploadHistoryFilters } from "./_components/UploadHistoryFilters";
 import { useToast } from "@/components/ui/toast";
+import { getDocumentViolations, type DocumentViolation } from "@/services/document-violations.service";
+import { ViolationsModal } from "./_components/ViolationsModal";
 import styles from "./styles.module.css";
-import { AlertCircle, FileText, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { AlertCircle, FileText, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle } from "lucide-react";
 
 type LoadState = "loading" | "success" | "empty" | "error";
 type SortColumn = "documentName" | "uploadDate";
@@ -39,6 +41,12 @@ export default function UploadHistoryPage() {
   const [sortBy, setSortBy] = useState<SortColumn | undefined>(undefined);
   const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined);
   const isLoading = state === "loading";
+
+  // Violations modal state
+  const [showViolationsModal, setShowViolationsModal] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<DocumentHistory | null>(null);
+  const [violations, setViolations] = useState<DocumentViolation[]>([]);
+  const [loadingViolations, setLoadingViolations] = useState(false);
 
   const fetchData = useCallback(
     async (params: UploadHistoryQueryParams) => {
@@ -92,14 +100,6 @@ export default function UploadHistoryPage() {
       page,
     }));
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
   };
 
   const formatDate = (dateString: string): string => {
@@ -199,6 +199,35 @@ export default function UploadHistoryPage() {
     });
   }, [documents, sortBy, sortOrder]);
 
+  // Handle view violations
+  const handleViewViolations = async (doc: DocumentHistory) => {
+    setSelectedDocument(doc);
+    setShowViolationsModal(true);
+    setLoadingViolations(true);
+    setViolations([]);
+
+    try {
+      const data = await getDocumentViolations(doc.id);
+      setViolations(data);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to load violations";
+      showToast({
+        type: "error",
+        title: "Error",
+        message: msg,
+        duration: 5000,
+      });
+    } finally {
+      setLoadingViolations(false);
+    }
+  };
+
+  // Check if document should show "View Reason" button
+  const shouldShowViewReason = (doc: DocumentHistory): boolean => {
+    // Show for non-premium documents that are rejected
+    return doc.status === "AI_REJECTED";
+  };
+
 
   return (
     <main className={styles["page-container"]}>
@@ -260,8 +289,9 @@ export default function UploadHistoryPage() {
                 <TableHead>Type</TableHead>
                 <TableHead>Domain</TableHead>
                 <TableHead>Specialization</TableHead>
-                <TableHead>Size</TableHead>
+                <TableHead>Visibility</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -279,13 +309,27 @@ export default function UploadHistoryPage() {
                   <TableCell className={styles["table-text"]}>{doc.type}</TableCell>
                   <TableCell className={styles["table-text"]}>{doc.domain}</TableCell>
                   <TableCell className={styles["table-text"]}>{doc.specialization}</TableCell>
-                  <TableCell className={styles["table-text"]}>
-                    {formatFileSize(doc.fileSize)}
+                  <TableCell>
+                    <span className={`${styles["visibility-badge"]} ${doc.isPremium ? styles["visibility-premium"] : styles["visibility-public"]}`}>
+                      {doc.isPremium ? "Premium" : "Public"}
+                    </span>
                   </TableCell>
                   <TableCell>
                     <span className={`${styles["status-badge"]} ${getStatusBadgeClass(doc.status)}`}>
                       {getStatusLabel(doc.status)}
                     </span>
+                  </TableCell>
+                  <TableCell className={styles["actions-cell"]}>
+                    {shouldShowViewReason(doc) && (
+                      <button
+                        onClick={() => handleViewViolations(doc)}
+                        className={styles["btn-view-reason"]}
+                        title="View rejection reasons"
+                      >
+                        <AlertTriangle className="w-4 h-4" />
+                        View Reason
+                      </button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -305,6 +349,18 @@ export default function UploadHistoryPage() {
         </div>
       )}
 
+      {/* Violations Modal */}
+      <ViolationsModal
+        isOpen={showViolationsModal}
+        onClose={() => {
+          setShowViolationsModal(false);
+          setSelectedDocument(null);
+          setViolations([]);
+        }}
+        documentName={selectedDocument?.documentName || ""}
+        violations={violations}
+        loading={loadingViolations}
+      />
     </main>
   );
 }

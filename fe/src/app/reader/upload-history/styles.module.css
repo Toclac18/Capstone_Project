@@ -341,3 +341,115 @@
   @apply animate-spin h-4 w-4;
 }
 
+
+/* Violations Modal Specific Styles */
+.modal-backdrop {
+  @apply absolute inset-0 bg-black/60 backdrop-blur-sm;
+}
+
+.modal-container-violations {
+  @apply relative z-10 w-full max-w-3xl mx-4;
+}
+
+.modal-card {
+  @apply rounded-[32px] overflow-hidden shadow-2xl;
+}
+
+.modal-header-violations {
+  @apply flex items-start justify-between p-8 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-rose-50 via-red-50 to-pink-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800;
+}
+
+.modal-icon-wrapper {
+  @apply flex items-center justify-center w-14 h-14 rounded-2xl bg-white dark:bg-gray-700 shadow-sm flex-shrink-0 border border-red-200 dark:border-red-800;
+}
+
+.modal-title-violations {
+  @apply text-xl font-bold text-gray-900 dark:text-white tracking-tight;
+}
+
+.modal-subtitle-violations {
+  @apply text-sm text-gray-600 dark:text-gray-400 mt-2 font-normal;
+}
+
+.modal-content-violations {
+  @apply p-8 max-h-[70vh] overflow-y-auto bg-white dark:bg-gray-800;
+}
+
+.violations-intro {
+  @apply mb-6 p-5 bg-red-50 dark:bg-red-900/10 rounded-2xl border-l-4 border-red-500;
+}
+
+.violations-intro p {
+  @apply text-sm text-gray-800 dark:text-gray-200 leading-relaxed font-normal;
+}
+
+.violation-item {
+  @apply border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden bg-white dark:bg-gray-800 shadow-sm;
+}
+
+.violation-info-grid {
+  @apply grid grid-cols-2 gap-5 p-6 bg-gray-50 dark:bg-gray-900/50;
+}
+
+.violation-info-item {
+  @apply flex flex-col gap-2;
+}
+
+.violation-info-label {
+  @apply text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider;
+}
+
+.violation-info-value {
+  @apply text-base font-semibold text-gray-900 dark:text-white;
+}
+
+.violation-content {
+  @apply px-6 py-5;
+}
+
+.violation-label {
+  @apply text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2;
+}
+
+.violation-snippet {
+  @apply p-5 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-sm text-gray-900 dark:text-gray-100 leading-relaxed;
+}
+
+.violations-note {
+  @apply mt-6 p-5 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-2xl text-sm text-gray-800 dark:text-gray-200 leading-relaxed flex items-start gap-3 font-normal;
+}
+
+.modal-footer-violations {
+  @apply flex items-center justify-end p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800;
+}
+
+.modal-button-close {
+  @apply px-6 py-2.5 text-sm font-semibold text-white bg-gray-800 dark:bg-gray-700 rounded-2xl hover:bg-gray-900 dark:hover:bg-gray-600 transition-colors shadow-sm;
+}
+
+/* View Reason Button */
+.btn-view-reason {
+  @apply inline-flex items-center justify-center gap-1 rounded-lg border-2 border-red-500 bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-700 hover:bg-red-100 hover:border-red-600 transition-all shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap;
+}
+:global(html.dark) .btn-view-reason {
+  @apply border-red-500 bg-red-900/20 text-red-400 hover:bg-red-900/30 hover:border-red-400;
+}
+
+/* Visibility Badge */
+.visibility-badge {
+  @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold;
+}
+
+.visibility-premium {
+  @apply bg-purple-100 text-purple-800;
+}
+:global(html.dark) .visibility-premium {
+  @apply bg-purple-900/30 text-purple-400;
+}
+
+.visibility-public {
+  @apply bg-blue-100 text-blue-800;
+}
+:global(html.dark) .visibility-public {
+  @apply bg-blue-900/30 text-blue-400;
+}

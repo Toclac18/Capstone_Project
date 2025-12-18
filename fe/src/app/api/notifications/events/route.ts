@@ -107,17 +107,43 @@ async function handleGET(_req: NextRequest): Promise<Response> {
     const stream = new ReadableStream({
       async start(controller) {
         const reader = upstream.body!.getReader();
+        let isClosed = false;
+
+        const safeClose = () => {
+          if (!isClosed) {
+            try {
+              controller.close();
+              isClosed = true;
+            } catch {
+              // Controller already closed
+            }
+          }
+        };
+
+        const safeEnqueue = (value: Uint8Array) => {
+          if (!isClosed) {
+            try {
+              controller.enqueue(value);
+            } catch (error: any) {
+              if (error?.code === "ERR_INVALID_STATE") {
+                isClosed = true;
+              } else {
+                throw error;
+              }
+            }
+          }
+        };
 
         try {
           while (true) {
             const { done, value } = await reader.read();
 
             if (done) {
-              controller.close();
+              safeClose();
               break;
             }
 
-            controller.enqueue(value);
+            safeEnqueue(value);
           }
         } catch (error: any) {
           if (
@@ -125,26 +151,25 @@ async function handleGET(_req: NextRequest): Promise<Response> {
             error?.message?.includes("terminated") ||
             error?.message?.includes("other side closed")
           ) {
-            try {
-              controller.close();
-            } catch (e) {
-              // Ignore errors when closing
-            }
+            safeClose();
           } else {
             console.error(
               "[notifications events] Error reading upstream stream:",
               error,
             );
-            try {
-              controller.error(error);
-            } catch (e) {
-              // Ignore errors when erroring
+            if (!isClosed) {
+              try {
+                controller.error(error);
+                isClosed = true;
+              } catch {
+                // Controller already closed or errored
+              }
             }
           }
         } finally {
           try {
             reader.releaseLock();
-          } catch (e) {
+          } catch {
             // Ignore errors when releasing lock
           }
         }

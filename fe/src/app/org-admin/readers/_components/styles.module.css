@@ -3,23 +3,25 @@
    ========================= */
 
 .enable-btn {
-  height: 36px; /* h-9 */
-  padding: 6px; /* p-1.5 */
-  min-width: unset;
+  width: 80px;
+  height: 36px;
+  padding: 6px;
 
-  border-radius: 8px; /* rounded-lg */
+  box-sizing: border-box;
+
+  border-radius: 8px;
   border: 1px solid #16a34a;
   background-color: transparent;
 
   color: #16a34a;
-  font-size: 12px; /* text-xs */
+  font-size: 12px;
   font-weight: 500;
   line-height: 1;
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px; /* gap-2 */
+  gap: 8px;
 
   cursor: pointer;
 

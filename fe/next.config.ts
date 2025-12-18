@@ -43,6 +43,11 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "15mb",
+    },
+  },
   images: {
     remotePatterns: [
       {

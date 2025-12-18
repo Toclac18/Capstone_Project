@@ -10,6 +10,7 @@ export type DocumentItem = {
   publicYear: number;
 
   isPremium: boolean;
+  hasRedeemed?: boolean;
   points?: number | null;
 
   description: string;

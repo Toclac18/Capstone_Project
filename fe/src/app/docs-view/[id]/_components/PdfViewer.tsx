@@ -35,20 +35,9 @@ function makeTextRenderer(query: string): TextRenderer {
 }
 
 export default function PdfViewer() {
-  const {
-    detail,
-    page,
-    scale,
-    setNumPages,
-    redeemed,
-    openRedeemModal,
-    onPageText,
-    query,
-  } = useDocsView();
+  const { detail, page, scale, setNumPages, onPageText, query } = useDocsView();
 
   if (!detail) return null;
-
-  const blurred = detail.isPremium && !redeemed;
 
   const textRenderer = makeTextRenderer(query);
 
@@ -65,37 +54,19 @@ export default function PdfViewer() {
   return (
     <div className={styles.viewerRoot}>
       <div className={styles.viewerWrap}>
-        <div className={blurred ? styles.viewerBlur : undefined}>
-          <Document
-            file={detail.fileUrl}
-            onLoadSuccess={handleDocumentLoadSuccess}
-            loading={<div className={styles.pdfLoading}>Loading PDF…</div>}
-            error={<div className={styles.pdfError}>Failed to load PDF</div>}
-          >
-            <Page
-              pageNumber={page}
-              scale={scale}
-              onGetTextSuccess={handlePageText}
-              customTextRenderer={textRenderer}
-            />
-          </Document>
-        </div>
-
-        {blurred && (
-          <div className={styles.premiumOverlay}>
-            <div className={styles.premiumCard}>
-              <div className={styles.premiumBadge}>Premium</div>
-              <h3 className={styles.premiumTitle}>Premium document</h3>
-              <p className={styles.premiumText}>
-                Redeem to read this document. It will be saved in your library
-                and you won&apos;t need to redeem it again.
-              </p>
-              <button className={styles.btnRedeem} onClick={openRedeemModal}>
-                Redeem
-              </button>
-            </div>
-          </div>
-        )}
+        <Document
+          file={detail.fileUrl}
+          onLoadSuccess={handleDocumentLoadSuccess}
+          loading={<div className={styles.pdfLoading}>Loading PDF…</div>}
+          error={<div className={styles.pdfError}>Failed to load PDF</div>}
+        >
+          <Page
+            pageNumber={page}
+            scale={scale}
+            onGetTextSuccess={handlePageText}
+            customTextRenderer={textRenderer}
+          />
+        </Document>
       </div>
     </div>
   );

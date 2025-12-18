@@ -69,6 +69,7 @@ export function toDocumentItem(raw: any): DocumentItem {
     publicYear: year,
 
     isPremium: !!raw?.isPremium,
+    hasRedeemed: raw?.userInfo?.hasRedeemed ?? false,
     points: typeof raw?.price === "number" ? raw.price : null,
 
     description: str(raw?.description, ""),

@@ -192,8 +192,6 @@ public interface DocumentService {
    * @return Search metadata with filter options
    */
   DocumentSearchMetaResponse getSearchMeta(UUID userId);
-  
-  DocumentSearchMetaResponse getPublicSearchMeta();
 
   /**
    * Get document statistics for admin dashboard

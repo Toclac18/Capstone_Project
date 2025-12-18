@@ -2,7 +2,6 @@
 
 import styles from "../styles.module.css";
 import { useHomepage } from "../provider";
-import { FileText, Layers, Building2 } from "lucide-react";
 
 export default function StatsStrip() {
   const { continueReading, topUpvoted, specGroups } = useHomepage();

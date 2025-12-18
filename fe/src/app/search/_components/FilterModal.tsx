@@ -169,19 +169,6 @@ export default function FilterModal({
 
   const yearOptions = meta?.years ?? [];
 
-  const onChangePriceFrom = (val: number) => {
-    setLocal((s) => {
-      const nextFrom = Math.min(Math.max(priceMin, val), s.priceTo ?? priceMax);
-      return { ...s, priceFrom: nextFrom };
-    });
-  };
-  const onChangePriceTo = (val: number) => {
-    setLocal((s) => {
-      const nextTo = Math.max(Math.min(priceMax, val), s.priceFrom ?? priceMin);
-      return { ...s, priceTo: nextTo };
-    });
-  };
-
   const apply = () => {
     const payload: SearchFilters = {
       organizationIds: local.organizationId

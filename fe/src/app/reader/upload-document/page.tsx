@@ -501,8 +501,14 @@ export default function UploadDocumentPage() {
 
     if (!description.trim()) {
       newErrors.description = "Description is required";
-    } else if (description.trim().length > 100) {
-      newErrors.description = "Description must be 100 characters or less";
+    } else {
+      const charCount = description.trim().length;
+      
+      if (charCount < 200) {
+        newErrors.description = `Description must contain at least 200 characters (current: ${charCount} characters)`;
+      } else if (charCount > 2000) {
+        newErrors.description = `Description must not exceed 2000 characters (current: ${charCount} characters)`;
+      }
     }
 
     if (!typeId) {
@@ -911,17 +917,17 @@ export default function UploadDocumentPage() {
                     ref={descriptionRef}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Provide a quick summary: What is this document about? Where did it originate? Who might find this information useful? What are the key highlights?"
-                    rows={4}
-                    maxLength={100}
+                    placeholder="Provide a detailed summary: What is this document about? Where did it originate? Who might find this information useful? What are the key highlights?"
+                    rows={8}
+                    maxLength={2000}
                     className={`${styles["textarea"]} ${errors.description ? styles["input-error"] : ""}`}
                   />
                   <div className={styles["field-help"]}>
                     <p className={styles["help-text"]}>
-                      Your description should be a few sentences long.
+                      Your description must be between 200 and 2000 characters.
                     </p>
                     <span className={styles["char-counter"]}>
-                      {description.length}/100
+                      {description.length}/2000
                     </span>
                   </div>
                   {errors.description && (

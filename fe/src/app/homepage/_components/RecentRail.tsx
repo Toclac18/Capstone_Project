@@ -12,6 +12,7 @@ export default function RecentRail() {
   const { continueReading, topUpvoted, specGroups } = useHomepage();
   const { open } = useModalPreview();
 
+  // Sort theo updatedAt descending (recently added)
   const items = useMemo<DocumentItem[]>(() => {
     const all: DocumentItem[] = [
       ...continueReading,
@@ -25,7 +26,16 @@ export default function RecentRail() {
       return true;
     });
 
-    unique.sort((a, b) => (b.publicYear || 0) - (a.publicYear || 0));
+    // Sort by updatedAt descending (most recent first)
+    unique.sort((a, b) => {
+      const aTime = (a as any).updatedAt
+        ? new Date((a as any).updatedAt).getTime()
+        : 0;
+      const bTime = (b as any).updatedAt
+        ? new Date((b as any).updatedAt).getTime()
+        : 0;
+      return bTime - aTime;
+    });
 
     return unique.slice(0, 12).map((d) => ({
       ...d,

@@ -17,7 +17,6 @@ import HomepageSkeleton from "./_components/HomepageSkeleton";
 // Guest versions
 import GuestPopularStrip from "./_components/GuestPopularStrip";
 import GuestHotPicks from "./_components/GuestHotPicks";
-import GuestOrgShowcase from "./_components/GuestOrgShowcase";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 export default function Homepage() {
@@ -89,7 +88,6 @@ export default function Homepage() {
           <>
             <GuestPopularStrip />
             <GuestHotPicks />
-            <GuestOrgShowcase />
 
             <Section
               title="Top Upvoted by Community"

@@ -53,7 +53,12 @@ async function handleGET(request: Request) {
 
   const responseData = await upstream.json();
 
-  return jsonResponse(responseData, {
+  // Extract data from wrapper response if present
+  // Backend returns: { success: true, data: {...}, timestamp: ... }
+  // Frontend expects: OrganizationStatistics directly
+  const statisticsData = responseData?.data || responseData;
+
+  return jsonResponse(statisticsData, {
     status: upstream.status,
     headers: {
       "content-type": "application/json",

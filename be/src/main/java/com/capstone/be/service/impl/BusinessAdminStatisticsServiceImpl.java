@@ -1218,18 +1218,12 @@ public class BusinessAdminStatisticsServiceImpl implements BusinessAdminStatisti
     long pendingReports = reports.stream()
         .filter(r -> r.getStatus() == ReportStatus.PENDING)
         .count();
-    long inReviewReports = reports.stream()
-        .filter(r -> r.getStatus() == ReportStatus.IN_REVIEW)
-        .count();
+    long inReviewReports = 0; // Deprecated - only PENDING and RESOLVED now
     long resolvedReports = reports.stream()
         .filter(r -> r.getStatus() == ReportStatus.RESOLVED)
         .count();
-    long rejectedReports = reports.stream()
-        .filter(r -> r.getStatus() == ReportStatus.REJECTED)
-        .count();
-    long closedReports = reports.stream()
-        .filter(r -> r.getStatus() == ReportStatus.CLOSED)
-        .count();
+    long rejectedReports = 0; // Deprecated - only PENDING and RESOLVED now
+    long closedReports = 0; // Deprecated - only PENDING and RESOLVED now
 
     // Calculate average resolution time (for resolved reports)
     List<DocumentReport> resolved = reports.stream()
@@ -1315,16 +1309,8 @@ public class BusinessAdminStatisticsServiceImpl implements BusinessAdminStatisti
 
   private List<ReportHandlingStatisticsResponse.TimeSeriesData> calculateReportsRejectedTimeSeries(List<DocumentReport> reports,
       Instant startDate, Instant endDate) {
+    // Deprecated - only PENDING and RESOLVED status now
     Map<String, Long> dateCounts = new HashMap<>();
-
-    for (DocumentReport report : reports) {
-      if (report.getStatus() == ReportStatus.REJECTED && report.getUpdatedAt() != null) {
-        LocalDate date = report.getUpdatedAt().atZone(ZoneId.systemDefault()).toLocalDate();
-        String dateStr = date.format(DATE_FORMATTER);
-        dateCounts.put(dateStr, dateCounts.getOrDefault(dateStr, 0L) + 1);
-      }
-    }
-
     return buildReportTimeSeries(dateCounts, startDate, endDate);
   }
 
@@ -1355,10 +1341,7 @@ public class BusinessAdminStatisticsServiceImpl implements BusinessAdminStatisti
   private List<ResolutionTimeBreakdown> calculateResolutionTimeBreakdown(
       List<DocumentReport> reports) {
     List<DocumentReport> resolved = reports.stream()
-        .filter(r -> (r.getStatus() == ReportStatus.RESOLVED
-            || r.getStatus() == ReportStatus.REJECTED
-            || r.getStatus() == ReportStatus.CLOSED)
-            && r.getUpdatedAt() != null)
+        .filter(r -> r.getStatus() == ReportStatus.RESOLVED && r.getUpdatedAt() != null)
         .collect(Collectors.toList());
 
     long lessThan24Hours = 0;

@@ -193,10 +193,23 @@ public interface DocumentService {
    */
   DocumentSearchMetaResponse getSearchMeta(UUID userId);
   
+  DocumentSearchMetaResponse getPublicSearchMeta();
+
   /**
    * Get document statistics for admin dashboard
    *
    * @return Document statistics response
    */
-  com.capstone.be.dto.response.document.DocumentStatisticsResponse getDocumentStatistics();
+  DocumentStatisticsResponse getDocumentStatistics();
+
+  /**
+   * Get violations for a specific document
+   * Only the uploader and admins can view violations
+   *
+   * @param userId     User ID requesting violations
+   * @param documentId Document ID
+   * @return List of violations
+   */
+  java.util.List<DocumentViolationResponse> getDocumentViolations(
+      UUID userId, UUID documentId);
 }

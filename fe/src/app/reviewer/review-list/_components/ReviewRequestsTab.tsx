@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import {
   getReviewRequests,
   approveReviewRequest,
@@ -10,6 +9,7 @@ import {
 import { Pagination } from "@/components/ui/pagination";
 import { AcceptModal } from "./AcceptModal";
 import { RejectModal } from "./RejectModal";
+import { DocumentInfoModal } from "./DocumentInfoModal";
 import { useToast } from "@/components/ui/toast";
 import { formatDate } from "@/utils/format-date";
 import { truncateText } from "@/utils/truncate-text";
@@ -31,6 +31,8 @@ export function ReviewRequestsTab() {
   const [selectedRequest, setSelectedRequest] = useState<ReviewRequest | null>(null);
   const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [isDocInfoModalOpen, setIsDocInfoModalOpen] = useState(false);
+  const [selectedDocForInfo, setSelectedDocForInfo] = useState<ReviewRequest | null>(null);
   const [loadingButtonId, setLoadingButtonId] = useState<string | null>(null);
   const [loadingButtonAction, setLoadingButtonAction] = useState<"accept" | "reject" | null>(null);
   const { showToast } = useToast();
@@ -146,6 +148,11 @@ export function ReviewRequestsTab() {
     }
   }, [fetchData, showToast]);
 
+  const handleTitleClick = useCallback((request: ReviewRequest) => {
+    setSelectedDocForInfo(request);
+    setIsDocInfoModalOpen(true);
+  }, []);
+
   if (loading) {
     return (
       <div className={styles["loading-container"]}>
@@ -201,10 +208,12 @@ export function ReviewRequestsTab() {
                     }`}
                   >
                   <td className={styles["table-cell"]}>
-                    <div className={styles["table-cell-main"]}>
-                      <Link href={`/docs-view/${req.id}`} className={styles["document-link"]}>
+                    <div 
+                      className={styles["table-cell-main"]}
+                      style={{ cursor: 'pointer', color: '#3b82f6' }}
+                      onClick={() => handleTitleClick(req)}
+                    >
                         {req.documentTitle}
-                      </Link>
                     </div>
                     {req.description && (
                       <div className={styles["table-cell-secondary"]}>
@@ -341,6 +350,16 @@ export function ReviewRequestsTab() {
         }}
         request={selectedRequest}
         onReject={handleRejectRequest}
+      />
+
+      {/* Document Info Modal */}
+      <DocumentInfoModal
+        isOpen={isDocInfoModalOpen}
+        onClose={() => {
+          setIsDocInfoModalOpen(false);
+          setSelectedDocForInfo(null);
+        }}
+        request={selectedDocForInfo}
       />
     </div>
   );

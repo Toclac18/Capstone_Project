@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -37,20 +38,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Get email from token to load user details
         String email = jwtUtil.getEmailFromToken(jwt);
 
-        // Load user details by email
-        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+        try {
+          // Load user details by email
+          UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-        // Create authentication with userDetails (which contains UUID as username)
-        UsernamePasswordAuthenticationToken authentication =
-            new UsernamePasswordAuthenticationToken(
-                userDetails,
-                null,
-                userDetails.getAuthorities()
-            );
+          // Create authentication with userDetails (which contains UUID as username)
+          UsernamePasswordAuthenticationToken authentication =
+              new UsernamePasswordAuthenticationToken(
+                  userDetails,
+                  null,
+                  userDetails.getAuthorities()
+              );
 
-        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+          authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+          SecurityContextHolder.getContext().setAuthentication(authentication);
+        } catch (UsernameNotFoundException ex) {
+          // User from token doesn't exist in database - token is stale/invalid
+          log.warn("Token contains non-existent user: {}", email);
+        }
       }
     } catch (Exception ex) {
       log.error("Could not set user authentication in security context", ex);

@@ -13,9 +13,7 @@ function ReadersContent() {
     reload,
     toggleAccess,
     reInvite,
-    page,
     pageSize,
-    total,
     q,
     setPage,
     setPageSize,
@@ -23,11 +21,6 @@ function ReadersContent() {
   } = useReaders();
 
   const [busyId, setBusyId] = useState<string | null>(null);
-
-  const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
-  const end = Math.min(page * pageSize, total);
-  const hasPrev = page > 1;
-  const hasNext = end < total;
 
   async function onEnable(enrollmentId: string) {
     setBusyId(enrollmentId);

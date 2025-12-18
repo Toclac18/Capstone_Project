@@ -325,14 +325,16 @@ public class DocumentController {
   }
 
   /**
-   * Search metadata cho public documents.
+   * Search metadata cho documents.
    * Dùng cho Filter Modal ở FE.
-   * Không yêu cầu authentication.
+   * Authentication optional - nếu có sẽ trả về joinedOrganizationIds.
    */
   @GetMapping("/search-meta")
-  public ResponseEntity<DocumentSearchMetaResponse> getPublicSearchMeta() {
-    log.info("Received request for public document search meta");
-    DocumentSearchMetaResponse meta = documentService.getPublicSearchMeta();
+  public ResponseEntity<DocumentSearchMetaResponse> getSearchMeta(
+      @AuthenticationPrincipal UserPrincipal userPrincipal) {
+    UUID userId = userPrincipal != null ? userPrincipal.getId() : null;
+    log.info("Received request for document search meta, userId: {}", userId);
+    DocumentSearchMetaResponse meta = documentService.getSearchMeta(userId);
     return ResponseEntity.ok(meta);
   }
 

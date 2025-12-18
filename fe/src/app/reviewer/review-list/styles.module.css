@@ -167,6 +167,13 @@
   @apply text-primary hover:opacity-90;
 }
 
+.title-link {
+  @apply text-primary hover:opacity-80 hover:underline transition-colors duration-200 text-left;
+}
+:global(html.dark) .title-link {
+  @apply text-primary hover:opacity-90;
+}
+
 .table-cell-secondary {
   @apply text-sm text-dark-6 leading-relaxed;
   line-height: 1.5;

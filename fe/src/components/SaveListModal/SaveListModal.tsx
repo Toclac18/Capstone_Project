@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import styles from "./styles.module.css";
 import { toast, useToast } from "../ui/toast";
 import { SaveList } from "@/types/saveList";
@@ -113,7 +114,7 @@ export default function SaveListModal({
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <div className={styles.backdrop}>
       <div className={styles.card}>
         {/* HEADER */}
@@ -282,4 +283,11 @@ export default function SaveListModal({
       </div>
     </div>
   );
+
+  // Use portal to render modal outside of parent stacking context
+  if (typeof document !== "undefined") {
+    return createPortal(modalContent, document.body);
+  }
+
+  return modalContent;
 }

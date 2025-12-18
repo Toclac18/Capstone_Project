@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearch } from "../provider";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Filter } from "lucide-react";
+import { Filter, Search } from "lucide-react";
 import styles from "../styles.module.css";
 
 export default function SearchToolbar({
@@ -40,14 +40,17 @@ export default function SearchToolbar({
 
   return (
     <div className={styles.toolbar} data-testid="search-toolbar">
-      <input
-        className={styles.searchInput}
-        type="text"
-        placeholder="Search title / organization / specialization / uploader / description / summary"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        aria-label="Search library documents"
-      />
+      <div className={styles.searchInputWrapper}>
+        <Search size={18} className={styles.searchIcon} />
+        <input
+          className={styles.searchInput}
+          type="text"
+          placeholder="Search documents, uploaders, topics..."
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="Search library documents"
+        />
+      </div>
 
       <div className={styles.right}>
         <label htmlFor="perPage" className={styles.perPageLabel}>

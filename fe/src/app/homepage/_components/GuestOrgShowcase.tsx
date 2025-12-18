@@ -4,12 +4,19 @@ import styles from "../styles.module.css";
 import DocCard from "./DocCard";
 import { useHomepage } from "../provider";
 import { useModalPreview } from "@/components/ModalPreview";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { DocumentItem } from "@/types/document-homepage";
+import { sanitizeImageUrl } from "@/utils/imageUrl";
+
+const LOGO_BASE_URL =
+  "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/org-logos/";
 
 export default function GuestOrgShowcase() {
   const { topUpvoted, specGroups } = useHomepage();
   const { open } = useModalPreview();
+  const router = useRouter();
+  const [logoErrors, setLogoErrors] = useState<Set<string>>(new Set());
 
   const groups = useMemo(() => {
     const all: DocumentItem[] = [
@@ -31,31 +38,85 @@ export default function GuestOrgShowcase() {
     return Array.from(byOrg.entries())
       .sort((a, b) => b[1].length - a[1].length)
       .slice(0, 2)
-      .map(([orgName, items]) => ({
-        orgName,
-        items: items.slice(0, 3),
-      }));
+      .map(([orgName, items]) => {
+        // Get logoUrl from the first item's organization data
+        const logoFilename = items[0]?.organization?.logoUrl;
+        const logoUrl = logoFilename
+          ? sanitizeImageUrl(logoFilename, LOGO_BASE_URL, null)
+          : null;
+
+        return {
+          orgName,
+          items: items.slice(0, 3),
+          logoUrl,
+        };
+      });
   }, [topUpvoted, specGroups]);
+
+  const handleLogoError = (orgName: string) => {
+    setLogoErrors((prev) => new Set(prev).add(orgName));
+  };
 
   if (!groups.length) return null;
 
   return (
     <section className={`${styles.section} ${styles.orgSection}`}>
       <div className={styles.sectionHeaderRow}>
-        <div className={styles.sectionHeader}>Hot organizations</div>
+        <div>
+          <div className={styles.sectionHeader}>Hot organizations</div>
+        </div>
       </div>
 
       <div className={styles.orgGrid}>
-        {groups.map((g) => (
-          <div key={g.orgName} className={styles.orgColumn}>
-            <div className={styles.orgTitle}>{g.orgName}</div>
-            <div className={styles.orgCards}>
-              {g.items.map((d) => (
-                <DocCard key={d.id} {...d} onPreview={() => open(d)} />
-              ))}
+        {groups.map((g) => {
+          const hasLogoError = logoErrors.has(g.orgName);
+          const showLogo = g.logoUrl && !hasLogoError;
+
+          return (
+            <div key={g.orgName} className={styles.orgColumn}>
+              <div className={styles.orgHeaderRow}>
+                <div className={styles.orgHeaderLeft}>
+                  {showLogo && g.logoUrl ? (
+                    <img
+                      src={g.logoUrl}
+                      alt={`${g.orgName} logo`}
+                      className={styles.orgLogoImg}
+                      onError={() => handleLogoError(g.orgName)}
+                    />
+                  ) : (
+                    <div className={styles.orgLogo} aria-hidden>
+                      {g.orgName.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <div className={styles.orgTitle}>{g.orgName}</div>
+                    <div className={styles.orgMeta}>
+                      {g.items.length} featured docs
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className={styles.viewAllBtn}
+                  onClick={() =>
+                    router.push(`/search#org=${encodeURIComponent(g.orgName)}`)
+                  }
+                >
+                  View all
+                </button>
+              </div>
+
+              <div className={styles.orgCardsRow}>
+                {g.items.map((d) => (
+                  <div key={d.id} className={styles.horizontalCardWrap}>
+                    <DocCard {...d} onPreview={() => open(d)} />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

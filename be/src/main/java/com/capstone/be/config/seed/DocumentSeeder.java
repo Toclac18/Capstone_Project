@@ -133,9 +133,17 @@ public class DocumentSeeder {
     };
     String title = seed < titles.length ? titles[seed] : "Tài liệu tham khảo " + seed;
 
-    // Determine if premium and status based on seed
-    boolean isPremium = seed % 3 != 0; // 2/3 documents are premium
-    DocStatus status = determineDocumentStatus(seed, isPremium);
+    // Document distribution (30 docs total):
+    // - INTERNAL (org docs): seed 0-7 (8 docs) - NOT premium, has orgId
+    // - PUBLIC free: seed 8-15 (8 docs) - NOT premium, no orgId
+    // - PUBLIC premium: seed 16-29 (14 docs) - premium, no orgId
+    
+    boolean isInternal = seed < 8;
+    boolean isPremium = seed >= 16; // Only PUBLIC docs can be premium
+    DocVisibility visibility = isInternal ? DocVisibility.INTERNAL : DocVisibility.PUBLIC;
+    OrganizationProfile docOrg = isInternal ? orgProfile : null; // Only INTERNAL docs have org
+    
+    DocStatus status = determineDocumentStatus(seed, isPremium, isInternal);
     
     // Only ACTIVE documents have engagement data
     int viewCount = 0;
@@ -156,11 +164,11 @@ public class DocumentSeeder {
             .title(title)
             .description("Mô tả chi tiết cho " + title + ". Quyển sách này rất hữu ích cho sinh viên và những người muốn học tập. Đây là tài liệu chất lượng cao được biên soạn bởi các chuyên gia trong ngành.")
             .uploader(user)
-            .organization(orgProfile)
-            .visibility(DocVisibility.PUBLIC)
+            .organization(docOrg)
+            .visibility(visibility)
             .docType(docType)
             .isPremium(isPremium)
-            .price(isPremium ? 100 + (seed * 25) : 0)
+            .price(isPremium ? 100 : 0)
             .thumbnailKey("/thumbnail-" + (seed % 5 + 1) + ".jpg")
             .fileKey("file-" + (seed + 1) + ".pdf")
             .pageCount(20 + (seed * 5))
@@ -190,51 +198,48 @@ public class DocumentSeeder {
       }
     }
 
-    log.info("✅ Created document #{}: {} (Premium: {}, Status: {})",
-            seed + 1, savedDoc.getTitle(), isPremium, status);
+    log.info("✅ Created document #{}: {} (Visibility: {}, Premium: {}, Status: {}, Org: {})",
+            seed + 1, savedDoc.getTitle(), visibility, isPremium, status, 
+            docOrg != null ? docOrg.getName() : "none");
   }
 
   /**
-   * Determine document status based on seed and premium flag
+   * Determine document status based on seed, premium flag, and visibility
    * 
    * Distribution for 30 documents:
-   * - Free documents (10): All ACTIVE (seed % 3 == 0)
-   * - Premium documents (20): Various statuses based on premium index
-   *   - 3 PENDING_REVIEW (waiting for reviewer assignment)
-   *   - 3 REVIEWING (reviewer accepted, working on review)
+   * - INTERNAL docs (seed 0-7): 6 ACTIVE, 2 INACTIVE (for org management testing)
+   * - PUBLIC free docs (seed 8-15): All ACTIVE
+   * - PUBLIC premium docs (seed 16-29): Various statuses
+   *   - 2 PENDING_REVIEW (waiting for reviewer assignment)
+   *   - 2 REVIEWING (reviewer accepted, working on review)
    *   - 2 PENDING_APPROVE (reviewer submitted, waiting BA approval)
-   *   - 10 ACTIVE (review approved) - for trending reviewers
+   *   - 6 ACTIVE (review approved)
    *   - 2 REJECTED (review rejected)
-   * 
-   * Premium documents are: seed 1,2,4,5,7,8,10,11,13,14,16,17,19,20,22,23,25,26,28,29
-   * We calculate premium index based on seed position
    */
-  private DocStatus determineDocumentStatus(int seed, boolean isPremium) {
+  private DocStatus determineDocumentStatus(int seed, boolean isPremium, boolean isInternal) {
+    // INTERNAL documents (org docs)
+    if (isInternal) {
+      // seed 0-5: ACTIVE, seed 6-7: INACTIVE (for testing activate/deactivate)
+      return seed < 6 ? DocStatus.ACTIVE : DocStatus.INACTIVE;
+    }
+    
+    // PUBLIC free documents - always ACTIVE
     if (!isPremium) {
-      // Free documents are always ACTIVE (no review needed)
       return DocStatus.ACTIVE;
     }
     
-    // Calculate premium document index based on seed
-    // For seed values: 1,2,4,5,7,8,10,11,13,14,16,17,19,20,22,23,25,26,28,29
-    // Premium index = (seed / 3) * 2 + (seed % 3) - 1 when seed % 3 != 0
-    // Simpler: count how many premium docs came before this seed
-    int premiumIdx = 0;
-    for (int i = 0; i < seed; i++) {
-      if (i % 3 != 0) {
-        premiumIdx++;
-      }
-    }
+    // PUBLIC premium documents (seed 16-29)
+    int premiumIdx = seed - 16; // 0-13
     
     DocStatus status;
-    if (premiumIdx < 3) {
-      status = DocStatus.PENDING_REVIEW; // 3 docs waiting for reviewer
+    if (premiumIdx < 2) {
+      status = DocStatus.PENDING_REVIEW; // 2 docs waiting for reviewer
+    } else if (premiumIdx < 4) {
+      status = DocStatus.REVIEWING; // 2 docs being reviewed
     } else if (premiumIdx < 6) {
-      status = DocStatus.REVIEWING; // 3 docs being reviewed
-    } else if (premiumIdx < 8) {
       status = DocStatus.PENDING_APPROVE; // 2 docs waiting BA approval
-    } else if (premiumIdx < 18) {
-      status = DocStatus.ACTIVE; // 10 docs approved - for trending reviewers
+    } else if (premiumIdx < 12) {
+      status = DocStatus.ACTIVE; // 6 docs approved
     } else {
       status = DocStatus.REJECTED; // 2 docs rejected
     }

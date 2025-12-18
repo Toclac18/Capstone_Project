@@ -1,0 +1,446 @@
+/* Organization Documents Management - Modern Design */
+
+.container {
+  @apply space-y-6;
+}
+
+/* Header Section */
+.header {
+  @apply flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between;
+}
+
+.header-title {
+  @apply text-2xl font-bold text-dark;
+}
+:global(html.dark) .header-title {
+  @apply text-white;
+}
+
+.header-subtitle {
+  @apply mt-1 text-sm text-gray-500;
+}
+:global(html.dark) .header-subtitle {
+  @apply text-gray-400;
+}
+
+/* Stats Cards - Simple Clean Style */
+.stats-grid {
+  @apply grid grid-cols-1 gap-4 sm:grid-cols-3;
+}
+
+.stat-card {
+  @apply flex items-center gap-4 rounded-lg border border-stroke bg-white p-5;
+}
+:global(html.dark) .stat-card {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.stat-icon-box {
+  @apply flex h-11 w-11 items-center justify-center rounded-lg;
+}
+
+.stat-active .stat-icon-box {
+  @apply bg-green-500 text-white;
+}
+
+.stat-inactive .stat-icon-box {
+  @apply bg-red-500 text-white;
+}
+
+.stat-total .stat-icon-box {
+  @apply bg-primary text-white;
+}
+
+.stat-content {
+  @apply flex flex-col;
+}
+
+.stat-value {
+  @apply text-2xl font-bold text-dark;
+}
+:global(html.dark) .stat-value {
+  @apply text-white;
+}
+
+.stat-label {
+  @apply text-sm text-gray-500;
+}
+:global(html.dark) .stat-label {
+  @apply text-gray-400;
+}
+
+/* Filters Card - Clean Design */
+.filters-card {
+  @apply rounded-2xl border border-stroke bg-white p-4 shadow-sm;
+}
+:global(html.dark) .filters-card {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.filters-row {
+  @apply flex flex-col gap-3 lg:flex-row lg:items-center;
+}
+
+.search-box {
+  @apply relative flex flex-1 items-center;
+}
+
+.search-icon {
+  @apply absolute left-4 h-5 w-5 text-gray-400;
+}
+
+.search-input {
+  @apply w-full rounded-xl border border-stroke bg-gray-50 py-3 pl-12 pr-28 text-sm text-dark placeholder:text-gray-400 transition-all focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20;
+}
+:global(html.dark) .search-input {
+  @apply border-stroke-dark bg-dark-3 text-white focus:bg-dark-3;
+}
+
+.search-btn {
+  @apply absolute right-2 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white transition-all hover:bg-primary/90 hover:shadow-md;
+}
+
+.filter-select-box {
+  @apply flex items-center gap-2 rounded-xl border border-stroke bg-gray-50 px-4 py-3 transition-all hover:border-primary/50;
+}
+:global(html.dark) .filter-select-box {
+  @apply border-stroke-dark bg-dark-3;
+}
+
+.filter-select {
+  @apply bg-transparent text-sm text-dark focus:outline-none;
+  min-width: 120px;
+}
+:global(html.dark) .filter-select {
+  @apply text-white;
+}
+
+.clear-btn {
+  @apply flex items-center gap-2 rounded-xl border border-stroke bg-white px-4 py-3 text-sm font-medium text-gray-600 transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-600;
+}
+:global(html.dark) .clear-btn {
+  @apply border-stroke-dark bg-dark-3 text-gray-300 hover:border-red-500/50 hover:bg-red-900/20 hover:text-red-400;
+}
+
+/* Table Card - Modern Style */
+.table-card {
+  @apply overflow-hidden rounded-2xl border border-stroke bg-white shadow-sm;
+}
+:global(html.dark) .table-card {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.table {
+  @apply w-full;
+}
+
+.table-head-row {
+  @apply bg-gray-50;
+}
+:global(html.dark) .table-head-row {
+  @apply bg-dark-3;
+}
+
+.th {
+  @apply px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500;
+}
+:global(html.dark) .th {
+  @apply text-gray-400;
+}
+
+.table-row {
+  @apply border-b border-stroke/50 transition-colors last:border-b-0 hover:bg-gray-50/50;
+}
+:global(html.dark) .table-row {
+  @apply border-stroke-dark/50 hover:bg-dark-3/50;
+}
+
+.td {
+  @apply px-6 py-4;
+}
+
+/* Document Info - Enhanced */
+.doc-info {
+  @apply flex items-center gap-4;
+}
+
+.doc-thumb-link {
+  @apply block flex-shrink-0 overflow-hidden rounded-lg transition-transform hover:scale-105;
+}
+
+.doc-thumb {
+  @apply h-20 w-16 flex-shrink-0 rounded-lg bg-gray-100 object-cover shadow-sm transition-all;
+}
+:global(html.dark) .doc-thumb {
+  @apply bg-dark-3;
+}
+
+.doc-icon-box {
+  @apply flex h-20 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gray-100 to-gray-200;
+}
+:global(html.dark) .doc-icon-box {
+  @apply from-dark-3 to-dark-4;
+}
+
+.doc-title-link {
+  @apply block;
+}
+
+.doc-title-link:hover .doc-title {
+  @apply text-primary;
+}
+
+.doc-title {
+  @apply font-semibold text-dark line-clamp-2 transition-colors;
+}
+:global(html.dark) .doc-title {
+  @apply text-white;
+}
+:global(html.dark) .doc-title-link:hover .doc-title {
+  @apply text-primary;
+}
+
+.doc-meta {
+  @apply mt-1 text-xs text-gray-500;
+}
+:global(html.dark) .doc-meta {
+  @apply text-gray-400;
+}
+
+/* Uploader Info */
+.uploader-info {
+  @apply flex items-center gap-3;
+}
+
+.uploader-name {
+  @apply text-sm font-medium text-dark;
+}
+:global(html.dark) .uploader-name {
+  @apply text-white;
+}
+
+.uploader-email {
+  @apply text-xs text-gray-500;
+}
+:global(html.dark) .uploader-email {
+  @apply text-gray-400;
+}
+
+/* Badges - Pill Style */
+.badge {
+  @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold;
+}
+
+.badge-active {
+  @apply bg-green-100 text-green-700;
+}
+:global(html.dark) .badge-active {
+  @apply bg-green-900/30 text-green-400;
+}
+
+.badge-inactive {
+  @apply bg-gray-100 text-gray-600;
+}
+:global(html.dark) .badge-inactive {
+  @apply bg-gray-800/50 text-gray-400;
+}
+
+.badge-pending {
+  @apply bg-amber-100 text-amber-700;
+}
+:global(html.dark) .badge-pending {
+  @apply bg-amber-900/30 text-amber-400;
+}
+
+.badge-public {
+  @apply bg-blue-100 text-blue-700;
+}
+:global(html.dark) .badge-public {
+  @apply bg-blue-900/30 text-blue-400;
+}
+
+.badge-internal {
+  @apply bg-violet-100 text-violet-700;
+}
+:global(html.dark) .badge-internal {
+  @apply bg-violet-900/30 text-violet-400;
+}
+
+/* Stats Cell */
+.stats-cell {
+  @apply flex items-center gap-4 text-sm text-gray-500;
+}
+:global(html.dark) .stats-cell {
+  @apply text-gray-400;
+}
+
+.stat-item {
+  @apply flex items-center gap-1.5;
+}
+
+.date-text {
+  @apply text-sm text-gray-500;
+}
+:global(html.dark) .date-text {
+  @apply text-gray-400;
+}
+
+/* Actions - Icon Buttons */
+.actions {
+  @apply flex items-center gap-2;
+}
+
+.action-btn {
+  @apply flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200;
+}
+
+.action-activate {
+  @apply bg-green-100 text-green-600 hover:bg-green-200;
+}
+:global(html.dark) .action-activate {
+  @apply bg-green-900/30 text-green-400 hover:bg-green-900/50;
+}
+
+.action-deactivate {
+  @apply bg-red-100 text-red-600 hover:bg-red-200;
+}
+:global(html.dark) .action-deactivate {
+  @apply bg-red-900/30 text-red-400 hover:bg-red-900/50;
+}
+
+.action-release {
+  @apply bg-primary/10 text-primary hover:bg-primary/20;
+}
+:global(html.dark) .action-release {
+  @apply bg-primary/20 text-primary hover:bg-primary/30;
+}
+
+/* Loading & Empty States */
+.loading-box {
+  @apply flex items-center justify-center py-20;
+}
+
+.spinner {
+  @apply h-10 w-10 animate-spin rounded-full border-4 border-primary/30 border-t-primary;
+}
+
+.empty-box {
+  @apply flex flex-col items-center justify-center py-20;
+}
+
+.empty-icon {
+  @apply h-20 w-20 text-gray-300;
+}
+:global(html.dark) .empty-icon {
+  @apply text-gray-600;
+}
+
+.empty-text {
+  @apply mt-4 text-gray-500;
+}
+:global(html.dark) .empty-text {
+  @apply text-gray-400;
+}
+
+.pagination-box {
+  @apply border-t border-stroke/50 p-4;
+}
+:global(html.dark) .pagination-box {
+  @apply border-stroke-dark/50;
+}
+
+/* Modal - Modern Design */
+.modal-overlay {
+  @apply fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm;
+}
+
+.modal-container {
+  @apply relative mx-4 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl;
+}
+:global(html.dark) .modal-container {
+  @apply bg-dark-2;
+}
+
+.modal-header {
+  @apply flex items-center gap-3 border-b border-stroke/50 px-6 py-5;
+}
+:global(html.dark) .modal-header {
+  @apply border-stroke-dark/50;
+}
+
+.modal-icon-box {
+  @apply flex h-10 w-10 items-center justify-center rounded-full;
+}
+
+.modal-icon-green { @apply bg-green-100 text-green-600; }
+.modal-icon-red { @apply bg-red-100 text-red-600; }
+.modal-icon-blue { @apply bg-primary/10 text-primary; }
+
+:global(html.dark) .modal-icon-green { @apply bg-green-900/30 text-green-400; }
+:global(html.dark) .modal-icon-red { @apply bg-red-900/30 text-red-400; }
+:global(html.dark) .modal-icon-blue { @apply bg-primary/20 text-primary; }
+
+.modal-title {
+  @apply flex-1 text-lg font-semibold text-dark;
+}
+:global(html.dark) .modal-title {
+  @apply text-white;
+}
+
+.modal-close {
+  @apply rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600;
+}
+:global(html.dark) .modal-close {
+  @apply text-gray-500 hover:bg-dark-3 hover:text-white;
+}
+
+.modal-body {
+  @apply p-6;
+}
+
+.modal-text {
+  @apply text-sm leading-relaxed text-gray-600;
+}
+:global(html.dark) .modal-text {
+  @apply text-gray-400;
+}
+
+.modal-doc-name {
+  @apply font-semibold text-dark;
+}
+:global(html.dark) .modal-doc-name {
+  @apply text-white;
+}
+
+.modal-warning {
+  @apply mt-4 flex items-start gap-3 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800;
+}
+:global(html.dark) .modal-warning {
+  @apply border-yellow-800 bg-yellow-900/20 text-yellow-300;
+}
+
+.modal-footer {
+  @apply flex items-center justify-end gap-3 border-t border-stroke px-6 py-4;
+}
+:global(html.dark) .modal-footer {
+  @apply border-stroke-dark;
+}
+
+.btn-cancel {
+  @apply rounded-lg border border-stroke bg-white px-4 py-2 text-sm font-semibold text-dark transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50;
+}
+:global(html.dark) .btn-cancel {
+  @apply border-stroke-dark bg-dark-2 text-white hover:bg-dark-3;
+}
+
+.btn-confirm {
+  @apply flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.btn-green { @apply bg-green-600 hover:bg-green-700; }
+.btn-red { @apply bg-red-600 hover:bg-red-700; }
+.btn-blue { @apply bg-primary hover:bg-primary/90; }
+
+.spinner-sm {
+  @apply h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white;
+}

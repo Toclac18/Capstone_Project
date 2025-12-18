@@ -1,5 +1,6 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.domain.enums.LogAction;
 import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
 import com.capstone.be.dto.request.document.DocumentSearchFilter;
@@ -11,6 +12,7 @@ import com.capstone.be.dto.response.document.*;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.DocumentService;
 import com.capstone.be.service.DocumentVoteService;
+import com.capstone.be.util.AuditLogHelper;
 import com.capstone.be.util.PagingUtil;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -38,6 +40,7 @@ public class DocumentController {
 
   private final DocumentService documentService;
   private final DocumentVoteService documentVoteService;
+  private final AuditLogHelper auditLogHelper;
 
   /**
    * Upload a document POST /api/v1/documents/upload
@@ -59,6 +62,28 @@ public class DocumentController {
     DocumentUploadResponse response = documentService.uploadDocument(
         uploaderId, info, file);
 
+    // Audit log - document uploaded
+    try {
+      var details = AuditLogHelper.details();
+      if (response.getId() != null) {
+        details.put("documentId", response.getId().toString());
+      }
+      details.put("title", info.getTitle());
+      details.put("isPremium", info.getIsPremium());
+      details.put("organizationId", info.getOrganizationId());
+      auditLogHelper.logSuccessWithResource(
+          LogAction.DOCUMENT_UPLOADED,
+          userPrincipal,
+          "DOCUMENT",
+          response.getId(),
+          details,
+          HttpStatus.CREATED.value()
+      );
+    } catch (Exception e) {
+      // Do not affect business logic if logging fails
+      log.warn("Failed to audit log DOCUMENT_UPLOADED: {}", e.getMessage());
+    }
+
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
@@ -77,6 +102,22 @@ public class DocumentController {
     log.info("User {} redeeming document: {}", userId, documentId);
 
     documentService.redeemDocument(userId, documentId);
+
+    // Audit log - document redeemed
+    try {
+      var details = AuditLogHelper.details();
+      details.put("documentId", documentId.toString());
+      auditLogHelper.logSuccessWithResource(
+          LogAction.DOCUMENT_REDEEMED,
+          userPrincipal,
+          "DOCUMENT",
+          documentId,
+          details,
+          HttpStatus.NO_CONTENT.value()
+      );
+    } catch (Exception e) {
+      log.warn("Failed to audit log DOCUMENT_REDEEMED: {}", e.getMessage());
+    }
 
     return ResponseEntity.noContent().build();
   }
@@ -217,6 +258,22 @@ public class DocumentController {
     log.info("User {} deleting document {}", uploaderId, documentId);
 
     documentService.deleteDocument(uploaderId, documentId);
+
+    // Audit log - document deleted (soft delete)
+    try {
+      var details = AuditLogHelper.details();
+      details.put("documentId", documentId.toString());
+      auditLogHelper.logSuccessWithResource(
+          LogAction.DOCUMENT_DELETED,
+          userPrincipal,
+          "DOCUMENT",
+          documentId,
+          details,
+          HttpStatus.NO_CONTENT.value()
+      );
+    } catch (Exception e) {
+      log.warn("Failed to audit log DOCUMENT_DELETED: {}", e.getMessage());
+    }
 
     return ResponseEntity.noContent().build();
   }

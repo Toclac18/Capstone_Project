@@ -2,12 +2,15 @@ package com.capstone.be.controller;
 
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.DocVisibility;
+import com.capstone.be.domain.enums.LogAction;
 import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.admin.UpdateDocumentStatusRequest;
 import com.capstone.be.dto.response.document.AdminDocumentListResponse;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
+import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.DocumentService;
+import com.capstone.be.util.AuditLogHelper;
 import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.UUID;
@@ -21,6 +24,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -39,6 +43,7 @@ public class AdminDocumentController {
 
   private final DocumentService documentService;
   private final JdbcTemplate jdbcTemplate;
+  private final AuditLogHelper auditLogHelper;
 
   @GetMapping
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
@@ -94,10 +99,28 @@ public class AdminDocumentController {
   @PatchMapping("/{documentId}/activate")
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
   public ResponseEntity<ApiResponse<Void>> activateDocument(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
       @PathVariable(name = "documentId") UUID documentId) {
     log.info("Admin activating document: {}", documentId);
 
     documentService.activateDocument(documentId);
+
+    // Audit log - document status changed to ACTIVE
+    try {
+      var details = AuditLogHelper.details();
+      details.put("documentId", documentId.toString());
+      details.put("newStatus", DocStatus.ACTIVE.name());
+      auditLogHelper.logSuccessWithResource(
+          LogAction.DOCUMENT_STATUS_CHANGED,
+          userPrincipal,
+          "DOCUMENT",
+          documentId,
+          details,
+          org.springframework.http.HttpStatus.OK.value()
+      );
+    } catch (Exception e) {
+      log.warn("Failed to audit log DOCUMENT_STATUS_CHANGED (activate): {}", e.getMessage());
+    }
 
     ApiResponse<Void> response = ApiResponse.<Void>builder()
         .success(true)
@@ -110,10 +133,28 @@ public class AdminDocumentController {
   @PatchMapping("/{documentId}/deactivate")
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
   public ResponseEntity<ApiResponse<Void>> deactivateDocument(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
       @PathVariable(name = "documentId") UUID documentId) {
     log.info("Admin deactivating document: {}", documentId);
 
     documentService.deactivateDocument(documentId);
+
+    // Audit log - document status changed to INACTIVE
+    try {
+      var details = AuditLogHelper.details();
+      details.put("documentId", documentId.toString());
+      details.put("newStatus", DocStatus.INACTIVE.name());
+      auditLogHelper.logSuccessWithResource(
+          LogAction.DOCUMENT_STATUS_CHANGED,
+          userPrincipal,
+          "DOCUMENT",
+          documentId,
+          details,
+          org.springframework.http.HttpStatus.OK.value()
+      );
+    } catch (Exception e) {
+      log.warn("Failed to audit log DOCUMENT_STATUS_CHANGED (deactivate): {}", e.getMessage());
+    }
 
     ApiResponse<Void> response = ApiResponse.<Void>builder()
         .success(true)
@@ -126,11 +167,29 @@ public class AdminDocumentController {
   @PatchMapping("/{documentId}/status")
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
   public ResponseEntity<ApiResponse<Void>> updateDocumentStatus(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
       @PathVariable(name = "documentId") UUID documentId,
       @Valid @RequestBody UpdateDocumentStatusRequest request) {
     log.info("Admin updating document {} status to {}", documentId, request.getStatus());
 
     documentService.updateDocumentStatus(documentId, request.getStatus());
+
+    // Audit log - document status changed (custom status)
+    try {
+      var details = AuditLogHelper.details();
+      details.put("documentId", documentId.toString());
+      details.put("newStatus", request.getStatus().name());
+      auditLogHelper.logSuccessWithResource(
+          LogAction.DOCUMENT_STATUS_CHANGED,
+          userPrincipal,
+          "DOCUMENT",
+          documentId,
+          details,
+          org.springframework.http.HttpStatus.OK.value()
+      );
+    } catch (Exception e) {
+      log.warn("Failed to audit log DOCUMENT_STATUS_CHANGED (update): {}", e.getMessage());
+    }
 
     ApiResponse<Void> response = ApiResponse.<Void>builder()
         .success(true)

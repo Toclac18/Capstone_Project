@@ -114,7 +114,12 @@ async function handleGET(request: Request) {
 
   const responseData = await response.json();
 
-  return jsonResponse(responseData, {
+  // Extract data from wrapper response if present
+  // Backend returns: { success: true, data: {...}, timestamp: ... }
+  // Frontend expects: SystemAdminDashboard directly
+  const dashboardData = responseData?.data || responseData;
+
+  return jsonResponse(dashboardData, {
     status: 200,
     headers: {
       "content-type": "application/json",

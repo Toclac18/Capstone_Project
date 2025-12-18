@@ -71,57 +71,48 @@ const seed: OrgEnrollment[] = [
 
 function generateExtra(count: number): OrgEnrollment[] {
   const rows: OrgEnrollment[] = [];
+
   const orgs = [
-    {
-      id: "org-hust",
-      name: "Đại học Bách Khoa Hà Nội",
-      type: "University",
-    },
-    {
-      id: "org-vnu",
-      name: "Đại học Quốc gia Hà Nội",
-      type: "University",
-    },
+    { id: "org-hust", name: "Đại học Bách Khoa Hà Nội", type: "University" },
+    { id: "org-vnu", name: "Đại học Quốc gia Hà Nội", type: "University" },
     {
       id: "org-edu01",
       name: "Trung tâm Đào tạo AI READEE",
       type: "TrainingCenter",
     },
+    { id: "org-fpt", name: "Đại học FPT", type: "University" },
+    {
+      id: "org-ptit",
+      name: "Học viện Công nghệ Bưu chính Viễn thông",
+      type: "University",
+    },
   ];
+
+  const statuses: OrgEnrollStatus[] = [
+    "JOINED",
+    "LEFT",
+    "REMOVED",
+    "PENDING_INVITE",
+  ];
+
+  const baseDate = new Date("2024-01-01T08:00:00.000Z");
 
   for (let i = 1; i <= count; i++) {
     const org = orgs[i % orgs.length];
+    const status = statuses[i % statuses.length];
 
-    // Include LEFT as a normal status in the distribution
-    // - PENDING_INVITE: every 7th
-    // - REMOVED: every 5th (admin removed)
-    // - LEFT: every 3rd (member left)
-    // - JOINED: otherwise
-    const status: OrgEnrollStatus =
-      i % 7 === 0
-        ? "PENDING_INVITE"
-        : i % 5 === 0
-          ? "REMOVED"
-          : i % 3 === 0
-            ? "LEFT"
-            : "JOINED";
+    const invitedAt = new Date(baseDate.getTime() + i * 86400000).toISOString();
 
-    const baseDate = new Date("2025-09-01T08:00:00.000Z");
-    baseDate.setDate(baseDate.getDate() + i);
-
-    const invitedAt = baseDate.toISOString();
-
-    // respondedAt: JOINED/LEFT have a response date; REMOVED/PENDING typically don't
     const respondedAt =
       status === "JOINED" || status === "LEFT"
-        ? new Date(baseDate.getTime() + 86400000).toISOString()
+        ? new Date(baseDate.getTime() + (i + 1) * 86400000).toISOString()
         : null;
 
     rows.push({
       enrollmentId: `mock-enrollment-${i}`,
       memberId: `mock-member-${i}`,
       memberEmail: `reader${i}@example.com`,
-      memberFullName: `Reader ${i}`,
+      memberFullName: `Reader ${i.toString().padStart(3, "0")}`,
       memberAvatarUrl: null,
       organizationId: org.id,
       organizationName: org.name,

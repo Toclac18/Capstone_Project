@@ -5,6 +5,7 @@ import styles from "./styles.module.css";
 import { ReadersProvider, useReaders } from "./provider";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
 import EnableButton from "./_components/Button";
+import { Pagination } from "@/components/ui/pagination";
 
 function ReadersContent() {
   const {
@@ -13,7 +14,9 @@ function ReadersContent() {
     reload,
     toggleAccess,
     reInvite,
+    page,
     pageSize,
+    total,
     q,
     setPage,
     setPageSize,
@@ -21,6 +24,8 @@ function ReadersContent() {
   } = useReaders();
 
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  const totalPages = Math.max(1, Math.ceil((total || 0) / (pageSize || 1)));
 
   async function onEnable(enrollmentId: string) {
     setBusyId(enrollmentId);
@@ -64,6 +69,7 @@ function ReadersContent() {
           }}
           className={styles["readers-pagesize"]}
           disabled={loading}
+          title="Rows per page"
         >
           {[10, 20, 50, 100].map((s) => (
             <option key={s} value={s}>
@@ -76,6 +82,7 @@ function ReadersContent() {
           onClick={reload}
           className={styles["readers-reload-btn"]}
           disabled={loading}
+          title="Reload readers list"
         >
           {loading ? "Loading..." : "Reload"}
         </button>
@@ -98,33 +105,42 @@ function ReadersContent() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6}>Loading…</td>
+                <td colSpan={6} className={styles["cell-right"]}>
+                  Loading…
+                </td>
               </tr>
             ) : readers.length === 0 ? (
               <tr>
-                <td colSpan={6}>No readers found</td>
+                <td colSpan={6} className={styles["cell-right"]}>
+                  No readers found
+                </td>
               </tr>
             ) : (
               readers.map((r) => {
                 const isBusy = busyId === r.enrollmentId;
 
+                const invitedDisplay = r.invitedAt
+                  ? new Date(r.invitedAt).toLocaleString()
+                  : "-";
+
                 return (
-                  <tr key={r.enrollmentId}>
+                  <tr key={r.enrollmentId} className={styles["table-row"]}>
                     <td>{r.memberFullName}</td>
-                    <td>{r.memberEmail}</td>
+                    <td className={styles["col-email"]}>{r.memberEmail}</td>
                     <td>{r.organizationName}</td>
                     <td>{r.status}</td>
-                    <td>
-                      {r.invitedAt
-                        ? new Date(r.invitedAt).toLocaleString()
-                        : "-"}
-                    </td>
+                    <td className={styles["cell-right"]}>{invitedDisplay}</td>
+
                     <td className={styles["cell-right"]}>
-                      {r.status === "JOINED" ? (
+                      {r.status === "PENDING_INVITE" ? (
+                        <span className={styles["action-placeholder"]}>-</span>
+                      ) : r.status === "JOINED" ? (
                         <DeleteConfirmation
                           onDelete={() => onRemove(r.enrollmentId)}
                           itemId={r.enrollmentId}
                           itemName={`${r.memberFullName} (${r.memberEmail})`}
+                          title="Remove reader’s access"
+                          description="This action cannot be undone. The reader will lose access to all resources."
                           size="sm"
                           variant="outline"
                           className={styles["action-btn"]}
@@ -154,6 +170,7 @@ function ReadersContent() {
                           title="Enable reader’s access"
                           label="Enable"
                           loadingLabel="Enabling..."
+                          variant="enable"
                         />
                       )}
                     </td>
@@ -164,6 +181,15 @@ function ReadersContent() {
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        totalItems={total}
+        itemsPerPage={pageSize}
+        onPageChange={(nextPage) => setPage(nextPage)}
+        loading={loading}
+      />
     </div>
   );
 }

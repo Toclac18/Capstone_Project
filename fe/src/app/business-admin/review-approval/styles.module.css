@@ -121,6 +121,13 @@
   @apply text-white;
 }
 
+.th-sortable {
+  @apply cursor-pointer select-none hover:text-primary transition-colors;
+}
+:global(html.dark) .th-sortable:hover {
+  @apply text-primary;
+}
+
 .table-row {
   @apply border-b border-stroke last:border-b-0 hover:bg-gray-1;
 }

@@ -112,6 +112,11 @@ export const ORGANIZATION_ADMIN_NAV_DATA = [
         url: "/org-admin/readers",
       },
       {
+        title: "Document Management",
+        icon: Icons.FileTextIcon,
+        url: "/org-admin/documents",
+      },
+      {
         title: "Import Readers Organization",
         icon: Icons.UploadIcon,
         url: "/org-admin/imports",

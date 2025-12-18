@@ -1330,17 +1330,6 @@ public class DocumentServiceImpl implements DocumentService {
               .map(reviewRequest -> reviewRequest.getStatus() == ReviewRequestStatus.ACCEPTED)
               .orElse(false);
 
-      // Add presigned URL if user has access
-      String presignedUrl = null;
-      if (hasAccess && document.getFileKey() != null) {
-        presignedUrl = fileStorageService.generatePresignedUrl(
-                FileStorage.DOCUMENT_FOLDER,
-                document.getFileKey(),
-                getPresignedUrlExpirationMinutes()
-        );
-      }
-      response.setPresignedUrl(presignedUrl);
-
       userInfo = DocumentDetailResponse.UserDocumentInfo.builder()
               .hasAccess(hasAccess)
               .isUploader(isUploader)
@@ -1350,21 +1339,7 @@ public class DocumentServiceImpl implements DocumentService {
               .build();
 
     } else {
-      boolean hasAccess = false;
-      if (!Boolean.TRUE.equals(document.getIsPremium())) {
-        hasAccess = true;
-      }
-
-      // Add presigned URL if guest has access (non-premium documents)
-      String presignedUrl = null;
-      if (hasAccess && document.getFileKey() != null) {
-        presignedUrl = fileStorageService.generatePresignedUrl(
-                FileStorage.DOCUMENT_FOLDER,
-                document.getFileKey(),
-                getPresignedUrlExpirationMinutes()
-        );
-      }
-      response.setPresignedUrl(presignedUrl);
+      boolean hasAccess = !Boolean.TRUE.equals(document.getIsPremium());
 
       userInfo = DocumentDetailResponse.UserDocumentInfo.builder()
               .hasAccess(hasAccess)

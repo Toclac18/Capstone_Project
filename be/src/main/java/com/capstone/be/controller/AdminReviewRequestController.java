@@ -5,8 +5,10 @@ import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.review.ApproveReviewResultRequest;
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
+import com.capstone.be.dto.request.review.ReviewManagementFilterRequest;
 import com.capstone.be.dto.response.review.ReviewResultResponse;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
+import com.capstone.be.dto.response.review.ReviewManagementItem;
 import com.capstone.be.scheduler.ReviewRequestExpirationJob;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.ReviewRequestService;
@@ -239,5 +241,45 @@ public class AdminReviewRequestController {
         : "Review result rejected. Reviewer must re-review the document.";
 
     return ResponseEntity.ok(ApiResponse.success(response, message));
+  }
+
+  /**
+   * Business Admin Review Management aggregated view.
+   * GET /api/v1/admin/review-management
+   *
+   * @param tab        Tab identifier: NEEDS_ASSIGNMENT, PENDING, IN_REVIEW, COMPLETED, ALL
+   * @param reviewerId Optional filter by reviewer
+   * @param domain     Optional filter by domain name
+   * @param search     Optional search by document title
+   * @param sortBy     Sort field: createdAt, title, deadline
+   * @param sortOrder  Sort order: asc/desc
+   * @param pageable   Pagination params
+   */
+  @GetMapping("/admin/review-management")
+  @PreAuthorize("hasRole('BUSINESS_ADMIN')")
+  public ResponseEntity<PagedResponse<ReviewManagementItem>> getReviewManagementList(
+      @RequestParam(name = "tab", required = false) String tab,
+      @RequestParam(name = "reviewerId", required = false) java.util.UUID reviewerId,
+      @RequestParam(name = "domain", required = false) String domain,
+      @RequestParam(name = "search", required = false) String search,
+      @RequestParam(name = "sortBy", required = false) String sortBy,
+      @RequestParam(name = "sortOrder", required = false) String sortOrder,
+      Pageable pageable
+  ) {
+    log.info("Business Admin requesting review management list - tab: {}, reviewerId: {}, domain: {}, search: {}, sortBy: {}, sortOrder: {}, page: {}, size: {}",
+        tab, reviewerId, domain, search, sortBy, sortOrder, pageable.getPageNumber(), pageable.getPageSize());
+
+    ReviewManagementFilterRequest filter = ReviewManagementFilterRequest.builder()
+        .tab(tab)
+        .reviewerId(reviewerId)
+        .domain(domain)
+        .search(search)
+        .sortBy(sortBy)
+        .sortOrder(sortOrder)
+        .build();
+
+    Page<ReviewManagementItem> page = reviewRequestService.getReviewManagementList(filter, pageable);
+
+    return ResponseEntity.ok(PagedResponse.of(page, "Review management data retrieved successfully"));
   }
 }

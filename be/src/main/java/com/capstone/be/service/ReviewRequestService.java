@@ -4,9 +4,11 @@ import com.capstone.be.dto.request.review.ApproveReviewResultRequest;
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
 import com.capstone.be.dto.request.review.RespondReviewRequestRequest;
 import com.capstone.be.dto.request.review.ReviewHistoryFilterRequest;
+import com.capstone.be.dto.request.review.ReviewManagementFilterRequest;
 import com.capstone.be.dto.request.review.SubmitReviewRequest;
 import com.capstone.be.dto.response.review.ReviewResultResponse;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
+import com.capstone.be.dto.response.review.ReviewManagementItem;
 import com.capstone.be.domain.enums.ReviewResultStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -144,4 +146,11 @@ public interface ReviewRequestService {
    * @return Updated document review response
    */
   ReviewResultResponse approveReviewResult(UUID businessAdminId, UUID reviewId, ApproveReviewResultRequest request);
+
+  /**
+   * Business Admin - Review Management aggregated view.
+   * Returns paginated list of documents with their latest / active review request info,
+   * filtered by tab, reviewer, domain, search, and sorted appropriately.
+   */
+  Page<ReviewManagementItem> getReviewManagementList(ReviewManagementFilterRequest filter, Pageable pageable);
 }

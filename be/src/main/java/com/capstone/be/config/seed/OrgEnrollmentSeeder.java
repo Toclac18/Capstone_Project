@@ -13,6 +13,7 @@ import com.capstone.be.repository.OrgEnrollmentRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.UserRepository;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,111 +37,98 @@ public class OrgEnrollmentSeeder {
   private final MemberImportBatchRepository batchRepository;
   private final ImportResultItemRepository importResultItemRepository;
 
+  private static final Instant DEFAULT_EXPIRY = Instant.parse("2025-12-31T23:59:59.00Z");
+
   @Transactional
   @EventListener(UserSeededEvent.class)
   public void run() {
-    log.info("\uD83C\uDF31 start seeding Org Enrollment");
+    log.info("🌱 start seeding Org Enrollment");
+    List<String> readerEmails = List.of(
+        "reader1@gmail.com",
+        "reader2@gmail.com"
+    );
+    String orgAdminEmail = "org1@gmail.com";
 
-    Optional<User> reader1Opt = userRepository.findByEmail("reader1@gmail.com");
-    Optional<User> reader2Opt = userRepository.findByEmail("reader2@gmail.com");
-    Optional<User> orgAdminOpt = userRepository.findByEmail("org1.admin@hust.edu.vn");
+    createOrgEnrollment(readerEmails, orgAdminEmail);
+  }
 
-    if (reader1Opt.isEmpty() || reader2Opt.isEmpty() || orgAdminOpt.isEmpty()) {
-      log.warn("Skipping OrgEnrollmentSeeder because required seed users are missing. " +
-          "reader1: {}, reader2: {}, orgAdmin: {}",
-          reader1Opt.isPresent(), reader2Opt.isPresent(), orgAdminOpt.isPresent());
+  private void createOrgEnrollment(List<String> readerEmails, String orgAdminEmail) {
+    Optional<User> orgAdminOpt = userRepository.findByEmail(orgAdminEmail);
+    if (orgAdminOpt.isEmpty()) {
+      log.warn("Skipping OrgEnrollmentSeeder: org admin {} not found", orgAdminEmail);
       return;
     }
 
-    User reader1 = reader1Opt.get();
-    User reader2 = reader2Opt.get();
     User orgAdmin = orgAdminOpt.get();
-
     Optional<OrganizationProfile> orgProfileOpt = organizationProfileRepository.findByUserId(orgAdmin.getId());
     if (orgProfileOpt.isEmpty()) {
-      log.warn("Skipping OrgEnrollmentSeeder because organization profile for {} is missing", orgAdmin.getEmail());
+      log.warn("Skipping OrgEnrollmentSeeder: organization profile for {} is missing",
+          orgAdminEmail);
       return;
     }
+
+    List<User> readers = userRepository.findByEmailIn(readerEmails);
+
     OrganizationProfile orgProfile = orgProfileOpt.get();
 
-    // Create batch with: 2 success, 1 failed, 1 skipped = 4 total
-    MemberImportBatch batch = MemberImportBatch.builder()
-        .organization(orgProfile)
-        .admin(orgAdmin)
-        .importSource("EXCEL")
-        .totalEmails(4)
-        .successCount(2)
-        .failedCount(1)
-        .skippedCount(1)
-        .fileName("sample_readers.xlsx")
-        .fileKey(null)
-        .notes(null)
+    MemberImportBatch batchToSave = MemberImportBatch.builder()
+        .organization(orgProfile).admin(orgAdmin)
+        .importSource("EXCEL").totalEmails(readerEmails.size() + 2)
+        .successCount(readers.size()).failedCount(1)
+        .skippedCount(1).fileName("sample_readers.xlsx")
+        .fileKey(null).notes(null)
         .build();
+    MemberImportBatch batch = batchRepository.save(batchToSave);
+//    MemberImportBatch batch = createBatch(orgProfile, orgAdmin, readers.size());
 
-    MemberImportBatch savedBatch = batchRepository.save(batch);
+    readers.forEach(reader -> {
+      OrgEnrollment enrollment = buildEnrollment(reader, orgProfile, batch);
+      enrollmentRepository.save(enrollment);
+      buildAndSaveImportResultItem(batch, reader.getEmail(), "SUCCESS", null);
+    });
 
-    // Create enrollments for successful invites
-    OrgEnrollment enrollment1 = OrgEnrollment.builder()
-        .id(SeedUtil.generateUUID("org-enrollment-1"))
+    buildAndSaveImportResultItem(batch, "reader3!gmail.com", "FAILED", "Invalid email");
+    buildAndSaveImportResultItem(batch, "reader1@gmail.com", "SKIPPED", "Already invited");
+
+    log.info("✅ Created {} org enrollments, with Result Item", readers.size());
+
+  }
+
+  private ImportResultItem buildAndSaveImportResultItem(MemberImportBatch batch, String email, String status, String reason){
+    return  importResultItemRepository.save(
+        ImportResultItem.builder()
+            .importBatch(batch)
+            .email(email)
+            .status(status)
+            .reason(reason)
+            .build()
+    );
+
+  }
+
+//  private MemberImportBatch createBatch(OrganizationProfile orgProfile, User orgAdmin, int count) {
+//    MemberImportBatch batch = MemberImportBatch.builder()
+//        .organization(orgProfile).admin(orgAdmin)
+//        .importSource("EXCEL").totalEmails(count)
+//        .successCount(count).failedCount(1)
+//        .skippedCount(1).fileName("sample_readers.xlsx")
+//        .fileKey(null).notes(null)
+//        .build();
+//
+//    return batchRepository.save(batch);
+//  }
+
+  private OrgEnrollment buildEnrollment(User member, OrganizationProfile orgProfile,
+      MemberImportBatch batch) {
+    String enrollmentId = String.format("org-enrollment-%s", member.getEmail());
+    return OrgEnrollment.builder()
+        .id(SeedUtil.generateUUID(enrollmentId))
         .status(OrgEnrollStatus.JOINED)
-        .member(reader1)
+        .member(member)
         .organization(orgProfile)
-        .memberEmail(reader1.getEmail())
-        .importBatch(savedBatch)
-        .expiry(Instant.parse("2025-12-31T23:59:59.00Z"))
+        .memberEmail(member.getEmail())
+        .importBatch(batch)
+        .expiry(DEFAULT_EXPIRY) //dump
         .build();
-
-    OrgEnrollment enrollment2 = OrgEnrollment.builder()
-        .id(SeedUtil.generateUUID("org-enrollment-2"))
-        .status(OrgEnrollStatus.JOINED)
-        .member(reader2)
-        .organization(orgProfile)
-        .memberEmail(reader2.getEmail())
-        .importBatch(savedBatch)
-        .expiry(Instant.parse("2025-12-31T23:59:59.00Z"))
-        .build();
-
-    enrollmentRepository.save(enrollment1);
-    enrollmentRepository.save(enrollment2);
-
-    // Create import result items for this batch
-    // 2 SUCCESS
-    ImportResultItem result1 = ImportResultItem.builder()
-        .importBatch(savedBatch)
-        .email(reader1.getEmail())
-        .status("SUCCESS")
-        .reason(null)
-        .build();
-
-    ImportResultItem result2 = ImportResultItem.builder()
-        .importBatch(savedBatch)
-        .email(reader2.getEmail())
-        .status("SUCCESS")
-        .reason(null)
-        .build();
-
-    // 1 FAILED
-    ImportResultItem result3 = ImportResultItem.builder()
-        .importBatch(savedBatch)
-        .email("invalid-email-format")
-        .status("FAILED")
-        .reason("Invalid email format")
-        .build();
-
-    // 1 SKIPPED
-    ImportResultItem result4 = ImportResultItem.builder()
-        .importBatch(savedBatch)
-        .email("already.invited@example.com")
-        .status("SKIPPED")
-        .reason("Already invited or joined")
-        .build();
-
-    importResultItemRepository.save(result1);
-    importResultItemRepository.save(result2);
-    importResultItemRepository.save(result3);
-    importResultItemRepository.save(result4);
-
-    log.info("✅ Seeded OrgEnrollment with {} enrollments and {} import result items", 
-        2, 4);
   }
 }

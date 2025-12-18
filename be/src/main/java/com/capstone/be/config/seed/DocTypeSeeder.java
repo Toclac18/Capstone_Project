@@ -24,12 +24,11 @@ public class DocTypeSeeder {
   @Transactional
   @EventListener(UserSeededEvent.class)
   public void run() {
+    log.info("\uD83C\uDF31 Start seeding User and profile");
+
     if (docTypeRepository.count() > 0) {
-      log.warn("Doc types already exist → skip seeding.");
       return;
     }
-
-    log.info("Starting DocType seeding...");
 
     createDocType(1, "REPORT", "Báo cáo học tập, báo cáo tổng kết, báo cáo nghiên cứu.");
     createDocType(2, "THESIS", "Luận văn, khóa luận tốt nghiệp.");
@@ -50,7 +49,6 @@ public class DocTypeSeeder {
         .name(name)
         .description(description)
         .build();
-
     docTypeRepository.save(docType);
   }
 }

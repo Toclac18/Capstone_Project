@@ -2,11 +2,37 @@ package com.capstone.be.config.seed;
 
 import com.capstone.be.config.seed.event.DocumentSeededEvent;
 import com.capstone.be.config.seed.event.TagSeededEvent;
-import com.capstone.be.domain.entity.*;
+import com.capstone.be.domain.entity.Comment;
+import com.capstone.be.domain.entity.DocType;
+import com.capstone.be.domain.entity.Document;
 import com.capstone.be.domain.entity.DocumentSummarization;
+import com.capstone.be.domain.entity.DocumentTagLink;
+import com.capstone.be.domain.entity.DocumentVote;
+import com.capstone.be.domain.entity.OrganizationProfile;
+import com.capstone.be.domain.entity.Specialization;
+import com.capstone.be.domain.entity.Tag;
+import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.DocVisibility;
-import com.capstone.be.repository.*;
+import com.capstone.be.domain.enums.TagStatus;
+import com.capstone.be.repository.CommentRepository;
+import com.capstone.be.repository.DocTypeRepository;
+import com.capstone.be.repository.DocumentReadHistoryRepository;
+import com.capstone.be.repository.DocumentRepository;
+import com.capstone.be.repository.DocumentTagLinkRepository;
+import com.capstone.be.repository.DocumentVoteRepository;
+import com.capstone.be.repository.OrganizationProfileRepository;
+import com.capstone.be.repository.ReaderProfileRepository;
+import com.capstone.be.repository.SpecializationRepository;
+import com.capstone.be.repository.TagRepository;
+import com.capstone.be.repository.UserRepository;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -14,10 +40,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Seeder for Document AND Read History (dev profile only)
@@ -32,6 +54,10 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DocumentSeeder {
 
+  private final DocumentVoteRepository documentVoteRepository;
+
+  private final ReaderProfileRepository readerProfileRepository;
+
   private final DocumentRepository documentRepository;
   private final UserRepository userRepository;
   private final DocTypeRepository docTypeRepository;
@@ -42,6 +68,9 @@ public class DocumentSeeder {
   private final DocumentTagLinkRepository documentTagLinkRepository;
   private final DocumentReadHistoryRepository documentReadHistoryRepository;
   private final ApplicationEventPublisher eventPublisher;
+
+
+  private final String dummyText = "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus. Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies nisi. Nam eget dui. Etiam rhoncus. Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum. Nam quam nunc, blandit vel, luctus pulvinar, hendrerit id, lorem. Maecenas nec odio et ante tincidunt tempus. Donec vitae sapien ut libero venenatis faucibus. Nullam quis ante.";
 
   @Transactional
   @EventListener(TagSeededEvent.class)
@@ -55,313 +84,210 @@ public class DocumentSeeder {
     }
 
     // 1. Tạo 30 documents với các status khác nhau
-    for (int i = 0; i < 30; i++) {
-      createDocument(i);
-    }
-
-    // 2. Sau khi tạo xong Document thì tạo luôn History
-    seedReadHistory();
-
-    // 3. Tạo comment cho docs (chỉ cho ACTIVE docs)
-    genCommentForDocument();
-
-    // 4. Tạo engagement data (views, votes) cho ACTIVE docs
-    seedEngagementData();
+    seedDocumentsData();
 
     eventPublisher.publishEvent(new DocumentSeededEvent());
   }
 
-  private void createDocument(int seed) {
-    OrganizationProfile orgProfile =
-            organizationProfileRepository.findByEmail("contact@hust.edu.vn").orElse(null);
-
-    List<User> users = userRepository.findAll();
-    if (users.isEmpty()) {
-      log.warn("⚠️ No users found. Skipping document seed " + seed);
-      return;
-    }
-    User user = users.get(seed % users.size());
-
-    List<DocType> docTypes = docTypeRepository.findAll();
-    DocType docType = docTypes.isEmpty() ? null : docTypes.get(seed % docTypes.size());
-
-    List<Specialization> specs = specializationRepository.findAll();
-    Specialization spec = specs.isEmpty() ? null : specs.get(seed % specs.size());
-
-    if (docType == null || spec == null) {
-      log.warn("⚠️ DocType or Specialization missing. Skipping document seed " + seed);
-      return;
-    }
-
-    DocumentSummarization summarization = DocumentSummarization.builder()
-            .shortSummary("Tóm tắt ngắn gọn cho tài liệu số " + (seed + 1) + ". Nội dung bao quát các khái niệm chính.")
-            .mediumSummary("Tóm tắt vừa phải: Tài liệu này đi sâu vào lý thuyết và thực hành, cung cấp cái nhìn tổng quan về chủ đề với các ví dụ minh họa cụ thể cho tài liệu " + (seed + 1) + ".")
-            .detailedSummary("Tóm tắt chi tiết: Đây là bản phân tích đầy đủ, kết nối các phương pháp cổ điển với các phát triển hiện đại. Tài liệu làm rõ các giả định, điều kiện biên và tính hợp lệ thống kê của các phát hiện được báo cáo, đồng thời đề xuất các tiêu chuẩn có thể tái lập cho tài liệu số " + (seed + 1) + ".")
-            .build();
-
-    String[] titles = {
-            "Sách giáo khoa Toán 11",
-            "Nhập môn Lập trình Java",
-            "Kinh tế vĩ mô căn bản",
-            "Machine Learning cơ bản",
-            "Thiết kế Database hiệu quả",
-            "Hệ điều hành Linux",
-            "Web Development với Spring Boot",
-            "Xử lý tín hiệu số",
-            "Mạng máy tính TCP/IP",
-            "Thuật toán và Cấu trúc dữ liệu",
-            "Lập trình song song",
-            "Bảo mật thông tin",
-            "AI và Deep Learning",
-            "Phân tích dữ liệu với Python",
-            "Cloud Computing AWS",
-            "Docker và Kubernetes",
-            "Microservices Architecture",
-            "Reactive Programming",
-            "GraphQL API Development",
-            "Blockchain và Smart Contracts",
-            "DevOps Best Practices",
-            "System Design Interview",
-            "Clean Code Principles",
-            "Design Patterns in Java",
-            "Agile Project Management",
-            "Data Structures Advanced",
-            "Computer Vision Basics",
-            "Natural Language Processing",
-            "Distributed Systems",
-            "Software Architecture"
+  private void seedDocumentsData() {
+    String[] docTitles = {
+        "Sách giáo khoa Toán 11",
+        "Nhập môn Lập trình Java",
+        "Kinh tế vĩ mô căn bản",
+        "Machine Learning cơ bản",
+        "Thiết kế Database hiệu quả",
+        "Hệ điều hành Linux",
+        "Web Development với Spring Boot",
+        "Xử lý tín hiệu số",
+        "Mạng máy tính TCP/IP",
+        "Thuật toán và Cấu trúc dữ liệu",
+        "Lập trình song song",
+        "Bảo mật thông tin",
+        "AI và Deep Learning",
+        "Phân tích dữ liệu với Python",
+        "Cloud Computing AWS",
+        "Docker và Kubernetes",
+        "Microservices Architecture",
+        "Reactive Programming",
+        "GraphQL API Development",
+        "Blockchain và Smart Contracts",
+        "DevOps Best Practices",
+        "System Design Interview",
+        "Clean Code Principles",
+        "Design Patterns in Java",
+        "Agile Project Management",
+        "Data Structures Advanced",
+        "Computer Vision Basics",
+        "Natural Language Processing",
+        "Distributed Systems",
+        "Software Architecture"
     };
-    String title = seed < titles.length ? titles[seed] : "Tài liệu tham khảo " + seed;
 
-    // Document distribution (30 docs total):
-    // - INTERNAL (org docs): seed 0-7 (8 docs) - NOT premium, has orgId
-    // - PUBLIC free: seed 8-15 (8 docs) - NOT premium, no orgId
-    // - PUBLIC premium: seed 16-29 (14 docs) - premium, no orgId
-    
-    boolean isInternal = seed < 8;
-    boolean isPremium = seed >= 16; // Only PUBLIC docs can be premium
-    DocVisibility visibility = isInternal ? DocVisibility.INTERNAL : DocVisibility.PUBLIC;
-    OrganizationProfile docOrg = isInternal ? orgProfile : null; // Only INTERNAL docs have org
-    
-    DocStatus status = determineDocumentStatus(seed, isPremium, isInternal);
-    
-    // Only ACTIVE documents have engagement data
-    int viewCount = 0;
-    int upvoteCount = 0;
-    int voteScore = 0;
-    int daysAgo = 7;
-    
-    if (status == DocStatus.ACTIVE) {
-      daysAgo = Math.max(0, 7 - (seed % 8));
-      viewCount = (30 - seed) * 50;
-      upvoteCount = Math.max(0, (20 - seed) * 3);
-      int downvoteCount = Math.max(0, (seed - 15) * 2);
-      voteScore = upvoteCount - downvoteCount;
-    }
+    List<User> allUsers = userRepository.findAll();
 
-    Document document = Document.builder()
-            .id(SeedUtil.generateUUID("doc-" + seed))
-            .title(title)
-            .description("Mô tả chi tiết cho " + title + ". Quyển sách này rất hữu ích cho sinh viên và những người muốn học tập. Đây là tài liệu chất lượng cao được biên soạn bởi các chuyên gia trong ngành.")
-            .uploader(user)
-            .organization(docOrg)
-            .visibility(visibility)
-            .docType(docType)
-            .isPremium(isPremium)
-            .price(isPremium ? 100 : 0)
-            .thumbnailKey("/thumbnail-" + (seed % 5 + 1) + ".jpg")
-            .fileKey("file-" + (seed + 1) + ".pdf")
-            .pageCount(20 + (seed * 5))
-            .status(status)
-            .specialization(spec)
-            .summarizations(summarization)
-            .viewCount(viewCount)
-            .upvoteCount(upvoteCount)
-            .voteScore(voteScore)
-            .createdAt(Instant.now().minusSeconds(daysAgo * 24 * 60 * 60L))
-            .build();
+    List<String> readerEmails = List.of("reader1@gmail.com", "reader2@gmail.com",
+        "reader3@gmail.com");
+    List<User> activeReaders = allUsers.stream()
+        .filter(u -> readerEmails.contains(u.getEmail()))
+        .limit(readerEmails.size()) //early stop
+        .toList();
 
-    Document savedDoc = documentRepository.save(document);
+    String orgAdminEmail = "org1@gmail.com";
+    User orgAdmin = allUsers.stream()
+        .filter(u -> orgAdminEmail.equals(u.getEmail()))
+        .findFirst().orElse(null);
 
-    // Gán tags
-    List<Tag> allTags = tagRepository.findAll();
-    if (allTags.size() >= 2) {
-      Tag tag1 = allTags.get(seed % allTags.size());
-      Tag tag2 = allTags.get((seed + 1) % allTags.size());
+    OrganizationProfile orgProfile = organizationProfileRepository
+        .findByUserId(orgAdmin.getId()).orElse(null);
 
-      if (!tag1.getId().equals(tag2.getId())) {
-        var link1 = DocumentTagLink.builder().tag(tag1).document(savedDoc).build();
-        var link2 = DocumentTagLink.builder().tag(tag2).document(savedDoc).build();
+    List<DocType> docTypes = docTypeRepository.findAll().stream()
+        .limit(5).toList();
 
-        documentTagLinkRepository.save(link1);
-        documentTagLinkRepository.save(link2);
+    //find 5 specs (different domain)
+    Set<UUID> existedDomain = new HashSet<>();
+    List<Specialization> specs = new ArrayList<>();
+    for (Specialization s : specializationRepository.findAll()) {
+      if (existedDomain.add(s.getDomain().getId())) {
+        specs.add(s);
+      }
+      if (specs.size() == 5) {
+        break;
       }
     }
 
-    log.info("✅ Created document #{}: {} (Visibility: {}, Premium: {}, Status: {}, Org: {})",
-            seed + 1, savedDoc.getTitle(), visibility, isPremium, status, 
-            docOrg != null ? docOrg.getName() : "none");
-  }
+    int n = docTitles.length;
+    for (int i = 0; i < n; i++) {
 
-  /**
-   * Determine document status based on seed, premium flag, and visibility
-   * 
-   * Distribution for 30 documents:
-   * - INTERNAL docs (seed 0-7): 6 ACTIVE, 2 INACTIVE (for org management testing)
-   * - PUBLIC free docs (seed 8-15): All ACTIVE
-   * - PUBLIC premium docs (seed 16-29): Various statuses
-   *   - 2 PENDING_REVIEW (waiting for reviewer assignment)
-   *   - 2 REVIEWING (reviewer accepted, working on review)
-   *   - 2 PENDING_APPROVE (reviewer submitted, waiting BA approval)
-   *   - 6 ACTIVE (review approved)
-   *   - 2 REJECTED (review rejected)
-   */
-  private DocStatus determineDocumentStatus(int seed, boolean isPremium, boolean isInternal) {
-    // INTERNAL documents (org docs)
-    if (isInternal) {
-      // seed 0-5: ACTIVE, seed 6-7: INACTIVE (for testing activate/deactivate)
-      return seed < 6 ? DocStatus.ACTIVE : DocStatus.INACTIVE;
-    }
-    
-    // PUBLIC free documents - always ACTIVE
-    if (!isPremium) {
-      return DocStatus.ACTIVE;
-    }
-    
-    // PUBLIC premium documents (seed 16-29)
-    int premiumIdx = seed - 16; // 0-13
-    
-    DocStatus status;
-    if (premiumIdx < 2) {
-      status = DocStatus.PENDING_REVIEW; // 2 docs waiting for reviewer
-    } else if (premiumIdx < 4) {
-      status = DocStatus.REVIEWING; // 2 docs being reviewed
-    } else if (premiumIdx < 6) {
-      status = DocStatus.PENDING_APPROVE; // 2 docs waiting BA approval
-    } else if (premiumIdx < 12) {
-      status = DocStatus.ACTIVE; // 6 docs approved
-    } else {
-      status = DocStatus.REJECTED; // 2 docs rejected
-    }
-    
-    log.debug("Premium doc seed={}, premiumIdx={}, status={}", seed, premiumIdx, status);
-    return status;
-  }
+      UUID docId = SeedUtil.generateUUID("doc-" + i);
+      String title = docTitles[i];
+      String description = title
+          + "is a very useful document for learning about Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor.";
 
-  /**
-   * Logic tạo lịch sử đọc cho user reader1 (chỉ cho ACTIVE docs)
-   */
-  private void seedReadHistory() {
-    if (documentReadHistoryRepository.count() > 0) {
-      log.warn("History already exists → skip.");
-      return;
-    }
+      User uploader = (i == 1) ? orgAdmin
+          : activeReaders.get(i % activeReaders.size());
 
-    User reader = userRepository.findByEmail("reader1@gmail.com").orElse(null);
-    if (reader == null) return;
+      DocVisibility visibility = DocVisibility.PUBLIC;
 
-    List<Document> activeDocuments = documentRepository.findAll().stream()
-            .filter(d -> d.getStatus() == DocStatus.ACTIVE)
-            .toList();
+      DocType docType = docTypes.get(i % docTypes.size());
 
-    for (int i = 0; i < activeDocuments.size(); i++) {
-      Document doc = activeDocuments.get(i);
+      boolean isPremium = i % 2 == 1;
 
-      DocumentReadHistory history = DocumentReadHistory.builder()
-              .id(SeedUtil.generateUUID("history-" + i))
-              .user(reader)
-              .document(doc)
-              .build();
+      int price = isPremium ? 100 : 0;
 
-      documentReadHistoryRepository.save(history);
-      log.info("\uD83D\uDCD6 Created history: User read " + doc.getTitle());
-    }
-  }
+      String thumnailKey = String.format("_sample_thumb_%d.png", (i % 5) + 1);
 
-  private void genCommentForDocument() {
-    List<String> targetEmails = List.of(
-            "reader1@gmail.com",
-            "reader2@gmail.com",
-            "reader3@gmail.com",
-            "reader4@gmail.com",
-            "reader5@gmail.com",
-            "reader.pending@gmail.com"
-    );
+      String fileKey = String.format("_sample_doc_%d.pdf", (i % 5) + 1);
 
-    List<User> users = targetEmails.stream()
-            .map(email -> userRepository.findByEmail(email).orElse(null))
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+      int pageCount = 1 + myRandom(10, i);
 
-    if (users.isEmpty()) {
-      log.warn("⚠️ Không tìm thấy User nào thuộc danh sách email yêu cầu. Bỏ qua việc tạo comment.");
-      return;
-    }
+      DocStatus status = i % 5 > 0 ? DocStatus.ACTIVE : DocStatus.AI_REJECTED;
 
-    log.info("Found {} users for commenting.", users.size());
+      Specialization spec = specs.get(i % specs.size());
 
-    // Chỉ tạo comment cho ACTIVE documents
-    List<Document> activeDocs = documentRepository.findAll().stream()
-            .filter(d -> d.getStatus() == DocStatus.ACTIVE)
-            .toList();
-    
-    List<Comment> commentsToSave = new ArrayList<>();
-    int userCursor = 0;
+      DocumentSummarization summarization = DocumentSummarization.builder()
+          .shortSummary(
+              title + "is about Lorem ipsum dolor sit amet. The content covers the main concepts.")
+          .mediumSummary(
+              "This document explores both theory and practice, providing an overview of the topic with concrete illustrative examples for document .")
+          .detailedSummary(
+              "This is a comprehensive analysis that connects classical methods with modern developments. The document clarifies assumptions, boundary conditions, and the statistical validity of the reported findings, while also proposing reproducible standards for document number .")
+          .build();
 
-    for (Document doc : activeDocs) {
-      int commentCount = 2 + (int) (Math.random() * 9);
-      for (int i = 0; i < commentCount; i++) {
-        User currentUser = users.get(userCursor % users.size());
-        userCursor++;
+      int viewCount = status == DocStatus.ACTIVE ? myRandom(999, i) : 0;
+
+      int upVoteCount = viewCount / 5 + myRandom(viewCount / 2, i); //from 20% to 70% upvote
+      int voteScore = upVoteCount / 5 * 3 + myRandom(upVoteCount / 5 * 2, i);
+
+      Instant createAt = Instant.now()
+          .minus(1, ChronoUnit.DAYS)
+          .minus(myRandom(30, 1), ChronoUnit.DAYS)
+          .minus(myRandom(500, 1), ChronoUnit.MINUTES);
+
+      Document document = Document.builder()
+          .id(docId).title(title)
+          .description(description).uploader(uploader)
+          .organization(orgProfile).visibility(visibility)
+          .docType(docType).isPremium(isPremium)
+          .price(price).thumbnailKey(thumnailKey)
+          .fileKey(fileKey).pageCount(pageCount)
+          .status(status).specialization(spec)
+          .summarizations(summarization).viewCount(viewCount)
+          .upvoteCount(upVoteCount).voteScore(voteScore)
+          .createdAt(createAt)
+          .build();
+
+      Document savedDocument = documentRepository.save(document);
+
+      //Tag
+      List<Tag> allTags = tagRepository.findAll().stream()
+          .filter(tag -> tag.getStatus() == TagStatus.ACTIVE)
+          .toList();
+
+      int docTagCount = 2 + myRandom(3, i);  //2-4 tag each Doc
+      for (int j = 0; j < docTagCount; j++) {
+        int seed = i * 10 + j;  //random
+
+        DocumentTagLink dtl = DocumentTagLink.builder()
+            .document(savedDocument)
+            .tag(allTags.get(myRandom(allTags.size(), seed)))
+
+            .build();
+        documentTagLinkRepository.save(dtl);
+      }
+
+
+      if (savedDocument.getStatus() != DocStatus.ACTIVE) {
+        continue;
+      }
+
+      //Comment: Each Document 0 , 5, 10,.. or 25 comment
+      int commentCount = myRandom(6, i) * 5;
+      for (int j = 0; j < commentCount; j++) {
+
+        String content = "This document is " +
+            dummyText.substring(myRandom(20, i * 10 + j)
+                , 20 + myRandom(50, i * 10 + j));
 
         Comment comment = Comment.builder()
-                .document(doc)
-                .user(currentUser)
-                .content("Bình luận tuyệt vời về: " + doc.getTitle() + ". Tài liệu này thực sự hữu ích và chuyên sâu. Cảm ơn tác giả đã chia sẻ kiến thức quý báu.")
-                .isDeleted(false)
-                .build();
-
-        commentsToSave.add(comment);
+            .user(activeReaders.get(myRandom(activeReaders.size(), i * 10 + j)))
+            .document(savedDocument)
+            .content(content)
+            .build();
+        commentRepository.save(comment);
       }
+
+      //Vote: real Vote Entity (note voteCount in document)
+      int voteCount = myRandom(6, i);
+
+      Set<UUID> votedUserId = new HashSet<>();
+      for (int j = 0; j < voteCount; j++) {
+
+        User user = activeReaders.get(myRandom(activeReaders.size(), i * 10 + j));
+
+        if (votedUserId.contains(user.getId())) {
+          continue;
+        }
+
+        DocumentVote vote = DocumentVote.builder()
+            .user(user)
+            .document(savedDocument)
+            .voteValue(myRandom(3, i * 10 + j) == 1 ? -1 : 1)
+            .build();
+
+        documentVoteRepository.save(vote);
+        votedUserId.add(user.getId());
+      }
+
     }
 
-    if (!commentsToSave.isEmpty()) {
-      commentRepository.saveAll(commentsToSave);
-      log.info("✅ Đã tạo thành công {} comments cho {} ACTIVE documents", commentsToSave.size(), activeDocs.size());
-    }
   }
 
-  /**
-   * Seed engagement data cho ACTIVE documents
-   */
-  private void seedEngagementData() {
-    List<Document> activeDocs = documentRepository.findAll().stream()
-            .filter(d -> d.getStatus() == DocStatus.ACTIVE)
-            .toList();
-    
-    log.info("📊 Seeding engagement data for {} ACTIVE documents", activeDocs.size());
-
-    for (int i = 0; i < activeDocs.size(); i++) {
-      Document doc = activeDocs.get(i);
-
-      int position = i;
-      int views = (20 - position) * 100 + (int) (Math.random() * 500);
-      int upvotes = Math.max(0, (15 - position) * 5 + (int) (Math.random() * 20));
-      int downvotes = Math.max(0, (position - 8) * 2);
-      int voteScore = upvotes - downvotes;
-
-      doc.setViewCount(Math.max(0, views));
-      doc.setUpvoteCount(Math.max(0, upvotes));
-      doc.setVoteScore(voteScore);
-
-      int daysAgo = i % 8;
-      doc.setCreatedAt(Instant.now().minusSeconds(daysAgo * 24 * 60 * 60L));
-
-      documentRepository.save(doc);
-      log.debug("  ✓ Doc #{}: {} - Views: {}, Upvotes: {}, VoteScore: {}",
-              i + 1, doc.getTitle(), views, upvotes, voteScore);
+  private int myRandom(int range, int seed) {
+    if (range <= 0) {
+      return 0;
     }
-
-    log.info("✅ Engagement data seeding completed!");
+    int x = (seed + 100) * (seed + 100); //random *
+    return x % range;
   }
+
 }

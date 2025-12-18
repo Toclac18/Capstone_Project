@@ -535,25 +535,6 @@ export default function UploadDocumentPage() {
     };
   };
 
-  const clearFormFields = () => {
-    // Only clear form fields, keep file
-    setTitle("");
-    setDescription("");
-    setVisibility("PUBLIC");
-    setIsPremium(false);
-    setTypeId("");
-    setSelectedDomainId("");
-    setSelectedSpecializationId("");
-    setSelectedTagIds([]);
-    setNewTags([]);
-    setNewTagInput("");
-    setTagSearch("");
-    setShowTagDropdown(false);
-    setSelectedOrganizationId("");
-    setErrors({});
-    setError(null);
-  };
-
   const resetForm = () => {
     // Cleanup preview URL
     if (filePreview && filePreview.startsWith("blob:")) {
@@ -1236,14 +1217,14 @@ export default function UploadDocumentPage() {
 
             {/* Form Actions */}
             <div className={styles["form-actions"]}>
-              <button
+              {/* <button
                 type="button"
                 onClick={clearFormFields}
                 className={styles["btn-delete"]}
                 disabled={uploading}
               >
                 Delete
-              </button>
+              </button> */}
               <button
                 type="submit"
                 disabled={uploading}

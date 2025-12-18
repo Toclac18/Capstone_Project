@@ -25,4 +25,18 @@ public interface MemberImportBatchRepository extends JpaRepository<MemberImportB
       OrganizationProfile organization,
       Pageable pageable
   );
+
+  /**
+   * Search import batches by fileName
+   *
+   * @param organization Organization
+   * @param fileName     Search keyword
+   * @param pageable     Pagination parameters
+   * @return Page of import batches
+   */
+  Page<MemberImportBatch> findByOrganizationAndFileNameContainingIgnoreCaseOrderByCreatedAtDesc(
+      OrganizationProfile organization,
+      String fileName,
+      Pageable pageable
+  );
 }

@@ -65,6 +65,11 @@ public class UserPrincipal implements UserDetails {
 
   @Override
   public boolean isEnabled() {
-    return status == UserStatus.ACTIVE;
+    // Return true for ACTIVE, PENDING_EMAIL_VERIFY, and PENDING_APPROVE
+    // so Spring Security doesn't block authentication before our custom logic runs
+    // We handle status-specific errors in AuthServiceImpl.login()
+    return status == UserStatus.ACTIVE 
+        || status == UserStatus.PENDING_EMAIL_VERIFY 
+        || status == UserStatus.PENDING_APPROVE;
   }
 }

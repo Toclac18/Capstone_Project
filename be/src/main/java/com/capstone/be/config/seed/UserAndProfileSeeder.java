@@ -96,8 +96,11 @@ public class UserAndProfileSeeder {
 
   private void seedReaders() {
     // Active readers
-    String[] names = {"Nguyễn Văn Anh", "Trần Thị Bình",
-        "Đinh Văn Cường", "Vũ Văn Dương", "Hoàng Văn Em", "Nguyễn Hương Giang"};
+    String[] names = {
+        "Nguyen Van Anh", "Tran Thi Binh",
+        "Dinh Van Cuong", "Vu Van Duong",
+        "Hoang Van Em", "Nguyen Huong Giang"
+    };
     int userCount = names.length;
     for (int i = 0; i < userCount; i++) {
       String email = "reader" + (i + 1) + "@gmail.com";
@@ -124,9 +127,15 @@ public class UserAndProfileSeeder {
     }
 
     //Active Reviewer
-    List<String> names = List.of("TS. Nguyễn Thành An", "ThS. Vũ Quốc Bảo",
-        "GS. Trần Đức Cảnh", "TS. Bùi Thuỳ Dung", "ThS. Trần Quốc Én",
-        "TS. Đinh Đức Giang", "CN. Bùi Thu Hương");
+    List<String> names = List.of(
+        "TS. Nguyen Thanh An",
+        "ThS. Vu Quoc Bao",
+        "GS. Tran Duc Canh",
+        "TS. Bui Thuy Dung",
+        "ThS. Tran Quoc En",
+        "TS. Dinh Duc Giang",
+        "CN. Bui Thu Huong"
+    );
 
     for (int i = 0; i < names.size(); i++) {
 
@@ -175,53 +184,53 @@ public class UserAndProfileSeeder {
     // Active organizations
     createOrganizationUser(
         seed++, "org1@gmail.com",
-        "Nguyễn Văn Tuấn", UserStatus.ACTIVE,
-        "Đại học Bách Khoa Hà Nội", OrgType.UNIVERSITY,
+        "Nguyen Van Tuan", UserStatus.ACTIVE,
+        "Dai hoc Bach Khoa Ha Noi", OrgType.UNIVERSITY,
         "contact@hust.edu.vn", "024-3869-2008",
-        "Số 1 Đại Cồ Việt, Hai Bà Trưng, Hà Nội",
+        "So 1 Dai Co Viet, Hai Ba Trung, Ha Noi",
         "0100101968",
         null
     );
 
     createOrganizationUser(
         seed++, "org2@gmail.com",
-        "Trần Thị Hương", UserStatus.ACTIVE,
-        "Đại học Công nghệ Thông tin - ĐHQG TP.HCM", OrgType.UNIVERSITY,
+        "Tran Thi Huong", UserStatus.ACTIVE,
+        "Dai hoc Cong nghe Thong tin - DHQG TP.HCM", OrgType.UNIVERSITY,
         "info@uit.edu.vn", "028-3725-2002",
-        "Khu phố 6, P.Linh Trung, TP.Thủ Đức, TP.HCM",
+        "Khu pho 6, P.Linh Trung, TP.Thu Duc, TP.HCM",
         "0304012363",
         null
     );
 
-    // Pending approval organization
+// Pending approval organization
     createOrganizationUser(
         seed++, "org3@gmail.com",
-        "Lê Minh Quân", UserStatus.PENDING_APPROVE,
-        "Trường Đại học FPT", OrgType.UNIVERSITY,
+        "Le Minh Quan", UserStatus.PENDING_APPROVE,
+        "Truong Dai hoc FPT", OrgType.UNIVERSITY,
         "admission@fpt.edu.vn", "024-7300-5588",
-        "Khu Công nghệ cao Hòa Lạc, Km29 Đại lộ Thăng Long, Hà Nội",
+        "Khu Cong nghe cao Hoa Lac, Km29 Dai lo Thang Long, Ha Noi",
         "0101388139",
         null
     );
 
-    // Pending email verification
+// Pending email verification
     createOrganizationUser(
         seed++, "org4@gmail.com",
-        "Phạm Văn Long", UserStatus.PENDING_EMAIL_VERIFY,
-        "Đại học Quốc gia Hà Nội", OrgType.UNIVERSITY,
+        "Pham Van Long", UserStatus.PENDING_EMAIL_VERIFY,
+        "Dai hoc Quoc gia Ha Noi", OrgType.UNIVERSITY,
         "vnu@vnu.edu.vn", "024-3554-4338",
-        "144 Xuân Thủy, Cầu Giấy, Hà Nội",
+        "144 Xuan Thuy, Cau Giay, Ha Noi",
         "0100104659",
         null
     );
 
-    // Rejected organization
+// Rejected organization
     createOrganizationUser(
         seed++, "org5@gmail.com",
-        "Hoàng Văn Nam", UserStatus.REJECTED,
-        "Trung tâm Đào tạo ABC", OrgType.TRAINING_CENTER,
+        "Hoang Van Nam", UserStatus.REJECTED,
+        "Trung tam Dao tao ABC", OrgType.TRAINING_CENTER,
         "contact@abc.edu.vn", "024-1234-5678",
-        "123 Đường ABC, Quận XYZ, Hà Nội",
+        "123 Duong ABC, Quan XYZ, Ha Noi",
         "0123456789",
         null
     );

@@ -401,4 +401,26 @@ public class DocumentController {
     return ResponseEntity.ok(response);
   }
 
+  /**
+   * Get violations for a specific document
+   * Only the uploader and admins can view violations
+   *
+   * @param userPrincipal Authenticated user
+   * @param documentId Document ID
+   * @return List of violations
+   */
+  @GetMapping("/{id}/violations")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN', 'BUSINESS_ADMIN', 'SYSTEM_ADMIN')")
+  public ResponseEntity<java.util.List<DocumentViolationResponse>> getDocumentViolations(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "id") UUID documentId) {
+    UUID userId = userPrincipal.getId();
+    log.info("User {} requesting violations for document {}", userId, documentId);
+
+    java.util.List<DocumentViolationResponse> violations =
+        documentService.getDocumentViolations(userId, documentId);
+
+    return ResponseEntity.ok(violations);
+  }
+
 }

@@ -90,38 +90,48 @@ public class DocumentSeeder {
   }
 
   private void seedDocumentsData() {
-    String[] docTitles = {
-        "Sách giáo khoa Toán 11",
-        "Nhập môn Lập trình Java",
-        "Kinh tế vĩ mô căn bản",
-        "Machine Learning cơ bản",
-        "Thiết kế Database hiệu quả",
-        "Hệ điều hành Linux",
-        "Web Development với Spring Boot",
-        "Xử lý tín hiệu số",
-        "Mạng máy tính TCP/IP",
-        "Thuật toán và Cấu trúc dữ liệu",
-        "Lập trình song song",
-        "Bảo mật thông tin",
-        "AI và Deep Learning",
-        "Phân tích dữ liệu với Python",
-        "Cloud Computing AWS",
-        "Docker và Kubernetes",
-        "Microservices Architecture",
-        "Reactive Programming",
-        "GraphQL API Development",
-        "Blockchain và Smart Contracts",
-        "DevOps Best Practices",
-        "System Design Interview",
-        "Clean Code Principles",
-        "Design Patterns in Java",
-        "Agile Project Management",
-        "Data Structures Advanced",
-        "Computer Vision Basics",
-        "Natural Language Processing",
-        "Distributed Systems",
-        "Software Architecture"
-    };
+    List<String> docTitles = List.of(
+        "Foundations of Modern Mathematics",
+        "Introduction to Computer Science",
+        "Principles of Micro and Macroeconomics",
+        "Basics of Machine Learning",
+        "Effective Communication Skills",
+        "Critical Thinking and Problem Solving",
+        "Introduction to Psychology",
+        "Data Analysis for Business Decisions",
+        "Fundamentals of Financial Accounting",
+        "Environmental Science and Sustainability",
+        "Project Management Essentials",
+        "Digital Marketing Strategies",
+        "Entrepreneurship and Startup Fundamentals",
+        "Leadership and Team Management",
+        "Human Resource Management Basics",
+        "Introduction to Sociology",
+        "Research Methods in Social Sciences",
+        "Creative Thinking and Innovation",
+        "Ethics in the Modern World",
+        "Public Speaking and Presentation Skills",
+        "Global Business and International Trade",
+        "Introduction to Artificial Intelligence",
+        "Statistics for Data Science",
+        "Supply Chain Management Fundamentals",
+        "Health, Nutrition, and Wellness",
+        "Educational Psychology",
+        "Media and Communication Studies",
+        "Philosophy: An Introduction",
+        "Time Management and Productivity",
+        "Cultural Studies in a Globalized World", // 30-th
+        "Introduction to Political Science",
+        "Behavioral Economics Explained",
+        "Climate Change and Global Challenges",
+        "History of Modern Civilization",
+        "Fundamentals of Biotechnology",
+        "Creative Writing Techniques",
+        "International Relations and Diplomacy",
+        "Basics of Law and Legal Systems",
+        "Urban Planning and Smart Cities",
+        "Science, Technology, and Society");
+
 
     List<User> allUsers = userRepository.findAll();
 
@@ -155,67 +165,12 @@ public class DocumentSeeder {
       }
     }
 
-    int n = docTitles.length;
-    for (int i = 0; i < n; i++) {
+    int n = docTitles.size();
+    int internalDocCount = 10; //need smaller than n
+    // Part 1: Public Doc
+    for (int i = 0; i < n-internalDocCount; i++) {
 
-      UUID docId = SeedUtil.generateUUID("doc-" + i);
-      String title = docTitles[i];
-      String description = title
-          + "is a very useful document for learning about Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor.";
-
-      User uploader = (i == 1) ? orgAdmin
-          : activeReaders.get(i % activeReaders.size());
-
-      DocVisibility visibility = DocVisibility.PUBLIC;
-
-      DocType docType = docTypes.get(i % docTypes.size());
-
-      boolean isPremium = i % 2 == 1;
-
-      int price = isPremium ? 100 : 0;
-
-      String thumnailKey = String.format("_sample_thumb_%d.png", (i % 5) + 1);
-
-      String fileKey = String.format("_sample_doc_%d.pdf", (i % 5) + 1);
-
-      int pageCount = 1 + myRandom(10, i);
-
-      DocStatus status = i % 5 > 0 ? DocStatus.ACTIVE : DocStatus.AI_REJECTED;
-
-      Specialization spec = specs.get(i % specs.size());
-
-      DocumentSummarization summarization = DocumentSummarization.builder()
-          .shortSummary(
-              title + "is about Lorem ipsum dolor sit amet. The content covers the main concepts.")
-          .mediumSummary(
-              "This document explores both theory and practice, providing an overview of the topic with concrete illustrative examples for document .")
-          .detailedSummary(
-              "This is a comprehensive analysis that connects classical methods with modern developments. The document clarifies assumptions, boundary conditions, and the statistical validity of the reported findings, while also proposing reproducible standards for document number .")
-          .build();
-
-      int viewCount = status == DocStatus.ACTIVE ? myRandom(999, i) : 0;
-
-      int upVoteCount = viewCount / 5 + myRandom(viewCount / 2, i); //from 20% to 70% upvote
-      int voteScore = upVoteCount / 5 * 3 + myRandom(upVoteCount / 5 * 2, i);
-
-      Instant createAt = Instant.now()
-          .minus(1, ChronoUnit.DAYS)
-          .minus(myRandom(30, 1), ChronoUnit.DAYS)
-          .minus(myRandom(500, 1), ChronoUnit.MINUTES);
-
-      Document document = Document.builder()
-          .id(docId).title(title)
-          .description(description).uploader(uploader)
-          .organization(orgProfile).visibility(visibility)
-          .docType(docType).isPremium(isPremium)
-          .price(price).thumbnailKey(thumnailKey)
-          .fileKey(fileKey).pageCount(pageCount)
-          .status(status).specialization(spec)
-          .summarizations(summarization).viewCount(viewCount)
-          .upvoteCount(upVoteCount).voteScore(voteScore)
-          .createdAt(createAt)
-          .build();
-
+      Document document = buildDocument(i, docTitles, activeReaders, docTypes, specs);
       Document savedDocument = documentRepository.save(document);
 
       //Tag
@@ -280,6 +235,77 @@ public class DocumentSeeder {
 
     }
 
+    for (int i = n - internalDocCount ; i < n ; i++){
+      Document doc = buildDocument(i, docTitles,
+          activeReaders, docTypes, specs );
+      doc.setOrganization(orgProfile);
+      doc.setVisibility(DocVisibility.INTERNAL);
+      documentRepository.save(doc);
+
+      // #TODO: comment, vote...
+    }
+
+  }
+
+  private Document buildDocument(int seed, List<String> docTitles,
+      List<User> activeReaders, List<DocType> docTypes,
+      List<Specialization> specs){
+    UUID docId = SeedUtil.generateUUID("doc-" + seed);
+    String title = docTitles.get(seed);
+    String description = title
+        + " is a very useful document for learning about Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor.";
+
+    User uploader = activeReaders.get(seed % activeReaders.size());
+
+    DocVisibility visibility = DocVisibility.PUBLIC;
+
+    DocType docType = docTypes.get(seed % docTypes.size());
+
+    boolean isPremium = seed % 2 == 1 ;
+
+    int price = isPremium ? 100 : 0;
+
+    String thumnailKey = String.format("_sample_thumb_%d.png", (seed % 5) + 1);
+
+    String fileKey = String.format("_sample_doc_%d.pdf", (seed % 5) + 1);
+
+    int pageCount = 1 + myRandom(10, seed);
+
+    DocStatus status = seed % 5 > 0 ? DocStatus.ACTIVE : DocStatus.AI_REJECTED;
+
+    Specialization spec = specs.get(seed % specs.size());
+
+    DocumentSummarization summarization = DocumentSummarization.builder()
+        .shortSummary(
+            title + "is about Lorem ipsum dolor sit amet. The content covers the main concepts.")
+        .mediumSummary(
+            "This document explores both theory and practice, providing an overview of the topic with concrete illustrative examples for document .")
+        .detailedSummary(
+            "This is a comprehensive analysis that connects classical methods with modern developments. The document clarifies assumptions, boundary conditions, and the statistical validity of the reported findings, while also proposing reproducible standards for document number .")
+        .build();
+
+    int viewCount = status == DocStatus.ACTIVE ? myRandom(999, seed) : 0;
+
+    int upVoteCount = viewCount / 5 + myRandom(viewCount / 2, seed); //from 20% to 70% upvote
+    int voteScore = upVoteCount / 5 * 3 + myRandom(upVoteCount / 5 * 2, seed);
+
+    Instant createAt = Instant.now()
+        .minus(1, ChronoUnit.DAYS)
+        .minus(myRandom(30, seed), ChronoUnit.DAYS)
+        .minus(myRandom(500, seed), ChronoUnit.MINUTES);
+
+    return Document.builder()
+        .id(docId).title(title)
+        .description(description).uploader(uploader)
+        .organization(null).visibility(visibility)
+        .docType(docType).isPremium(isPremium)
+        .price(price).thumbnailKey(thumnailKey)
+        .fileKey(fileKey).pageCount(pageCount)
+        .status(status).specialization(spec)
+        .summarizations(summarization).viewCount(viewCount)
+        .upvoteCount(upVoteCount).voteScore(voteScore)
+        .createdAt(createAt)
+        .build();
   }
 
   private int myRandom(int range, int seed) {

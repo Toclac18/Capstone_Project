@@ -17,13 +17,32 @@ import java.util.List;
 @AllArgsConstructor
 public class AiModerationResponse {
 
-  private String status; // "pass" or "reject"
+  private String status; // "pass" or "fail"
 
-  private List<String> violations;
+  private List<Violation> violations;
 
   private Summaries summaries;
 
   private Timings timings;
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class Violation {
+
+    private String type; // "text" or "image"
+
+    private Integer index; // Index in batch
+
+    private String snippet; // For text violations, the offending text
+
+    private String prediction; // e.g., "toxic"
+
+    private Double confidence; // Confidence score (0.0 to 1.0)
+
+    private Integer page; // Page number where violation was found
+  }
 
   @Data
   @Builder

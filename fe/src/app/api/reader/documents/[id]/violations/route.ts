@@ -4,7 +4,7 @@ import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { proxyJsonResponse } from "@/server/response";
 
 async function handleGET(
-  request: Request,
+  _request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   const params = await context.params;

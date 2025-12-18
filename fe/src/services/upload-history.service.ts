@@ -1,6 +1,6 @@
 import { apiClient } from "./http";
 
-export type DocumentHistoryStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type DocumentHistoryStatus = "PENDING" | "APPROVED" | "REJECTED" | "AI_REJECTED";
 
 export type DocumentHistory = {
   id: string;

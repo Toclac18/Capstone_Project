@@ -47,3 +47,4 @@ public class DocumentStatisticsResponse {
   private Long documentsActivatedLast30Days;
 }
 
+

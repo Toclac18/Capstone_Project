@@ -1,13 +1,16 @@
 package com.capstone.be.repository;
 
-import com.capstone.be.domain.entity.*;
-
+import com.capstone.be.domain.entity.DocType;
+import com.capstone.be.domain.entity.Document;
+import com.capstone.be.domain.entity.Domain;
+import com.capstone.be.domain.entity.OrganizationProfile;
+import com.capstone.be.domain.entity.Specialization;
+import com.capstone.be.domain.entity.Tag;
+import com.capstone.be.domain.enums.DocStatus;
+import com.capstone.be.domain.enums.DocVisibility;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-
-import com.capstone.be.domain.enums.DocStatus;
-import com.capstone.be.domain.enums.DocVisibility;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -68,7 +71,7 @@ public interface DocumentRepository extends JpaRepository<Document, UUID>,
 
   @Query("""
       select distinct l.tag
-      from DocTagLink l
+      from DocumentTagLink l
         join l.document d
       where d.visibility = com.capstone.be.domain.enums.DocVisibility.PUBLIC
         and d.status = com.capstone.be.domain.enums.DocStatus.ACTIVE

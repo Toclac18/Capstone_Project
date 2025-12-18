@@ -357,7 +357,16 @@ export function ReviewManagement() {
     setShowDocumentDetailModal(true);
   };
 
-  const handleAssignClick = (doc: DocumentListItem) => {
+  const handleAssignClick = (item: ReviewManagementItem) => {
+    const doc: any = {
+      id: item.documentId,
+      title: item.title,
+      specializationName: item.specializationName,
+      status: item.documentStatus,
+      isPremium: item.isPremium,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+    };
     setSelectedDocument(doc);
     setSelectedReviewRequest(null);
     setShowAssignModal(true);
@@ -368,7 +377,7 @@ export function ReviewManagement() {
     reviewRequest: ReviewRequestResponse,
   ) => {
     setSelectedDocument(doc);
-    setSelectedReviewRequest(reviewRequest);
+    setSelectedReviewRequest(item);
     setShowAssignModal(true);
   };
 

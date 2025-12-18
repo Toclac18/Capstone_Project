@@ -15,10 +15,12 @@ import com.capstone.be.dto.request.review.ApproveReviewResultRequest;
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
 import com.capstone.be.dto.request.review.RespondReviewRequestRequest;
 import com.capstone.be.dto.request.review.ReviewHistoryFilterRequest;
+import com.capstone.be.dto.request.review.ReviewManagementFilterRequest;
 import com.capstone.be.dto.request.review.SubmitReviewRequest;
 import com.capstone.be.domain.enums.ReviewResultStatus;
 import com.capstone.be.dto.response.review.ReviewResultResponse;
 import com.capstone.be.dto.response.review.ReviewRequestResponse;
+import com.capstone.be.dto.response.review.ReviewManagementItem;
 import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.mapper.ReviewResultMapper;
@@ -49,6 +51,8 @@ import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -1012,6 +1016,244 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
     }
 
     return response;
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<ReviewManagementItem> getReviewManagementList(ReviewManagementFilterRequest filter, Pageable pageable) {
+    log.info("Getting BA review management list with filter: {}, page: {}, size: {}",
+        filter, pageable.getPageNumber(), pageable.getPageSize());
+
+    // For now, implement this using in-memory filtering based on seeded dev data.
+    // This keeps logic close to existing FE behavior while we stabilise requirements.
+    List<Document> allDocs = documentRepository.findAll();
+
+    // Only consider premium documents (same as FE)
+    List<Document> premiumDocs = allDocs.stream()
+        .filter(d -> Boolean.TRUE.equals(d.getIsPremium()))
+        .toList();
+
+    List<ReviewManagementItem> items = new ArrayList<>();
+
+    for (Document doc : premiumDocs) {
+      // Fetch all review requests for this document
+      List<ReviewRequest> docRequests = reviewRequestRepository
+          .findByDocument_Id(doc.getId(), Pageable.unpaged())
+          .getContent();
+
+      // Helper to find appropriate review request depending on tab (similar to FE getReviewRequestForDocument)
+      ReviewRequest chosenRequest = chooseReviewRequestForTab(doc, docRequests, filter.getTab());
+
+      // Apply tab-specific inclusion logic
+      if (!matchTab(doc, docRequests, chosenRequest, filter.getTab())) {
+        continue;
+      }
+
+      // Build item
+      ReviewManagementItem item = buildReviewManagementItem(doc, chosenRequest);
+      items.add(item);
+    }
+
+    // Apply additional filters (reviewer, domain, search)
+    // Wrap result in a mutable list because Stream.toList() can return an immutable list
+    items = new ArrayList<>(applyAdditionalFilters(items, filter));
+
+    // Apply sorting
+    items.sort(buildComparator(filter));
+
+    // Pagination (manual PageImpl)
+    int start = (int) pageable.getOffset();
+    int end = Math.min(start + pageable.getPageSize(), items.size());
+    List<ReviewManagementItem> pageContent = start > end ? List.of() : items.subList(start, end);
+
+    return new org.springframework.data.domain.PageImpl<>(pageContent, pageable, items.size());
+  }
+
+  /**
+   * Choose representative review request for a document depending on tab.
+   * This mirrors frontend logic in ReviewManagement component.
+   */
+  private ReviewRequest chooseReviewRequestForTab(Document doc, List<ReviewRequest> docRequests, String tab) {
+    if (docRequests.isEmpty()) {
+      return null;
+    }
+
+    String normalizedTab = tab != null ? tab.toUpperCase() : "ALL";
+    String docIdStr = doc.getId().toString();
+
+    if ("PENDING".equals(normalizedTab)) {
+      // For pending tab, get the most recent PENDING request
+      return docRequests.stream()
+          .filter(r -> r.getStatus() == ReviewRequestStatus.PENDING)
+          .max(Comparator.comparing(ReviewRequest::getCreatedAt))
+          .orElse(null);
+    } else if ("COMPLETED".equals(normalizedTab)) {
+      // For completed tab, prioritize ACCEPTED requests (most recent)
+      List<ReviewRequest> accepted = docRequests.stream()
+          .filter(r -> r.getStatus() == ReviewRequestStatus.ACCEPTED)
+          .toList();
+      if (!accepted.isEmpty()) {
+        return accepted.stream()
+            .max(Comparator.comparing(ReviewRequest::getCreatedAt))
+            .orElse(null);
+      }
+      // Fallback: any latest request
+      return docRequests.stream()
+          .max(Comparator.comparing(ReviewRequest::getCreatedAt))
+          .orElse(null);
+    } else {
+      // For other tabs, use the latest "active" request (PENDING or ACCEPTED), else latest any
+      List<ReviewRequest> active = docRequests.stream()
+          .filter(r -> r.getStatus() == ReviewRequestStatus.PENDING || r.getStatus() == ReviewRequestStatus.ACCEPTED)
+          .toList();
+      if (!active.isEmpty()) {
+        return active.stream()
+            .max(Comparator.comparing(ReviewRequest::getCreatedAt))
+            .orElse(null);
+      }
+      return docRequests.stream()
+          .max(Comparator.comparing(ReviewRequest::getCreatedAt))
+          .orElse(null);
+    }
+  }
+
+  /**
+   * Tab inclusion logic, following FE semantics.
+   */
+  private boolean matchTab(Document doc, List<ReviewRequest> docRequests, ReviewRequest chosenRequest, String tab) {
+    String normalizedTab = tab != null ? tab.toUpperCase() : "NEEDS_ASSIGNMENT";
+
+    if ("NEEDS_ASSIGNMENT".equals(normalizedTab)) {
+      // Documents with status PENDING_REVIEW and no active review request (PENDING/ACCEPTED)
+      if (doc.getStatus() != DocStatus.PENDING_REVIEW) {
+        return false;
+      }
+      boolean hasActive = docRequests.stream().anyMatch(r ->
+          r.getStatus() == ReviewRequestStatus.PENDING || r.getStatus() == ReviewRequestStatus.ACCEPTED);
+      return !hasActive;
+    }
+
+    if ("PENDING".equals(normalizedTab)) {
+      // Documents that have at least one PENDING review request
+      return docRequests.stream().anyMatch(r -> r.getStatus() == ReviewRequestStatus.PENDING);
+    }
+
+    if ("IN_REVIEW".equals(normalizedTab)) {
+      // Documents with status REVIEWING and at least one ACCEPTED review request
+      if (doc.getStatus() != DocStatus.REVIEWING) {
+        return false;
+      }
+      return docRequests.stream().anyMatch(r -> r.getStatus() == ReviewRequestStatus.ACCEPTED);
+    }
+
+    if ("COMPLETED".equals(normalizedTab)) {
+      // Documents that have been reviewed (status = ACTIVE or REJECTED) and have at least one review request
+      if (doc.getStatus() != DocStatus.ACTIVE && doc.getStatus() != DocStatus.REJECTED) {
+        return false;
+      }
+      return !docRequests.isEmpty();
+    }
+
+    // "ALL" tab: include all premium documents that are in any stage of review flow
+    return true;
+  }
+
+  private ReviewManagementItem buildReviewManagementItem(Document doc, ReviewRequest request) {
+    ReviewManagementItem.ReviewManagementItemBuilder builder = ReviewManagementItem.builder()
+        .documentId(doc.getId())
+        .title(doc.getTitle())
+        .documentStatus(doc.getStatus())
+        .isPremium(doc.getIsPremium())
+        .createdAt(doc.getCreatedAt())
+        .updatedAt(doc.getUpdatedAt());
+
+    if (doc.getSpecialization() != null && doc.getSpecialization().getDomain() != null) {
+      String specName = doc.getSpecialization().getDomain().getName() + " - " + doc.getSpecialization().getName();
+      builder.specializationName(specName);
+    }
+
+    if (request != null) {
+      builder.reviewRequestId(request.getId())
+          .reviewRequestStatus(request.getStatus())
+          .responseDeadline(request.getResponseDeadline())
+          .reviewDeadline(request.getReviewDeadline());
+
+      if (request.getReviewer() != null) {
+        builder.reviewerId(request.getReviewer().getId())
+            .reviewerName(request.getReviewer().getFullName())
+            .reviewerEmail(request.getReviewer().getEmail());
+      }
+
+      // Determine decision from latest ReviewResult if document is completed
+      if (doc.getStatus() == DocStatus.ACTIVE || doc.getStatus() == DocStatus.REJECTED) {
+        reviewResultRepository.findFirstByReviewRequest_IdOrderBySubmittedAtDesc(request.getId())
+            .ifPresent(reviewResult -> builder.decision(reviewResult.getDecision()));
+      }
+    }
+
+    return builder.build();
+  }
+
+  private List<ReviewManagementItem> applyAdditionalFilters(List<ReviewManagementItem> items, ReviewManagementFilterRequest filter) {
+    return items.stream()
+        .filter(item -> {
+          if (filter.getReviewerId() != null) {
+            if (item.getReviewerId() == null || !item.getReviewerId().equals(filter.getReviewerId())) {
+              return false;
+            }
+          }
+          if (filter.getDomain() != null && !filter.getDomain().isBlank()) {
+            if (item.getSpecializationName() == null || !item.getSpecializationName().startsWith(filter.getDomain())) {
+              return false;
+            }
+          }
+          if (filter.getSearch() != null && !filter.getSearch().isBlank()) {
+            String search = filter.getSearch().toLowerCase();
+            String title = item.getTitle() != null ? item.getTitle().toLowerCase() : "";
+            if (!title.contains(search)) {
+              return false;
+            }
+          }
+          return true;
+        })
+        .toList();
+  }
+
+  private Comparator<ReviewManagementItem> buildComparator(ReviewManagementFilterRequest filter) {
+    String sortBy = filter.getSortBy() != null ? filter.getSortBy() : "createdAt";
+    String sortOrder = filter.getSortOrder() != null ? filter.getSortOrder() : "desc";
+    boolean asc = "asc".equalsIgnoreCase(sortOrder);
+
+    Comparator<ReviewManagementItem> comparator;
+
+    if ("title".equalsIgnoreCase(sortBy)) {
+      comparator = Comparator.comparing(
+          item -> item.getTitle() != null ? item.getTitle().toLowerCase() : "",
+          Comparator.naturalOrder()
+      );
+    } else if ("deadline".equalsIgnoreCase(sortBy)) {
+      // For pending: use responseDeadline; for in-review: reviewDeadline; otherwise fallback to createdAt
+      comparator = Comparator.comparing((ReviewManagementItem item) -> {
+        Instant deadline = item.getResponseDeadline();
+        if (deadline == null) {
+          deadline = item.getReviewDeadline();
+        }
+        if (deadline == null) {
+          deadline = item.getCreatedAt();
+        }
+        return deadline != null ? deadline : Instant.EPOCH;
+      });
+    } else {
+      // Default: createdAt
+      comparator = Comparator.comparing((ReviewManagementItem item) ->
+          item.getCreatedAt() != null ? item.getCreatedAt() : Instant.EPOCH);
+    }
+
+    if (!asc) {
+      comparator = comparator.reversed();
+    }
+
+    return comparator;
   }
 
   /**

@@ -120,5 +120,7 @@ export function toDocumentItem(raw: any): DocumentItem {
           logoUrl: String(raw.organization.logoUrl ?? ""),
         }
       : undefined,
+
+    updatedAt: raw?.updatedAt ?? raw?.createdAt ?? undefined,
   };
 }

@@ -9,16 +9,20 @@ import { useMemo } from "react";
 import type { DocumentItem } from "@/types/document-homepage";
 
 export default function RecentRail() {
-  const { continueReading, topUpvoted, specGroups } = useHomepage();
+  const { continueReading, topUpvoted, allSpecGroups } = useHomepage();
   const { open } = useModalPreview();
 
   // Sort theo updatedAt descending (recently added)
+  // Sử dụng allSpecGroups thay vì specGroups để có đầy đủ documents từ tất cả groups
   const items = useMemo<DocumentItem[]>(() => {
+    // Flatten all documents from ALL specGroups (not just visible ones)
     const all: DocumentItem[] = [
-      ...continueReading,
+      ...allSpecGroups.flatMap((g) => g.items),
       ...topUpvoted,
-      ...specGroups.flatMap((g) => g.items),
+      ...continueReading,
     ];
+
+    // Deduplicate by id
     const seen = new Set<string>();
     const unique = all.filter((d) => {
       if (seen.has(d.id)) return false;
@@ -28,20 +32,13 @@ export default function RecentRail() {
 
     // Sort by updatedAt descending (most recent first)
     unique.sort((a, b) => {
-      const aTime = (a as any).updatedAt
-        ? new Date((a as any).updatedAt).getTime()
-        : 0;
-      const bTime = (b as any).updatedAt
-        ? new Date((b as any).updatedAt).getTime()
-        : 0;
+      const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
       return bTime - aTime;
     });
 
-    return unique.slice(0, 12).map((d) => ({
-      ...d,
-      viewCount: (d as any).viewCount ?? 0,
-    }));
-  }, [continueReading, topUpvoted, specGroups]);
+    return unique.slice(0, 12);
+  }, [continueReading, topUpvoted, allSpecGroups]);
 
   if (!items.length) return null;
 

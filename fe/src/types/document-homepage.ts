@@ -8,6 +8,7 @@ export type DocumentItem = {
   uploader: string;
 
   publicYear: number;
+  updatedAt?: string; // ISO date string for sorting
 
   isPremium: boolean;
   hasRedeemed?: boolean;

@@ -40,6 +40,7 @@ interface ReadersContextValue {
    * enable = false => REMOVED
    */
   toggleAccess: (enrollmentId: string, enable: boolean) => Promise<void>;
+  reInvite: (enrollmentId: string) => Promise<void>;
 
   setPage: (p: number) => void;
   setPageSize: (s: number) => void;
@@ -127,6 +128,35 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
     [showToast, changeEnrollmentStatus],
   );
 
+  /**
+   * reInvite: send a re-invite to a reader who has LEFT
+   */
+  const reInvite = useCallback(
+    async (enrollmentId: string) => {
+      try {
+        // call BE
+        // import inviteMember lazily to avoid circulars at module scope
+        const svc = await import("@/services/org-admin-reader.service");
+        await svc.inviteMember(enrollmentId);
+
+        // update local state: set status -> PENDING_INVITE and update invitedAt
+        const now = new Date().toISOString();
+        setReaders((prev) =>
+          prev.map((r) =>
+            r.enrollmentId === enrollmentId
+              ? { ...r, status: "PENDING_INVITE", invitedAt: now }
+              : r,
+          ),
+        );
+      } catch (err: any) {
+        const msg = typeof err?.message === "string" ? err.message : "Error";
+        setError(msg);
+        showToast(toast.error("Error", msg));
+      }
+    },
+    [showToast],
+  );
+
   useEffect(() => {
     reload();
   }, [reload]);
@@ -144,6 +174,7 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
       status,
       reload,
       toggleAccess,
+      reInvite,
       setPage,
       setPageSize,
       setQ,
@@ -163,6 +194,7 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
       status,
       reload,
       toggleAccess,
+      reInvite,
     ],
   );
 

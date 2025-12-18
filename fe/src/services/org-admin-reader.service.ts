@@ -1,7 +1,7 @@
 // src/services/org-admin-reader.service.ts
 import { apiClient } from "./http";
 
-export type OrgEnrollStatus = "PENDING_INVITE" | "JOINED" | "REMOVED";
+export type OrgEnrollStatus = "PENDING_INVITE" | "JOINED" | "REMOVED" | "LEFT";
 
 export type ChangeEnrollmentStatusPayload = {
   enrollmentId: string;
@@ -15,6 +15,15 @@ export async function changeEnrollmentStatus(
     "org-admin/reader-change-access",
     payload,
   );
+  return res.data;
+}
+
+export async function inviteMember(
+  enrollmentId: string,
+): Promise<{ success: boolean; message?: string }> {
+  const res = await apiClient.post("org-admin/readers/invite", {
+    enrollmentId,
+  });
   return res.data;
 }
 

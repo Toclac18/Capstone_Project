@@ -53,6 +53,20 @@ const seed: OrgEnrollment[] = [
     invitedAt: "2025-09-10T08:00:00.000Z",
     respondedAt: null,
   },
+  // NEW: LEFT (member voluntarily left)
+  {
+    enrollmentId: "left-1",
+    memberId: "member-left-1",
+    memberEmail: "linh.left@example.com",
+    memberFullName: "Linh Pham",
+    memberAvatarUrl: null,
+    organizationId: "org-edu01",
+    organizationName: "Trung tâm Đào tạo AI READEE",
+    organizationType: "TrainingCenter",
+    status: "LEFT",
+    invitedAt: "2025-08-12T08:00:00.000Z",
+    respondedAt: "2025-08-20T10:15:00.000Z",
+  },
 ];
 
 function generateExtra(count: number): OrgEnrollment[] {
@@ -78,15 +92,28 @@ function generateExtra(count: number): OrgEnrollment[] {
   for (let i = 1; i <= count; i++) {
     const org = orgs[i % orgs.length];
 
+    // Include LEFT as a normal status in the distribution
+    // - PENDING_INVITE: every 7th
+    // - REMOVED: every 5th (admin removed)
+    // - LEFT: every 3rd (member left)
+    // - JOINED: otherwise
     const status: OrgEnrollStatus =
-      i % 5 === 0 ? "PENDING_INVITE" : i % 3 === 0 ? "REMOVED" : "JOINED";
+      i % 7 === 0
+        ? "PENDING_INVITE"
+        : i % 5 === 0
+          ? "REMOVED"
+          : i % 3 === 0
+            ? "LEFT"
+            : "JOINED";
 
     const baseDate = new Date("2025-09-01T08:00:00.000Z");
     baseDate.setDate(baseDate.getDate() + i);
 
     const invitedAt = baseDate.toISOString();
+
+    // respondedAt: JOINED/LEFT have a response date; REMOVED/PENDING typically don't
     const respondedAt =
-      status === "JOINED"
+      status === "JOINED" || status === "LEFT"
         ? new Date(baseDate.getTime() + 86400000).toISOString()
         : null;
 
@@ -193,6 +220,13 @@ export function mockChangeReaderAccess(enrollmentId: string, enable: string) {
     };
   }
 
-  r.status = enable ? "JOINED" : "REMOVED";
+  // Interpret `enable` like a boolean-ish string.
+  // If disabled -> mark as LEFT (user left). If enabled -> JOINED.
+  const enabled =
+    typeof enable === "string"
+      ? ["1", "true", "yes", "y", "on"].includes(enable.trim().toLowerCase())
+      : Boolean(enable);
+
+  r.status = enabled ? "JOINED" : "LEFT";
   return { success: true };
 }

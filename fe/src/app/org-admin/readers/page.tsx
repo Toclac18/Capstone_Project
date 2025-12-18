@@ -1,11 +1,10 @@
-// src/app/org-admin/readers/page.tsx
 "use client";
 
 import { useState } from "react";
 import styles from "./styles.module.css";
 import { ReadersProvider, useReaders } from "./provider";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
-import EnableButton from "./_components/EnableButton";
+import EnableButton from "./_components/Button";
 
 function ReadersContent() {
   const {
@@ -13,6 +12,7 @@ function ReadersContent() {
     loading,
     reload,
     toggleAccess,
+    reInvite,
     page,
     pageSize,
     total,
@@ -32,7 +32,7 @@ function ReadersContent() {
   async function onEnable(enrollmentId: string) {
     setBusyId(enrollmentId);
     try {
-      await toggleAccess(enrollmentId, true); // → JOINED
+      await toggleAccess(enrollmentId, true);
     } finally {
       setBusyId(null);
     }
@@ -41,7 +41,7 @@ function ReadersContent() {
   async function onRemove(enrollmentId: string) {
     setBusyId(enrollmentId);
     try {
-      await toggleAccess(enrollmentId, false); // → REMOVED
+      await toggleAccess(enrollmentId, false);
     } finally {
       setBusyId(null);
     }
@@ -71,7 +71,6 @@ function ReadersContent() {
           }}
           className={styles["readers-pagesize"]}
           disabled={loading}
-          title="Rows per page"
         >
           {[10, 20, 50, 100].map((s) => (
             <option key={s} value={s}>
@@ -84,7 +83,6 @@ function ReadersContent() {
           onClick={reload}
           className={styles["readers-reload-btn"]}
           disabled={loading}
-          title="Reload readers list"
         >
           {loading ? "Loading..." : "Reload"}
         </button>
@@ -99,11 +97,7 @@ function ReadersContent() {
               <th className={styles["col-email"]}>Email</th>
               <th>Organization</th>
               <th>Status</th>
-              <th
-                className={`${styles["header-right"]} ${styles["col-coins"]}`}
-              >
-                Invited at
-              </th>
+              <th className={styles["header-right"]}>Invited at</th>
               <th className={styles["header-right"]}>Actions</th>
             </tr>
           </thead>
@@ -111,67 +105,52 @@ function ReadersContent() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className={styles["cell-right"]}>
-                  Loading…
-                </td>
+                <td colSpan={6}>Loading…</td>
               </tr>
             ) : readers.length === 0 ? (
               <tr>
-                <td colSpan={6} className={styles["cell-right"]}>
-                  No readers found
-                </td>
+                <td colSpan={6}>No readers found</td>
               </tr>
             ) : (
               readers.map((r) => {
-                const status = r.status; // "PENDING_INVITE" | "JOINED" | "REMOVED"
-
-                const isPending = status === "PENDING_INVITE";
-                const isJoined = status === "JOINED";
-
-                const badgeClass = isJoined
-                  ? styles["status-active"]
-                  : isPending
-                    ? styles["status-pending"]
-                    : styles["status-suspended"];
-
-                const statusLabel = status;
-
-                const invitedDisplay = r.invitedAt
-                  ? new Date(r.invitedAt).toLocaleString()
-                  : "-";
-
                 const isBusy = busyId === r.enrollmentId;
 
                 return (
-                  <tr key={r.enrollmentId} className={styles["table-row"]}>
+                  <tr key={r.enrollmentId}>
                     <td>{r.memberFullName}</td>
-                    <td className={styles["col-email"]}>{r.memberEmail}</td>
+                    <td>{r.memberEmail}</td>
                     <td>{r.organizationName}</td>
+                    <td>{r.status}</td>
                     <td>
-                      <span
-                        className={`${styles["status-badge"]} ${badgeClass}`}
-                      >
-                        {statusLabel}
-                      </span>
-                    </td>
-                    <td
-                      className={`${styles["cell-right"]} ${styles["col-coins"]}`}
-                    >
-                      {invitedDisplay}
+                      {r.invitedAt
+                        ? new Date(r.invitedAt).toLocaleString()
+                        : "-"}
                     </td>
                     <td className={styles["cell-right"]}>
-                      {isPending ? (
-                        <span className={styles["action-placeholder"]}>-</span>
-                      ) : isJoined ? (
+                      {r.status === "JOINED" ? (
                         <DeleteConfirmation
                           onDelete={() => onRemove(r.enrollmentId)}
                           itemId={r.enrollmentId}
                           itemName={`${r.memberFullName} (${r.memberEmail})`}
-                          title="Remove reader’s access"
-                          description="This action cannot be undone. The reader will lose access to all resources."
                           size="sm"
                           variant="outline"
                           className={styles["action-btn"]}
+                        />
+                      ) : r.status === "LEFT" ? (
+                        <EnableButton
+                          onClick={() => {
+                            setBusyId(r.enrollmentId);
+                            reInvite(r.enrollmentId).finally(() =>
+                              setBusyId(null),
+                            );
+                          }}
+                          disabled={isBusy || loading}
+                          loading={isBusy}
+                          className={styles["action-btn"]}
+                          title="Re-invite reader"
+                          label="Re-invite"
+                          loadingLabel="Re-inviting..."
+                          variant="reinvite"
                         />
                       ) : (
                         <EnableButton
@@ -191,30 +170,6 @@ function ReadersContent() {
             )}
           </tbody>
         </table>
-      </div>
-
-      {/* Pagination footer */}
-      <div className={styles["readers-pagination"]}>
-        <span className={styles["readers-range"]}>
-          {total === 0 ? "No results" : `Showing ${start}–${end} of ${total}`}
-        </span>
-        <div className={styles["readers-page-controls"]}>
-          <button
-            onClick={() => setPage(Math.max(1, page - 1))}
-            disabled={!hasPrev || loading}
-            className={styles["page-btn"]}
-          >
-            Prev
-          </button>
-          <span className={styles["readers-page"]}>Page {page}</span>
-          <button
-            onClick={() => setPage(page + 1)}
-            disabled={!hasNext || loading}
-            className={styles["page-btn"]}
-          >
-            Next
-          </button>
-        </div>
       </div>
     </div>
   );

@@ -1,9 +1,10 @@
-// src/app/org-admin/readers/_components/EnableButton.tsx
 "use client";
 
 import styles from "./styles.module.css";
 
-interface EnableButtonProps {
+type ButtonVariant = "enable" | "reinvite";
+
+interface ButtonProps {
   onClick?: () => void;
   disabled?: boolean;
   loading?: boolean;
@@ -11,9 +12,10 @@ interface EnableButtonProps {
   title?: string;
   label?: string;
   loadingLabel?: string;
+  variant?: ButtonVariant;
 }
 
-export default function EnableButton({
+export default function Button({
   onClick,
   disabled,
   loading,
@@ -21,7 +23,8 @@ export default function EnableButton({
   title = "Enable access",
   label = "Enable",
   loadingLabel = "Enabling…",
-}: EnableButtonProps) {
+  variant = "enable",
+}: ButtonProps) {
   const isDisabled = disabled || loading;
 
   return (
@@ -32,11 +35,10 @@ export default function EnableButton({
       title={title}
       aria-disabled={isDisabled}
       aria-busy={loading || false}
-      className={`${styles["enable-btn"]} ${className}`}
+      className={` ${styles["enable-btn"]} ${variant === "reinvite" ? styles["reinvite-btn"] : ""} ${className} `}
     >
       {loading ? (
         <span className={styles["enable-loading-wrap"]}>
-          {/* spinner */}
           <svg
             className={styles["enable-loading-icon"]}
             viewBox="0 0 24 24"
@@ -57,11 +59,10 @@ export default function EnableButton({
               d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
             />
           </svg>
-          <span>{loadingLabel}</span>
+          <span className={styles["btn-text"]}>{loadingLabel}</span>
         </span>
       ) : (
         <span className={styles["enable-content"]}>
-          {/* tick xanh lá */}
           <svg
             className={styles["enable-icon"]}
             viewBox="0 0 24 24"
@@ -76,7 +77,7 @@ export default function EnableButton({
               strokeLinejoin="round"
             />
           </svg>
-          <span>{label}</span>
+          <span className={styles["btn-text"]}>{label}</span>
         </span>
       )}
     </button>

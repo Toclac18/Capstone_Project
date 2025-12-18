@@ -22,7 +22,7 @@ public class Document extends BaseEntity {
   @Column(nullable = false)
   private String title;
 
-  @Column(nullable = false)
+  @Column(nullable = false, length = 2000)
   private String description;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)

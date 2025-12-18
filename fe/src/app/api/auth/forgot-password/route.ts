@@ -31,7 +31,7 @@ async function handlePOST(req: Request) {
 
     if (!upstream.ok) {
       const text = await upstream.text();
-      return jsonResponse(JSON.parse(text), { status: upstream.status });
+      return jsonResponse(text, { status: upstream.status });
     }
 
     const text = await upstream.text();

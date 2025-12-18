@@ -1,0 +1,409 @@
+/* Review Management - Clean Design (matching Review Approval) */
+
+.container {
+  @apply space-y-6;
+}
+
+/* Stats Cards */
+.stats-grid {
+  @apply grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5;
+}
+
+.stat-card {
+  @apply flex items-center gap-4 rounded-lg border border-stroke bg-white p-5;
+}
+:global(html.dark) .stat-card {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.stat-result-pending .stat-icon-box { @apply bg-purple-500 text-white; }
+.stat-result-completed .stat-icon-box { @apply bg-teal-500 text-white; }
+.stat-needs-assignment .stat-icon-box { @apply bg-orange-500 text-white; }
+.stat-pending .stat-icon-box { @apply bg-amber-500 text-white; }
+.stat-in-review .stat-icon-box { @apply bg-blue-500 text-white; }
+.stat-completed .stat-icon-box { @apply bg-green-500 text-white; }
+
+.stat-icon-box {
+  @apply flex h-11 w-11 items-center justify-center rounded-lg;
+}
+
+.stat-content {
+  @apply flex flex-col;
+}
+
+.stat-value {
+  @apply text-2xl font-bold text-dark;
+}
+:global(html.dark) .stat-value {
+  @apply text-white;
+}
+
+.stat-label {
+  @apply text-sm text-gray-500;
+}
+:global(html.dark) .stat-label {
+  @apply text-gray-400;
+}
+
+/* Filters Card */
+.filters-card {
+  @apply rounded-lg border border-stroke bg-white p-5;
+}
+:global(html.dark) .filters-card {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.filters-row {
+  @apply flex flex-col gap-4 lg:flex-row lg:items-center;
+}
+
+.search-box {
+  @apply relative flex flex-1 items-center;
+}
+
+.search-icon {
+  @apply absolute left-3 h-5 w-5 text-gray-400;
+}
+
+.search-input {
+  @apply w-full rounded-lg border border-stroke bg-white py-2.5 pl-10 pr-24 text-sm text-dark placeholder:text-gray-400 focus:border-primary focus:outline-none;
+}
+:global(html.dark) .search-input {
+  @apply border-stroke-dark bg-dark-3 text-white;
+}
+
+.search-btn {
+  @apply absolute right-1.5 rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-white hover:bg-primary/90;
+}
+
+.filter-select-box {
+  @apply flex items-center gap-2 rounded-lg border border-stroke bg-white px-3 py-2.5;
+}
+:global(html.dark) .filter-select-box {
+  @apply border-stroke-dark bg-dark-3;
+}
+
+.filter-select {
+  @apply bg-transparent text-sm text-dark focus:outline-none;
+}
+:global(html.dark) .filter-select {
+  @apply text-white;
+}
+
+.clear-btn {
+  @apply flex items-center gap-2 rounded-lg border border-stroke bg-white px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50;
+}
+:global(html.dark) .clear-btn {
+  @apply border-stroke-dark bg-dark-3 text-gray-300 hover:bg-dark-2;
+}
+
+
+/* Table Card */
+.table-card {
+  @apply overflow-hidden rounded-lg border border-stroke bg-white;
+}
+:global(html.dark) .table-card {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.table {
+  @apply w-full;
+}
+
+.table-head-row {
+  @apply bg-gray-2;
+}
+:global(html.dark) .table-head-row {
+  @apply bg-dark-3;
+}
+
+.th {
+  @apply px-5 py-4 text-left text-sm font-medium text-dark;
+}
+:global(html.dark) .th {
+  @apply text-white;
+}
+
+.th-sortable {
+  @apply cursor-pointer select-none hover:text-primary transition-colors;
+}
+:global(html.dark) .th-sortable:hover {
+  @apply text-primary;
+}
+
+.table-row {
+  @apply border-b border-stroke last:border-b-0 hover:bg-gray-1;
+}
+:global(html.dark) .table-row {
+  @apply border-stroke-dark hover:bg-dark-3;
+}
+
+.td {
+  @apply px-5 py-4;
+}
+
+/* Document Info */
+.doc-info {
+  @apply flex items-start gap-3;
+}
+
+.doc-icon-box {
+  @apply flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gray-2;
+}
+:global(html.dark) .doc-icon-box {
+  @apply bg-dark-3;
+}
+
+.doc-title {
+  @apply font-medium text-dark;
+}
+:global(html.dark) .doc-title {
+  @apply text-white;
+}
+
+.doc-meta {
+  @apply mt-0.5 text-xs text-gray-500;
+}
+:global(html.dark) .doc-meta {
+  @apply text-gray-400;
+}
+
+/* Reviewer Info */
+.reviewer-info {
+  @apply flex items-center gap-3;
+}
+
+.avatar {
+  @apply flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-medium text-white;
+}
+
+.reviewer-name {
+  @apply text-sm font-medium text-dark;
+}
+:global(html.dark) .reviewer-name {
+  @apply text-white;
+}
+
+.reviewer-email {
+  @apply text-xs text-gray-500;
+}
+:global(html.dark) .reviewer-email {
+  @apply text-gray-400;
+}
+
+/* Status Badges */
+.badge {
+  @apply inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium;
+}
+
+.badge-pending-review {
+  @apply bg-blue-100 text-blue-700;
+}
+:global(html.dark) .badge-pending-review {
+  @apply bg-blue-900/30 text-blue-400;
+}
+
+.badge-reviewing {
+  @apply bg-yellow-100 text-yellow-700;
+}
+:global(html.dark) .badge-reviewing {
+  @apply bg-yellow-900/30 text-yellow-400;
+}
+
+.badge-active {
+  @apply bg-green-100 text-green-700;
+}
+:global(html.dark) .badge-active {
+  @apply bg-green-900/30 text-green-400;
+}
+
+.badge-rejected {
+  @apply bg-red-100 text-red-700;
+}
+:global(html.dark) .badge-rejected {
+  @apply bg-red-900/30 text-red-400;
+}
+
+/* Review Request Status */
+.status {
+  @apply inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium;
+}
+
+.status-pending {
+  @apply bg-amber-100 text-amber-700;
+}
+:global(html.dark) .status-pending {
+  @apply bg-amber-900/30 text-amber-400;
+}
+
+.status-accepted {
+  @apply bg-blue-100 text-blue-700;
+}
+:global(html.dark) .status-accepted {
+  @apply bg-blue-900/30 text-blue-400;
+}
+
+.status-rejected {
+  @apply bg-red-100 text-red-700;
+}
+:global(html.dark) .status-rejected {
+  @apply bg-red-900/30 text-red-400;
+}
+
+.status-expired {
+  @apply bg-gray-100 text-gray-700;
+}
+:global(html.dark) .status-expired {
+  @apply bg-gray-700 text-gray-300;
+}
+
+.status-completed {
+  @apply bg-green-100 text-green-700;
+}
+:global(html.dark) .status-completed {
+  @apply bg-green-900/30 text-green-400;
+}
+
+.status-no-request {
+  @apply text-orange-600;
+}
+:global(html.dark) .status-no-request {
+  @apply text-orange-400;
+}
+
+.date-text {
+  @apply text-sm text-gray-500;
+}
+:global(html.dark) .date-text {
+  @apply text-gray-400;
+}
+
+.overdue-text {
+  @apply ml-1 text-xs text-red-600;
+}
+:global(html.dark) .overdue-text {
+  @apply text-red-400;
+}
+
+/* Actions */
+.actions {
+  @apply flex items-center gap-2;
+}
+
+.action-view {
+  @apply flex h-8 w-8 items-center justify-center rounded bg-gray-100 text-gray-600 hover:bg-gray-200;
+}
+:global(html.dark) .action-view {
+  @apply bg-dark-3 text-gray-400 hover:bg-dark-4;
+}
+
+.action-assign {
+  @apply flex h-8 w-8 items-center justify-center rounded bg-primary/10 text-primary hover:bg-primary/20;
+}
+:global(html.dark) .action-assign {
+  @apply bg-primary/20 text-primary hover:bg-primary/30;
+}
+
+.action-change {
+  @apply flex h-8 w-8 items-center justify-center rounded bg-amber-100 text-amber-600 hover:bg-amber-200;
+}
+:global(html.dark) .action-change {
+  @apply bg-amber-900/30 text-amber-400 hover:bg-amber-900/50;
+}
+
+/* Loading & Empty */
+.loading-box {
+  @apply flex items-center justify-center py-16;
+}
+
+.spinner {
+  @apply h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent;
+}
+
+.empty-box {
+  @apply flex flex-col items-center justify-center py-16;
+}
+
+.pagination-box {
+  @apply border-t border-stroke p-4;
+}
+:global(html.dark) .pagination-box {
+  @apply border-stroke-dark;
+}
+
+/* Alert */
+.alert {
+  @apply mb-4 rounded-lg border p-4;
+}
+
+.alert-error {
+  @apply border-red-200 bg-red-50 text-red-700;
+}
+:global(html.dark) .alert-error {
+  @apply border-red-900/50 bg-red-900/20 text-red-400;
+}
+
+/* Decision Badge */
+.decision-badge {
+  @apply inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium;
+}
+
+.decision-approved {
+  @apply bg-green-100 text-green-700;
+}
+:global(html.dark) .decision-approved {
+  @apply bg-green-900/30 text-green-400;
+}
+
+.decision-rejected {
+  @apply bg-red-100 text-red-700;
+}
+:global(html.dark) .decision-rejected {
+  @apply bg-red-900/30 text-red-400;
+}
+
+/* Premium Badge */
+.premium-badge {
+  @apply inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-purple-100 text-purple-700;
+}
+:global(html.dark) .premium-badge {
+  @apply bg-purple-900/30 text-purple-400;
+}
+
+
+/* Tabs Card */
+.tabs-card {
+  @apply rounded-lg border border-stroke bg-white p-2;
+}
+:global(html.dark) .tabs-card {
+  @apply border-stroke-dark bg-dark-2;
+}
+
+.tabs-row {
+  @apply flex flex-wrap gap-2;
+}
+
+.tab-btn {
+  @apply flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100;
+}
+:global(html.dark) .tab-btn {
+  @apply text-gray-400 hover:bg-dark-3;
+}
+
+.tab-active {
+  @apply bg-primary text-white hover:bg-primary;
+}
+:global(html.dark) .tab-active {
+  @apply bg-primary text-white hover:bg-primary;
+}
+
+.tab-count {
+  @apply rounded-full bg-gray-200 px-2 py-0.5 text-xs font-semibold;
+}
+:global(html.dark) .tab-count {
+  @apply bg-dark-3;
+}
+
+.tab-active .tab-count {
+  @apply bg-white/20 text-white;
+}

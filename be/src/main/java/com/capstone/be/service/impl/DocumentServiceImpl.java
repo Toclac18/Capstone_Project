@@ -1303,6 +1303,9 @@ public class DocumentServiceImpl implements DocumentService {
         // Business Admin has access to all premium documents without redemption
         if (isBusinessAdmin) {
           hasRedeemed = true;
+        } else if (isUploader) {
+          // Uploader can access their own premium documents without redemption
+          hasRedeemed = true;
         } else {
           // Find ReaderProfile from User ID first, then check redemption
           ReaderProfile readerProfile = readerProfileRepository.findByUserId(userId).orElse(null);

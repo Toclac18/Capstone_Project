@@ -51,21 +51,32 @@ export default function ChangePasswordModal({
     }
   }, [isOpen]);
 
+  const validatePassword = (password: string): string => {
+    if (!password) return "Password is required";
+    if (password.length < 8) return "Password must be at least 8 characters";
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      return "Password must include letters and numbers";
+    }
+    return "";
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
+    // Validate current password
     if (!formData.currentPassword) {
       newErrors.currentPassword = "Current password is required";
     }
 
-    if (!formData.newPassword) {
-      newErrors.newPassword = "New password is required";
-    } else if (formData.newPassword.length < 8) {
-      newErrors.newPassword = "Password must be at least 8 characters";
+    // Validate new password with full validation
+    const newPasswordError = validatePassword(formData.newPassword);
+    if (newPasswordError) {
+      newErrors.newPassword = newPasswordError;
     } else if (formData.newPassword === formData.currentPassword) {
       newErrors.newPassword = "New password must be different from current";
     }
 
+    // Validate confirm password
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = "Please confirm your password";
     } else if (formData.newPassword !== formData.confirmPassword) {
@@ -214,9 +225,23 @@ export default function ChangePasswordModal({
                     type={showPasswords.new ? "text" : "password"}
                     value={formData.newPassword}
                     onChange={(e) => {
-                      setFormData({ ...formData, newPassword: e.target.value });
-                      if (errors.newPassword)
+                      const value = e.target.value;
+                      setFormData({ ...formData, newPassword: value });
+                      // Real-time validation
+                      const error = validatePassword(value);
+                      if (error) {
+                        setErrors({ ...errors, newPassword: error });
+                      } else if (value === formData.currentPassword) {
+                        setErrors({ ...errors, newPassword: "New password must be different from current" });
+                      } else {
                         setErrors({ ...errors, newPassword: "" });
+                      }
+                      // Re-validate confirm password if it exists
+                      if (formData.confirmPassword && value !== formData.confirmPassword) {
+                        setErrors(prev => ({ ...prev, confirmPassword: "Passwords do not match" }));
+                      } else if (formData.confirmPassword) {
+                        setErrors(prev => ({ ...prev, confirmPassword: "" }));
+                      }
                     }}
                     placeholder="Enter new password (min. 8 characters)"
                     className={`${styles["field-input"]} ${styles["field-input-sm"]} ${styles["with-toggle"]} ${errors.newPassword ? styles.error : ""}`}
@@ -244,6 +269,16 @@ export default function ChangePasswordModal({
                     {errors.newPassword}
                   </div>
                 )}
+                {!errors.newPassword && formData.newPassword && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    ✓ Password meets requirements
+                  </p>
+                )}
+                {!formData.newPassword && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Must be at least 8 characters with letters and numbers
+                  </p>
+                )}
               </div>
 
               <div className={`${styles["field-group"]} ${styles["space-y"]}`}>
@@ -255,12 +290,19 @@ export default function ChangePasswordModal({
                     type={showPasswords.confirm ? "text" : "password"}
                     value={formData.confirmPassword}
                     onChange={(e) => {
+                      const value = e.target.value;
                       setFormData({
                         ...formData,
-                        confirmPassword: e.target.value,
+                        confirmPassword: value,
                       });
-                      if (errors.confirmPassword)
+                      // Real-time validation
+                      if (!value) {
+                        setErrors({ ...errors, confirmPassword: "Please confirm your password" });
+                      } else if (formData.newPassword !== value) {
+                        setErrors({ ...errors, confirmPassword: "Passwords do not match" });
+                      } else {
                         setErrors({ ...errors, confirmPassword: "" });
+                      }
                     }}
                     placeholder="Confirm new password"
                     className={`${styles["field-input"]} ${styles["field-input-sm"]} ${styles["with-toggle"]} ${errors.confirmPassword ? styles.error : ""}`}

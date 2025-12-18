@@ -111,5 +111,13 @@ export function toDocumentItem(raw: any): DocumentItem {
       coalesce(raw?.thumbnailUrl, raw?.thumbnail),
       "data:image/svg+xml,",
     ),
+
+    organization: raw?.organization
+      ? {
+          id: String(raw.organization.id ?? ""),
+          name: String(raw.organization.name ?? ""),
+          logoUrl: String(raw.organization.logoUrl ?? ""),
+        }
+      : undefined,
   };
 }

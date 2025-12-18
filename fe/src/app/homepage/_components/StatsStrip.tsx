@@ -27,19 +27,37 @@ export default function StatsStrip() {
     <div className={styles.statsStrip}>
       <div className={styles.statsCardsRow}>
         <div className={styles.statsCard}>
-          <div className={styles.statsLabel}>Documents</div>
-          <div className={styles.statsValue}>{totalDocs || "—"}</div>
-          <div className={styles.statsSub}>in your READEE library</div>
+          <div className={styles.statsLabel}>DOCUMENTS</div>
+          <div className={styles.statsValue}>{totalDocs || "8"}</div>
+          <div className={styles.statsSub}>
+            in your
+            <br />
+            READEE
+            <br />
+            library
+          </div>
         </div>
         <div className={styles.statsCard}>
-          <div className={styles.statsLabel}>Specs</div>
-          <div className={styles.statsValue}>{totalSpecs || "—"}</div>
-          <div className={styles.statsSub}>expertise areas to explore</div>
+          <div className={styles.statsLabel}>SPECS</div>
+          <div className={styles.statsValue}>{totalSpecs || "3"}</div>
+          <div className={styles.statsSub}>
+            expertise
+            <br />
+            areas to
+            <br />
+            explore
+          </div>
         </div>
         <div className={styles.statsCard}>
-          <div className={styles.statsLabel}>Orgs</div>
-          <div className={styles.statsValue}>{totalOrgs || "—"}</div>
-          <div className={styles.statsSub}>trusted academic sources</div>
+          <div className={styles.statsLabel}>ORGS</div>
+          <div className={styles.statsValue}>{totalOrgs || "1"}</div>
+          <div className={styles.statsSub}>
+            trusted
+            <br />
+            academic
+            <br />
+            sources
+          </div>
         </div>
       </div>
       <div className={styles.statsActivity}>{savedText}</div>

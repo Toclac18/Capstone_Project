@@ -2,6 +2,7 @@
 
 import styles from "../styles.module.css";
 import DocCard from "./DocCard";
+import HorizontalScroll from "./HorizontalScroll";
 import { useHomepage } from "../provider";
 import { useModalPreview } from "@/components/ModalPreview";
 import { useMemo } from "react";
@@ -26,7 +27,7 @@ export default function RecentRail() {
 
     unique.sort((a, b) => (b.publicYear || 0) - (a.publicYear || 0));
 
-    return unique.slice(0, 6).map((d) => ({
+    return unique.slice(0, 12).map((d) => ({
       ...d,
       viewCount: (d as any).viewCount ?? 0,
     }));
@@ -39,13 +40,11 @@ export default function RecentRail() {
       <div className={styles.sectionHeaderRow}>
         <div className={styles.sectionHeader}>Recently added</div>
       </div>
-      <div className={styles.horizontalScroll}>
+      <HorizontalScroll>
         {items.map((d) => (
-          <div key={d.id} className={styles.horizontalCardWrap}>
-            <DocCard {...d} onPreview={() => open(d)} />
-          </div>
+          <DocCard key={d.id} {...d} onPreview={() => open(d)} />
         ))}
-      </div>
+      </HorizontalScroll>
     </section>
   );
 }

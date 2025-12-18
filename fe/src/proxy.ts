@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
-const COOKIE_NAME = process.env.COOKIE_NAME || "access_token";
+import { COOKIE_NAME } from "@/server/config";
 
 const PUBLIC_PAGE_PATHS = [
   "/",

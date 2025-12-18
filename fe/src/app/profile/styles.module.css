@@ -948,3 +948,36 @@
   @apply w-4 h-4 animate-spin;
 }
 
+
+
+/* ============================================
+   CREDENTIAL FILES SECTION
+   ============================================ */
+
+.credential-files-container {
+  @apply flex-1;
+}
+
+.credential-files-list {
+  @apply flex flex-wrap gap-2 mt-1;
+}
+
+.credential-file-link {
+  @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all;
+  @apply border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:border-green-300 hover:shadow-sm;
+}
+:global(html.dark) .credential-file-link {
+  @apply border-green-700 bg-green-900/20 text-green-400 hover:bg-green-900/30 hover:border-green-600;
+}
+
+.credential-file-icon {
+  @apply h-4 w-4 flex-shrink-0;
+}
+
+.credential-file-name {
+  @apply max-w-[150px] truncate;
+}
+
+.credential-file-external {
+  @apply h-3 w-3 flex-shrink-0 opacity-60;
+}

@@ -258,7 +258,6 @@ public class DocumentSeeder {
 
       //Vote: real Vote Entity (note voteCount in document)
       int voteCount = myRandom(6, i);
-      log.info(" VOTE {} FOR DOC {}", voteCount, i);
 
       Set<UUID> votedUserId = new HashSet<>();
       for (int j = 0; j < voteCount; j++) {

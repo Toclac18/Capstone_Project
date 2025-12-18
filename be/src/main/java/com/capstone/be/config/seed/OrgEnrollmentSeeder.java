@@ -70,28 +70,53 @@ public class OrgEnrollmentSeeder {
     List<User> readers = userRepository.findByEmailIn(readerEmails);
 
     OrganizationProfile orgProfile = orgProfileOpt.get();
-    MemberImportBatch batch = createBatch(orgProfile, orgAdmin, readers.size());
-    
-    readers.forEach(reader -> {
-      OrgEnrollment enrollment = buildEnrollment(reader, orgProfile, batch);
-      enrollmentRepository.save(enrollment);
-    });
 
-    log.info("✅ Created {} org enrollments", readers.size());
-
-  }
-
-  private MemberImportBatch createBatch(OrganizationProfile orgProfile, User orgAdmin, int count) {
-    MemberImportBatch batch = MemberImportBatch.builder()
+    MemberImportBatch batchToSave = MemberImportBatch.builder()
         .organization(orgProfile).admin(orgAdmin)
-        .importSource("EXCEL").totalEmails(count)
-        .successCount(count).failedCount(1)
+        .importSource("EXCEL").totalEmails(readerEmails.size() + 2)
+        .successCount(readers.size()).failedCount(1)
         .skippedCount(1).fileName("sample_readers.xlsx")
         .fileKey(null).notes(null)
         .build();
+    MemberImportBatch batch = batchRepository.save(batchToSave);
+//    MemberImportBatch batch = createBatch(orgProfile, orgAdmin, readers.size());
 
-    return batchRepository.save(batch);
+    readers.forEach(reader -> {
+      OrgEnrollment enrollment = buildEnrollment(reader, orgProfile, batch);
+      enrollmentRepository.save(enrollment);
+      buildAndSaveImportResultItem(batch, reader.getEmail(), "SUCCESS", null);
+    });
+
+    buildAndSaveImportResultItem(batch, "reader3!gmail.com", "FAILED", "Invalid email");
+    buildAndSaveImportResultItem(batch, "reader1@gmail.com", "SKIPPED", "Already invited");
+
+    log.info("✅ Created {} org enrollments, with Result Item", readers.size());
+
   }
+
+  private ImportResultItem buildAndSaveImportResultItem(MemberImportBatch batch, String email, String status, String reason){
+    return  importResultItemRepository.save(
+        ImportResultItem.builder()
+            .importBatch(batch)
+            .email(email)
+            .status(status)
+            .reason(reason)
+            .build()
+    );
+
+  }
+
+//  private MemberImportBatch createBatch(OrganizationProfile orgProfile, User orgAdmin, int count) {
+//    MemberImportBatch batch = MemberImportBatch.builder()
+//        .organization(orgProfile).admin(orgAdmin)
+//        .importSource("EXCEL").totalEmails(count)
+//        .successCount(count).failedCount(1)
+//        .skippedCount(1).fileName("sample_readers.xlsx")
+//        .fileKey(null).notes(null)
+//        .build();
+//
+//    return batchRepository.save(batch);
+//  }
 
   private OrgEnrollment buildEnrollment(User member, OrganizationProfile orgProfile,
       MemberImportBatch batch) {

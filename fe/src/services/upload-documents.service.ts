@@ -129,18 +129,17 @@ export async function uploadDocument(
     newTags: data.newTags || [],
   };
 
-  // Create FormData with info as JSON string and file
+  // Create FormData with info as JSON Blob and file
   const formData = new FormData();
-  formData.append("info", JSON.stringify(info));
+  const infoBlob = new Blob([JSON.stringify(info)], { type: "application/json" });
+  formData.append("info", infoBlob);
   formData.append("file", data.file);
 
   const res = await apiClient.post<UploadDocumentResponse>(
     "/reader/documents/upload",
     formData,
     {
-      headers: {
-        "Content-Type": undefined, // Let axios set it automatically for multipart/form-data
-      },
+      timeout: 300000, // 5 minutes for large file uploads
     }
   );
   return res.data;

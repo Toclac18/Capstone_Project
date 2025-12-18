@@ -83,11 +83,12 @@ public class DocumentVoteServiceImpl implements DocumentVoteService {
         Document doc = documentRepository.findById(documentId)
             .orElseThrow(()-> ResourceNotFoundException.document(documentId));
 
-        // Get user's vote
-        DocumentVote vote = documentVoteRepository.findByDocumentIdAndUserId(documentId, userId)
-            .orElseThrow(()-> new ResourceNotFoundException(""));
+        // Get user's vote - return 0 if not voted yet
+        int voteValue = documentVoteRepository.findByDocumentIdAndUserId(documentId, userId)
+            .map(DocumentVote::getVoteValue)
+            .orElse(0);
 
-        return buildVoteResponse(doc, vote.getVoteValue());
+        return buildVoteResponse(doc, voteValue);
     }
 
     /**

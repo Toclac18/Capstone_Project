@@ -84,14 +84,14 @@ public class DocumentController {
   /**
    * Get presigned URL for document access Access is granted if: - Document is PUBLIC, OR - User is
    * the uploader, OR - User is a member of the document's organization (for INTERNAL documents), OR
-   * - User has redeemed/purchased the document
+   * - User has redeemed/purchased the document, OR - User is BUSINESS_ADMIN (full access)
    *
    * @param userPrincipal Authenticated user
    * @param documentId    Document ID
    * @return Presigned URL response with expiration time
    */
   @GetMapping(value = "/{id}/presigned-url")
-  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN', 'BUSINESS_ADMIN')")
   public ResponseEntity<DocumentPresignedUrlResponse> getDocumentPresignedUrl(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @PathVariable(name = "id") UUID documentId) {
@@ -113,7 +113,7 @@ public class DocumentController {
    * @return Document detail response with all metadata
    */
   @GetMapping(value = "/{id}")
-  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN', 'BUSINESS_ADMIN')")
   public ResponseEntity<DocumentDetailResponse> getDocumentDetail(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @PathVariable(name = "id") UUID documentId) {

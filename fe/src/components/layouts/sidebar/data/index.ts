@@ -82,7 +82,11 @@ export const REVIEWER_NAV_DATA = [
         icon: Icons.ClipboardCheckIcon,
         url: "/reviewer/review-list",
       },
-      
+      {
+        title: "Contact Admin",
+        icon: Icons.HeadphonesIcon,
+        url: "/contact-admin",
+      },
     ],
   },
 ];

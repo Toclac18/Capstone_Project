@@ -169,19 +169,6 @@ export default function FilterModal({
 
   const yearOptions = meta?.years ?? [];
 
-  const onChangePriceFrom = (val: number) => {
-    setLocal((s) => {
-      const nextFrom = Math.min(Math.max(priceMin, val), s.priceTo ?? priceMax);
-      return { ...s, priceFrom: nextFrom };
-    });
-  };
-  const onChangePriceTo = (val: number) => {
-    setLocal((s) => {
-      const nextTo = Math.max(Math.min(priceMax, val), s.priceFrom ?? priceMin);
-      return { ...s, priceTo: nextTo };
-    });
-  };
-
   const apply = () => {
     const payload: SearchFilters = {
       organizationIds: local.organizationId
@@ -416,87 +403,28 @@ export default function FilterModal({
               </div>
             </div>
 
-            {/* Premium & Price slider */}
+            {/* Premium only toggle */}
             <div className={styles.field}>
-              <label className={styles.checkboxInline}>
-                <input
-                  type="checkbox"
-                  checked={!!local.isPremium}
-                  onChange={(e) =>
-                    setLocal((s) => ({
-                      ...s,
-                      isPremium: e.target.checked ? true : null,
-                      ...(e.target.checked
-                        ? {
-                            priceFrom: s.priceFrom ?? priceMin,
-                            priceTo: s.priceTo ?? priceMax,
-                          }
-                        : { priceFrom: null, priceTo: null }),
-                    }))
-                  }
-                />
-                <span className={styles.fieldLabelInline}>Premium only</span>
-              </label>
-
-              {local.isPremium ? (
-                <div className={styles.pointsSliderBlock}>
-                  <div className={styles.pointsHeader}>
-                    <span className={styles.pointsLabel}>Price</span>
-                    <div className={styles.pointsEnds}>
-                      <span className={styles.pointsPill}>{priceMin}</span>
-                      <span className={styles.pointsPill}>{priceMax}</span>
-                    </div>
-                  </div>
-
-                  <div className={styles.dualSlider}>
-                    <div
-                      className={styles.dualSliderTrack}
-                      style={
-                        {
-                          "--min": String(priceMin),
-                          "--max": String(priceMax),
-                          "--from": String(local.priceFrom ?? priceMin),
-                          "--to": String(local.priceTo ?? priceMax),
-                        } as any
-                      }
-                    />
-                    <input
-                      aria-label="Price from"
-                      type="range"
-                      min={priceMin}
-                      max={priceMax}
-                      step={1}
-                      value={local.priceFrom ?? priceMin}
-                      onChange={(e) =>
-                        onChangePriceFrom(Number(e.target.value))
-                      }
-                      className={styles.range}
-                    />
-                    <input
-                      aria-label="Price to"
-                      type="range"
-                      min={priceMin}
-                      max={priceMax}
-                      step={1}
-                      value={local.priceTo ?? priceMax}
-                      onChange={(e) => onChangePriceTo(Number(e.target.value))}
-                      className={styles.range}
-                    />
-                  </div>
-                  <div className={styles.pointsCurrent}>
-                    <span className={styles.pointsPill}>
-                      {local.priceFrom ?? priceMin}
-                    </span>
-                    <span className={styles.pointsPill}>
-                      {local.priceTo ?? priceMax}
-                    </span>
-                  </div>
+              <label className={styles.toggleLabel}>
+                <span className={styles.fieldLabel}>Premium documents only</span>
+                <div className={styles.toggleWrapper}>
+                  <input
+                    type="checkbox"
+                    checked={!!local.isPremium}
+                    onChange={(e) =>
+                      setLocal((s) => ({
+                        ...s,
+                        isPremium: e.target.checked ? true : null,
+                      }))
+                    }
+                    className={styles.toggleInput}
+                  />
+                  <span className={styles.toggleSlider} />
                 </div>
-              ) : (
-                <p className={styles.inlineHelp}>
-                  Check on premium to enable price filter
-                </p>
-              )}
+              </label>
+              <p className={styles.inlineHelp}>
+                Premium documents cost 100 points to access
+              </p>
             </div>
           </div>
         )}

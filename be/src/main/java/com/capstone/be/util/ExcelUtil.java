@@ -50,7 +50,7 @@ public class ExcelUtil {
 
   /**
    * Parse email list from Excel file
-   * Expected format: First column contains email addresses, first row is header (skipped)
+   * Expected format: First column contains email addresses, first row is header with "Email"
    *
    * @param file Excel file containing email list
    * @return List of valid email addresses
@@ -62,6 +62,9 @@ public class ExcelUtil {
         Workbook workbook = new XSSFWorkbook(inputStream)) {
 
       Sheet sheet = workbook.getSheetAt(0); // Get first sheet
+
+      // Validate template - check header row
+      validateTemplateHeader(sheet);
 
       // Skip header row (row 0) and start from row 1
       for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
@@ -123,5 +126,32 @@ public class ExcelUtil {
   private static boolean isValidEmail(String email) {
 //    return email != null && EMAIL_PATTERN.matcher(email).matches();
     return EmailValidator.getInstance().isValid(email);
+  }
+
+  /**
+   * Validate template header - first row must have "Email" in first column
+   */
+  private static void validateTemplateHeader(Sheet sheet) {
+    Row headerRow = sheet.getRow(0);
+    if (headerRow == null) {
+      throw new InvalidRequestException(
+          "Invalid template: File is empty or missing header row. " +
+          "Please use the correct template with 'Email' as the first column header.");
+    }
+
+    Cell headerCell = headerRow.getCell(0);
+    if (headerCell == null) {
+      throw new InvalidRequestException(
+          "Invalid template: Missing header in first column. " +
+          "Please use the correct template with 'Email' as the first column header.");
+    }
+
+    String headerValue = getCellValueAsString(headerCell);
+    if (headerValue == null || (!headerValue.trim().equalsIgnoreCase("email") && !headerValue.trim().equalsIgnoreCase("emails"))) {
+      throw new InvalidRequestException(
+          "Invalid template: First column header must be 'Email'. " +
+          "Found: '" + (headerValue != null ? headerValue : "empty") + "'. " +
+          "Please use the correct template.");
+    }
   }
 }

@@ -1,26 +1,31 @@
 // src/app/org-admin/imports/[id]/_components/ResultTable.tsx
 "use client";
 
+import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { useImportDetail } from "../provider";
 import s from "../styles.module.css";
 
-function formatDate(value?: string | null) {
-  if (!value) return "—";
-  try {
-    return new Date(value).toLocaleString();
-  } catch {
-    return value;
+function StatusIcon({ status }: { status: string }) {
+  switch (status) {
+    case "SUCCESS":
+      return <CheckCircle size={16} className={s.iconSuccess} />;
+    case "FAILED":
+      return <XCircle size={16} className={s.iconFailed} />;
+    case "SKIPPED":
+      return <AlertCircle size={16} className={s.iconSkipped} />;
+    default:
+      return null;
   }
 }
 
-function statusClass(status: string) {
+function getRowClass(status: string) {
   switch (status) {
-    case "APPROVED":
-      return s.statusApproved;
-    case "PENDING":
-      return s.statusPending;
+    case "FAILED":
+      return s.rowFailed;
+    case "SKIPPED":
+      return s.rowSkipped;
     default:
-      return s.statusRejected;
+      return "";
   }
 }
 
@@ -30,8 +35,14 @@ export default function ResultTable() {
   if (!rows || rows.items.length === 0) {
     return (
       <section className={s.tableSection}>
-        <h2 className={s.tableTitle}>Import results</h2>
-        <div className={s.emptyState}>Waiting for results…</div>
+        <h2 className={s.tableTitle}>Import Results</h2>
+        <div className={s.emptyState}>
+          No detailed results available for this import batch.
+          <br />
+          <span style={{ fontSize: "12px", marginTop: "8px", display: "block" }}>
+            (Only imports created after the latest update have detailed results)
+          </span>
+        </div>
       </section>
     );
   }
@@ -39,7 +50,7 @@ export default function ResultTable() {
   return (
     <section className={s.tableSection}>
       <h2 className={s.tableTitle}>
-        Import results ({rows.total} {rows.total === 1 ? "record" : "records"})
+        Import Results ({rows.total} {rows.total === 1 ? "email" : "emails"})
       </h2>
 
       <div className={s.tableWrap}>
@@ -47,24 +58,23 @@ export default function ResultTable() {
           <thead>
             <tr>
               <th>#</th>
-              <th>Full name</th>
               <th>Email</th>
               <th>Status</th>
-              <th>Invited at</th>
-              <th>Responded at</th>
+              <th>Reason</th>
             </tr>
           </thead>
           <tbody>
-            {rows.items.map((e, idx) => (
-              <tr key={e.enrollmentId ?? idx}>
+            {rows.items.map((item, idx) => (
+              <tr key={item.id ?? idx} className={getRowClass(item.status)}>
                 <td>{idx + 1}</td>
-                <td>{e.memberFullName || "—"}</td>
-                <td>{e.memberEmail}</td>
+                <td>{item.email}</td>
                 <td>
-                  <span className={statusClass(e.status)}>{e.status}</span>
+                  <span className={s.statusCell}>
+                    <StatusIcon status={item.status} />
+                    {item.status}
+                  </span>
                 </td>
-                <td>{formatDate(e.invitedAt)}</td>
-                <td>{formatDate(e.respondedAt)}</td>
+                <td>{item.reason || "—"}</td>
               </tr>
             ))}
           </tbody>

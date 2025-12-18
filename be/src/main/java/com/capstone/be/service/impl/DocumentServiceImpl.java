@@ -507,8 +507,14 @@ public class DocumentServiceImpl implements DocumentService {
       OrganizationProfile organization,
       String fileUrl) {
 
+    // Internal documents cannot be premium
+    Boolean isPremium = request.getIsPremium();
+    if (request.getVisibility() == DocVisibility.INTERNAL) {
+      isPremium = false;
+    }
+
     // Determine price: use configured premium price or 0
-    Integer price = Boolean.TRUE.equals(request.getIsPremium()) ? getPremiumDocPrice() : 0;
+    Integer price = Boolean.TRUE.equals(isPremium) ? getPremiumDocPrice() : 0;
 
     return Document.builder()
         .title(request.getTitle())
@@ -517,7 +523,7 @@ public class DocumentServiceImpl implements DocumentService {
         .organization(organization)
         .visibility(request.getVisibility())
         .docType(docType)
-        .isPremium(request.getIsPremium())
+        .isPremium(isPremium)
         .price(price)
         .fileKey(fileUrl)
         .status(DocStatus.AI_VERIFYING)

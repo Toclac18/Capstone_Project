@@ -1,79 +1,34 @@
 // src/app/org-admin/imports/[id]/_components/MetaGrid.tsx
 "use client";
 
-import StatusBadge from "../../_components/StatusBadge";
+import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { useImportDetail } from "../provider";
 import s from "../styles.module.css";
-
-function formatDate(value?: string | null) {
-  if (!value) return "—";
-  try {
-    return new Date(value).toLocaleString();
-  } catch {
-    return value;
-  }
-}
 
 export default function MetaGrid() {
   const { summary } = useImportDetail();
 
   return (
     <section className={s.metaSection}>
-      <div className={s.metaGrid}>
-        <div className={s.card}>
-          <div className={s.kvRow}>
-            <span className={s.kvLabel}>File</span>
-            <span className={s.kvValue}>{summary.fileName || "—"}</span>
-          </div>
-          <div className={s.kvRow}>
-            <span className={s.kvLabel}>Created at</span>
-            <span className={s.kvValue}>{formatDate(summary.createdAt)}</span>
-          </div>
-          <div className={s.kvRow}>
-            <span className={s.kvLabel}>By</span>
-            <span className={s.kvValue}>{summary.createdBy || "—"}</span>
-          </div>
+      <div className={s.statsGrid}>
+        <div className={s.statCard}>
+          <div className={s.statValue}>{summary.totalRows}</div>
+          <div className={s.statLabel}>Total</div>
         </div>
-
-        <div className={s.card}>
-          <div className={s.kvRow}>
-            <span className={s.kvLabel}>Total records</span>
-            <span className={s.kvValue}>{summary.totalRows}</span>
-          </div>
-          <div className={s.kvRow}>
-            <span className={s.kvLabel}>Success</span>
-            <span className={s.kvValue}>{summary.successCount}</span>
-          </div>
-          <div className={s.kvRow}>
-            <span className={s.kvLabel}>Pending</span>
-            <span className={s.kvValue}>{summary.pendingCount}</span>
-          </div>
-          <div className={s.kvRow}>
-            <span className={s.kvLabel}>Failed</span>
-            <span className={s.kvValue}>{summary.failureCount}</span>
-          </div>
+        <div className={`${s.statCard} ${s.statSuccess}`}>
+          <CheckCircle size={20} />
+          <div className={s.statValue}>{summary.successCount}</div>
+          <div className={s.statLabel}>Success</div>
         </div>
-
-        <div className={s.statusCard}>
-          <div className={s.kvLabel}>Status</div>
-          <StatusBadge status={summary.status} />
+        <div className={`${s.statCard} ${s.statFailed}`}>
+          <XCircle size={20} />
+          <div className={s.statValue}>{summary.failedCount}</div>
+          <div className={s.statLabel}>Failed</div>
         </div>
-      </div>
-
-      <div className={s.progressBlock}>
-        <div className={s.progressText}>
-          Progress: {summary.percent}% (
-          {summary.successCount + summary.failureCount}/{summary.totalRows})
-        </div>
-        <div className={s.progressText}>
-          Pending: {summary.pendingCount} — Success: {summary.successCount} —
-          Failed: {summary.failureCount}
-        </div>
-        <div className={s.progressTrack}>
-          <div
-            className={s.progressFill}
-            style={{ width: `${summary.percent}%` }}
-          />
+        <div className={`${s.statCard} ${s.statSkipped}`}>
+          <AlertCircle size={20} />
+          <div className={s.statValue}>{summary.skippedCount}</div>
+          <div className={s.statLabel}>Skipped</div>
         </div>
       </div>
     </section>

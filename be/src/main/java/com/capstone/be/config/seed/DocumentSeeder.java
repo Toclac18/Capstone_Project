@@ -86,19 +86,6 @@ public class DocumentSeeder {
     // 1. Tạo 30 documents với các status khác nhau
     seedDocumentsData();
 
-//    for (int i = 0; i < 30; i++) {
-//      createDocument(i);
-//    }
-
-    // 2. Sau khi tạo xong Document thì tạo luôn History
-//    seedReadHistory();
-
-    // 3. Tạo comment cho docs (chỉ cho ACTIVE docs)
-//    genCommentForDocument();
-
-    // 4. Tạo engagement data (views, votes) cho ACTIVE docs
-//    seedEngagementData();
-
     eventPublisher.publishEvent(new DocumentSeededEvent());
   }
 
@@ -243,14 +230,15 @@ public class DocumentSeeder {
         DocumentTagLink dtl = DocumentTagLink.builder()
             .document(savedDocument)
             .tag(allTags.get(myRandom(allTags.size(), seed)))
+
             .build();
         documentTagLinkRepository.save(dtl);
       }
 
+
       if (savedDocument.getStatus() != DocStatus.ACTIVE) {
         continue;
       }
-      //else Create Comment, vote data
 
       //Comment: Each Document 0 , 5, 10,.. or 25 comment
       int commentCount = myRandom(6, i) * 5;

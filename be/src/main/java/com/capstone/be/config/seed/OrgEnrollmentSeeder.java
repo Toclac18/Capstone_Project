@@ -1,11 +1,13 @@
 package com.capstone.be.config.seed;
 
 import com.capstone.be.config.seed.event.UserSeededEvent;
+import com.capstone.be.domain.entity.ImportResultItem;
 import com.capstone.be.domain.entity.MemberImportBatch;
 import com.capstone.be.domain.entity.OrgEnrollment;
 import com.capstone.be.domain.entity.OrganizationProfile;
 import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.OrgEnrollStatus;
+import com.capstone.be.repository.ImportResultItemRepository;
 import com.capstone.be.repository.MemberImportBatchRepository;
 import com.capstone.be.repository.OrgEnrollmentRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
@@ -33,6 +35,7 @@ public class OrgEnrollmentSeeder {
   private final UserRepository userRepository;
   private final OrganizationProfileRepository organizationProfileRepository;
   private final MemberImportBatchRepository batchRepository;
+  private final ImportResultItemRepository importResultItemRepository;
 
   private static final Instant DEFAULT_EXPIRY = Instant.parse("2025-12-31T23:59:59.00Z");
 
@@ -68,21 +71,25 @@ public class OrgEnrollmentSeeder {
 
     OrganizationProfile orgProfile = orgProfileOpt.get();
     MemberImportBatch batch = createBatch(orgProfile, orgAdmin, readers.size());
-
+    
     readers.forEach(reader -> {
       OrgEnrollment enrollment = buildEnrollment(reader, orgProfile, batch);
       enrollmentRepository.save(enrollment);
     });
 
     log.info("✅ Created {} org enrollments", readers.size());
+
   }
 
   private MemberImportBatch createBatch(OrganizationProfile orgProfile, User orgAdmin, int count) {
-    MemberImportBatch batch = new MemberImportBatch(
-        orgProfile, orgAdmin, "MANUAL",
-        count, count, 0, 0,
-        null, null
-    );
+    MemberImportBatch batch = MemberImportBatch.builder()
+        .organization(orgProfile).admin(orgAdmin)
+        .importSource("EXCEL").totalEmails(count)
+        .successCount(count).failedCount(1)
+        .skippedCount(1).fileName("sample_readers.xlsx")
+        .fileKey(null).notes(null)
+        .build();
+
     return batchRepository.save(batch);
   }
 

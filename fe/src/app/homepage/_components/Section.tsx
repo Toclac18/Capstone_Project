@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import styles from "../styles.module.css";
 import DocCard from "./DocCard";
+import HorizontalScroll from "./HorizontalScroll";
 import { useHomepage } from "../provider";
 import { useModalPreview } from "@/components/ModalPreview";
 import type { DocumentItem as BaseDoc } from "@/types/document-homepage";
@@ -10,7 +11,7 @@ import type { DocumentItem as BaseDoc } from "@/types/document-homepage";
 export default function Section({
   title,
   items,
-  defaultPageSize = 8,
+  defaultPageSize = 12,
 }: {
   title: string;
   items: BaseDoc[];
@@ -72,11 +73,11 @@ export default function Section({
         <div className={styles.sectionHeader}>{title}</div>
       </div>
 
-      <div className={styles.cardsGrid}>
+      <HorizontalScroll>
         {pageItems.map((d) => (
           <DocCard key={d.id} {...d} onPreview={() => open(d)} />
         ))}
-      </div>
+      </HorizontalScroll>
     </section>
   );
 }

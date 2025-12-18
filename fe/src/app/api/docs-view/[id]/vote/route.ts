@@ -123,11 +123,10 @@ async function handlePOST(
 
 export const GET = (...args: Parameters<typeof handleGET>) =>
   withErrorBoundary(() => handleGET(...args), {
-    context: "api/docs-view/[id]/vote/route.ts/GET",
+    context: "api/documents/[id]/votes/route.ts/GET",
   });
 
 export const POST = (...args: Parameters<typeof handlePOST>) =>
   withErrorBoundary(() => handlePOST(...args), {
-    context: "api/docs-view/[id]/vote/route.ts/POST",
+    context: "api/documents/[id]/votes/route.ts/POST",
   });
-

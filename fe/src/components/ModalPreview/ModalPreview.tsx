@@ -3,10 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { ThumbsUp, ThumbsDown, Eye, Crown } from "lucide-react";
 import styles from "./styles.module.css";
 import { useModalPreview } from "./Provider";
+import { sanitizeImageUrl } from "@/utils/imageUrl";
 
 type Level = "short" | "medium" | "detailed";
+
+const THUMB_BASE_URL =
+  "https://readee-bucket.s3.ap-southeast-1.amazonaws.com/public/doc-thumbs/";
 
 export default function ModalPreview() {
   const { isOpen, doc, close } = useModalPreview();
@@ -40,13 +45,24 @@ export default function ModalPreview() {
 
   if (!isOpen || !doc) return null;
 
+  const thumbnailUrl = sanitizeImageUrl(
+    doc.thumbnail,
+    THUMB_BASE_URL,
+    "/placeholder-thumbnail.png"
+  );
+
   return (
     <div className={styles.backdrop} role="dialog" aria-modal="true">
       <div className={styles.modal}>
         <div className={styles.header}>
           <div className={styles.thumbWrap}>
+            {doc.isPremium && (
+              <span className={styles.premiumBadge}>
+                <Crown className={styles.premiumIcon} />
+              </span>
+            )}
             <Image
-              src={doc.thumbnail || "/placeholder-thumbnail.png"}
+              src={thumbnailUrl || "/placeholder-thumbnail.png"}
               alt={doc.title || "Document thumbnail"}
               fill
               sizes="160px"
@@ -57,7 +73,7 @@ export default function ModalPreview() {
           <div className={styles.headerText}>
             <h2 className={styles.title}>{doc.title}</h2>
             <div className={styles.metaLine}>
-              {doc.orgName} • {doc.specialization} • {doc.viewCount ?? 0} views
+              {doc.orgName} • {doc.specialization}
             </div>
 
             {doc.isPremium && typeof doc.points === "number" && (
@@ -66,14 +82,20 @@ export default function ModalPreview() {
               </div>
             )}
 
+            <span className={styles.uploader}>Uploader: {doc.uploader}</span>
             <div className={styles.statRow}>
+              <span className={styles.stat} aria-label="Views">
+                <Eye className={styles.statIcon} />
+                {doc.viewCount ?? 0}
+              </span>
               <span className={styles.stat} aria-label="Upvotes">
-                ▲ {doc.upvote_counts}
+                <ThumbsUp className={styles.statIcon} />
+                {doc.upvote_counts}
               </span>
               <span className={styles.stat} aria-label="Downvotes">
-                ▼ {doc.downvote_counts}
+                <ThumbsDown className={styles.statIcon} />
+                {doc.downvote_counts}
               </span>
-              <span className={styles.uploader}>Uploader: {doc.uploader}</span>
             </div>
           </div>
         </div>

@@ -18,4 +18,10 @@ public interface SavedListRepository extends JpaRepository<SavedList, UUID> {
 
   @Query("SELECT sl FROM SavedList sl LEFT JOIN FETCH sl.savedListDocuments WHERE sl.reader.id = :readerId")
   List<SavedList> findByReaderIdWithDocuments(@Param("readerId") UUID readerId);
+
+  // Check if a SavedList with the same name exists for a reader
+  boolean existsByReaderIdAndName(UUID readerId, String name);
+
+  // Check if a SavedList with the same name exists for a reader (excluding current list)
+  boolean existsByReaderIdAndNameAndIdNot(UUID readerId, String name, UUID id);
 }

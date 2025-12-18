@@ -2,9 +2,9 @@
 "use client";
 
 import {
-  fetchImportDetail,
+  fetchImportResultItems,
   PagedResult,
-  OrgEnrollment,
+  ImportResultItem,
 } from "@/services/org-admin-imports.service";
 import { toast, useToast } from "@/components/ui/toast";
 import { generateCsv } from "@/utils/csv-export";
@@ -16,21 +16,14 @@ import React, {
   useState,
 } from "react";
 
-export type ImportSummaryStatus = "WAITING" | "PROCESSING" | "COMPLETED";
-
 export type ImportSummary = {
-  fileName?: string | null;
-  createdAt?: string | null;
-  createdBy?: string | null;
-  status: ImportSummaryStatus;
   totalRows: number;
   successCount: number;
-  failureCount: number;
-  pendingCount: number;
-  percent: number;
+  failedCount: number;
+  skippedCount: number;
 };
 
-type DetailData = PagedResult<OrgEnrollment>;
+type DetailData = PagedResult<ImportResultItem>;
 
 type Ctx = {
   id: string;
@@ -52,47 +45,28 @@ export const useImportDetail = () => {
 function buildSummary(rows?: DetailData): ImportSummary {
   if (!rows || !rows.items || rows.items.length === 0) {
     return {
-      fileName: null,
-      createdAt: null,
-      createdBy: null,
-      status: "WAITING",
       totalRows: 0,
       successCount: 0,
-      failureCount: 0,
-      pendingCount: 0,
-      percent: 0,
+      failedCount: 0,
+      skippedCount: 0,
     };
   }
 
-  const totalRows = rows.total ?? rows.items.length;
   let successCount = 0;
-  let failureCount = 0;
-  let pendingCount = 0;
+  let failedCount = 0;
+  let skippedCount = 0;
 
-  for (const e of rows.items) {
-    if (e.status === "APPROVED") successCount += 1;
-    else if (e.status === "PENDING") pendingCount += 1;
-    else failureCount += 1;
+  for (const item of rows.items) {
+    if (item.status === "SUCCESS") successCount += 1;
+    else if (item.status === "FAILED") failedCount += 1;
+    else if (item.status === "SKIPPED") skippedCount += 1;
   }
 
-  const processed = successCount + failureCount;
-  const percent = totalRows > 0 ? Math.round((processed / totalRows) * 100) : 0;
-
-  let status: ImportSummaryStatus = "WAITING";
-  if (totalRows === 0) status = "WAITING";
-  else if (pendingCount > 0) status = "PROCESSING";
-  else status = "COMPLETED";
-
   return {
-    fileName: null,
-    createdAt: null,
-    createdBy: null,
-    status,
-    totalRows,
+    totalRows: rows.total ?? rows.items.length,
     successCount,
-    failureCount,
-    pendingCount,
-    percent,
+    failedCount,
+    skippedCount,
   };
 }
 
@@ -114,9 +88,16 @@ export default function ImportDetailProvider({
       if (mounted) setLoading(true);
     });
 
-    fetchImportDetail(id)
+    fetchImportResultItems(id)
       .then((d) => {
         if (mounted) setRows(d);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch import results:", err);
+        // Set empty result on error
+        if (mounted) {
+          setRows({ items: [], total: 0, page: 1, pageSize: 100 });
+        }
       })
       .finally(() => {
         if (mounted) setLoading(false);
@@ -131,36 +112,21 @@ export default function ImportDetailProvider({
 
   const downloadCsv = () => {
     try {
-      // Check if data is available
       if (!rows?.items || rows.items.length === 0) {
         showToast(toast.warning("No Data", "No results available to download"));
         return;
       }
 
-      // Define CSV headers
-      const headers = [
-        "Email",
-        "Full Name",
-        "Organization",
-        "Status",
-        "Invited At",
-        "Responded At",
-      ];
+      const headers = ["Email", "Status", "Reason"];
 
-      // Convert rows to CSV format
       const csvData = rows.items.map((item) => [
-        item.memberEmail,
-        item.memberFullName || "",
-        item.organizationName,
+        item.email,
         item.status,
-        item.invitedAt ? new Date(item.invitedAt).toLocaleString() : "",
-        item.respondedAt ? new Date(item.respondedAt).toLocaleString() : "",
+        item.reason || "",
       ]);
 
-      // Generate and download CSV
       generateCsv(headers, csvData, `import_results_${id}`);
 
-      // Show success toast
       showToast(
         toast.success(
           "Download Complete",

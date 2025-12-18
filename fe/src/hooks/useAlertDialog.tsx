@@ -111,7 +111,7 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
       switch (status) {
         // 401: Hết phiên -> Login
         case 401:
-          if (currentPath?.startsWith("/auth/")) {
+          if (currentPath?.startsWith("/auth/") || currentPath?.startsWith("/profile") || currentPath?.startsWith("/org-admin/manage-organization")){
             return;
           }
           showAlert({

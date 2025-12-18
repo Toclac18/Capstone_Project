@@ -56,11 +56,11 @@ async function handleGET(req: NextRequest) {
   let beUrl: URL;
 
   if (id) {
-    // chi tiết 1 batch: enrollments
+    // chi tiết 1 batch: import result items (SUCCESS, FAILED, SKIPPED)
     beUrl = new URL(
       `${BE_BASE}/api/organization/members/import-batches/${encodeURIComponent(
         id,
-      )}/enrollments`,
+      )}/results`,
     );
   } else {
     // danh sách batch

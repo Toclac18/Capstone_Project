@@ -466,6 +466,9 @@ export default function UploadDocumentPage() {
     setVisibility(newVisibility);
     if (newVisibility === "PUBLIC") {
       setSelectedOrganizationId("");
+    } else {
+      // Internal documents cannot be premium
+      setIsPremium(false);
     }
   };
 
@@ -533,25 +536,6 @@ export default function UploadDocumentPage() {
       firstErrorField,
       firstErrorMessage,
     };
-  };
-
-  const clearFormFields = () => {
-    // Only clear form fields, keep file
-    setTitle("");
-    setDescription("");
-    setVisibility("PUBLIC");
-    setIsPremium(false);
-    setTypeId("");
-    setSelectedDomainId("");
-    setSelectedSpecializationId("");
-    setSelectedTagIds([]);
-    setNewTags([]);
-    setNewTagInput("");
-    setTagSearch("");
-    setShowTagDropdown(false);
-    setSelectedOrganizationId("");
-    setErrors({});
-    setError(null);
   };
 
   const resetForm = () => {
@@ -1101,25 +1085,27 @@ export default function UploadDocumentPage() {
                   </div>
                 )}
 
-                {/* Premium Toggle */}
-                <div className={styles["field-group"]}>
-                  <label className={styles["field-label"]}>Premium Document</label>
-                  <div className={styles["toggle-wrapper"]}>
-                    <button
-                      type="button"
-                      onClick={() => setIsPremium(!isPremium)}
-                      className={`${styles["toggle-btn"]} ${isPremium ? styles["toggle-active"] : ""}`}
-                    >
-                      <span className={styles["toggle-slider"]} />
-                    </button>
-                    <span className={styles["toggle-label"]}>
-                      {isPremium ? "Premium" : "Free"}
-                    </span>
+                {/* Premium Toggle - Only for PUBLIC documents */}
+                {visibility === "PUBLIC" && (
+                  <div className={styles["field-group"]}>
+                    <label className={styles["field-label"]}>Premium Document</label>
+                    <div className={styles["toggle-wrapper"]}>
+                      <button
+                        type="button"
+                        onClick={() => setIsPremium(!isPremium)}
+                        className={`${styles["toggle-btn"]} ${isPremium ? styles["toggle-active"] : ""}`}
+                      >
+                        <span className={styles["toggle-slider"]} />
+                      </button>
+                      <span className={styles["toggle-label"]}>
+                        {isPremium ? "Premium" : "Free"}
+                      </span>
+                    </div>
+                    <p className={styles["help-text"]}>
+                      Premium documents require readers to redeem before viewing.
+                    </p>
                   </div>
-                  <p className={styles["help-text"]}>
-                    Premium documents require readers to redeem before viewing.
-                  </p>
-                </div>
+                )}
 
                 {/* Tags Multi-select with Combobox */}
                 <div className={styles["field-group"]}>
@@ -1236,14 +1222,14 @@ export default function UploadDocumentPage() {
 
             {/* Form Actions */}
             <div className={styles["form-actions"]}>
-              <button
+              {/* <button
                 type="button"
                 onClick={clearFormFields}
                 className={styles["btn-delete"]}
                 disabled={uploading}
               >
                 Delete
-              </button>
+              </button> */}
               <button
                 type="submit"
                 disabled={uploading}

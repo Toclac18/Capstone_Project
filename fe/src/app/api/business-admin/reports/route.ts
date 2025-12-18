@@ -1,7 +1,7 @@
 import { BE_BASE } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
-import { proxyJsonResponse, jsonResponse } from "@/server/response";
+import { proxyJsonResponse } from "@/server/response";
 
 async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);

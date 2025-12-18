@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
+import { FileSpreadsheet, Plus, Loader2 } from "lucide-react";
 import s from "../styles.module.css";
 import { useImportHistory } from "../provider";
-import StatusBadge from "./StatusBadge";
 
 export default function HistoryTable() {
   const { data, loading } = useImportHistory();
@@ -14,8 +14,10 @@ export default function HistoryTable() {
     return (
       <div className={s.tableWrap}>
         <div className={s.emptyState}>
-          <div className={s.emptyTitle}>Loading import history...</div>
-          <p className={s.emptySubtitle}>Please wait some minutes!</p>
+          <div className={s.emptyIcon}>
+            <Loader2 size={24} className="animate-spin" />
+          </div>
+          <div className={s.emptyTitle}>Loading...</div>
         </div>
       </div>
     );
@@ -25,9 +27,16 @@ export default function HistoryTable() {
     return (
       <div className={s.tableWrap}>
         <div className={s.emptyState}>
-          <div className={s.emptyTitle}>No import batch has been executed</div>
+          <div className={s.emptyIcon}>
+            <FileSpreadsheet size={24} />
+          </div>
+          <div className={s.emptyTitle}>No imports yet</div>
+          <p className={s.emptySubtitle}>
+            Import readers from an Excel file to add members
+          </p>
           <Link href="/org-admin/imports/new" className={s.emptyCta}>
-            + New import
+            <Plus size={16} />
+            New Import
           </Link>
         </div>
       </div>
@@ -42,13 +51,10 @@ export default function HistoryTable() {
             <th>File</th>
             <th>Created at</th>
             <th>Source</th>
-            <th>Admin</th>
-            <th>Notes</th>
             <th className={s.cellRight}>Total</th>
             <th className={s.cellRight}>Success</th>
             <th className={s.cellRight}>Failed</th>
             <th className={s.cellRight}>Skipped</th>
-            <th>Status</th>
             <th />
           </tr>
         </thead>
@@ -58,8 +64,6 @@ export default function HistoryTable() {
             const success = r.successCount ?? r.success ?? r.successEmails ?? 0;
             const failed = r.failedCount ?? r.failureCount ?? r.failCount ?? 0;
             const skipped = r.skippedCount ?? r.skipped ?? r.skipCount ?? 0;
-            const admin = r.adminName ?? r.createdBy ?? "-";
-            const notes = r.notes ?? "";
             const source = r.importSource ?? r.source ?? "EXCEL";
             const created = r.importedAt || r.createdAt || r.created_at || "-";
 
@@ -76,11 +80,6 @@ export default function HistoryTable() {
                       <div className={s.fileName}>
                         {r.fileName || "Manual import"}
                       </div>
-                      {notes && (
-                        <div className={s.fileNote} title={notes}>
-                          {notes}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </td>
@@ -91,14 +90,6 @@ export default function HistoryTable() {
                   <span className={s.chip}>
                     {source === "EXCEL" ? "Excel" : source}
                   </span>
-                </td>
-                <td>
-                  <div className={s.mainText}>{admin}</div>
-                </td>
-                <td>
-                  <div className={s.subText}>
-                    {notes || <span className={s.muted}>—</span>}
-                  </div>
                 </td>
                 <td className={s.cellRight}>
                   <span className={s.metricTotal}>{total}</span>
@@ -111,9 +102,6 @@ export default function HistoryTable() {
                 </td>
                 <td className={s.cellRight}>
                   <span className={s.metricSkipped}>{skipped}</span>
-                </td>
-                <td>
-                  <StatusBadge status={r.status} />
                 </td>
                 <td className={s.cellAction}>
                   <Link className={s.link} href={`/org-admin/imports/${r.id}`}>

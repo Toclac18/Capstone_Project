@@ -76,6 +76,12 @@ public class MemberImportBatch extends BaseEntity {
   private String fileKey;
 
   /**
+   * Original file name of the uploaded Excel file
+   */
+  @Column(length = 255)
+  private String fileName;
+
+  /**
    * Additional notes or error summary
    */
   @Column(columnDefinition = "TEXT")

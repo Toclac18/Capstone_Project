@@ -39,6 +39,14 @@ export type OrgEnrollment = {
   respondedAt: string | null;
 };
 
+export type ImportResultItem = {
+  id: string;
+  email: string;
+  status: "SUCCESS" | "FAILED" | "SKIPPED";
+  reason: string | null;
+  createdAt: string;
+};
+
 export type PagedResult<T> = {
   items: T[];
   total: number;
@@ -53,15 +61,25 @@ export type ImportListFilters = {
   pageSize?: number;
 };
 
+export type FailedInvitation = {
+  email: string;
+  reason: string;
+};
+
+export type ImportResult = {
+  importBatchId: string;
+  totalEmails: number;
+  successCount: number;
+  successEmails: string[];
+  failedCount: number;
+  failedInvitations: FailedInvitation[];
+  skippedCount: number;
+  skippedEmails: string[];
+};
+
 type CreateImportApiResponse = {
   success: boolean;
-  data: {
-    importBatchId: string;
-    totalEmails: number;
-    successCount: number;
-    failedCount: number;
-    skippedCount: number;
-  };
+  data: ImportResult;
   timestamp: string;
 };
 
@@ -170,7 +188,7 @@ export async function fetchImportDetail(
 /**
  * UPLOAD IMPORT (Excel)
  */
-export async function createImport(form: FormData): Promise<{ id: string }> {
+export async function createImport(form: FormData): Promise<ImportResult> {
   const res = await apiClient.post<CreateImportApiResponse>(
     "org-admin/imports",
     form,
@@ -181,11 +199,35 @@ export async function createImport(form: FormData): Promise<{ id: string }> {
     },
   );
 
-  const id = res.data?.data?.importBatchId;
+  const data = res.data?.data;
 
-  if (!id) {
+  if (!data?.importBatchId) {
     throw new Error("Cannot detect importBatchId from server response");
   }
 
-  return { id };
+  return {
+    importBatchId: data.importBatchId,
+    totalEmails: data.totalEmails ?? 0,
+    successCount: data.successCount ?? 0,
+    successEmails: data.successEmails ?? [],
+    failedCount: data.failedCount ?? 0,
+    failedInvitations: data.failedInvitations ?? [],
+    skippedCount: data.skippedCount ?? 0,
+    skippedEmails: data.skippedEmails ?? [],
+  };
+}
+
+
+/**
+ * FETCH IMPORT RESULT ITEMS (SUCCESS, FAILED, SKIPPED)
+ */
+export async function fetchImportResultItems(
+  batchId: string,
+  page = 1,
+  pageSize = 100,
+): Promise<PagedResult<ImportResultItem>> {
+  const res = await apiClient.get("org-admin/imports", {
+    params: { id: batchId, page, pageSize },
+  });
+  return normalizePagedResult<ImportResultItem>(res.data, page, pageSize);
 }

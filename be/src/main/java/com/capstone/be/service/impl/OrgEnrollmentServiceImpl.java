@@ -9,6 +9,8 @@ import com.capstone.be.domain.enums.NotificationType;
 import com.capstone.be.domain.enums.OrgEnrollStatus;
 import com.capstone.be.domain.enums.UserRole;
 import com.capstone.be.domain.enums.UserStatus;
+import com.capstone.be.domain.entity.ImportResultItem;
+import com.capstone.be.dto.response.organization.ImportResultItemResponse;
 import com.capstone.be.dto.response.organization.InviteMembersResponse;
 import com.capstone.be.dto.response.organization.InviteMembersResponse.FailedInvitation;
 import com.capstone.be.dto.response.organization.MemberImportBatchResponse;
@@ -18,6 +20,7 @@ import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.mapper.MemberImportBatchMapper;
 import com.capstone.be.mapper.OrgEnrollmentMapper;
+import com.capstone.be.repository.ImportResultItemRepository;
 import com.capstone.be.repository.MemberImportBatchRepository;
 import com.capstone.be.repository.OrgEnrollmentRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
@@ -58,6 +61,7 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
   private final UserRepository userRepository;
   private final OrgEnrollmentMapper orgEnrollmentMapper;
   private final MemberImportBatchRepository memberImportBatchRepository;
+  private final ImportResultItemRepository importResultItemRepository;
 
   private final EmailService emailService;
   private final FileStorageService fileStorageService;
@@ -173,11 +177,46 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
         // Check if already has enrollment
         OrgEnrollment existingEnrollment = existingEnrollmentsMap.get(email);
         if (existingEnrollment != null) {
-          // Skip if already pending or joined
-          if (
-              existingEnrollment.getStatus() == OrgEnrollStatus.JOINED) {
+          // Skip if already joined
+          if (existingEnrollment.getStatus() == OrgEnrollStatus.JOINED) {
             skippedEmails.add(email);
-            log.info("Skipped email (already invited/joined): {}", email);
+            log.info("Skipped email (already joined): {}", email);
+            continue;
+          }
+
+          // Skip if pending invite and NOT expired
+          if (existingEnrollment.getStatus() == OrgEnrollStatus.PENDING_INVITE) {
+            boolean isExpired = existingEnrollment.getExpiry() != null 
+                && Instant.now().isAfter(existingEnrollment.getExpiry());
+            
+            if (!isExpired) {
+              skippedEmails.add(email);
+              log.info("Skipped email (already invited, not expired): {}", email);
+              continue;
+            }
+            
+            // Re-invite expired pending invite
+            Instant newExpiry = LocalDate.now(zone)
+                .plusDays(8)
+                .atStartOfDay(zone)
+                .toInstant();
+            existingEnrollment.setExpiry(newExpiry);
+            orgEnrollmentRepository.save(existingEnrollment);
+
+            // Send appropriate notification/email
+            if (existingEnrollment.getMember() != null) {
+              notificationService.createNotification(
+                  existingEnrollment.getMember().getId(),
+                  NotificationType.INFO,
+                  "Organization invitation",
+                  "You have a new invitation from " + organization.getName());
+              sendInvitationEmail(existingEnrollment, organization);
+            } else {
+              emailService.sendAccountCreationInvitation(email, organization.getName());
+            }
+
+            successEmails.add(email);
+            log.info("Re-invited expired pending member: {}", email);
             continue;
           }
 
@@ -296,6 +335,38 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
             .build());
       }
     }
+
+    // Save import result items to database
+    List<ImportResultItem> resultItems = new ArrayList<>();
+    
+    for (String email : successEmails) {
+      resultItems.add(ImportResultItem.builder()
+          .importBatch(batch)
+          .email(email)
+          .status("SUCCESS")
+          .reason(null)
+          .build());
+    }
+    
+    for (FailedInvitation failed : failedInvitations) {
+      resultItems.add(ImportResultItem.builder()
+          .importBatch(batch)
+          .email(failed.getEmail())
+          .status("FAILED")
+          .reason(failed.getReason())
+          .build());
+    }
+    
+    for (String email : skippedEmails) {
+      resultItems.add(ImportResultItem.builder()
+          .importBatch(batch)
+          .email(email)
+          .status("SKIPPED")
+          .reason("Already invited or joined")
+          .build());
+    }
+    
+    importResultItemRepository.saveAll(resultItems);
 
     return InviteMembersResponse.builder()
         .importBatchId(batch.getId())
@@ -722,13 +793,21 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
   @Transactional(readOnly = true)
   public Page<MemberImportBatchResponse> getImportBatches(
       UUID organizationAdminId,
+      String search,
       Pageable pageable) {
-    log.info("Get import batches for organization admin: {}", organizationAdminId);
+    log.info("Get import batches for organization admin: {}, search: {}", organizationAdminId, search);
 
     OrganizationProfile organization = getOrganizationByAdminId(organizationAdminId);
 
-    Page<MemberImportBatch> batchPage = memberImportBatchRepository
-        .findByOrganizationOrderByCreatedAtDesc(organization, pageable);
+    Page<MemberImportBatch> batchPage;
+    if (search != null && !search.trim().isEmpty()) {
+      batchPage = memberImportBatchRepository
+          .findByOrganizationAndFileNameContainingIgnoreCaseOrderByCreatedAtDesc(
+              organization, search.trim(), pageable);
+    } else {
+      batchPage = memberImportBatchRepository
+          .findByOrganizationOrderByCreatedAtDesc(organization, pageable);
+    }
 
     return batchPage.map(memberImportBatchMapper::toResponse);
   }
@@ -783,6 +862,12 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
       }
     }
 
+    // Get original file name
+    String originalFileName = null;
+    if (file != null && !file.isEmpty()) {
+      originalFileName = file.getOriginalFilename();
+    }
+
     // Create and save import batch with initial counts
     MemberImportBatch batch = MemberImportBatch.builder()
         .organization(organization)
@@ -793,6 +878,7 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
         .failedCount(0)
         .skippedCount(0)
         .fileKey(importFileKey)
+        .fileName(originalFileName)
         .build();
 
     batch = memberImportBatchRepository.save(batch);
@@ -801,5 +887,41 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
         organization.getName(), importSource);
 
     return batch;
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<ImportResultItemResponse> getImportResultItems(
+      UUID organizationAdminId,
+      UUID importBatchId,
+      Pageable pageable) {
+    log.info("Get import result items for batch: {}", importBatchId);
+
+    // Verify organization ownership
+    OrganizationProfile organization = getOrganizationByAdminId(organizationAdminId);
+
+    MemberImportBatch batch = memberImportBatchRepository.findById(importBatchId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            "Import batch", "id", importBatchId));
+
+    // Verify batch belongs to the organization
+    if (!batch.getOrganization().getId().equals(organization.getId())) {
+      throw new BusinessException(
+          "Import batch does not belong to this organization",
+          HttpStatus.FORBIDDEN,
+          "IMPORT_BATCH_FORBIDDEN"
+      );
+    }
+
+    // Find all import result items for this batch (ordered by status: FAILED, SKIPPED, SUCCESS)
+    Page<ImportResultItem> items = importResultItemRepository.findByImportBatchOrderByStatusAsc(batch, pageable);
+
+    return items.map(item -> ImportResultItemResponse.builder()
+        .id(item.getId())
+        .email(item.getEmail())
+        .status(item.getStatus())
+        .reason(item.getReason())
+        .createdAt(item.getCreatedAt())
+        .build());
   }
 }

@@ -2,9 +2,12 @@ import { headers } from "next/headers";
 import { BE_BASE, USE_MOCK } from "@/server/config";
 import { getAuthHeader } from "@/server/auth";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
-import { proxyJsonResponse, jsonResponse } from "@/server/response";
+import { jsonResponse } from "@/server/response";
+import FormData from "form-data";
 import axios from "axios";
-import FormDataLib from "form-data";
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 300; // 5 minutes timeout for Vercel
 
 async function handlePOST(request: Request) {
   try {
@@ -15,28 +18,16 @@ async function handlePOST(request: Request) {
       if (!file) {
         return jsonResponse(
           { error: "File is required" },
-          {
-            status: 400,
-            headers: {
-              "content-type": "application/json",
-              "x-mode": "mock",
-            },
-          },
+          { status: 400, mode: "mock" },
         );
       }
 
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        {
           id: "doc-" + Date.now(),
           message: "Your document has been uploaded successfully. (mock)",
-        }),
-        {
-          status: 200,
-          headers: {
-            "content-type": "application/json",
-            "x-mode": "mock",
-          },
         },
+        { status: 200, mode: "mock" },
       );
     }
 
@@ -46,52 +37,56 @@ async function handlePOST(request: Request) {
 
     // Read FormData from request
     const formData = await request.formData();
-    
+
     // Validate required parts
     const infoPart = formData.get("info");
     const filePart = formData.get("file");
-    
+
     if (!infoPart) {
       return jsonResponse(
         { error: "Missing 'info' part in form data" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     if (!filePart || !(filePart instanceof File)) {
       return jsonResponse(
         { error: "Missing 'file' part in form data" },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    
-    // Use form-data library to ensure proper Content-Type with boundary
-    const forwardFormData = new FormDataLib();
-    
-    // Append "info" part as JSON string with Content-Type: application/json
-    forwardFormData.append("info", infoPart as string, {
+
+    // Get info as string
+    let infoString: string;
+    if (infoPart instanceof Blob) {
+      infoString = await infoPart.text();
+    } else {
+      infoString = infoPart as string;
+    }
+
+    // Use form-data library to properly set Content-Type for each part
+    const forwardFormData = new FormData();
+
+    // Append info with application/json content type
+    forwardFormData.append("info", infoString, {
       contentType: "application/json",
     });
-    
-    // Append "file" part as Buffer
-    const fileBuffer = Buffer.from(await (filePart as File).arrayBuffer());
+
+    // Append file with proper content type
+    const fileBuffer = Buffer.from(await filePart.arrayBuffer());
     forwardFormData.append("file", fileBuffer, {
-      filename: (filePart as File).name,
-      contentType: (filePart as File).type || "application/octet-stream",
+      filename: filePart.name,
+      contentType: filePart.type || "application/pdf",
     });
 
-    // Use axios to forward request - it handles form-data library correctly
-    const axiosHeaders: Record<string, string> = {};
+    // Build headers
+    const axiosHeaders: Record<string, string> = {
+      ...forwardFormData.getHeaders(),
+    };
     if (bearerToken) {
       axiosHeaders["Authorization"] = bearerToken;
     }
     if (ip) {
       axiosHeaders["X-Forwarded-For"] = ip;
-    }
-    
-    // form-data library sets Content-Type with boundary automatically
-    const contentType = forwardFormData.getHeaders()["content-type"];
-    if (contentType) {
-      axiosHeaders["Content-Type"] = contentType;
     }
 
     try {
@@ -102,6 +97,7 @@ async function handlePOST(request: Request) {
           headers: axiosHeaders,
           maxBodyLength: Infinity,
           maxContentLength: Infinity,
+          timeout: 300000, // 5 minutes
         },
       );
 
@@ -109,36 +105,23 @@ async function handlePOST(request: Request) {
         status: response.status,
         mode: "real",
       });
-    } catch (error: any) {
-      if (error.response) {
-        return proxyJsonResponse(
-          new Response(JSON.stringify(error.response.data), {
-            status: error.response.status,
-            headers: {
-              "content-type": "application/json",
-            },
-          }),
-          { mode: "real" },
-        );
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response) {
+        return jsonResponse(error.response.data, {
+          status: error.response.status,
+          mode: "real",
+        });
       }
-      return jsonResponse(
-        { error: error.message || "Failed to upload document" },
-        { status: 500 },
-      );
+      throw error;
     }
   } catch (error) {
     console.error("Upload error:", error);
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         error:
           error instanceof Error ? error.message : "Failed to upload document",
-      }),
-      {
-        status: 500,
-        headers: {
-          "content-type": "application/json",
-        },
       },
+      { status: 500 },
     );
   }
 }

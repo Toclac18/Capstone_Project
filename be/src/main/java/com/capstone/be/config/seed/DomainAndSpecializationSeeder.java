@@ -131,12 +131,11 @@ public class DomainAndSpecializationSeeder {
     );
 
     // ===== GHI DB =====
-    int domainIndex = 1; //also domainCount
-    int specIndex;
-    int specCount = 0;
+    int domainIndex = 0; //also domainCount
+    int specIndex = 0;
 
     for (DomainData dd : data) {
-      UUID xid = SeedUtil.generateUUID(domainIndex);
+      UUID xid = SeedUtil.generateUUID("domain-" + domainIndex);
       Domain domain = Domain.builder()
           .id(xid)
           .code(domainIndex)
@@ -144,11 +143,11 @@ public class DomainAndSpecializationSeeder {
           .build();
 
       domainRepository.save(domain);
+      domainIndex++;
 
-      specIndex = domainIndex * 100 + 1;
       for (String specName : dd.specializations) {
         Specialization spec = Specialization.builder()
-            .id(SeedUtil.generateUUID(specIndex))
+            .id(SeedUtil.generateUUID("spec-" + specIndex))
             .code(specIndex)
             .name(specName)
             .domain(domain)
@@ -156,14 +155,11 @@ public class DomainAndSpecializationSeeder {
 
         specializationRepository.save(spec);
         specIndex++;
-        specCount++;
       }
 
-      domainIndex++;
     }
 
-    log.info("Seeded {} domains and {} specializations",
-        data.size(), specCount);
+    log.info("Seeded {} domains and {} specializations", domainIndex, specIndex);
   }
 
   record DomainData(String name, List<String> specializations) {

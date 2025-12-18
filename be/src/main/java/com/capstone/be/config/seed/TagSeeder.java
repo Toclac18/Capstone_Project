@@ -39,8 +39,14 @@ public class TagSeeder {
       return;
     }
 
-    for (int i = 0; i < 10; i++) {
-      TagStatus status = i < 7 ? TagStatus.ACTIVE : i < 9 ? TagStatus.PENDING : TagStatus.REJECTED;
+    int tagCount = 15;
+    for (int i = 0; i < tagCount; i++) {
+      TagStatus status = TagStatus.ACTIVE;
+      if (i == tagCount - 2) {
+        status = TagStatus.PENDING;
+      } else if (i == tagCount - 1) {
+        status = TagStatus.REJECTED;
+      }
       createTag(i, "tag" + i, status);
     }
 
@@ -51,7 +57,7 @@ public class TagSeeder {
   private void createTag(int code, String name, TagStatus status) {
     Tag tag = Tag.builder()
         .id(SeedUtil.generateUUID("tag-" + code))
-//        .code(code)
+//        .code(code) //auto-gen
         .name(name)
         .status(status)
         .build();

@@ -9,11 +9,8 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum ReportStatus {
-  PENDING("Pending Review"),
-  IN_REVIEW("In Review"),
-  RESOLVED("Resolved"),
-  REJECTED("Rejected"),
-  CLOSED("Closed");
+  PENDING("Pending"),
+  RESOLVED("Resolved");
 
   private final String displayName;
 }

@@ -190,25 +190,25 @@ public class MockAiDocumentModerationAndSummarizationServiceImpl implements
 
     } else {
       // AI rejected - mark as rejected
-      document.setStatus(DocStatus.AI_REJECTED);
-      log.warn("[MOCK AI] Document ID: {} rejected by mock AI moderation. Violations: {}",
-          documentId, response.getViolations());
-
-      // Send rejection email to uploader
-      try {
-        String violationsText = response.getViolations() != null
-            ? String.join(", ", response.getViolations())
-            : "Content policy violation";
-        emailService.sendDocumentStatusUpdateEmail(
-            uploaderEmail,
-            uploaderName,
-            document.getTitle(),
-            DocStatus.AI_REJECTED,
-            "Reason: " + violationsText + " (Mock Mode)"
-        );
-      } catch (Exception e) {
-        log.error("[MOCK AI] Failed to send document rejection email to {}: {}", uploaderEmail, e.getMessage());
-      }
+//      document.setStatus(DocStatus.AI_REJECTED);
+//      log.warn("[MOCK AI] Document ID: {} rejected by mock AI moderation. Violations: {}",
+//          documentId, response.getViolations());
+//
+//      // Send rejection email to uploader
+//      try {
+//        String violationsText = response.getViolations() != null
+//            ? String.join(", ", response.getViolations())
+//            : "Content policy violation";
+//        emailService.sendDocumentStatusUpdateEmail(
+//            uploaderEmail,
+//            uploaderName,
+//            document.getTitle(),
+//            DocStatus.AI_REJECTED,
+//            "Reason: " + violationsText + " (Mock Mode)"
+//        );
+//      } catch (Exception e) {
+//        log.error("[MOCK AI] Failed to send document rejection email to {}: {}", uploaderEmail, e.getMessage());
+//      }
     }
 
     documentRepository.save(document);

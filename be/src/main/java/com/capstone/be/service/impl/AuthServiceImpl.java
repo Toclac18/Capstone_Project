@@ -360,15 +360,19 @@ public class AuthServiceImpl implements AuthService {
     String normalizedAdminEmail = request.getAdminEmail().toLowerCase().trim();
     String normalizedOrgEmail = request.getOrganizationEmail().toLowerCase().trim();
     
+    // Normalize and trim organization name
+    String trimmedOrgName = request.getOrganizationName().trim();
+    request.setOrganizationName(trimmedOrgName);
+    
     // Check if admin email already exists
     if (userRepository.existsByEmail(normalizedAdminEmail)) {
       throw DuplicateResourceException.email(normalizedAdminEmail);
     }
 
-    // Check if organization name already exists
-    if (organizationProfileRepository.existsByName(request.getOrganizationName())) {
+    // Check if organization name already exists (after trimming)
+    if (organizationProfileRepository.existsByName(trimmedOrgName)) {
       throw new DuplicateResourceException(
-          "Organization name already exists: " + request.getOrganizationName());
+          "Organization name already exists: " + trimmedOrgName);
     }
 
     // Check if organization email already exists

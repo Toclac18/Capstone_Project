@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import {
   getTodoDocuments,
   submitReview,
@@ -145,9 +144,7 @@ export function TodoTab() {
                   >
                   <td className={styles["table-cell"]}>
                     <div className={styles["table-cell-main"]}>
-                      <Link href={`/docs-view/${doc.id}`} className={styles["document-link"]}>
                         {doc.documentTitle}
-                      </Link>
                     </div>
                     {doc.description && (
                       <div className={styles["table-cell-secondary"]}>

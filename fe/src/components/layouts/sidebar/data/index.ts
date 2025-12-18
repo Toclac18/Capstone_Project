@@ -11,7 +11,7 @@ export const NAV_DATA = [
       },
       {
         title: "Contact Admin",
-        icon: Icons.HeadphonesIcon,
+        icon: Icons.PhoneIcon,
         url: "/contact-admin",
       },
     ],
@@ -60,7 +60,7 @@ export const READER_NAV_DATA = [
       },     
       {
         title: "Contact Admin",
-        icon: Icons.HeadphonesIcon,
+        icon: Icons.PhoneIcon,
         url: "/contact-admin",
       },
     ],
@@ -73,9 +73,9 @@ export const REVIEWER_NAV_DATA = [
     label: "REVIEWER",
     items: [
       {
-        title: "Home",
-        icon: Icons.HomeIcon,
-        url: "/homepage",
+        title: "My Statistics",
+        icon: Icons.BarChartIcon,
+        url: "/reviewer/statistics",
       },
       {
         title: "View Review List",
@@ -83,9 +83,9 @@ export const REVIEWER_NAV_DATA = [
         url: "/reviewer/review-list",
       },
       {
-        title: "My Statistics",
-        icon: Icons.BarChartIcon,
-        url: "/reviewer/statistics",
+        title: "Contact Admin",
+        icon: Icons.PhoneIcon,
+        url: "/contact-admin",
       },
     ],
   },
@@ -96,6 +96,11 @@ export const ORGANIZATION_ADMIN_NAV_DATA = [
   {
     label: "ORGANIZATION ADMIN",
     items: [
+      {
+        title: "Home",
+        icon: Icons.HomeIcon,
+        url: "/homepage",
+      },
       {
         title: "Dashboard",
         icon: Icons.BarChartIcon,
@@ -177,12 +182,12 @@ export const BUSINESS_ADMIN_NAV_DATA = [
       },
       {
         title: "Report Management",
-        icon: Icons.BarChartIcon,
+        icon: Icons.AlertTriangleIcon,
         url: "/business-admin/reports",
       },
       {
         title: "Contact Tickets",
-        icon: Icons.HeadphonesIcon,
+        icon: Icons.PhoneIcon,
         url: "/business-admin/tickets",
       },
     ],

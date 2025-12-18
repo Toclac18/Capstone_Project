@@ -6,13 +6,29 @@ import { Header } from "@/components/layouts/header";
 import { Sidebar } from "@/components/layouts/sidebar/Sidebar";
 import { useSidebarContext } from "@/components/layouts/sidebar/SidebarContext";
 import { Footer } from "@/components/layouts/footer/Footer";
+import { useAuthContext } from "@/lib/auth/provider";
 
 export default function ConditionalLayout({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const { isOpen, isMobile } = useSidebarContext();
+  const { isAuthenticated } = useAuthContext();
 
   const isAuthRoute = pathname?.startsWith("/auth");
 
+  // Guest users (not authenticated) - no sidebar, but show header and footer
+  if (!isAuthenticated && !isAuthRoute) {
+    return (
+      <div className="flex min-h-screen flex-col bg-gray-2 dark:bg-[#020d1a]">
+        <Header />
+        <main className="flex-1 mx-auto w-full max-w-screen-2xl overflow-hidden p-4 md:p-6 2xl:p-10">
+          {children}
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Auth routes (sign-in, sign-up) - no sidebar
   if (isAuthRoute) {
     return (
       <div className="flex min-h-screen flex-col bg-gray-2 dark:bg-[#020d1a]">
@@ -24,6 +40,7 @@ export default function ConditionalLayout({ children }: PropsWithChildren) {
     );
   }
 
+  // Authenticated users - full layout with sidebar
   return (
     <div className="flex min-h-screen overflow-x-hidden">
       <Sidebar />

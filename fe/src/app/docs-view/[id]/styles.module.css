@@ -102,7 +102,7 @@
   /* --- CỐ ĐỊNH HEADER (Sticky) --- */
   position: sticky;
   top: 1rem; /* Cách mép trên 16px */
-  z-index: 50; /* Đè lên nội dung khác */
+  z-index: 10; /* Thấp hơn notification dropdown (z-index: 9999) */
   backdrop-filter: blur(8px); /* Hiệu ứng mờ nền nếu background trong suốt */
 }
 

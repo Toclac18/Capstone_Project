@@ -618,6 +618,17 @@ public class DocumentServiceImpl implements DocumentService {
     Document document = documentRepository.findById(documentId)
             .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
 
+    // Check access for INACTIVE documents
+    if (document.getStatus() == DocStatus.INACTIVE) {
+      if (userId == null) {
+        throw new ForbiddenException("This document is not available");
+      }
+      boolean hasAccess = documentAccessService.hasAccess(userId, documentId);
+      if (!hasAccess) {
+        throw new ForbiddenException("You do not have permission to view this document");
+      }
+    }
+
     DocumentDetailResponse response = mapDocumentToDetailResponse(document, userId);
 
     log.info("Successfully retrieved document detail for document {}", documentId);
@@ -1278,6 +1289,10 @@ public class DocumentServiceImpl implements DocumentService {
     DocumentDetailResponse.UserDocumentInfo userInfo;
 
     if (userId != null) {
+      // Fetch user to check role
+      User user = userRepository.findById(userId).orElse(null);
+      boolean isBusinessAdmin = user != null && user.getRole() == com.capstone.be.domain.enums.UserRole.BUSINESS_ADMIN;
+
       // Check access (includes all access types: public, uploader, org member, redeemed, reviewer)
       boolean hasAccess = documentAccessService.hasAccess(userId, document.getId());
 
@@ -1285,23 +1300,25 @@ public class DocumentServiceImpl implements DocumentService {
 
       boolean hasRedeemed = false;
       if (Boolean.TRUE.equals(document.getIsPremium())) {
-        // Find ReaderProfile from User ID first, then check redemption
-        ReaderProfile readerProfile = readerProfileRepository.findByUserId(userId).orElse(null);
-        if (readerProfile != null) {
-          hasRedeemed = documentRedemptionRepository
-                  .existsByReader_IdAndDocument_Id(readerProfile.getId(), document.getId());
+        // Business Admin has access to all premium documents without redemption
+        if (isBusinessAdmin) {
+          hasRedeemed = true;
+        } else {
+          // Find ReaderProfile from User ID first, then check redemption
+          ReaderProfile readerProfile = readerProfileRepository.findByUserId(userId).orElse(null);
+          if (readerProfile != null) {
+            hasRedeemed = documentRedemptionRepository
+                    .existsByReader_IdAndDocument_Id(readerProfile.getId(), document.getId());
+          }
         }
       }
 
       boolean isMemberOfOrganization = false;
-      if (document.getOrganization() != null) {
-        User user = userRepository.findById(userId).orElse(null);
-        if (user != null) {
-          isMemberOfOrganization = orgEnrollmentRepository
-                  .findByOrganizationAndMember(document.getOrganization(), user)
-                  .map(enrollment -> enrollment.getStatus() == OrgEnrollStatus.JOINED)
-                  .orElse(false);
-        }
+      if (document.getOrganization() != null && user != null) {
+        isMemberOfOrganization = orgEnrollmentRepository
+                .findByOrganizationAndMember(document.getOrganization(), user)
+                .map(enrollment -> enrollment.getStatus() == OrgEnrollStatus.JOINED)
+                .orElse(false);
       }
 
       // Check if user is assigned reviewer with ACCEPTED status

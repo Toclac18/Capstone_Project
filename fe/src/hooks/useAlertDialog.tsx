@@ -15,6 +15,7 @@ import {
 } from "@/components/AlertDialog/AlertDialog";
 import { ApiError, setApiClientErrorHandler } from "@/services/http";
 import type { ErrorDialogPayload } from "@/server/withErrorBoundary";
+import { logout } from "@/services/auth.service";
 
 // --- Types ---
 export interface ShowAlertOptions {
@@ -121,10 +122,10 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
             onPrimaryAction: async () => {
               hideAlert();
               // Clear cookies before redirecting to sign-in
-              try {
-                await fetch("/api/auth/logout", { method: "POST" });
-              } catch (e) {
-                console.error("Failed to clear session cookies:", e);
+              await logout();
+              // Clear localStorage
+              if (typeof window !== "undefined") {
+                localStorage.removeItem("userName");
               }
               currentRouter.push("/auth/sign-in");
             },

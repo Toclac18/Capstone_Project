@@ -1,6 +1,7 @@
 package com.capstone.be.config;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
 import org.springframework.context.annotation.Configuration;
@@ -16,11 +17,18 @@ public class AsyncConfig implements AsyncConfigurer {
   @Override
   public Executor getAsyncExecutor() {
     ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-    executor.setCorePoolSize(2);
-    executor.setMaxPoolSize(10);
-    executor.setQueueCapacity(100);
-    executor.setThreadNamePrefix("EmailAsync-");
+    executor.setCorePoolSize(5); // Increased from 2 to handle more concurrent uploads
+    executor.setMaxPoolSize(20); // Increased from 10 to handle burst uploads
+    executor.setQueueCapacity(200); // Increased from 100 to queue more requests
+    executor.setThreadNamePrefix("Async-");
+    executor.setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy()); // Run in caller thread if queue full
+    // Configure thread cleanup: threads beyond core pool size will be terminated after 60 seconds of inactivity
+    executor.setKeepAliveSeconds(60); // Release threads after 60s of inactivity (default is 60, but explicit is better)
+    executor.setWaitForTasksToCompleteOnShutdown(true); // Wait for tasks to complete on shutdown
+    executor.setAwaitTerminationSeconds(30); // Wait max 30s for tasks to complete on shutdown
     executor.initialize();
+    log.info("Async executor initialized: core={}, max={}, queue={}, keepAlive={}s", 
+        executor.getCorePoolSize(), executor.getMaxPoolSize(), executor.getQueueCapacity(), executor.getKeepAliveSeconds());
     return executor;
   }
 

@@ -2,9 +2,10 @@
 Document processing service cho Readee_AI_System.
 
 Pipeline:
-- PDF:
-  + Gọi OCR_Service để lấy text_path (file .txt đã OCR 100%).
-  + Đọc full_text từ text_path.
+- PDF (Tối ưu tốc độ):
+  + Thử extract text trực tiếp từ PDF trước (nhanh, ~1-2s cho file nhiều trang)
+  + Nếu text đủ tốt (>=70% trang có text) → dùng text trực tiếp, không cần OCR
+  + Nếu không đủ → OCR những trang thiếu text hoặc OCR toàn bộ
   + Trích ảnh từ PDF để moderation ảnh.
 - DOCX:
   + Trích text + ảnh trực tiếp bằng python-docx.
@@ -27,7 +28,7 @@ import fitz  # PyMuPDF
 from docx import Document
 from PIL import Image
 
-from src.services.ocr_client import run_ocr_on_file, run_ocr_on_file_parallel
+from src.services.ocr_client import run_ocr_on_file, run_ocr_on_file_parallel, run_ocr_on_pages
 
 
 class DocumentService:
@@ -211,35 +212,112 @@ class DocumentService:
 
     async def process_pdf(self, pdf_path: str, use_parallel: bool = True) -> Tuple[str, str, List[Image.Image], List[int], Dict[int, Tuple[int, int]]]:
         """
-        Xử lý PDF:
-        - Gọi OCR_Service với parallel processing (mặc định) -> text_path (file txt).
-        - Đọc full_text từ text_path.
-        - Trích ảnh từ PDF với page numbers.
-        - Trả về page_ranges để map text chunks về pages.
+        Xử lý PDF với tối ưu tốc độ theo từng trang:
+        - Extract text trực tiếp từ PDF (nhanh, ~1-2s cho file nhiều trang)
+        - Kiểm tra từng trang: nếu trang có text trực tiếp < threshold → OCR trang đó
+        - Merge kết quả: dùng text trực tiếp nếu đủ tốt, nếu không thì dùng OCR (có thể lấy text từ ảnh)
+        - Xử lý case text trong ảnh: nếu OCR được nhiều text hơn → dùng OCR
         
         Args:
             pdf_path: Đường dẫn file PDF
-            use_parallel: Nếu True, dùng parallel OCR (nhanh hơn). Nếu False, dùng tuần tự.
+            use_parallel: Nếu True, dùng parallel OCR khi cần (nhanh hơn). Nếu False, dùng tuần tự.
         
         Returns: (full_text, text_path, images, image_page_numbers, page_ranges)
         """
-        # Tối ưu: Chạy song song OCR và image extraction để tăng tốc độ
-        if use_parallel:
-            ocr_task = run_ocr_on_file_parallel(pdf_path, max_workers=4)
-        else:
-            ocr_task = asyncio.to_thread(run_ocr_on_file, pdf_path)
+        import logging
+        logger = logging.getLogger(__name__)
         
-        # Chạy song song: OCR và image extraction
-        ocr_result, (images, image_page_numbers), (_, page_ranges) = await asyncio.gather(
-            ocr_task,
+        # Extract images và text trực tiếp từ PDF (song song để tăng tốc)
+        (images, image_page_numbers), (direct_text, page_ranges) = await asyncio.gather(
             asyncio.to_thread(self._extract_images_from_pdf, pdf_path),
             asyncio.to_thread(self._extract_text_by_pages_from_pdf, pdf_path),
         )
         
-        text_path = ocr_result["text_path"]
-        full_text = Path(text_path).read_text(encoding="utf-8")
+        # Kiểm tra từng trang và quyết định trang nào cần OCR
+        min_text_length = 50  # Tối thiểu 50 ký tự để coi là có text đủ tốt
+        pages_to_ocr: List[int] = []
+        page_direct_texts: Dict[int, str] = {}  # Lưu text trực tiếp của từng trang
         
-        return full_text, text_path, images, image_page_numbers, page_ranges
+        # Phân tích từng trang
+        for page_num in sorted(page_ranges.keys()):
+            start_pos, end_pos = page_ranges[page_num]
+            page_direct_text = direct_text[start_pos:end_pos].strip()
+            page_direct_texts[page_num] = page_direct_text
+            
+            # Nếu trang có ít text → cần OCR (có thể có text trong ảnh)
+            if len(page_direct_text) < min_text_length:
+                pages_to_ocr.append(page_num)
+        
+        total_pages = len(page_ranges)
+        pages_needing_ocr = len(pages_to_ocr)
+        
+        logger.info(
+            f"PDF text extraction: {total_pages - pages_needing_ocr}/{total_pages} pages have sufficient direct text. "
+            f"Pages needing OCR: {pages_needing_ocr}"
+        )
+        
+        # Nếu không có trang nào cần OCR → dùng text trực tiếp
+        if not pages_to_ocr:
+            logger.info(f"All pages have sufficient direct text. Using direct text extraction (fast path).")
+            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".txt", encoding="utf-8") as tf:
+                tf.write(direct_text)
+                text_path = tf.name
+            
+            return direct_text, text_path, images, image_page_numbers, page_ranges
+        
+        # OCR những trang thiếu text (song song để tăng tốc)
+        logger.info(f"OCR-ing {pages_needing_ocr} pages that need OCR: {pages_to_ocr}")
+        
+        # OCR từng trang (song song nếu use_parallel=True, tuần tự nếu False)
+        max_workers = 4 if use_parallel else 1
+        ocr_texts_by_page = await run_ocr_on_pages(pdf_path, pages_to_ocr, max_workers=max_workers)
+        
+        # Merge kết quả: ghép text từng trang theo thứ tự
+        merged_page_texts: List[str] = []
+        new_page_ranges: Dict[int, Tuple[int, int]] = {}
+        current_pos = 0
+        
+        for page_num in sorted(page_ranges.keys()):
+            if page_num in pages_to_ocr:
+                # Trang này đã OCR → dùng OCR text
+                ocr_text = ocr_texts_by_page.get(page_num, "")
+                # So sánh với text trực tiếp: nếu OCR có nhiều text hơn → dùng OCR
+                direct_text_page = page_direct_texts.get(page_num, "")
+                if len(ocr_text.strip()) > len(direct_text_page.strip()):
+                    page_text = ocr_text
+                    logger.debug(f"Page {page_num}: Using OCR text ({len(ocr_text)} chars) over direct text ({len(direct_text_page)} chars)")
+                else:
+                    # OCR không tốt hơn → dùng text trực tiếp (nếu có)
+                    page_text = direct_text_page if direct_text_page else ocr_text
+                    logger.debug(f"Page {page_num}: Using direct text ({len(direct_text_page)} chars) over OCR text ({len(ocr_text)} chars)")
+            else:
+                # Trang này có text trực tiếp đủ tốt → dùng text trực tiếp
+                page_text = page_direct_texts.get(page_num, "")
+            
+            # Thêm newline giữa các trang (trừ trang cuối)
+            if page_num < total_pages:
+                page_text += "\n"
+            
+            start_pos = current_pos
+            end_pos = current_pos + len(page_text)
+            new_page_ranges[page_num] = (start_pos, end_pos)
+            merged_page_texts.append(page_text)
+            current_pos = end_pos
+        
+        # Ghép toàn bộ text
+        full_text = "".join(merged_page_texts)
+        
+        # Lưu vào file tạm
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".txt", encoding="utf-8") as tf:
+            tf.write(full_text)
+            text_path = tf.name
+        
+        logger.info(
+            f"PDF processing completed: {total_pages - pages_needing_ocr} pages used direct text, "
+            f"{pages_needing_ocr} pages used OCR. Total text length: {len(full_text)} chars"
+        )
+        
+        return full_text, text_path, images, image_page_numbers, new_page_ranges
 
     def process_docx(self, docx_path: str) -> Tuple[str, str, List[Image.Image], List[int], Dict[int, Tuple[int, int]]]:
         """

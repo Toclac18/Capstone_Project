@@ -49,9 +49,11 @@ import com.capstone.be.service.FileStorageService;
 import com.capstone.be.service.helper.NotificationHelper;
 import com.capstone.be.service.SystemConfigService;
 import com.capstone.be.util.StringUtil;
+import com.capstone.be.dto.ai.AiModerationResponse;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -230,15 +232,24 @@ public class DocumentServiceImpl implements DocumentService {
 
     // Trigger async AI processing (will update document status and summaries after completion)
     UUID documentId = document.getId();
-    aiModerationService.processDocumentAsync(documentId, fileToUpload)
-        .thenAccept(aiResponse -> {
-          log.info("AI processing completed for document ID: {} with status: {}",
-              documentId, aiResponse.getStatus());
-        })
-        .exceptionally(ex -> {
-          log.error("AI processing failed for document ID: {}", documentId, ex);
-          return null;
-        });
+    log.info("Submitting async AI processing task for document ID: {}", documentId);
+    
+    try {
+      CompletableFuture<AiModerationResponse> aiFuture = aiModerationService.processDocumentAsync(documentId, fileToUpload);
+      log.info("Async AI processing task submitted successfully for document ID: {}", documentId);
+      
+      aiFuture.thenAccept(aiResponse -> {
+        log.info("AI processing completed for document ID: {} with status: {}",
+            documentId, aiResponse != null ? aiResponse.getStatus() : "null");
+      })
+      .exceptionally(ex -> {
+        log.error("AI processing failed for document ID: {}", documentId, ex);
+        return null;
+      });
+    } catch (Exception e) {
+      log.error("Failed to submit async AI processing task for document ID: {}", documentId, e);
+      // Don't throw - document was uploaded successfully, just AI processing failed to start
+    }
 
     // Build and return response using mapper
     return documentMapper.toUploadResponse(document, allTags);

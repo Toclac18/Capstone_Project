@@ -49,3 +49,36 @@ async def run_ocr_on_file_parallel(file_path: str, max_workers: int = 4) -> Dict
         return resp.json()
 
 
+async def run_ocr_on_pages(file_path: str, page_numbers: list[int], max_workers: int = 4) -> Dict[int, str]:
+    """
+    OCR nhiều trang cụ thể song song.
+    
+    Args:
+        file_path: Đường dẫn file PDF
+        page_numbers: Danh sách số trang cần OCR (1-indexed)
+        max_workers: Số worker song song
+    
+    Returns:
+        Dict mapping page_number -> text của trang đó
+    """
+    async with httpx.AsyncClient(timeout=OCR_TIMEOUT) as client:
+        semaphore = asyncio.Semaphore(max_workers)
+        
+        async def ocr_single_page(page_num: int) -> tuple[int, str]:
+            async with semaphore:
+                resp = await client.get(
+                    f"{OCR_SERVICE_URL}/ocr-page",
+                    params={"path": file_path, "page_number": page_num},
+                )
+                resp.raise_for_status()
+                result = resp.json()
+                return page_num, result["text"]
+        
+        # OCR tất cả các trang song song
+        tasks = [ocr_single_page(page_num) for page_num in page_numbers]
+        results = await asyncio.gather(*tasks)
+        
+        # Convert thành dict
+        return {page_num: text for page_num, text in results}
+
+

@@ -76,6 +76,7 @@ public class SecurityConfig {
                 "/public/**",
                 "/dev/**",
                 "/contact-tickets/**", // Public endpoint for ticket creation, auth handled in controller
+                "/v1/ai/webhook", // Webhook endpoint for AI service callbacks (no auth required) - relative to servlet path /api
                 "/error", // Error page
                 "/api/error" // API error page
             ).permitAll()

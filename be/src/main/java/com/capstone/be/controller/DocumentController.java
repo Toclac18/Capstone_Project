@@ -21,6 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -181,7 +183,7 @@ public class DocumentController {
   public ResponseEntity<PagedResponse<DocumentUploadHistoryResponse>> getMyUploadHistory(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @ModelAttribute DocumentUploadHistoryFilter filter,
-      Pageable pageable) {
+      @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
     UUID uploaderId = userPrincipal.getId();
     log.info("User {} requesting upload history (page: {}, size: {}, filter: {})",
         uploaderId, pageable.getPageNumber(), pageable.getPageSize(), filter);
@@ -290,7 +292,7 @@ public class DocumentController {
   @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
   public ResponseEntity<PagedResponse<DocumentReadHistoryResponse>> getReadHistory(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
-      Pageable pageable) {
+      @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
     UUID userId = userPrincipal.getId();
     log.info("User {} requesting read history (page: {}, size: {})",
         userId, pageable.getPageNumber(), pageable.getPageSize());

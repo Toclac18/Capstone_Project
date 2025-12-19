@@ -12,6 +12,7 @@ import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
 import styles from "../../sign-in/styles.module.css";
 import { ApiError } from "@/services/http";
+import { useAuthContext } from "@/lib/auth/provider";
 
 type FormValues = {
   email: string;
@@ -23,6 +24,7 @@ type FormValues = {
 export default function AdminSignin() {
   const { showToast } = useToast();
   const router = useRouter();
+  const { setAuthInfo } = useAuthContext();
 
   const {
     register,
@@ -61,23 +63,29 @@ export default function AdminSignin() {
         localStorage.setItem("userName", response.fullName);
       }
 
+      // Update auth context immediately so header/sidebar reflect new state
+      setAuthInfo({
+        isAuthenticated: true,
+        readerId: response.userId ?? null,
+        email: response.email ?? null,
+        role: response.role ?? data.role,
+        payload: null,
+      });
+
       showToast({ type: "success", title: "Login Successful" });
 
       // Redirect based on role
       const roleRoutes: Record<typeof data.role, string> = {
         SYSTEM_ADMIN: "/admin",
-        BUSINESS_ADMIN: "/business-admin",
+        BUSINESS_ADMIN: "/business-admin/dashboard",
       };
 
       const targetRoute = roleRoutes[data.role] || "/";
 
-      // Refresh router to update server-side auth state
+      // Navigate to target route first, then refresh to update auth state
+      // This ensures the new page loads with fresh server-side auth
+      router.push(targetRoute);
       router.refresh();
-
-      // Navigate to target route
-      setTimeout(() => {
-        router.push(targetRoute);
-      }, 100);
     } catch (e: any) {
       const msg =
         e instanceof ApiError && !e.isHandledGlobally

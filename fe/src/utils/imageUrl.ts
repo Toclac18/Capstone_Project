@@ -3,12 +3,12 @@
  * @param url - The URL to sanitize
  * @param baseUrl - Base URL to prepend if the URL is a relative path
  * @param fallbackUrl - Fallback URL if sanitization fails (default: null)
- * @returns Sanitized URL with cache busting parameter, or fallback/null
+ * @returns Sanitized URL or fallback/null
  */
 export function sanitizeImageUrl(
   url: string | null | undefined,
   baseUrl?: string,
-  fallbackUrl: string | null = null
+  fallbackUrl: string | null = null,
 ): string | null {
   if (!url || typeof url !== "string") {
     return fallbackUrl;
@@ -23,7 +23,7 @@ export function sanitizeImageUrl(
   if (cleaned.startsWith("http://") || cleaned.startsWith("https://")) {
     try {
       const urlObj = new URL(cleaned);
-      return `${urlObj.toString()}?t=${Date.now()}`;
+      return urlObj.toString();
     } catch {
       return fallbackUrl;
     }
@@ -33,11 +33,11 @@ export function sanitizeImageUrl(
   if (cleaned.includes("s3.amazonaws.com")) {
     try {
       const urlObj = new URL(cleaned);
-      return `${urlObj.toString()}?t=${Date.now()}`;
+      return urlObj.toString();
     } catch {
       try {
         const urlObj = new URL(`https://${cleaned}`);
-        return `${urlObj.toString()}?t=${Date.now()}`;
+        return urlObj.toString();
       } catch {
         return fallbackUrl;
       }
@@ -50,7 +50,7 @@ export function sanitizeImageUrl(
     try {
       const fullUrl = `${baseUrl}${path}`;
       new URL(fullUrl);
-      return `${fullUrl}?t=${Date.now()}`;
+      return fullUrl;
     } catch {
       return fallbackUrl;
     }
@@ -58,4 +58,3 @@ export function sanitizeImageUrl(
 
   return fallbackUrl;
 }
-

@@ -20,6 +20,7 @@ export interface ModalPreviewDoc {
   publicYear?: number | string;
   uploader?: string;
   isPremium?: boolean;
+  hasRedeemed?: boolean;
   points?: number | null;
   thumbnail?: string;
   description?: string;

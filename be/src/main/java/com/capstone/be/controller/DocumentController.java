@@ -325,14 +325,16 @@ public class DocumentController {
   }
 
   /**
-   * Search metadata cho public documents.
+   * Search metadata cho documents.
    * Dùng cho Filter Modal ở FE.
-   * Không yêu cầu authentication.
+   * Authentication optional - nếu có sẽ trả về joinedOrganizationIds.
    */
   @GetMapping("/search-meta")
-  public ResponseEntity<DocumentSearchMetaResponse> getPublicSearchMeta() {
-    log.info("Received request for public document search meta");
-    DocumentSearchMetaResponse meta = documentService.getPublicSearchMeta();
+  public ResponseEntity<DocumentSearchMetaResponse> getSearchMeta(
+      @AuthenticationPrincipal UserPrincipal userPrincipal) {
+    UUID userId = userPrincipal != null ? userPrincipal.getId() : null;
+    log.info("Received request for document search meta, userId: {}", userId);
+    DocumentSearchMetaResponse meta = documentService.getSearchMeta(userId);
     return ResponseEntity.ok(meta);
   }
 
@@ -421,6 +423,32 @@ public class DocumentController {
         documentService.getDocumentViolations(userId, documentId);
 
     return ResponseEntity.ok(violations);
+  }
+
+  /**
+   * Get review result for a rejected document
+   * Only the uploader and admins can view review result
+   *
+   * @param userPrincipal Authenticated user
+   * @param documentId Document ID
+   * @return Review result response
+   */
+  @GetMapping("/{id}/review-result")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN', 'BUSINESS_ADMIN', 'SYSTEM_ADMIN')")
+  public ResponseEntity<com.capstone.be.dto.response.review.ReviewResultResponse> getDocumentReviewResult(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "id") UUID documentId) {
+    UUID userId = userPrincipal.getId();
+    log.info("User {} requesting review result for document {}", userId, documentId);
+
+    com.capstone.be.dto.response.review.ReviewResultResponse reviewResult =
+        documentService.getDocumentReviewResult(userId, documentId);
+
+    if (reviewResult == null) {
+      return ResponseEntity.notFound().build();
+    }
+
+    return ResponseEntity.ok(reviewResult);
   }
 
 }

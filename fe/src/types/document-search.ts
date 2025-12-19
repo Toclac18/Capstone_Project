@@ -133,6 +133,8 @@ export type SearchMeta = {
     min: number;
     max: number;
   } | null;
+  /** Organization IDs mà user đã join (chỉ có khi authenticated) */
+  joinedOrganizationIds?: string[] | null;
 };
 
 // Kết quả phân trang dùng chung

@@ -30,6 +30,9 @@ function toModalPreviewDoc(doc: DocumentSearchItem) {
     publicYear,
     uploader: doc.uploader.fullName,
     isPremium: doc.isPremium,
+    // Search API không trả về userInfo, mặc định true để hiển thị "View details"
+    // User sẽ xử lý redeem ở trang detail
+    hasRedeemed: true,
     points: doc.price,
     thumbnail: doc.thumbnailUrl || undefined,
     description: doc.description,
@@ -95,7 +98,7 @@ export default function DocumentList() {
           const thumbnailUrl = sanitizeImageUrl(
             doc.thumbnailUrl,
             THUMBNAIL_BASE_URL,
-            DEFAULT_THUMBNAIL
+            DEFAULT_THUMBNAIL,
           );
 
           const handleOpen = () => {

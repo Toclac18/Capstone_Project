@@ -11,6 +11,7 @@ import type { DocumentItem as BaseDoc } from "@/types/document-homepage";
 export default function Section({
   title,
   items,
+  sectionKey,
   defaultPageSize = 12,
 }: {
   title: string;
@@ -22,14 +23,20 @@ export default function Section({
   const { open } = useModalPreview();
 
   // Chuẩn hoá data cho DocCard (bổ sung viewCount nếu thiếu)
-  const normalized: BaseDoc[] = useMemo(
-    () =>
-      (items ?? []).map((d) => ({
-        ...d,
-        viewCount: (d as any).viewCount ?? 0,
-      })),
-    [items],
-  );
+  // Sort by upvoteCount descending nếu là section "top" (Top Upvoted)
+  const normalized: BaseDoc[] = useMemo(() => {
+    const mapped = (items ?? []).map((d) => ({
+      ...d,
+      viewCount: (d as any).viewCount ?? 0,
+    }));
+
+    // Sort by upvoteCount descending cho Top Upvoted section
+    if (sectionKey === "top") {
+      mapped.sort((a, b) => (b.upvote_counts ?? 0) - (a.upvote_counts ?? 0));
+    }
+
+    return mapped;
+  }, [items, sectionKey]);
 
   // Pagination thuần client-side (không sync URL)
   const [page, setPage] = useState(1);

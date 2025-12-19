@@ -536,6 +536,13 @@
   justify-content: space-between;
 }
 
+[data-search-scope] .fieldHint {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--search-text-muted);
+  font-style: italic;
+}
+
 [data-search-scope] .select {
   border-radius: 10px;
   border: 2px solid var(--search-border-subtle);
@@ -1151,8 +1158,6 @@
   font-size: 12px;
 }
 
-
-
 /* responsive – stack nicely on small screens */
 @media (max-width: 768px) {
   [data-search-scope] .card {
@@ -1200,7 +1205,11 @@
 }
 
 :global(html.dark) [data-search-scope] .priceBadge {
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(251, 191, 36, 0.2) 0%,
+    rgba(245, 158, 11, 0.1) 100%
+  );
   border: 1px solid rgba(251, 191, 36, 0.6);
   color: #fbbf24;
 }
@@ -1315,7 +1324,6 @@
   color: var(--search-text-soft);
 }
 
-
 /* Empty state */
 [data-search-scope] .emptyState {
   display: flex;
@@ -1339,7 +1347,11 @@
 }
 
 :global(html.dark) [data-search-scope] .emptyIcon {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.15) 0%,
+    rgba(139, 92, 246, 0.1) 100%
+  );
   color: #a5b4fc;
 }
 

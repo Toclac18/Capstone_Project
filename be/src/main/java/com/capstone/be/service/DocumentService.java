@@ -186,7 +186,12 @@ public interface DocumentService {
 
   Page<DocumentDetailResponse> getHomepageDocuments(UUID userId, int page, int size);
 
-  DocumentSearchMetaResponse getPublicSearchMeta();
+  /**
+   * Get search metadata for filter modal
+   * @param userId Optional user ID to get joined organizations
+   * @return Search metadata with filter options
+   */
+  DocumentSearchMetaResponse getSearchMeta(UUID userId);
 
   /**
    * Get document statistics for admin dashboard
@@ -204,5 +209,16 @@ public interface DocumentService {
    * @return List of violations
    */
   java.util.List<DocumentViolationResponse> getDocumentViolations(
+      UUID userId, UUID documentId);
+
+  /**
+   * Get review result for a rejected document
+   * Only the uploader can view their document's review result
+   *
+   * @param userId     User ID requesting review result
+   * @param documentId Document ID
+   * @return Review result response or null if not found
+   */
+  com.capstone.be.dto.response.review.ReviewResultResponse getDocumentReviewResult(
       UUID userId, UUID documentId);
 }

@@ -5,7 +5,6 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
   fetchDocDetail,
   fetchCommentsPage,
-  redeemDoc,
   getUserVote,
   voteDocument,
   addComment,
@@ -15,7 +14,6 @@ import {
   type RelatedLite,
   type Comment,
 } from "@/services/docs.service";
-import { useToast } from "@/components/ui/toast";
 
 type DocsContextValue = {
   loading: boolean;
@@ -42,14 +40,6 @@ type DocsContextValue = {
   voteLoading: boolean;
   handleUpvote: () => Promise<void>;
   handleDownvote: () => Promise<void>;
-
-  // premium / redeem
-  redeemed: boolean;
-  isRedeemModalOpen: boolean;
-  redeemLoading: boolean;
-  openRedeemModal: () => void;
-  closeRedeemModal: () => void;
-  redeem: () => Promise<void>;
 
   // comments
   comments: Comment[];
@@ -98,10 +88,6 @@ export function DocsViewProvider({
   const [hits, setHits] = useState<number[]>([]);
   const [hitIndex, setHitIndex] = useState(0);
 
-  const [redeemed, setRedeemed] = useState(false);
-  const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
-  const [redeemLoading, setRedeemLoading] = useState(false);
-
   const [userVote, setUserVote] = useState<number>(0); // -1, 0, or 1 (default: 0 = no vote)
   const [voteLoading, setVoteLoading] = useState(false);
 
@@ -113,8 +99,6 @@ export function DocsViewProvider({
   const [commentPageSize, setCommentPageSize] = useState(20);
   const [commentTotalPages, setCommentTotalPages] = useState(1);
   const [commentTotalElements, setCommentTotalElements] = useState(0);
-
-  const { showToast } = useToast();
 
   // -----------------------------
   // LOAD DOC DETAIL + FIRST COMMENTS PAGE
@@ -142,12 +126,6 @@ export function DocsViewProvider({
         setHits([]);
         setHitIndex(0);
         pagesTextRef.current = {};
-
-        // redeemed state
-        const initialRedeemed = doc.isPremium ? !!doc.isRedeemed : true;
-        setRedeemed(initialRedeemed);
-        setIsRedeemModalOpen(false);
-        setRedeemLoading(false);
 
         // comments + pageInfo
         setComments(data.comments || []);
@@ -351,51 +329,6 @@ export function DocsViewProvider({
   };
 
   // -----------------------------
-  // REDEEM
-  // -----------------------------
-  const openRedeemModal = () => setIsRedeemModalOpen(true);
-  const closeRedeemModal = () => {
-    if (!redeemLoading) setIsRedeemModalOpen(false);
-  };
-
-  const redeem = async () => {
-    if (!detail || redeemed) return;
-
-    try {
-      setRedeemLoading(true);
-      setError(null);
-
-      const res = await redeemDoc(detail.id);
-
-      if (!res.success || !res.redeemed) {
-        throw new Error("Redeem failed");
-      }
-
-      setDetail((d) =>
-        d
-          ? {
-              ...d,
-              isRedeemed: true,
-            }
-          : d,
-      );
-      setRedeemed(true);
-      setIsRedeemModalOpen(false);
-    } catch (e: any) {
-      const errorMessage = e?.message || "Redeem failed";
-      setError(errorMessage);
-      showToast({
-        type: "error",
-        title: "Redeem Failed",
-        message: errorMessage,
-        duration: 5000,
-      });
-    } finally {
-      setRedeemLoading(false);
-    }
-  };
-
-  // -----------------------------
   // COMMENTS: ADD, EDIT, DELETE
   // -----------------------------
   const addNewComment = async (content: string) => {
@@ -506,13 +439,6 @@ export function DocsViewProvider({
     voteLoading,
     handleUpvote,
     handleDownvote,
-
-    redeemed,
-    isRedeemModalOpen,
-    redeemLoading,
-    openRedeemModal,
-    closeRedeemModal,
-    redeem,
 
     comments,
     commentLoading,

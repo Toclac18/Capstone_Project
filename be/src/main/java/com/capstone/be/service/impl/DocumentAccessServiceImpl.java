@@ -12,6 +12,7 @@ import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.repository.DocumentRedemptionRepository;
 import com.capstone.be.repository.DocumentRepository;
 import com.capstone.be.repository.OrgEnrollmentRepository;
+import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.repository.ReviewRequestRepository;
 import com.capstone.be.repository.UserRepository;
 import com.capstone.be.service.DocumentAccessService;
@@ -31,6 +32,7 @@ public class DocumentAccessServiceImpl implements DocumentAccessService {
   private final OrgEnrollmentRepository orgEnrollmentRepository;
   private final DocumentRedemptionRepository documentRedemptionRepository;
   private final ReviewRequestRepository reviewRequestRepository;
+  private final ReaderProfileRepository readerProfileRepository;
 
   @Override
   @Transactional(readOnly = true)
@@ -81,7 +83,10 @@ public class DocumentAccessServiceImpl implements DocumentAccessService {
     }
 
     // Check 4: User has redeemed/purchased the document
-    boolean hasRedeemed = documentRedemptionRepository.existsByReader_IdAndDocument_Id(userId, documentId);
+    // Note: DocumentRedemption stores reader.id (ReaderProfile ID), not user.id
+    boolean hasRedeemed = readerProfileRepository.findByUserId(userId)
+        .map(reader -> documentRedemptionRepository.existsByReader_IdAndDocument_Id(reader.getId(), documentId))
+        .orElse(false);
     if (hasRedeemed) {
       log.debug("Access granted: User {} has redeemed document {}", userId, documentId);
       return true;

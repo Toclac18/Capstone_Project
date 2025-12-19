@@ -33,6 +33,7 @@ import { DocumentDetailModal } from "./DocumentDetailModal";
 import { Pagination } from "@/components/ui/pagination";
 import {
   fetchReviewResults,
+  approveReviewResult,
   type ReviewResult,
 } from "../../review-approval/api";
 import { ReviewDetailModal as ReviewResultDetailModal } from "../../review-approval/_components/ReviewDetailModal";
@@ -417,16 +418,38 @@ export function ReviewManagement() {
     setShowReviewResultModal(true);
   };
 
-  const handleReviewResultApprove = async () => {
-    setShowReviewResultModal(false);
-    setSelectedReviewResult(null);
-    fetchAllReviewResults();
+  const handleReviewResultApprove = async (reason: string) => {
+    if (!selectedReviewResult) return;
+    try {
+      await approveReviewResult(selectedReviewResult.id, {
+        approved: true,
+        rejectionReason: reason || undefined,
+      });
+      setShowReviewResultModal(false);
+      setSelectedReviewResult(null);
+      fetchAllReviewResults();
+      fetchDocuments();
+    } catch (e) {
+      console.error("Failed to approve review result:", e);
+      throw e;
+    }
   };
 
-  const handleReviewResultReject = async () => {
-    setShowReviewResultModal(false);
-    setSelectedReviewResult(null);
-    fetchAllReviewResults();
+  const handleReviewResultReject = async (reason: string) => {
+    if (!selectedReviewResult) return;
+    try {
+      await approveReviewResult(selectedReviewResult.id, {
+        approved: false,
+        rejectionReason: reason,
+      });;
+      setShowReviewResultModal(false);
+      setSelectedReviewResult(null);
+      fetchAllReviewResults();
+      fetchDocuments();
+    } catch (e) {
+      console.error("Failed to reject review result:", e);
+      throw e;
+    }
   };
 
   const tabs = [

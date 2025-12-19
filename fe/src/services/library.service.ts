@@ -7,6 +7,7 @@ export type LibraryDocument = {
   type: string;
   domain: string;
   specializationId?: string;
+  specializationName?: string;
   fileSize: number;
   source: "UPLOADED" | "REDEEMED";
   pages: number;

@@ -57,7 +57,8 @@ export function DocumentDetailModal({
         const response = await fetch(`/api/business-admin/documents/${doc.id}`);
         if (response.ok) {
           const data = await response.json();
-          setFileUrl(data.data?.fileUrl || null);
+          // API returns documentData directly, fileUrl is at top level
+          setFileUrl(data.fileUrl || null);
         }
       } catch (e) {
         console.error("Failed to fetch document file URL:", e);

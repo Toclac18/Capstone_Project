@@ -79,7 +79,20 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     // Update organization profile fields (only if provided)
     if (request.getName() != null) {
-      organizationProfile.setName(request.getName());
+      String trimmedName = request.getName().trim();
+      
+      // Check if name is being changed and if new name already exists
+      if (!trimmedName.equals(organizationProfile.getName())) {
+        if (organizationProfileRepository.existsByName(trimmedName)) {
+          throw new BusinessException(
+              "Organization name already exists: " + trimmedName,
+              HttpStatus.CONFLICT,
+              "DUPLICATE_ORG_NAME"
+          );
+        }
+      }
+      
+      organizationProfile.setName(trimmedName);
     }
     if (request.getType() != null) {
       organizationProfile.setType(request.getType());

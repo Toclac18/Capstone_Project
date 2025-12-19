@@ -18,15 +18,20 @@ import com.capstone.be.exception.ForbiddenException;
 import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.mapper.DocumentMapper;
+import com.capstone.be.repository.CommentRepository;
 import com.capstone.be.repository.DocTypeRepository;
 import com.capstone.be.repository.DocumentReadHistoryRepository;
 import com.capstone.be.repository.DocumentRedemptionRepository;
+import com.capstone.be.repository.DocumentReportRepository;
 import com.capstone.be.repository.DocumentRepository;
 import com.capstone.be.repository.DocumentTagLinkRepository;
+import com.capstone.be.repository.DocumentViolationRepository;
 import com.capstone.be.repository.OrgEnrollmentRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.repository.ReviewRequestRepository;
+import com.capstone.be.repository.ReviewResultRepository;
+import com.capstone.be.repository.SavedListDocumentRepository;
 import com.capstone.be.repository.SpecializationRepository;
 import com.capstone.be.repository.TagRepository;
 import com.capstone.be.repository.UserRepository;
@@ -36,10 +41,12 @@ import com.capstone.be.repository.specification.DocumentSpecification;
 import com.capstone.be.repository.specification.DocumentUploadHistorySpecification;
 import com.capstone.be.service.AiDocumentModerationAndSummarizationService;
 import com.capstone.be.service.DocumentAccessService;
+import com.capstone.be.service.DocumentConversionService;
 import com.capstone.be.service.DocumentService;
 import com.capstone.be.service.DocumentThumbnailService;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.service.FileStorageService;
+import com.capstone.be.service.helper.NotificationHelper;
 import com.capstone.be.service.SystemConfigService;
 import com.capstone.be.util.StringUtil;
 
@@ -78,18 +85,20 @@ public class DocumentServiceImpl implements DocumentService {
   private final DocumentRedemptionRepository documentRedemptionRepository;
   private final DocumentReadHistoryRepository documentReadHistoryRepository;
   private final ReviewRequestRepository reviewRequestRepository;
-  private final com.capstone.be.repository.ReviewResultRepository reviewResultRepository;
-  private final com.capstone.be.repository.CommentRepository commentRepository;
-  private final com.capstone.be.repository.SavedListDocumentRepository savedListDocumentRepository;
-  private final com.capstone.be.repository.DocumentReportRepository documentReportRepository;
+  private final ReviewResultRepository reviewResultRepository;
+  private final CommentRepository commentRepository;
+  private final SavedListDocumentRepository savedListDocumentRepository;
+  private final DocumentReportRepository documentReportRepository;
+  private final DocumentViolationRepository documentViolationRepository;
   private final FileStorageService fileStorageService;
   private final DocumentThumbnailService documentThumbnailService;
   private final DocumentMapper documentMapper;
   private final DocumentAccessService documentAccessService;
   private final OrgEnrollmentRepository orgEnrollmentRepository;
   private final AiDocumentModerationAndSummarizationService aiModerationService;
+  private final NotificationHelper notificationHelper;
   private final EmailService emailService;
-  private final com.capstone.be.service.DocumentConversionService documentConversionService;
+  private final DocumentConversionService documentConversionService;
   private final SystemConfigService systemConfigService;
 
   @Value("${app.document.defaultPremiumPrice:100}")
@@ -189,6 +198,36 @@ public class DocumentServiceImpl implements DocumentService {
     saveDocumentTagLinks(document, allTags);
     log.info("Saved {} document-tag relationships", allTags.size());
 
+    // Notify BUSINESS_ADMIN if document needs reviewer assignment
+    // (Documents with status VERIFYING need reviewer assignment)
+    if (document.getStatus() == DocStatus.REVIEWING) {
+      notificationHelper.sendNotificationToBusinessAdmins(
+          com.capstone.be.domain.enums.NotificationType.INFO,
+          "New Document Needs Review",
+          String.format("A new document '%s' uploaded by %s needs reviewer assignment", 
+              document.getTitle(), uploader.getFullName())
+      );
+    }
+
+    // Notify BUSINESS_ADMIN if document needs reviewer assignment
+    // (Documents with status VERIFYING need reviewer assignment)
+    if (document.getStatus() == DocStatus.AI_VERIFYING) {
+      notificationHelper.sendNotificationToBusinessAdmins(
+          com.capstone.be.domain.enums.NotificationType.INFO,
+          "New Document Needs Review",
+          String.format("A new document '%s' uploaded by %s needs AI verification", 
+              document.getTitle(), uploader.getFullName())
+      );
+    }
+
+    // Send notification to Reader (uploader)
+    notificationHelper.sendSuccessNotification(
+        uploader,
+        "Document Uploaded Successfully",
+        String.format("Your document '%s' has been uploaded and is being processed.",
+            document.getTitle())
+    );
+
     // Trigger async AI processing (will update document status and summaries after completion)
     UUID documentId = document.getId();
     aiModerationService.processDocumentAsync(documentId, fileToUpload)
@@ -236,10 +275,21 @@ public class DocumentServiceImpl implements DocumentService {
             .document(document)
             .build();
 
-    reader.setPoint(reader.getPoint() - document.getPrice());
+    int pointsDeducted = document.getPrice();
+    reader.setPoint(reader.getPoint() - pointsDeducted);
     readerProfileRepository.save(reader);
 
     documentRedemptionRepository.save(redemption);
+
+    // Send notification to Reader about points deduction
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    notificationHelper.sendInfoNotification(
+        user,
+        "Document Redeemed",
+        String.format("You redeemed '%s' for %d points. Remaining balance: %d points.",
+            document.getTitle(), pointsDeducted, reader.getPoint())
+    );
   }
 
   /**
@@ -435,6 +485,17 @@ public class DocumentServiceImpl implements DocumentService {
           allTags.addAll(savedNewTags);
           log.info("Created {} new tags with PENDING status for admin approval",
               savedNewTags.size());
+          
+          // Notify BUSINESS_ADMIN about new tags
+          String tagNames = savedNewTags.stream()
+              .map(Tag::getName)
+              .collect(Collectors.joining(", "));
+          notificationHelper.sendNotificationToBusinessAdmins(
+              com.capstone.be.domain.enums.NotificationType.INFO,
+              "New Tags Created",
+              String.format("User has created %d new tag(s) that need approval: %s", 
+                  savedNewTags.size(), tagNames)
+          );
         }
       }
     }
@@ -453,8 +514,14 @@ public class DocumentServiceImpl implements DocumentService {
       OrganizationProfile organization,
       String fileUrl) {
 
+    // Internal documents cannot be premium
+    Boolean isPremium = request.getIsPremium();
+    if (request.getVisibility() == DocVisibility.INTERNAL) {
+      isPremium = false;
+    }
+
     // Determine price: use configured premium price or 0
-    Integer price = Boolean.TRUE.equals(request.getIsPremium()) ? getPremiumDocPrice() : 0;
+    Integer price = Boolean.TRUE.equals(isPremium) ? getPremiumDocPrice() : 0;
 
     return Document.builder()
         .title(request.getTitle())
@@ -463,7 +530,7 @@ public class DocumentServiceImpl implements DocumentService {
         .organization(organization)
         .visibility(request.getVisibility())
         .docType(docType)
-        .isPremium(request.getIsPremium())
+        .isPremium(isPremium)
         .price(price)
         .fileKey(fileUrl)
         .status(DocStatus.AI_VERIFYING)
@@ -558,6 +625,17 @@ public class DocumentServiceImpl implements DocumentService {
     Document document = documentRepository.findById(documentId)
             .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
 
+    // Check access for INACTIVE documents
+    if (document.getStatus() == DocStatus.INACTIVE) {
+      if (userId == null) {
+        throw new ForbiddenException("This document is not available");
+      }
+      boolean hasAccess = documentAccessService.hasAccess(userId, documentId);
+      if (!hasAccess) {
+        throw new ForbiddenException("You do not have permission to view this document");
+      }
+    }
+
     DocumentDetailResponse response = mapDocumentToDetailResponse(document, userId);
 
     log.info("Successfully retrieved document detail for document {}", documentId);
@@ -597,12 +675,22 @@ public class DocumentServiceImpl implements DocumentService {
       throw ResourceNotFoundException.userById(uploaderId);
     }
 
+    // Apply default sort by createdAt DESC if no sort specified
+    Pageable sortedPageable = pageable;
+    if (pageable.getSort().isUnsorted()) {
+      sortedPageable = PageRequest.of(
+          pageable.getPageNumber(),
+          pageable.getPageSize(),
+          Sort.by(Sort.Direction.DESC, "createdAt")
+      );
+    }
+
     // Build specification with filter
     Specification<Document> spec = DocumentUploadHistorySpecification.buildUploadHistorySpec(
         uploaderId, filter);
 
     // Fetch documents with specification and pagination
-    Page<Document> documentsPage = documentRepository.findAll(spec, pageable);
+    Page<Document> documentsPage = documentRepository.findAll(spec, sortedPageable);
 
     // Map to response DTO
     Page<DocumentUploadHistoryResponse> responsePage = documentsPage.map(document -> {
@@ -638,6 +726,16 @@ public class DocumentServiceImpl implements DocumentService {
       throw ResourceNotFoundException.userById(userId);
     }
 
+    // Apply default sort by createdAt DESC if no sort specified
+    Pageable sortedPageable = pageable;
+    if (pageable.getSort().isUnsorted()) {
+      sortedPageable = PageRequest.of(
+          pageable.getPageNumber(),
+          pageable.getPageSize(),
+          Sort.by(Sort.Direction.DESC, "createdAt")
+      );
+    }
+
     // Get reader profile ID for redemption queries
     ReaderProfile readerProfile = readerProfileRepository.findByUserId(userId).orElse(null);
     UUID readerProfileId = readerProfile != null ? readerProfile.getId() : null;
@@ -646,7 +744,7 @@ public class DocumentServiceImpl implements DocumentService {
     var spec = DocumentLibrarySpecification.buildLibrarySpec(userId, readerProfileId, filter);
 
     // Fetch documents with specification
-    Page<Document> documentsPage = documentRepository.findAll(spec, pageable);
+    Page<Document> documentsPage = documentRepository.findAll(spec, sortedPageable);
 
     // Map to response DTO
     final UUID finalReaderProfileId = readerProfileId;
@@ -785,6 +883,16 @@ public class DocumentServiceImpl implements DocumentService {
     documentRepository.save(document);
 
     log.info("Soft deleted document with ID: {} (status changed to DELETED)", documentId);
+
+    // Notify BUSINESS_ADMIN about document deletion
+    notificationHelper.sendNotificationToBusinessAdmins(
+        com.capstone.be.domain.enums.NotificationType.WARNING,
+        "Document Deleted",
+        String.format("Reader %s (%s) has deleted document: %s", 
+            document.getUploader().getFullName(), 
+            document.getUploader().getEmail(), 
+            document.getTitle())
+    );
   }
 
   @Override
@@ -1023,6 +1131,17 @@ public class DocumentServiceImpl implements DocumentService {
 
     Integer downvoteCount = document.getUpvoteCount() - document.getVoteScore();
     response.setDownvoteCount(Math.max(0, downvoteCount));
+    
+    // Generate presigned URL for document file (for admin to preview)
+    if (document.getFileKey() != null) {
+      Integer expirationMinutes = getPresignedUrlExpirationMinutes();
+      String fileUrl = fileStorageService.generatePresignedUrl(
+          FileStorage.DOCUMENT_FOLDER,
+          document.getFileKey(),
+          expirationMinutes
+      );
+      response.setFileUrl(fileUrl);
+    }
 
     List<DocumentTagLink> tagLinks = documentTagLinkRepository.findByDocument(document);
     List<DocumentDetailResponse.TagInfo> tagInfos = tagLinks.stream()
@@ -1208,6 +1327,10 @@ public class DocumentServiceImpl implements DocumentService {
     DocumentDetailResponse.UserDocumentInfo userInfo;
 
     if (userId != null) {
+      // Fetch user to check role
+      User user = userRepository.findById(userId).orElse(null);
+      boolean isBusinessAdmin = user != null && user.getRole() == com.capstone.be.domain.enums.UserRole.BUSINESS_ADMIN;
+
       // Check access (includes all access types: public, uploader, org member, redeemed, reviewer)
       boolean hasAccess = documentAccessService.hasAccess(userId, document.getId());
 
@@ -1215,23 +1338,28 @@ public class DocumentServiceImpl implements DocumentService {
 
       boolean hasRedeemed = false;
       if (Boolean.TRUE.equals(document.getIsPremium())) {
-        // Find ReaderProfile from User ID first, then check redemption
-        ReaderProfile readerProfile = readerProfileRepository.findByUserId(userId).orElse(null);
-        if (readerProfile != null) {
-          hasRedeemed = documentRedemptionRepository
-                  .existsByReader_IdAndDocument_Id(readerProfile.getId(), document.getId());
+        // Business Admin has access to all premium documents without redemption
+        if (isBusinessAdmin) {
+          hasRedeemed = true;
+        } else if (isUploader) {
+          // Uploader can access their own premium documents without redemption
+          hasRedeemed = true;
+        } else {
+          // Find ReaderProfile from User ID first, then check redemption
+          ReaderProfile readerProfile = readerProfileRepository.findByUserId(userId).orElse(null);
+          if (readerProfile != null) {
+            hasRedeemed = documentRedemptionRepository
+                    .existsByReader_IdAndDocument_Id(readerProfile.getId(), document.getId());
+          }
         }
       }
 
       boolean isMemberOfOrganization = false;
-      if (document.getOrganization() != null) {
-        User user = userRepository.findById(userId).orElse(null);
-        if (user != null) {
-          isMemberOfOrganization = orgEnrollmentRepository
-                  .findByOrganizationAndMember(document.getOrganization(), user)
-                  .map(enrollment -> enrollment.getStatus() == OrgEnrollStatus.JOINED)
-                  .orElse(false);
-        }
+      if (document.getOrganization() != null && user != null) {
+        isMemberOfOrganization = orgEnrollmentRepository
+                .findByOrganizationAndMember(document.getOrganization(), user)
+                .map(enrollment -> enrollment.getStatus() == OrgEnrollStatus.JOINED)
+                .orElse(false);
       }
 
       // Check if user is assigned reviewer with ACCEPTED status
@@ -1239,17 +1367,6 @@ public class DocumentServiceImpl implements DocumentService {
               .findByDocument_IdAndReviewer_Id(document.getId(), userId)
               .map(reviewRequest -> reviewRequest.getStatus() == ReviewRequestStatus.ACCEPTED)
               .orElse(false);
-
-      // Add presigned URL if user has access
-      String presignedUrl = null;
-      if (hasAccess && document.getFileKey() != null) {
-        presignedUrl = fileStorageService.generatePresignedUrl(
-                FileStorage.DOCUMENT_FOLDER,
-                document.getFileKey(),
-                getPresignedUrlExpirationMinutes()
-        );
-      }
-      response.setPresignedUrl(presignedUrl);
 
       userInfo = DocumentDetailResponse.UserDocumentInfo.builder()
               .hasAccess(hasAccess)
@@ -1260,21 +1377,7 @@ public class DocumentServiceImpl implements DocumentService {
               .build();
 
     } else {
-      boolean hasAccess = false;
-      if (!Boolean.TRUE.equals(document.getIsPremium())) {
-        hasAccess = true;
-      }
-
-      // Add presigned URL if guest has access (non-premium documents)
-      String presignedUrl = null;
-      if (hasAccess && document.getFileKey() != null) {
-        presignedUrl = fileStorageService.generatePresignedUrl(
-                FileStorage.DOCUMENT_FOLDER,
-                document.getFileKey(),
-                getPresignedUrlExpirationMinutes()
-        );
-      }
-      response.setPresignedUrl(presignedUrl);
+      boolean hasAccess = !Boolean.TRUE.equals(document.getIsPremium());
 
       userInfo = DocumentDetailResponse.UserDocumentInfo.builder()
               .hasAccess(hasAccess)
@@ -1293,8 +1396,8 @@ public class DocumentServiceImpl implements DocumentService {
 
   @Override
   @Transactional(readOnly = true)
-  public DocumentSearchMetaResponse getPublicSearchMeta() {
-    log.info("Building search meta for public documents");
+  public DocumentSearchMetaResponse getSearchMeta(UUID userId) {
+    log.info("Building search meta for documents, userId: {}", userId);
 
     // Organizations
     List<OrganizationProfile> orgEntities =
@@ -1306,7 +1409,7 @@ public class DocumentServiceImpl implements DocumentService {
                     .id(org.getId())
                     .name(org.getName())
                     .logoUrl(org.getLogoKey())
-                    .docCount(null) // nếu muốn có docCount, cần query riêng
+                    .docCount(null)
                     .build())
             .sorted(Comparator.comparing(DocumentSearchMetaResponse.OrganizationOption::getName,
                     String.CASE_INSENSITIVE_ORDER))
@@ -1381,6 +1484,17 @@ public class DocumentServiceImpl implements DocumentService {
             .max(maxPrice)
             .build();
 
+    // Joined organization IDs (only if user is authenticated)
+    List<UUID> joinedOrgIds = null;
+    if (userId != null) {
+      List<OrgEnrollment> enrollments = orgEnrollmentRepository.findByMemberIdAndStatus(
+              userId, OrgEnrollStatus.JOINED);
+      joinedOrgIds = enrollments.stream()
+              .map(e -> e.getOrganization().getId())
+              .collect(Collectors.toList());
+      log.info("User {} has {} joined organizations", userId, joinedOrgIds.size());
+    }
+
     return DocumentSearchMetaResponse.builder()
             .organizations(orgOptions)
             .domains(domainOptions)
@@ -1389,6 +1503,7 @@ public class DocumentServiceImpl implements DocumentService {
             .tags(tagOptions)
             .years(years)
             .priceRange(priceRange)
+            .joinedOrganizationIds(joinedOrgIds)
             .build();
   }
   
@@ -1478,6 +1593,171 @@ public class DocumentServiceImpl implements DocumentService {
         .submittedReviews(submittedReviews)
         .documentsUploadedLast30Days(documentsUploadedLast30Days)
         .documentsActivatedLast30Days(documentsActivatedLast30Days)
+        .build();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<DocumentViolationResponse> getDocumentViolations(UUID userId, UUID documentId) {
+    // Fetch document
+    Document document = documentRepository.findById(documentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+
+    // Fetch user
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+    // Authorization: Only uploader or admin can view violations
+    boolean isUploader = document.getUploader().getId().equals(userId);
+    boolean isAdmin = user.getRole().name().contains("ADMIN");
+
+    if (!isUploader && !isAdmin) {
+      throw new ForbiddenException("You are not authorized to view violations for this document");
+    }
+
+    // Fetch violations
+    List<DocumentViolation> violations = documentViolationRepository.findByDocumentId(documentId);
+
+    // Map to DTO
+    return violations.stream()
+        .map(v -> DocumentViolationResponse.builder()
+            .id(v.getId())
+            .type(v.getType())
+            .snippet(v.getSnippet())
+            .page(v.getPage())
+            .prediction(v.getPrediction())
+            .confidence(v.getConfidence())
+            .createdAt(v.getCreatedAt())
+            .build())
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public com.capstone.be.dto.response.review.ReviewResultResponse getDocumentReviewResult(
+      UUID userId, UUID documentId) {
+    // Fetch document
+    Document document = documentRepository.findById(documentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+
+    // Fetch user
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+    // Authorization: Only uploader or admin can view review result
+    boolean isUploader = document.getUploader().getId().equals(userId);
+    boolean isAdmin = user.getRole().name().contains("ADMIN");
+
+    if (!isUploader && !isAdmin) {
+      throw new ForbiddenException("You are not authorized to view review result for this document");
+    }
+
+    // Find the latest review result for this document
+    Page<ReviewResult> reviewResults = reviewResultRepository.findByDocument_Id(
+        documentId, PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "submittedAt")));
+
+    if (reviewResults.isEmpty()) {
+      return null;
+    }
+
+    ReviewResult reviewResult = reviewResults.getContent().get(0);
+
+    // Map to response DTO
+    return mapToReviewResultResponse(reviewResult);
+  }
+
+  private com.capstone.be.dto.response.review.ReviewResultResponse mapToReviewResultResponse(
+      ReviewResult reviewResult) {
+    Document doc = reviewResult.getDocument();
+    User reviewer = reviewResult.getReviewer();
+    User uploader = doc.getUploader();
+
+    // Build document info
+    com.capstone.be.dto.response.review.ReviewResultResponse.DocumentInfo documentInfo = 
+        com.capstone.be.dto.response.review.ReviewResultResponse.DocumentInfo.builder()
+            .id(doc.getId())
+            .title(doc.getTitle())
+            .thumbnailUrl(doc.getThumbnailKey() != null
+                ? fileStorageService.generatePresignedUrl(FileStorage.DOCUMENT_THUMB_FOLDER, doc.getThumbnailKey(), 60)
+                : null)
+            .fileUrl(doc.getFileKey() != null
+                ? fileStorageService.generatePresignedUrl(FileStorage.DOCUMENT_FOLDER, doc.getFileKey(), 60)
+                : null)
+            .build();
+
+    if (doc.getDocType() != null) {
+      documentInfo.setDocType(
+          com.capstone.be.dto.response.review.ReviewResultResponse.DocTypeInfo.builder()
+              .id(doc.getDocType().getId())
+              .code(doc.getDocType().getCode())
+              .name(doc.getDocType().getName())
+              .build());
+    }
+
+    if (doc.getSpecialization() != null) {
+      documentInfo.setSpecialization(
+          com.capstone.be.dto.response.review.ReviewResultResponse.SpecializationInfo.builder()
+              .id(doc.getSpecialization().getId())
+              .code(doc.getSpecialization().getCode())
+              .name(doc.getSpecialization().getName())
+              .build());
+
+      if (doc.getSpecialization().getDomain() != null) {
+        documentInfo.setDomain(
+            com.capstone.be.dto.response.review.ReviewResultResponse.DomainInfo.builder()
+                .id(doc.getSpecialization().getDomain().getId())
+                .code(doc.getSpecialization().getDomain().getCode())
+                .name(doc.getSpecialization().getDomain().getName())
+                .build());
+      }
+    }
+
+    // Build reviewer info
+    com.capstone.be.dto.response.review.ReviewResultResponse.ReviewerInfo reviewerInfo = 
+        com.capstone.be.dto.response.review.ReviewResultResponse.ReviewerInfo.builder()
+            .id(reviewer.getId())
+            .fullName(reviewer.getFullName())
+            .email(reviewer.getEmail())
+            .avatarUrl(reviewer.getAvatarKey() != null
+                ? fileStorageService.generatePresignedUrl(FileStorage.AVATAR_FOLDER, reviewer.getAvatarKey(), 60)
+                : null)
+            .build();
+
+    // Build uploader info
+    com.capstone.be.dto.response.review.ReviewResultResponse.UploaderInfo uploaderInfo = 
+        com.capstone.be.dto.response.review.ReviewResultResponse.UploaderInfo.builder()
+            .id(uploader.getId())
+            .fullName(uploader.getFullName())
+            .email(uploader.getEmail())
+            .build();
+
+    // Build approval info if exists
+    com.capstone.be.dto.response.review.ReviewResultResponse.ApprovalInfo approvalInfo = null;
+    if (reviewResult.getApprovedBy() != null) {
+      approvalInfo = com.capstone.be.dto.response.review.ReviewResultResponse.ApprovalInfo.builder()
+          .approvedById(reviewResult.getApprovedBy().getId())
+          .approvedByName(reviewResult.getApprovedBy().getFullName())
+          .approvedAt(reviewResult.getApprovedAt())
+          .rejectionReason(reviewResult.getRejectionReason())
+          .build();
+    }
+
+    return com.capstone.be.dto.response.review.ReviewResultResponse.builder()
+        .id(reviewResult.getId())
+        .reviewRequestId(reviewResult.getReviewRequest().getId())
+        .document(documentInfo)
+        .reviewer(reviewerInfo)
+        .uploader(uploaderInfo)
+        .report(reviewResult.getComment())
+        .reportFileUrl(reviewResult.getReportFilePath() != null
+            ? fileStorageService.generatePresignedUrl(FileStorage.REVIEW_REPORT_FOLDER, reviewResult.getReportFilePath(), 60)
+            : null)
+        .decision(reviewResult.getDecision())
+        .status(reviewResult.getStatus())
+        .submittedAt(reviewResult.getSubmittedAt())
+        .approval(approvalInfo)
+        .createdAt(reviewResult.getCreatedAt())
+        .updatedAt(reviewResult.getUpdatedAt())
         .build();
   }
 

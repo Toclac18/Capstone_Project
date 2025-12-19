@@ -10,7 +10,7 @@ import { cn } from "@/utils/utils";
 import Link from "next/link";
 import { useState, useLayoutEffect } from "react";
 import { logout } from "@/services/auth.service";
-import { LogOutIcon, SettingsIcon, UserIcon } from "./icons";
+import { LogOutIcon, PhoneIcon, UserIcon } from "./icons";
 import { useReader } from "@/hooks/useReader";
 
 export function UserInfo() {
@@ -21,6 +21,9 @@ export function UserInfo() {
 
   // Only show profile link for READER and REVIEWER (ORGANIZATION_ADMIN has manage-organization page)
   const showProfileLink = role === "READER" || role === "REVIEWER";
+  
+  // Only show Contact Admin for non-admin roles (not BA or SYSTEM_ADMIN)
+  const showContactAdmin = role !== "BUSINESS_ADMIN" && role !== "SYSTEM_ADMIN";
 
   // Get name from localStorage after component mounts (client-side only)
   useLayoutEffect(() => {
@@ -99,36 +102,41 @@ export function UserInfo() {
         </figure>
 
         <hr className="border-[#E8E8E8] dark:border-dark-3" />
+        {(showProfileLink ||  showContactAdmin) && (
+          <div className="p-2 text-base text-[#4B5563] dark:text-dark-6 [&>*]:cursor-pointer">
+            {showProfileLink && (
+              <Link
+                href={"/profile"}
+                onClick={() => setIsOpen(false)}
+                className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[9px] hover:bg-gray-2 hover:text-dark dark:hover:bg-dark-3 dark:hover:text-white"
+              >
+                <UserIcon />
 
-        <div className="p-2 text-base text-[#4B5563] dark:text-dark-6 [&>*]:cursor-pointer">
-          {showProfileLink && (
-            <Link
-              href={"/profile"}
-              onClick={() => setIsOpen(false)}
-              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[9px] hover:bg-gray-2 hover:text-dark dark:hover:bg-dark-3 dark:hover:text-white"
-            >
-              <UserIcon />
+                <span className="mr-auto text-base font-medium">
+                  View profile
+                </span>
+              </Link>
+            )}
 
-              <span className="mr-auto text-base font-medium">
-                View profile
-              </span>
-            </Link>
-          )}
+            {showContactAdmin && (
+              <>
+              <Link
+                href={"/contact-admin"}
+                onClick={() => setIsOpen(false)}
+                className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[9px] hover:bg-gray-2 hover:text-dark dark:hover:bg-dark-3 dark:hover:text-white"
+              >
+                <PhoneIcon />
 
-          <Link
-            href={"/pages/settings"}
-            onClick={() => setIsOpen(false)}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[9px] hover:bg-gray-2 hover:text-dark dark:hover:bg-dark-3 dark:hover:text-white"
-          >
-            <SettingsIcon />
+                <span className="mr-auto text-base font-medium">
+                  Contact Admin
+                </span>
+              </Link>
+              <hr className="border-[#E8E8E8] dark:border-dark-3" />
+              </>
+            )}
+          </div>
+        )}        
 
-            <span className="mr-auto text-base font-medium">
-              Account Settings
-            </span>
-          </Link>
-        </div>
-
-        <hr className="border-[#E8E8E8] dark:border-dark-3" />
 
         <div className="p-2 text-base text-[#4B5563] dark:text-dark-6">
           <button

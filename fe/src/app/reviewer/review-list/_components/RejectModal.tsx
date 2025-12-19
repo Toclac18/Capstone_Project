@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react";
 import { X } from "lucide-react";
 import type { ReviewRequest } from "../api";
-import { formatDate } from "@/utils/format-date";
 import { Spinner } from "@/components/ui/spinner";
 import styles from "../styles.module.css";
 
@@ -76,22 +75,6 @@ export function RejectModal({
               <div className={styles["modal-info-item"]}>
                 <span className={styles["modal-info-label"]}>Document:</span>
                 <span className={styles["modal-info-value"]}>{request.documentTitle}</span>
-              </div>
-              {request.description && (
-                <div className={styles["modal-info-item"]}>
-                  <span className={styles["modal-info-label"]}>Description:</span>
-                  <span className={styles["modal-info-value"]}>{request.description}</span>
-                </div>
-              )}
-              <div className={styles["modal-info-item"]}>
-                <span className={styles["modal-info-label"]}>Uploader:</span>
-                <span className={styles["modal-info-value"]}>{request.uploaderName}</span>
-              </div>
-              <div className={styles["modal-info-item"]}>
-                <span className={styles["modal-info-label"]}>Upload Date:</span>
-                <span className={styles["modal-info-value"]}>
-                  {formatDate(request.uploadedDate)}
-                </span>
               </div>
             </div>
 

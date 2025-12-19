@@ -57,20 +57,9 @@ public class UserAndProfileSeeder {
   @Transactional
   @EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
   public void run() {
+    log.info("\uD83C\uDF31 Start seeding User and profile");
     if (userRepository.count() > 0) {
-      log.warn("Users already exist → skip seeding.");
       eventPublisher.publishEvent(new UserSeededEvent());
-      return;
-    }
-
-    log.info("Starting user seeding...");
-
-    // Get domains and specializations for reviewers
-    List<Domain> allDomains = domainRepository.findAll();
-    List<Specialization> allSpecs = specializationRepository.findAll();
-
-    if (allDomains.isEmpty() || allSpecs.isEmpty()) {
-      log.warn("No domains/specializations found. Run DomainAndSpecializationSeeder first.");
       return;
     }
 
@@ -84,7 +73,7 @@ public class UserAndProfileSeeder {
     seedReaders();
 
     // Seed Reviewers (with domains and specializations)
-    seedReviewers(allDomains, allSpecs);
+    seedReviewers();
 
     // Seed Organizations
     seedOrganizations();
@@ -94,194 +83,99 @@ public class UserAndProfileSeeder {
   }
 
   private void seedSystemAdmins() {
-    createUser(0, "admin@capstone.com", "Admin Hệ Thống",
-        UserRole.SYSTEM_ADMIN, UserStatus.ACTIVE, null);
-    log.info("Seeded 1 System Admin");
+    createUser(0, "sadmin@gmail.com", "System Admin A",
+        UserRole.SYSTEM_ADMIN, UserStatus.ACTIVE);
   }
 
   private void seedBusinessAdmins() {
-    createUser(1, "business1@capstone.com", "Nguyễn Văn An",
-        UserRole.BUSINESS_ADMIN, UserStatus.ACTIVE, null);
-    createUser(2, "business2@capstone.com", "Trần Thị Bình",
-        UserRole.BUSINESS_ADMIN, UserStatus.ACTIVE, null);
-    log.info("Seeded 2 Business Admins");
+    createUser(1, "badmin1@gmail.com", "Business Admin A",
+        UserRole.BUSINESS_ADMIN, UserStatus.ACTIVE);
+    createUser(2, "badmin2@gmail.com", "Business Admin B",
+        UserRole.BUSINESS_ADMIN, UserStatus.ACTIVE);
   }
 
   private void seedReaders() {
-    int seed = 0;
-
     // Active readers
-    createReaderUser(seed++, "reader1@gmail.com", "Phạm Minh Cường", UserStatus.ACTIVE,
-        LocalDate.of(1998, 5, 15));
-    createReaderUser(seed++, "reader2@gmail.com", "Lê Thu Hà", UserStatus.ACTIVE,
-        LocalDate.of(1999, 8, 20));
-    createReaderUser(seed++, "reader3@gmail.com", "Hoàng Văn Đức", UserStatus.ACTIVE,
-        LocalDate.of(2000, 3, 10));
-    createReaderUser(seed++, "reader4@gmail.com", "Vũ Thị Mai", UserStatus.ACTIVE,
-        LocalDate.of(1997, 12, 5));
-    createReaderUser(seed++, "reader5@gmail.com", "Đỗ Quang Huy", UserStatus.ACTIVE,
-        LocalDate.of(2001, 7, 25));
+    String[] names = {
+        "Nguyen Van Anh", "Tran Thi Binh",
+        "Dinh Van Cuong", "Vu Van Duong",
+        "Hoang Van Em", "Nguyen Huong Giang"
+    };
+    int userCount = names.length;
+    for (int i = 0; i < userCount; i++) {
+      String email = "reader" + (i + 1) + "@gmail.com";
+      LocalDate dob = LocalDate.ofEpochDay(10950 + (i + 100) * (i + 100) % 730); //2000 + random
 
-    // Pending email verification
-    createReaderUser(seed++, "reader.pending@gmail.com", "Ngô Thị Lan",
-        UserStatus.PENDING_EMAIL_VERIFY,
-        LocalDate.of(1999, 4, 18));
+      UserStatus status = UserStatus.ACTIVE;
+      if (i == userCount - 1) {
+        status = UserStatus.PENDING_EMAIL_VERIFY;
+      }
 
-    log.info("Seeded 6 Readers (5 active, 1 pending email)");
+      createReaderUser(i + 1, email, names[i], status, dob);
+    }
+
   }
 
-  private void seedReviewers(List<Domain> allDomains, List<Specialization> allSpecs) {
-    int seed = 0;
+  private void seedReviewers() {
 
-    // Get specific domains
-    Domain itDomain = allDomains.stream()
-        .filter(d -> d.getName().contains("INFORMATION TECHNOLOGY"))
-        .findFirst().orElse(allDomains.get(0));
+    List<Domain> allDomains = domainRepository.findAll();
+    List<Specialization> allSpecs = specializationRepository.findAll();
 
-    Domain engineeringDomain = allDomains.stream()
-        .filter(d -> d.getName().contains("ENGINEERING"))
-        .findFirst().orElse(allDomains.get(1));
+    if (allDomains.size() < 3) {
+      log.info("(!) Domain is not seeded. please Check");
+      return;
+    }
 
-    Domain healthDomain = allDomains.stream()
-        .filter(d -> d.getName().contains("HEALTH"))
-        .findFirst().orElse(allDomains.get(2));
-
-    // Get some specializations
-    List<Specialization> itSpecs = allSpecs.stream()
-        .filter(s -> s.getDomain().getId().equals(itDomain.getId()))
-        .limit(3)
-        .toList();
-
-    List<Specialization> engSpecs = allSpecs.stream()
-        .filter(s -> s.getDomain().getId().equals(engineeringDomain.getId()))
-        .limit(3)
-        .toList();
-
-    List<Specialization> healthSpecs = allSpecs.stream()
-        .filter(s -> s.getDomain().getId().equals(healthDomain.getId()))
-        .limit(2)
-        .toList();
-
-    // Active reviewers
-    createReviewerUser(
-        seed++, "reviewer1@gmail.com", "TS. Bùi Văn Thành", UserStatus.ACTIVE,
-        LocalDate.of(1985, 3, 20), "0000-0001-2345-6789",
-        EducationLevel.DOCTORATE, "Đại học Bách Khoa Hà Nội", "thanh.bui@hust.edu.vn",
-        List.of("https://s3.amazonaws.com/reviewer-credentials/thanh-cv.pdf"),
-        List.of(itDomain), itSpecs
+    //Active Reviewer
+    List<String> names = List.of(
+        "TS. Nguyen Thanh An",
+        "ThS. Vu Quoc Bao",
+        "GS. Tran Duc Canh",
+        "TS. Bui Thuy Dung",
+        "ThS. Tran Quoc En",
+        "TS. Dinh Duc Giang",
+        "CN. Bui Thu Huong"
     );
 
-    createReviewerUser(
-        seed++, "reviewer2@gmail.com", "PGS. Lương Thị Hương", UserStatus.ACTIVE,
-        LocalDate.of(1980, 7, 15), "0000-0002-3456-7890",
-        EducationLevel.DOCTORATE, "Đại học Quốc Gia TP.HCM", "huong.luong@vnu.edu.vn",
-        List.of("https://s3.amazonaws.com/reviewer-credentials/huong-cv.pdf"),
-        List.of(engineeringDomain), engSpecs
-    );
+    for (int i = 0; i < names.size(); i++) {
 
-    createReviewerUser(
-        seed++, "reviewer3@gmail.com", "TS. Đặng Minh Tuấn", UserStatus.ACTIVE,
-        LocalDate.of(1988, 11, 8), "0000-0003-4567-8901",
-        EducationLevel.DOCTORATE, "Viện Khoa học Công nghệ", "tuan.dang@vast.vn",
-        List.of("https://s3.amazonaws.com/reviewer-credentials/tuan-cv.pdf",
-            "https://s3.amazonaws.com/reviewer-credentials/tuan-cert.pdf"),
-        List.of(itDomain, engineeringDomain), itSpecs
-    );
+      List<Domain> domains = List.of(
+          allDomains.get(i % allDomains.size()),
+          allDomains.get((i + 1) % allDomains.size())); //2 domain
 
-    // Additional active reviewers for trending test
-    createReviewerUser(
-        seed++, "reviewer4@gmail.com", "PGS.TS. Nguyễn Thị Lan", UserStatus.ACTIVE,
-        LocalDate.of(1982, 4, 10), "0000-0008-9012-3456",
-        EducationLevel.DOCTORATE, "Đại học Kinh tế Quốc dân", "lan.nguyen@neu.edu.vn",
-        List.of("https://s3.amazonaws.com/reviewer-credentials/lan-cv.pdf"),
-        List.of(itDomain), itSpecs
-    );
+      List<Specialization> specs = new ArrayList<>();
+      for (Domain d : domains) {
+        List<Specialization> sp = allSpecs.stream()
+            .filter(s -> s.getDomain().getId().equals(d.getId()))
+            .limit(3)
+            .toList();
+        specs.addAll(sp);
+      }
 
-    createReviewerUser(
-        seed++, "reviewer5@gmail.com", "TS. Trần Văn Hùng", UserStatus.ACTIVE,
-        LocalDate.of(1986, 9, 22), "0000-0009-0123-4567",
-        EducationLevel.DOCTORATE, "Đại học Công nghệ - ĐHQG Hà Nội", "hung.tran@vnu.edu.vn",
-        List.of("https://s3.amazonaws.com/reviewer-credentials/hung-cv.pdf"),
-        List.of(itDomain, engineeringDomain), itSpecs
-    );
+      String email = "reviewer" + i + "@gmail.com";
 
-    createReviewerUser(
-        seed++, "reviewer6@gmail.com", "PGS.TS. Phạm Thị Mai", UserStatus.ACTIVE,
-        LocalDate.of(1983, 12, 5), "0000-0010-1234-5678",
-        EducationLevel.DOCTORATE, "Đại học Y Hà Nội", "mai.pham@hmu.edu.vn",
-        List.of("https://s3.amazonaws.com/reviewer-credentials/mai-cv.pdf"),
-        List.of(healthDomain), healthSpecs
-    );
+      LocalDate dob = LocalDate.ofEpochDay(7300 + (i + 100) * (i + 100) % 730);
 
-    createReviewerUser(
-        seed++, "reviewer7@gmail.com", "TS. Hoàng Văn Đức", UserStatus.ACTIVE,
-        LocalDate.of(1987, 6, 18), "0000-0011-2345-6789",
-        EducationLevel.DOCTORATE, "Đại học Bách Khoa TP.HCM", "duc.hoang@hcmut.edu.vn",
-        List.of("https://s3.amazonaws.com/reviewer-credentials/duc-cv.pdf"),
-        List.of(engineeringDomain), engSpecs
-    );
+      String orcid = i % 2 == 0 ? "ORCID-10000" + i : null;
+      EducationLevel eduLevel = i % 3 == 0 ? EducationLevel.MASTER : EducationLevel.DOCTORATE;
 
-    createReviewerUser(
-        seed++, "reviewer8@gmail.com", "TS. Lê Thị Hoa", UserStatus.ACTIVE,
-        LocalDate.of(1989, 3, 25), "0000-0012-3456-7890",
-        EducationLevel.DOCTORATE, "Đại học Khoa học Tự nhiên - ĐHQG TP.HCM", "hoa.le@hcmus.edu.vn",
-        List.of("https://s3.amazonaws.com/reviewer-credentials/hoa-cv.pdf"),
-        List.of(itDomain), itSpecs
-    );
+      String orgName = "University" + (char) ('A' + i - 1);
+      String orgEmail = orgName.toLowerCase() + "@gmail.com";
+      List<String> credentials = List.of("_sample_review_credential_1.pdf");
+      UserStatus status = UserStatus.ACTIVE;
+      if (i == names.size() - 1) {
+        status = UserStatus.REJECTED;
+      }
+      if (i == names.size() - 2) {
+        status = UserStatus.PENDING_APPROVE;
+      }
+      if (i == names.size() - 3) {
+        status = UserStatus.PENDING_EMAIL_VERIFY;
+      }
 
-    createReviewerUser(
-        seed++, "reviewer9@gmail.com", "PGS.TS. Vũ Minh Quang", UserStatus.ACTIVE,
-        LocalDate.of(1981, 8, 14), "0000-0013-4567-8901",
-        EducationLevel.DOCTORATE, "Viện Hàn lâm Khoa học và Công nghệ Việt Nam", "quang.vu@vast.vn",
-        List.of("https://s3.amazonaws.com/reviewer-credentials/quang-cv.pdf"),
-        List.of(itDomain, engineeringDomain), itSpecs
-    );
-
-    createReviewerUser(
-        seed++, "reviewer10@gmail.com", "TS. Đỗ Thị Linh", UserStatus.ACTIVE,
-        LocalDate.of(1984, 11, 30), "0000-0014-5678-9012",
-        EducationLevel.DOCTORATE, "Đại học Sư phạm Hà Nội", "linh.do@hnue.edu.vn",
-        List.of("https://s3.amazonaws.com/reviewer-credentials/linh-cv.pdf"),
-        List.of(engineeringDomain), engSpecs
-    );
-
-    // Pending approval reviewers
-    createReviewerUser(
-        seed++, "reviewer.pending1@gmail.com", "ThS. Trịnh Văn Long", UserStatus.PENDING_APPROVE,
-        LocalDate.of(1990, 5, 12), "0000-0004-5678-9012",
-        EducationLevel.MASTER, "Đại học Y Hà Nội", "long.trinh@hmu.edu.vn",
-        List.of("https://s3.amazonaws.com/reviewer-credentials/long-cv.pdf"),
-        List.of(healthDomain), healthSpecs
-    );
-
-    createReviewerUser(
-        seed++, "reviewer.pending2@gmail.com", "TS. Phan Thị Nga", UserStatus.PENDING_APPROVE,
-        LocalDate.of(1987, 9, 25), "0000-0005-6789-0123",
-        EducationLevel.DOCTORATE, "Đại học Khoa học Tự nhiên", "nga.phan@hus.edu.vn",
-        List.of("https://s3.amazonaws.com/reviewer-credentials/nga-cv.pdf"),
-        List.of(itDomain), itSpecs
-    );
-
-    // Pending email verification
-    createReviewerUser(
-        seed++, "reviewer.email@gmail.com", "ThS. Võ Quang Nam", UserStatus.PENDING_EMAIL_VERIFY,
-        LocalDate.of(1992, 2, 18), "0000-0006-7890-1234",
-        EducationLevel.MASTER, "Đại học Công nghệ", "nam.vo@hutech.edu.vn",
-        List.of("https://s3.amazonaws.com/reviewer-credentials/nam-cv.pdf"),
-        List.of(engineeringDomain), engSpecs
-    );
-
-    // Rejected reviewer
-    createReviewerUser(
-        seed++, "reviewer.rejected@gmail.com", "Nguyễn Văn Bình", UserStatus.REJECTED,
-        LocalDate.of(1995, 6, 30), "0000-0007-8901-2345",
-        EducationLevel.UNIVERSITY, "Công ty ABC", "binh.nguyen@abc.com",
-        List.of("https://s3.amazonaws.com/reviewer-credentials/binh-cv.pdf"),
-        List.of(itDomain), itSpecs
-    );
-
-    log.info(
-        "Seeded 15 Reviewers (10 active, 2 pending approval, 1 pending email, 1 rejected)");
+      createReviewerUser(i, email, names.get(i), status,
+          dob, orcid, eduLevel, orgName, orgEmail, credentials, domains, specs);
+    }
   }
 
   private void seedOrganizations() {
@@ -289,49 +183,54 @@ public class UserAndProfileSeeder {
 
     // Active organizations
     createOrganizationUser(
-        seed++, "org1.admin@hust.edu.vn", "Nguyễn Văn Tuấn", UserStatus.ACTIVE,
-        "Đại học Bách Khoa Hà Nội", OrgType.UNIVERSITY,
+        seed++, "org1@gmail.com",
+        "Nguyen Van Tuan", UserStatus.ACTIVE,
+        "Dai hoc Bach Khoa Ha Noi", OrgType.UNIVERSITY,
         "contact@hust.edu.vn", "024-3869-2008",
-        "Số 1 Đại Cồ Việt, Hai Bà Trưng, Hà Nội",
+        "So 1 Dai Co Viet, Hai Ba Trung, Ha Noi",
         "0100101968",
-        "https://s3.amazonaws.com/organization-logos/hust-logo.png"
+        null
     );
 
     createOrganizationUser(
-        seed++, "org2.admin@uit.edu.vn", "Trần Thị Hương", UserStatus.ACTIVE,
-        "Đại học Công nghệ Thông tin - ĐHQG TP.HCM", OrgType.UNIVERSITY,
+        seed++, "org2@gmail.com",
+        "Tran Thi Huong", UserStatus.ACTIVE,
+        "Dai hoc Cong nghe Thong tin - DHQG TP.HCM", OrgType.UNIVERSITY,
         "info@uit.edu.vn", "028-3725-2002",
-        "Khu phố 6, P.Linh Trung, TP.Thủ Đức, TP.HCM",
+        "Khu pho 6, P.Linh Trung, TP.Thu Duc, TP.HCM",
         "0304012363",
-        "https://s3.amazonaws.com/organization-logos/uit-logo.png"
+        null
     );
 
-    // Pending approval organization
+// Pending approval organization
     createOrganizationUser(
-        seed++, "org.pending@fpt.edu.vn", "Lê Minh Quân", UserStatus.PENDING_APPROVE,
-        "Trường Đại học FPT", OrgType.UNIVERSITY,
+        seed++, "org3@gmail.com",
+        "Le Minh Quan", UserStatus.PENDING_APPROVE,
+        "Truong Dai hoc FPT", OrgType.UNIVERSITY,
         "admission@fpt.edu.vn", "024-7300-5588",
-        "Khu Công nghệ cao Hòa Lạc, Km29 Đại lộ Thăng Long, Hà Nội",
+        "Khu Cong nghe cao Hoa Lac, Km29 Dai lo Thang Long, Ha Noi",
         "0101388139",
         null
     );
 
-    // Pending email verification
+// Pending email verification
     createOrganizationUser(
-        seed++, "org.email@vnu.edu.vn", "Phạm Văn Long", UserStatus.PENDING_EMAIL_VERIFY,
-        "Đại học Quốc gia Hà Nội", OrgType.UNIVERSITY,
+        seed++, "org4@gmail.com",
+        "Pham Van Long", UserStatus.PENDING_EMAIL_VERIFY,
+        "Dai hoc Quoc gia Ha Noi", OrgType.UNIVERSITY,
         "vnu@vnu.edu.vn", "024-3554-4338",
-        "144 Xuân Thủy, Cầu Giấy, Hà Nội",
+        "144 Xuan Thuy, Cau Giay, Ha Noi",
         "0100104659",
-        "https://s3.amazonaws.com/organization-logos/vnu-logo.png"
+        null
     );
 
-    // Rejected organization
+// Rejected organization
     createOrganizationUser(
-        seed++, "org.rejected@abc.edu.vn", "Hoàng Văn Nam", UserStatus.REJECTED,
-        "Trung tâm Đào tạo ABC", OrgType.TRAINING_CENTER,
+        seed++, "org5@gmail.com",
+        "Hoang Van Nam", UserStatus.REJECTED,
+        "Trung tam Dao tao ABC", OrgType.TRAINING_CENTER,
         "contact@abc.edu.vn", "024-1234-5678",
-        "123 Đường ABC, Quận XYZ, Hà Nội",
+        "123 Duong ABC, Quan XYZ, Ha Noi",
         "0123456789",
         null
     );
@@ -341,7 +240,7 @@ public class UserAndProfileSeeder {
   }
 
   private void createUser(int seed, String email, String fullName, UserRole role,
-      UserStatus status, LocalDate dob) {
+      UserStatus status) {
     User user = User.builder()
         .id(SeedUtil.generateUUID("user" + seed))
         .email(email)
@@ -349,7 +248,6 @@ public class UserAndProfileSeeder {
         .fullName(fullName)
         .role(role)
         .status(status)
-//        .point(0)
         .build();
 
     userRepository.save(user);
@@ -364,15 +262,14 @@ public class UserAndProfileSeeder {
         .fullName(fullName)
         .role(UserRole.READER)
         .status(status)
-//        .point(0)
         .build();
 
     user = userRepository.save(user);
 
     ReaderProfile profile = ReaderProfile.builder()
-        .id(SeedUtil.generateUUID("reader-profile-" + seed)) // Offset for profile IDs
+        .id(SeedUtil.generateUUID("reader-profile-" + seed))
         .user(user)
-        .point(user.getEmail().equals("reader1@gmail.com") ? 1000 : 100)
+        .point(seed == 1 ? 1000 : 100)
         .dob(dob)
         .build();
 
@@ -390,7 +287,6 @@ public class UserAndProfileSeeder {
         .fullName(fullName)
         .role(UserRole.REVIEWER)
         .status(status)
-//        .point(0)
         .build();
 
     user = userRepository.save(user);
@@ -411,7 +307,7 @@ public class UserAndProfileSeeder {
     // Create domain links
     for (Domain domain : domains) {
       ReviewerDomainLink link = ReviewerDomainLink.builder()
-          .id(SeedUtil.generateUUID("ReviewerDomainLink-" + seed))
+          .id(SeedUtil.generateUUID("reviewer-domain-link" + seed))
           .reviewer(profile)
           .domain(domain)
           .build();
@@ -420,7 +316,7 @@ public class UserAndProfileSeeder {
 
     for (Specialization spec : specializations) {
       ReviewerSpecLink link = ReviewerSpecLink.builder()
-          .id(SeedUtil.generateUUID("spec-link-reviewer-" + seed))
+          .id(SeedUtil.generateUUID("reviewer-spec-link-" + seed))
           .reviewer(profile)
           .specialization(spec)
           .build();
@@ -439,7 +335,6 @@ public class UserAndProfileSeeder {
         .fullName(adminFullName)
         .role(UserRole.ORGANIZATION_ADMIN)
         .status(status)
-//        .point(0)
         .build();
 
     admin = userRepository.save(admin);

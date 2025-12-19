@@ -38,6 +38,7 @@ import com.capstone.be.service.AuditLogService;
 import com.capstone.be.service.AuthService;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.service.FileStorageService;
+import com.capstone.be.service.helper.NotificationHelper;
 import com.capstone.be.util.HttpRequestUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
@@ -75,6 +76,7 @@ public class AuthServiceImpl implements AuthService {
   private final FileStorageService fileStorageService;
   private final AuthMapper authMapper;
   private final AuditLogService auditLogService;
+  private final NotificationHelper notificationHelper;
 
   @Override
   @Transactional
@@ -117,6 +119,13 @@ public class AuthServiceImpl implements AuthService {
 
     // Send verification email (async)
     emailService.sendEmailVerification(user.getId(), user.getEmail(), verificationToken);
+
+    // Notify BUSINESS_ADMIN about new user registration
+    notificationHelper.sendNotificationToBusinessAdmins(
+        com.capstone.be.domain.enums.NotificationType.INFO,
+        "New User Registration",
+        String.format("A new READER has registered: %s (%s)", user.getFullName(), user.getEmail())
+    );
 
     // Return response WITHOUT access token (user needs to verify email first)
     return authMapper.toAuthResponse(user);
@@ -166,6 +175,18 @@ public class AuthServiceImpl implements AuthService {
       if (user.getRole() == UserRole.READER) {
         user.setStatus(UserStatus.ACTIVE);
         log.info("Reader {} email verified successfully - account activated", email);
+        
+        // Add 500 welcome points for new reader
+        ReaderProfile readerProfile = readerProfileRepository.findByUserId(user.getId())
+            .orElse(null);
+        if (readerProfile != null) {
+          int currentPoints = readerProfile.getPoint() != null ? readerProfile.getPoint() : 0;
+          readerProfile.setPoint(currentPoints + 500);
+          readerProfileRepository.save(readerProfile);
+          log.info("Added 500 welcome points to reader {} - total points: {}", 
+              email, readerProfile.getPoint());
+        }
+        
         // Send welcome email (async, non-blocking)
         emailService.sendWelcomeEmail(user.getEmail(), user.getFullName());
       } else if (user.getRole() == UserRole.REVIEWER
@@ -174,6 +195,14 @@ public class AuthServiceImpl implements AuthService {
         log.info("{} {} email verified - waiting for admin approval",
             user.getRole(), email);
         // Don't send welcome email yet, wait for approval
+
+        // Notify BUSINESS_ADMIN about new reviewer/org admin pending approval
+        notificationHelper.sendNotificationToBusinessAdmins(
+            com.capstone.be.domain.enums.NotificationType.INFO,
+            "New " + user.getRole().name().replace("_", " ") + " Pending Approval",
+            String.format("A new %s has verified their email and is pending approval: %s (%s)",
+                user.getRole().name().replace("_", " "), user.getFullName(), user.getEmail())
+        );
       }
       userRepository.save(user);
     }
@@ -230,8 +259,41 @@ public class AuthServiceImpl implements AuthService {
         throw UnauthorizedException.invalidCredentials();
       }
 
+      // Check account status and throw appropriate exception
+      if (principal.getStatus() == UserStatus.PENDING_EMAIL_VERIFY) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("email", request.getEmail());
+        details.put("reason", "Email not verified");
+        auditLogService.logFailedAction(
+            LogAction.USER_LOGIN_FAILED,
+            principal,
+            details,
+            "Email not verified",
+            ipAddress,
+            userAgent,
+            401
+        );
+        throw UnauthorizedException.emailNotVerified();
+      }
+
+      if (principal.getStatus() == UserStatus.PENDING_APPROVE) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("email", request.getEmail());
+        details.put("reason", "Account pending approval");
+        auditLogService.logFailedAction(
+            LogAction.USER_LOGIN_FAILED,
+            principal,
+            details,
+            "Account pending admin approval",
+            ipAddress,
+            userAgent,
+            401
+        );
+        throw UnauthorizedException.accountPendingApproval();
+      }
+
       if (!principal.isEnabled()) {
-        // Log failed login - account disabled
+        // Log failed login - account disabled (INACTIVE, DELETED, REJECTED, etc.)
         Map<String, Object> details = new HashMap<>();
         details.put("email", request.getEmail());
         details.put("reason", "Account disabled");
@@ -298,15 +360,19 @@ public class AuthServiceImpl implements AuthService {
     String normalizedAdminEmail = request.getAdminEmail().toLowerCase().trim();
     String normalizedOrgEmail = request.getOrganizationEmail().toLowerCase().trim();
     
+    // Normalize and trim organization name
+    String trimmedOrgName = request.getOrganizationName().trim();
+    request.setOrganizationName(trimmedOrgName);
+    
     // Check if admin email already exists
     if (userRepository.existsByEmail(normalizedAdminEmail)) {
       throw DuplicateResourceException.email(normalizedAdminEmail);
     }
 
-    // Check if organization name already exists
-    if (organizationProfileRepository.existsByName(request.getOrganizationName())) {
+    // Check if organization name already exists (after trimming)
+    if (organizationProfileRepository.existsByName(trimmedOrgName)) {
       throw new DuplicateResourceException(
-          "Organization name already exists: " + request.getOrganizationName());
+          "Organization name already exists: " + trimmedOrgName);
     }
 
     // Check if organization email already exists
@@ -359,6 +425,14 @@ public class AuthServiceImpl implements AuthService {
 
     // Send verification email (async)
     emailService.sendEmailVerification(admin.getId(), admin.getEmail(), verificationToken);
+
+    // Notify BUSINESS_ADMIN about new organization registration
+    notificationHelper.sendNotificationToBusinessAdmins(
+        com.capstone.be.domain.enums.NotificationType.INFO,
+        "New Organization Registration",
+        String.format("A new ORGANIZATION has registered: %s (Admin: %s)", 
+            request.getOrganizationName(), admin.getEmail())
+    );
 
     // Return response WITHOUT access token (user needs to verify email first)
     return authMapper.toAuthResponse(admin);

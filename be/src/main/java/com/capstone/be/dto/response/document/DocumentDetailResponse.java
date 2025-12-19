@@ -30,7 +30,7 @@ public class DocumentDetailResponse {
   private Boolean isPremium;
   private Integer price;
   private String thumbnailUrl;
-  private String presignedUrl;  // Presigned URL for document access (if user has access)
+  private String fileUrl;  // Presigned URL for document file
   private Integer pageCount;
   private Integer viewCount;
   private Integer upvoteCount;

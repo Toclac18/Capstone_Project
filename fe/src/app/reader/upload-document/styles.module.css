@@ -147,17 +147,19 @@
 
 /* Two Column Layout */
 .two-column-layout {
-  @apply grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-8 mb-6;
+  @apply grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6;
 }
 
 /* Preview Column */
 .preview-column {
   @apply flex flex-col;
+  @apply w-full max-w-full overflow-hidden;
 }
 
 .preview-card {
   @apply rounded-xl border border-stroke bg-white p-6 shadow-sm relative;
   @apply min-h-[500px] flex flex-col;
+  @apply w-full max-w-full overflow-hidden;
 }
 :global(html.dark) .preview-card {
   @apply border-dark-3 bg-dark-2;
@@ -176,7 +178,8 @@
 
 .preview-pdf-wrapper {
   @apply flex justify-center items-start bg-gray-50 rounded-lg p-4;
-  @apply border border-stroke min-h-[400px] overflow-auto;
+  @apply border border-stroke min-h-[400px] max-h-[600px] overflow-auto;
+  @apply w-full max-w-full;
 }
 
 :global(html.dark) .preview-pdf-wrapper {
@@ -184,7 +187,9 @@
 }
 
 .preview-pdf-wrapper :global(canvas) {
-  @apply max-w-full h-auto shadow-lg;
+  @apply h-auto shadow-lg;
+  max-width: 100%;
+  width: auto;
 }
 
 .preview-loading {

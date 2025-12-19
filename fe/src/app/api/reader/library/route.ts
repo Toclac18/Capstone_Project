@@ -231,6 +231,7 @@ async function handleGET(request: Request) {
           type: doc.docTypeName || doc.type,
           domain: doc.domainName || doc.domain,
           specializationId: specializationId,
+          specializationName: doc.specializationName,
           fileSize: doc.fileSize || 0,
           source: doc.userRelation?.isOwned ? "UPLOADED" : "REDEEMED",
           pages: doc.pageCount || doc.pages || 0,

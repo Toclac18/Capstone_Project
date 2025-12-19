@@ -28,7 +28,7 @@ async function handleGET(_req: NextRequest): Promise<Response> {
     }
 
     const raw = await upstream.json().catch(() => ({}));
-    return jsonResponse(raw?.data ?? raw, {
+    return jsonResponse(raw, {
       status: upstream.status,
       mode: "real",
     });

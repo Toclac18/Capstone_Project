@@ -15,6 +15,7 @@ import com.capstone.be.repository.specification.ContactTicketSpecification;
 import com.capstone.be.service.ContactTicketService;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.service.NotificationService;
+import com.capstone.be.service.helper.NotificationHelper;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,7 @@ public class ContactTicketServiceImpl implements ContactTicketService {
   private final ContactTicketMapper contactTicketMapper;
   private final NotificationService notificationService;
   private final EmailService emailService;
+  private final NotificationHelper notificationHelper;
 
   @Override
   @Transactional
@@ -61,6 +63,28 @@ public class ContactTicketServiceImpl implements ContactTicketService {
     ContactTicket savedTicket = contactTicketRepository.save(ticket);
 
     log.info("Contact ticket created successfully: {}", savedTicket.getTicketCode());
+
+    // Notify user (if authenticated) about ticket received
+    if (userId != null && savedTicket.getUser() != null) {
+      notificationHelper.sendInfoNotification(
+          savedTicket.getUser(),
+          "Support Ticket Received",
+          String.format("Your support ticket %s has been received. We'll get back to you soon.",
+              savedTicket.getTicketCode())
+      );
+    }
+
+    // Notify BUSINESS_ADMIN about new contact ticket
+    String userInfo = userId != null
+        ? String.format("User: %s (%s)", savedTicket.getUser().getFullName(), savedTicket.getEmail())
+        : String.format("Guest: %s", savedTicket.getEmail());
+
+    notificationHelper.sendNotificationToBusinessAdmins(
+        com.capstone.be.domain.enums.NotificationType.INFO,
+        "New Contact Ticket",
+        String.format("A new contact ticket has been created: %s. %s",
+            savedTicket.getTicketCode(), userInfo)
+    );
 
     // Return simple response for ticket creation (matching frontend expectation)
     return ContactTicketResponse.ofSimple(

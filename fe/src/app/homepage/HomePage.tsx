@@ -17,7 +17,6 @@ import HomepageSkeleton from "./_components/HomepageSkeleton";
 // Guest versions
 import GuestPopularStrip from "./_components/GuestPopularStrip";
 import GuestHotPicks from "./_components/GuestHotPicks";
-import GuestOrgShowcase from "./_components/GuestOrgShowcase";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 export default function Homepage() {
@@ -29,21 +28,26 @@ export default function Homepage() {
     return <HomepageSkeleton />;
   }
 
-  const isLoggedIn = isAuthenticated.isAuthenticated;
-
+  // const isLoggedIn = isAuthenticated.isAuthenticated;
+  const isLoggedIn = false;
   return (
     <div className={styles.pageShell}>
       <main className={styles.main}>
-        {/* HERO */}
+        {/* HERO SECTION */}
         <div className={styles.heroRow}>
+          {/* Decorative element on right */}
+          <div className={styles.heroDecorRight} />
+
           <div className={styles.heroMain}>
-            <h1 className={styles.heroTitle}>
-              Discover trusted academic documents
-            </h1>
-            <p className={styles.heroSubtitle}>
-              Search, save, and revisit high-quality resources across
-              specializations — all in one place.
-            </p>
+            <div>
+              <h1 className={styles.heroTitle}>
+                📚 Discover Trusted Academic Documents
+              </h1>
+              <p className={styles.heroSubtitle}>
+                Search, save, and revisit high-quality resources across
+                specializations — all in one place.
+              </p>
+            </div>
             <div className={styles.heroSearchRow}>
               <SearchBar />
             </div>
@@ -62,17 +66,17 @@ export default function Homepage() {
             <RecommendedStrip />
 
             <Section
-              title="Continue reading"
+              title="Continue Reading"
               items={continueReading}
               sectionKey="continue"
-              defaultPageSize={8}
+              defaultPageSize={12}
             />
 
             <Section
-              title="Top upvoted"
+              title="Top Upvoted"
               items={topUpvoted}
               sectionKey="top"
-              defaultPageSize={8}
+              defaultPageSize={12}
             />
 
             <OrgHighlights />
@@ -84,13 +88,12 @@ export default function Homepage() {
           <>
             <GuestPopularStrip />
             <GuestHotPicks />
-            <GuestOrgShowcase />
 
             <Section
-              title="Top upvoted"
+              title="Top Upvoted by Community"
               items={topUpvoted}
               sectionKey="top"
-              defaultPageSize={8}
+              defaultPageSize={12}
             />
           </>
         )}
@@ -99,7 +102,7 @@ export default function Homepage() {
         <SpecializationsBlock
           groups={specGroups}
           defaultGroupsPerPage={3}
-          maxItemsPerGroup={8}
+          maxItemsPerGroup={12}
         />
 
         <RecentRail />

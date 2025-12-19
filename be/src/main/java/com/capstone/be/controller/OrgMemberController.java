@@ -4,6 +4,7 @@ import com.capstone.be.domain.enums.OrgEnrollStatus;
 import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.organization.InviteMembersRequest;
 import com.capstone.be.dto.request.organization.UpdateEnrollStatusRequest;
+import com.capstone.be.dto.response.organization.ImportResultItemResponse;
 import com.capstone.be.dto.response.organization.InviteMembersResponse;
 import com.capstone.be.dto.response.organization.MemberImportBatchResponse;
 import com.capstone.be.dto.response.organization.OrgEnrollmentResponse;
@@ -134,6 +135,27 @@ public class OrgMemberController {
   }
 
   /**
+   * Re-invite a member who has LEFT the organization
+   * POST /api/v1/organization/members/{enrollmentId}/re-invite
+   *
+   * @param userPrincipal Organization admin
+   * @param enrollmentId  Enrollment ID of member with LEFT status
+   * @return 200 OK
+   */
+  @PostMapping("/{enrollmentId}/re-invite")
+  @PreAuthorize("hasRole('ORGANIZATION_ADMIN')")
+  public ResponseEntity<Void> reInviteMember(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "enrollmentId") UUID enrollmentId) {
+    UUID adminId = userPrincipal.getId();
+    log.info("Organization admin {} re-inviting member: {}", adminId, enrollmentId);
+
+    orgEnrollmentService.reInviteMember(adminId, enrollmentId);
+
+    return ResponseEntity.ok().build();
+  }
+
+  /**
    * Accept organization invitation using JWT token from email link
    * POST /api/v1/organization/members/accept-invitation
    *
@@ -184,12 +206,13 @@ public class OrgMemberController {
   @PreAuthorize("hasRole('ORGANIZATION_ADMIN')")
   public ResponseEntity<PagedResponse<MemberImportBatchResponse>> getImportBatches(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @RequestParam(required = false) String q,
       Pageable pageable) {
     UUID adminId = userPrincipal.getId();
-    log.info("Get import batches for organization admin: {}", adminId);
+    log.info("Get import batches for organization admin: {}, search: {}", adminId, q);
 
     Page<MemberImportBatchResponse> batches = orgEnrollmentService.getImportBatches(
-        adminId, pageable);
+        adminId, q, pageable);
 
     return ResponseEntity.ok(PagedResponse.of(batches));
   }
@@ -216,6 +239,30 @@ public class OrgMemberController {
         adminId, importBatchId, pageable);
 
     return ResponseEntity.ok(PagedResponse.of(enrollments));
+  }
+
+  /**
+   * Get import result items for a specific import batch
+   * GET /api/v1/organization/members/import-batches/{importBatchId}/results
+   *
+   * @param userPrincipal Organization admin
+   * @param importBatchId Import batch ID
+   * @param pageable      Pagination parameters
+   * @return Paged response of import result items (SUCCESS, FAILED, SKIPPED)
+   */
+  @GetMapping("/import-batches/{importBatchId}/results")
+  @PreAuthorize("hasRole('ORGANIZATION_ADMIN')")
+  public ResponseEntity<PagedResponse<ImportResultItemResponse>> getImportResultItems(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "importBatchId") UUID importBatchId,
+      Pageable pageable) {
+    UUID adminId = userPrincipal.getId();
+    log.info("Get import result items for batch: {}", importBatchId);
+
+    Page<ImportResultItemResponse> results = orgEnrollmentService.getImportResultItems(
+        adminId, importBatchId, pageable);
+
+    return ResponseEntity.ok(PagedResponse.of(results));
   }
 
   /**

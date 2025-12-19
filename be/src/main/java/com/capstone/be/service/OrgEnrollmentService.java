@@ -1,6 +1,7 @@
 package com.capstone.be.service;
 
 import com.capstone.be.domain.enums.OrgEnrollStatus;
+import com.capstone.be.dto.response.organization.ImportResultItemResponse;
 import com.capstone.be.dto.response.organization.InviteMembersResponse;
 import com.capstone.be.dto.response.organization.MemberImportBatchResponse;
 import com.capstone.be.dto.response.organization.OrgEnrollmentResponse;
@@ -108,6 +109,15 @@ public interface OrgEnrollmentService {
   void leaveOrganization(UUID readerId, UUID organizationId);
 
   /**
+   * Re-invite a member who has LEFT the organization
+   * Only works for members with LEFT status
+   *
+   * @param organizationAdminId Organization admin user ID
+   * @param enrollmentId        Enrollment ID
+   */
+  void reInviteMember(UUID organizationAdminId, UUID enrollmentId);
+
+  /**
    * Get enrollment detail
    *
    * @param enrollmentId Enrollment ID
@@ -119,10 +129,11 @@ public interface OrgEnrollmentService {
    * Get import batches for an organization
    *
    * @param organizationAdminId Organization admin user ID
+   * @param search              Search keyword (optional)
    * @param pageable            Pagination
    * @return Page of import batches
    */
-  Page<MemberImportBatchResponse> getImportBatches(UUID organizationAdminId, Pageable pageable);
+  Page<MemberImportBatchResponse> getImportBatches(UUID organizationAdminId, String search, Pageable pageable);
 
   /**
    * Get successful enrollments for a specific import batch
@@ -150,5 +161,19 @@ public interface OrgEnrollmentService {
       UUID organizationAdminId,
       UUID enrollmentId,
       OrgEnrollStatus newStatus
+  );
+
+  /**
+   * Get import result items for a specific import batch
+   *
+   * @param organizationAdminId Organization admin user ID
+   * @param importBatchId       Import batch ID
+   * @param pageable            Pagination
+   * @return Page of import result items
+   */
+  Page<ImportResultItemResponse> getImportResultItems(
+      UUID organizationAdminId,
+      UUID importBatchId,
+      Pageable pageable
   );
 }

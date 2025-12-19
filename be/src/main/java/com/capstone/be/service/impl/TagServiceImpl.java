@@ -123,9 +123,9 @@ public class TagServiceImpl implements TagService {
 
     // Check if new name is different
     if (!tag.getName().equals(request.getName().trim())) {
-      // Check for duplicate tag name
+      // Check for duplicate tag name (excluding current tag)
       String normalizedName = normalizeTagName(request.getName());
-      if (tagRepository.existsByNormalizedName(normalizedName)) {
+      if (tagRepository.existsByNormalizedNameAndIdNot(normalizedName, tagId)) {
         log.warn("Tag already exists with name: {}", request.getName());
         throw new DuplicateResourceException("Tag", "name", request.getName());
       }

@@ -69,6 +69,7 @@ export function toDocumentItem(raw: any): DocumentItem {
     publicYear: year,
 
     isPremium: !!raw?.isPremium,
+    hasRedeemed: raw?.userInfo?.hasRedeemed ?? false,
     points: typeof raw?.price === "number" ? raw.price : null,
 
     description: str(raw?.description, ""),
@@ -111,5 +112,15 @@ export function toDocumentItem(raw: any): DocumentItem {
       coalesce(raw?.thumbnailUrl, raw?.thumbnail),
       "data:image/svg+xml,",
     ),
+
+    organization: raw?.organization
+      ? {
+          id: String(raw.organization.id ?? ""),
+          name: String(raw.organization.name ?? ""),
+          logoUrl: String(raw.organization.logoUrl ?? ""),
+        }
+      : undefined,
+
+    updatedAt: raw?.updatedAt ?? raw?.createdAt ?? undefined,
   };
 }

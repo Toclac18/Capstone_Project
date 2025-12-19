@@ -2,6 +2,7 @@
 
 import styles from "../styles.module.css";
 import DocCard from "./DocCard";
+import HorizontalScroll from "./HorizontalScroll";
 import { useHomepage } from "../provider";
 import { useModalPreview } from "@/components/ModalPreview";
 import { useMemo } from "react";
@@ -23,7 +24,7 @@ export default function GuestHotPicks() {
 
     unique.sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0));
 
-    return unique.slice(0, 8);
+    return unique.slice(0, 12);
   }, [specGroups]);
 
   if (!items.length) return null;
@@ -34,11 +35,11 @@ export default function GuestHotPicks() {
         <div className={styles.sectionHeader}>Hot picks for learners</div>
       </div>
 
-      <div className={styles.cardsGrid}>
+      <HorizontalScroll>
         {items.map((d) => (
           <DocCard key={d.id} {...d} onPreview={() => open(d)} />
         ))}
-      </div>
+      </HorizontalScroll>
     </section>
   );
 }

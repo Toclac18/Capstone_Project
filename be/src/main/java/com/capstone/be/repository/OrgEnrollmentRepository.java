@@ -107,4 +107,9 @@ public interface OrgEnrollmentRepository extends JpaRepository<OrgEnrollment, UU
    * Find enrollment by member ID and organization ID
    */
   Optional<OrgEnrollment> findByMemberIdAndOrganizationId(UUID memberId, UUID organizationId);
+
+  /**
+   * Find all active enrollments for a member
+   */
+  List<OrgEnrollment> findByMemberIdAndStatus(UUID memberId, OrgEnrollStatus status);
 }

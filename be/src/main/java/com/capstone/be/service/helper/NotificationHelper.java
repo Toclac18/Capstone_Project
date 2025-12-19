@@ -2,9 +2,17 @@ package com.capstone.be.service.helper;
 
 import com.capstone.be.domain.entity.User;
 import com.capstone.be.domain.enums.NotificationType;
+import com.capstone.be.domain.enums.UserRole;
+import com.capstone.be.domain.enums.UserStatus;
+import com.capstone.be.repository.UserRepository;
+import com.capstone.be.repository.specification.UserSpecification;
 import com.capstone.be.service.NotificationService;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
 /**
@@ -17,6 +25,7 @@ import org.springframework.stereotype.Component;
 public class NotificationHelper {
 
   private final NotificationService notificationService;
+  private final UserRepository userRepository;
 
   /**
    * Send a welcome notification to a new user
@@ -134,5 +143,183 @@ public class NotificationHelper {
    */
   public void sendNotification(User user, NotificationType type, String title, String summary) {
     notificationService.createNotification(user.getId(), type, title, summary);
+  }
+
+  // ========== Generic Type-Based Notification Methods ==========
+
+  /**
+   * Send INFO notification to a user
+   */
+  public void sendInfoNotification(User user, String title, String summary) {
+    notificationService.createNotification(user.getId(), NotificationType.INFO, title, summary);
+  }
+
+  /**
+   * Send SUCCESS notification to a user
+   */
+  public void sendSuccessNotification(User user, String title, String summary) {
+    notificationService.createNotification(user.getId(), NotificationType.SUCCESS, title, summary);
+  }
+
+  /**
+   * Send WARNING notification to a user
+   */
+  public void sendWarningNotification(User user, String title, String summary) {
+    notificationService.createNotification(user.getId(), NotificationType.WARNING, title, summary);
+  }
+
+  /**
+   * Send DOCUMENT notification to a user
+   */
+  public void sendDocumentNotification(User user, String title, String summary) {
+    notificationService.createNotification(user.getId(), NotificationType.DOCUMENT, title, summary);
+  }
+
+  /**
+   * Send SYSTEM notification to a user
+   */
+  public void sendSystemNotification(User user, String title, String summary) {
+    notificationService.createNotification(user.getId(), NotificationType.SYSTEM, title, summary);
+  }
+
+  // ========== Admin Notification Methods ==========
+
+  /**
+   * Send notification to all admin users (ORGANIZATION_ADMIN, BUSINESS_ADMIN, SYSTEM_ADMIN)
+   * Only sends to ACTIVE admins
+   *
+   * @param type    Notification type
+   * @param title   Notification title
+   * @param summary Notification summary
+   */
+  public void sendNotificationToAllAdmins(NotificationType type, String title, String summary) {
+    List<UserRole> adminRoles = Arrays.asList(
+        UserRole.ORGANIZATION_ADMIN,
+        UserRole.BUSINESS_ADMIN,
+        UserRole.SYSTEM_ADMIN
+    );
+
+    Specification<User> spec = Specification
+        .where(UserSpecification.hasAnyRole(adminRoles))
+        .and(UserSpecification.hasStatus(UserStatus.ACTIVE));
+
+    List<User> adminUsers = userRepository.findAll(spec);
+
+    log.info("Sending notification to {} admin users: {}", adminUsers.size(), title);
+
+    for (User admin : adminUsers) {
+      try {
+        notificationService.createNotification(admin.getId(), type, title, summary);
+        log.debug("Sent notification to admin: {}", admin.getEmail());
+      } catch (Exception e) {
+        log.error("Failed to send notification to admin {}: {}", admin.getEmail(), e.getMessage());
+      }
+    }
+  }
+
+  /**
+   * Send notification to ORGANIZATION_ADMIN users only
+   * Only sends to ACTIVE admins
+   *
+   * @param type    Notification type
+   * @param title   Notification title
+   * @param summary Notification summary
+   */
+  public void sendNotificationToOrganizationAdmins(NotificationType type, String title, String summary) {
+    Specification<User> spec = Specification
+        .where(UserSpecification.hasRole(UserRole.ORGANIZATION_ADMIN))
+        .and(UserSpecification.hasStatus(UserStatus.ACTIVE));
+
+    List<User> orgAdmins = userRepository.findAll(spec);
+
+    log.info("Sending notification to {} organization admins: {}", orgAdmins.size(), title);
+
+    for (User admin : orgAdmins) {
+      try {
+        notificationService.createNotification(admin.getId(), type, title, summary);
+        log.debug("Sent notification to organization admin: {}", admin.getEmail());
+      } catch (Exception e) {
+        log.error("Failed to send notification to organization admin {}: {}", admin.getEmail(), e.getMessage());
+      }
+    }
+  }
+
+  /**
+   * Send notification to BUSINESS_ADMIN and SYSTEM_ADMIN users only
+   * Only sends to ACTIVE admins
+   *
+   * @param type    Notification type
+   * @param title   Notification title
+   * @param summary Notification summary
+   */
+  public void sendNotificationToSystemAdmins(NotificationType type, String title, String summary) {
+    List<UserRole> systemAdminRoles = Arrays.asList(
+        UserRole.BUSINESS_ADMIN,
+        UserRole.SYSTEM_ADMIN
+    );
+
+    Specification<User> spec = Specification
+        .where(UserSpecification.hasAnyRole(systemAdminRoles))
+        .and(UserSpecification.hasStatus(UserStatus.ACTIVE));
+
+    List<User> systemAdmins = userRepository.findAll(spec);
+
+    log.info("Sending notification to {} system admins: {}", systemAdmins.size(), title);
+
+    for (User admin : systemAdmins) {
+      try {
+        notificationService.createNotification(admin.getId(), type, title, summary);
+        log.debug("Sent notification to system admin: {}", admin.getEmail());
+      } catch (Exception e) {
+        log.error("Failed to send notification to system admin {}: {}", admin.getEmail(), e.getMessage());
+      }
+    }
+  }
+
+  /**
+   * Send notification to BUSINESS_ADMIN users only
+   * Only sends to ACTIVE admins
+   *
+   * @param type    Notification type
+   * @param title   Notification title
+   * @param summary Notification summary
+   */
+  public void sendNotificationToBusinessAdmins(NotificationType type, String title, String summary) {
+    Specification<User> spec = Specification
+        .where(UserSpecification.hasRole(UserRole.BUSINESS_ADMIN))
+        .and(UserSpecification.hasStatus(UserStatus.ACTIVE));
+
+    List<User> businessAdmins = userRepository.findAll(spec);
+
+    log.info("Sending notification to {} business admins: {}", businessAdmins.size(), title);
+
+    if (businessAdmins.isEmpty()) {
+      log.warn("No active Business Admin found. Skipping notification: {}", title);
+      return;
+    }
+
+    for (User admin : businessAdmins) {
+      try {
+        notificationService.createNotification(admin.getId(), type, title, summary);
+        log.info("Sent notification to BA: {} ({})", admin.getEmail(), admin.getId());
+      } catch (Exception e) {
+        log.error("Failed to send notification to BA {}: {}", admin.getEmail(), e.getMessage(), e);
+      }
+    }
+  }
+
+  /**
+   * Send notification to a specific organization admin
+   * Useful when you know the organization ID and want to notify its admin
+   *
+   * @param organizationId Organization ID
+   * @param type            Notification type
+   * @param title           Notification title
+   * @param summary         Notification summary
+   */
+  public void sendNotificationToOrganizationAdmin(UUID organizationId, NotificationType type, String title, String summary) {
+    // This would require OrganizationProfileRepository to find the admin
+    // For now, this is a placeholder - implement based on your needs
+    log.warn("sendNotificationToOrganizationAdmin not yet implemented for organizationId: {}", organizationId);
   }
 }

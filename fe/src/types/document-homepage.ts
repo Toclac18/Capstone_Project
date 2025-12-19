@@ -8,8 +8,10 @@ export type DocumentItem = {
   uploader: string;
 
   publicYear: number;
+  updatedAt?: string; // ISO date string for sorting
 
   isPremium: boolean;
+  hasRedeemed?: boolean;
   points?: number | null;
 
   description: string;
@@ -32,4 +34,10 @@ export type DocumentItem = {
   }[];
 
   thumbnail: string;
+
+  organization?: {
+    id: string;
+    name: string;
+    logoUrl: string;
+  };
 };

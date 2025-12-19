@@ -35,14 +35,13 @@ export default async function RootLayout({ children }: PropsWithChildren) {
       <body>
         <AuthProvider initialAuth={auth}>
           <AlertDialogProvider>
-            <ModalPreviewProvider>
-              <Providers>
+            <Providers>
+              <ModalPreviewProvider>
                 <NextTopLoader color="#5750F1" showSpinner={false} />
                 <ConditionalLayout>{children}</ConditionalLayout>
-              </Providers>
-
-              <ModalPreview />
-            </ModalPreviewProvider>
+                <ModalPreview />
+              </ModalPreviewProvider>
+            </Providers>
           </AlertDialogProvider>
         </AuthProvider>
       </body>

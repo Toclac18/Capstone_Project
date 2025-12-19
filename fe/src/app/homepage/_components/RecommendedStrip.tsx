@@ -2,6 +2,7 @@
 
 import styles from "../styles.module.css";
 import DocCard from "./DocCard";
+import HorizontalScroll from "./HorizontalScroll";
 import { useHomepage } from "../provider";
 import { useModalPreview } from "@/components/ModalPreview";
 import { useMemo } from "react";
@@ -28,7 +29,7 @@ function buildRecommended(
     return true;
   });
 
-  return unique.slice(0, 6).map((d) => ({
+  return unique.slice(0, 12).map((d) => ({
     ...d,
     viewCount: (d as any).viewCount ?? 0,
   }));
@@ -50,13 +51,11 @@ export default function RecommendedStrip() {
       <div className={styles.sectionHeaderRow}>
         <div className={styles.sectionHeader}>Recommended for you</div>
       </div>
-      <div className={styles.horizontalScroll}>
+      <HorizontalScroll>
         {items.map((d) => (
-          <div key={d.id} className={styles.horizontalCardWrap}>
-            <DocCard key={d.id} {...d} onPreview={() => open(d)} />
-          </div>
+          <DocCard key={d.id} {...d} onPreview={() => open(d)} />
         ))}
-      </div>
+      </HorizontalScroll>
     </section>
   );
 }

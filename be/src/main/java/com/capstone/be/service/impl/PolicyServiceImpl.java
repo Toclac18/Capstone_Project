@@ -1,19 +1,25 @@
 package com.capstone.be.service.impl;
 
 import com.capstone.be.domain.entity.Policy;
+import com.capstone.be.domain.entity.User;
+import com.capstone.be.domain.enums.UserStatus;
 import com.capstone.be.dto.request.policy.CreatePolicyRequest;
 import com.capstone.be.dto.request.policy.UpdatePolicyRequest;
 import com.capstone.be.dto.response.policy.PolicyResponse;
 import com.capstone.be.exception.BusinessException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.repository.PolicyRepository;
+import com.capstone.be.repository.UserRepository;
+import com.capstone.be.repository.specification.UserSpecification;
 import com.capstone.be.service.PolicyService;
+import com.capstone.be.service.helper.NotificationHelper;
 import com.capstone.be.util.HtmlSanitizerUtil;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class PolicyServiceImpl implements PolicyService {
 
   private final PolicyRepository policyRepository;
+  private final UserRepository userRepository;
+  private final NotificationHelper notificationHelper;
 
   @Override
   @Transactional(readOnly = true)
@@ -156,6 +164,25 @@ public class PolicyServiceImpl implements PolicyService {
     policy.setIsActive(true);
     Policy activated = policyRepository.save(policy);
     log.info("Activated policy: id={}, version={}", activated.getId(), activated.getVersion());
+
+    // Notify all ACTIVE users about Terms of Service update
+    Specification<User> spec = UserSpecification.hasStatus(UserStatus.ACTIVE);
+    List<User> activeUsers = userRepository.findAll(spec);
+    log.info("Sending ToS update notification to {} active users", activeUsers.size());
+
+    for (User user : activeUsers) {
+      try {
+        notificationHelper.sendSystemNotification(
+            user,
+            "Terms of Service Updated",
+            String.format("Our Terms of Service has been updated to version %s. Please review the changes.",
+                activated.getVersion())
+        );
+      } catch (Exception e) {
+        log.error("Failed to send ToS notification to user {}: {}", user.getId(), e.getMessage());
+      }
+    }
+
     return toResponse(activated);
   }
 

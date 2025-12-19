@@ -13,6 +13,7 @@ import {
   Loader2,
 } from "lucide-react";
 import type { ReviewResult } from "../api";
+import { useToast } from "@/components/ui/toast";
 import styles from "../styles.module.css";
 
 const SimplePdfViewer = dynamic(
@@ -41,6 +42,7 @@ export function ReviewDetailModal({
   onApprove,
   onReject,
 }: ReviewDetailModalProps) {
+  const { showToast } = useToast();
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"document" | "review">("review");
@@ -69,6 +71,19 @@ export function ReviewDetailModal({
     setLoading(true);
     try {
       await onApprove(reason);
+      showToast({
+        type: "success",
+        title: "Document Approved",
+        message: `Document "${review.document.title}" has been approved successfully.`,
+        duration: 4000,
+      });
+    } catch (e) {
+      showToast({
+        type: "error",
+        title: "Approval Failed",
+        message: e instanceof Error ? e.message : "Failed to approve document.",
+        duration: 5000,
+      });
     } finally {
       setLoading(false);
     }
@@ -79,6 +94,19 @@ export function ReviewDetailModal({
     setLoading(true);
     try {
       await onReject(reason);
+      showToast({
+        type: "success",
+        title: "Document Rejected",
+        message: `Document "${review.document.title}" has been rejected.`,
+        duration: 4000,
+      });
+    } catch (e) {
+      showToast({
+        type: "error",
+        title: "Rejection Failed",
+        message: e instanceof Error ? e.message : "Failed to reject document.",
+        duration: 5000,
+      });
     } finally {
       setLoading(false);
     }

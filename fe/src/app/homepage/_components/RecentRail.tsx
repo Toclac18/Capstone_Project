@@ -2,21 +2,27 @@
 
 import styles from "../styles.module.css";
 import DocCard from "./DocCard";
+import HorizontalScroll from "./HorizontalScroll";
 import { useHomepage } from "../provider";
 import { useModalPreview } from "@/components/ModalPreview";
 import { useMemo } from "react";
 import type { DocumentItem } from "@/types/document-homepage";
 
 export default function RecentRail() {
-  const { continueReading, topUpvoted, specGroups } = useHomepage();
+  const { continueReading, topUpvoted, allSpecGroups } = useHomepage();
   const { open } = useModalPreview();
 
+  // Sort theo updatedAt descending (recently added)
+  // Sử dụng allSpecGroups thay vì specGroups để có đầy đủ documents từ tất cả groups
   const items = useMemo<DocumentItem[]>(() => {
+    // Flatten all documents from ALL specGroups (not just visible ones)
     const all: DocumentItem[] = [
-      ...continueReading,
+      ...allSpecGroups.flatMap((g) => g.items),
       ...topUpvoted,
-      ...specGroups.flatMap((g) => g.items),
+      ...continueReading,
     ];
+
+    // Deduplicate by id
     const seen = new Set<string>();
     const unique = all.filter((d) => {
       if (seen.has(d.id)) return false;
@@ -24,13 +30,15 @@ export default function RecentRail() {
       return true;
     });
 
-    unique.sort((a, b) => (b.publicYear || 0) - (a.publicYear || 0));
+    // Sort by updatedAt descending (most recent first)
+    unique.sort((a, b) => {
+      const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return bTime - aTime;
+    });
 
-    return unique.slice(0, 6).map((d) => ({
-      ...d,
-      viewCount: (d as any).viewCount ?? 0,
-    }));
-  }, [continueReading, topUpvoted, specGroups]);
+    return unique.slice(0, 12);
+  }, [continueReading, topUpvoted, allSpecGroups]);
 
   if (!items.length) return null;
 
@@ -39,13 +47,11 @@ export default function RecentRail() {
       <div className={styles.sectionHeaderRow}>
         <div className={styles.sectionHeader}>Recently added</div>
       </div>
-      <div className={styles.horizontalScroll}>
+      <HorizontalScroll>
         {items.map((d) => (
-          <div key={d.id} className={styles.horizontalCardWrap}>
-            <DocCard {...d} onPreview={() => open(d)} />
-          </div>
+          <DocCard key={d.id} {...d} onPreview={() => open(d)} />
         ))}
-      </div>
+      </HorizontalScroll>
     </section>
   );
 }

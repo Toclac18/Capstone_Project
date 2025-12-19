@@ -11,6 +11,9 @@ import {
   Users,
   Filter,
   RefreshCw,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { useToast } from "@/components/ui/toast";
@@ -34,6 +37,7 @@ export function ReviewApprovalManagement() {
   const [totalItems, setTotalItems] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | undefined>("desc");
   const [statusFilter, setStatusFilter] = useState<ReviewResultStatus | "ALL">(
     "ALL",
   );
@@ -78,19 +82,34 @@ export function ReviewApprovalManagement() {
   }, [reviews]);
 
   const filteredReviews = useMemo(() => {
-    if (!searchTerm) return reviews;
-    const search = searchTerm.toLowerCase();
-    return reviews.filter((review) => {
-      const matchesTitle = review.document.title.toLowerCase().includes(search);
-      const matchesReviewer = review.reviewer.fullName
-        .toLowerCase()
-        .includes(search);
-      const matchesUploader = review.uploader?.fullName
-        ?.toLowerCase()
-        .includes(search);
-      return matchesTitle || matchesReviewer || matchesUploader;
-    });
-  }, [reviews, searchTerm]);
+    let result = reviews;
+
+    // Filter by search term
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      result = result.filter((review) => {
+        const matchesTitle = review.document.title.toLowerCase().includes(search);
+        const matchesReviewer = review.reviewer.fullName
+          .toLowerCase()
+          .includes(search);
+        const matchesUploader = review.uploader?.fullName
+          ?.toLowerCase()
+          .includes(search);
+        return matchesTitle || matchesReviewer || matchesUploader;
+      });
+    }
+
+    // Sort by date
+    if (sortOrder) {
+      result = [...result].sort((a, b) => {
+        const dateA = new Date(a.submittedAt).getTime();
+        const dateB = new Date(b.submittedAt).getTime();
+        return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      });
+    }
+
+    return result;
+  }, [reviews, searchTerm, sortOrder]);
 
   const handleSearch = () => {
     setSearchTerm(searchInput);
@@ -104,8 +123,30 @@ export function ReviewApprovalManagement() {
     setSearchInput("");
     setSearchTerm("");
     setStatusFilter("ALL");
+    setSortOrder("desc");
     setCurrentPage(1);
     loadData(1, "ALL");
+  };
+
+  // Handle date sort toggle
+  const handleDateSort = () => {
+    if (sortOrder === undefined) {
+      setSortOrder("desc");
+    } else if (sortOrder === "desc") {
+      setSortOrder("asc");
+    } else {
+      setSortOrder(undefined);
+    }
+  };
+
+  // Get sort icon
+  const getDateSortIcon = () => {
+    if (sortOrder === "asc") {
+      return <ArrowUp className="w-4 h-4 ml-1 text-primary" />;
+    } else if (sortOrder === "desc") {
+      return <ArrowDown className="w-4 h-4 ml-1 text-primary" />;
+    }
+    return <ArrowUpDown className="w-4 h-4 ml-1 text-gray-400" />;
   };
 
   const handleStatusFilterChange = (status: ReviewResultStatus | "ALL") => {
@@ -288,7 +329,15 @@ export function ReviewApprovalManagement() {
                     <th className={styles["th"]}>Reviewer</th>
                     <th className={styles["th"]}>Decision</th>
                     <th className={styles["th"]}>Status</th>
-                    <th className={styles["th"]}>Submitted</th>
+                    <th
+                      className={`${styles["th"]} ${styles["th-sortable"]}`}
+                      onClick={handleDateSort}
+                    >
+                      <span className="flex items-center cursor-pointer">
+                        Submitted
+                        {getDateSortIcon()}
+                      </span>
+                    </th>
                     <th className={styles["th"]}>Actions</th>
                   </tr>
                 </thead>

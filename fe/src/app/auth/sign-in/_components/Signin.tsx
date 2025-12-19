@@ -86,43 +86,61 @@ export default function Signin() {
 
       const targetRoute = roleRoutes[data.role] || "/";
 
-      // Refresh router to update server-side auth state
+      // Navigate to target route first, then refresh to update auth state
+      // This ensures the new page loads with fresh server-side auth
+      router.push(targetRoute);
       router.refresh();
-
-      // Navigate to target route - this will trigger server-side re-render
-      // and AuthProvider will receive updated initialAuth
-      setTimeout(() => {
-        router.push(targetRoute);
-      }, 100);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Invalid email or password";
       
-      // Check if error is about email not verified or account disabled
-      // Note: Backend returns "Your account has been disabled" or "User is disabled" 
-      // when user status is PENDING_EMAIL_VERIFY (because isEnabled() returns false)
+      // Check error type based on backend response
       const lowerMsg = msg.toLowerCase();
+      
+      // Check if account is pending admin approval (reviewer/org-admin verified email but waiting for BA approval)
+      const isPendingApproval = 
+        lowerMsg.includes("pending admin approval") ||
+        lowerMsg.includes("pending approval") ||
+        lowerMsg.includes("waiting for admin") ||
+        lowerMsg.includes("account is pending");
+      
+      // Check if email not verified
       const isEmailNotVerified = 
         lowerMsg.includes("verify your email") ||
         lowerMsg.includes("email not verified") ||
         lowerMsg.includes("email address first") ||
         (lowerMsg.includes("email") && (lowerMsg.includes("not verified") || lowerMsg.includes("unverified") || lowerMsg.includes("verify")));
       
+      // Check if account is disabled (INACTIVE, DELETED, REJECTED)
       const isAccountDisabled = 
         lowerMsg.includes("user is disabled") ||
         lowerMsg.includes("account has been disabled") ||
         lowerMsg.includes("account is disabled");
       
-      // Show resend email UI for both email not verified and account disabled errors
-      // (account disabled might be due to unverified email)
-      if (isEmailNotVerified || isAccountDisabled) {
+      // Only show resend email UI for email not verified errors
+      // NOT for pending approval or disabled accounts
+      if (isEmailNotVerified) {
         setShowResendEmail(true);
-        setResendEmail(data.email); // Pre-fill with the email from form
+        setResendEmail(data.email);
+      } else {
+        setShowResendEmail(false);
+      }
+      
+      // Customize error message based on status
+      let displayMsg = msg;
+      let toastTitle = "Login Failed";
+      
+      if (isPendingApproval) {
+        displayMsg = "Your account is pending admin approval. Please wait for the administrator to review and approve your account.";
+        toastTitle = "Pending Approval";
+      } else if (isAccountDisabled) {
+        displayMsg = "Your account has been disabled. Please contact support for assistance.";
+        toastTitle = "Account Disabled";
       }
       
       showToast({
         type: "error",
-        title: "Login Failed",
-        message: msg,
+        title: toastTitle,
+        message: displayMsg,
       });
     } finally {
       setLoading(false);
@@ -307,17 +325,17 @@ export default function Signin() {
           </div>
         </form>
 
-        {/* Resend Verification Email Section */}
+        {/* Resend Verification Email Section - Only for unverified email */}
         {showResendEmail && (
           <div className="mt-6 rounded-lg border border-orange-500 bg-orange-50 p-4 dark:border-orange-600 dark:bg-orange-900/20">
             <div className="mb-3 flex items-start gap-3">
               <Mail className="mt-0.5 h-5 w-5 text-orange-600 dark:text-orange-400" />
               <div className="flex-1">
                 <h3 className="mb-1 text-sm font-semibold text-orange-800 dark:text-orange-200">
-                  Account Not Activated
+                  Email Not Verified
                 </h3>
                 <p className="mb-3 text-sm text-orange-700 dark:text-orange-300">
-                  Your account may not be activated yet. This could be because your email address has not been verified. Please check your inbox for the verification link or request a new one below.
+                  Your email address has not been verified yet. Please check your inbox for the verification link or request a new one below.
                 </p>
                 <div className="space-y-3">
                   <div>

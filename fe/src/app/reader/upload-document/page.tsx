@@ -466,6 +466,9 @@ export default function UploadDocumentPage() {
     setVisibility(newVisibility);
     if (newVisibility === "PUBLIC") {
       setSelectedOrganizationId("");
+    } else {
+      // Internal documents cannot be premium
+      setIsPremium(false);
     }
   };
 
@@ -498,8 +501,14 @@ export default function UploadDocumentPage() {
 
     if (!description.trim()) {
       newErrors.description = "Description is required";
-    } else if (description.trim().length > 100) {
-      newErrors.description = "Description must be 100 characters or less";
+    } else {
+      const charCount = description.trim().length;
+      
+      if (charCount < 50) {
+        newErrors.description = `Description must contain at least 50 characters (current: ${charCount} characters)`;
+      } else if (charCount > 2000) {
+        newErrors.description = `Description must not exceed 2000 characters (current: ${charCount} characters)`;
+      }
     }
 
     if (!typeId) {
@@ -533,25 +542,6 @@ export default function UploadDocumentPage() {
       firstErrorField,
       firstErrorMessage,
     };
-  };
-
-  const clearFormFields = () => {
-    // Only clear form fields, keep file
-    setTitle("");
-    setDescription("");
-    setVisibility("PUBLIC");
-    setIsPremium(false);
-    setTypeId("");
-    setSelectedDomainId("");
-    setSelectedSpecializationId("");
-    setSelectedTagIds([]);
-    setNewTags([]);
-    setNewTagInput("");
-    setTagSearch("");
-    setShowTagDropdown(false);
-    setSelectedOrganizationId("");
-    setErrors({});
-    setError(null);
   };
 
   const resetForm = () => {
@@ -927,17 +917,17 @@ export default function UploadDocumentPage() {
                     ref={descriptionRef}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Provide a quick summary: What is this document about? Where did it originate? Who might find this information useful? What are the key highlights?"
-                    rows={4}
-                    maxLength={100}
+                    placeholder="Provide a detailed summary: What is this document about? Where did it originate? Who might find this information useful? What are the key highlights?"
+                    rows={8}
+                    maxLength={2000}
                     className={`${styles["textarea"]} ${errors.description ? styles["input-error"] : ""}`}
                   />
                   <div className={styles["field-help"]}>
                     <p className={styles["help-text"]}>
-                      Your description should be a few sentences long.
+                      Your description must be between 50 and 2000 characters.
                     </p>
                     <span className={styles["char-counter"]}>
-                      {description.length}/100
+                      {description.length}/2000
                     </span>
                   </div>
                   {errors.description && (
@@ -1101,25 +1091,27 @@ export default function UploadDocumentPage() {
                   </div>
                 )}
 
-                {/* Premium Toggle */}
-                <div className={styles["field-group"]}>
-                  <label className={styles["field-label"]}>Premium Document</label>
-                  <div className={styles["toggle-wrapper"]}>
-                    <button
-                      type="button"
-                      onClick={() => setIsPremium(!isPremium)}
-                      className={`${styles["toggle-btn"]} ${isPremium ? styles["toggle-active"] : ""}`}
-                    >
-                      <span className={styles["toggle-slider"]} />
-                    </button>
-                    <span className={styles["toggle-label"]}>
-                      {isPremium ? "Premium" : "Free"}
-                    </span>
+                {/* Premium Toggle - Only for PUBLIC documents */}
+                {visibility === "PUBLIC" && (
+                  <div className={styles["field-group"]}>
+                    <label className={styles["field-label"]}>Premium Document</label>
+                    <div className={styles["toggle-wrapper"]}>
+                      <button
+                        type="button"
+                        onClick={() => setIsPremium(!isPremium)}
+                        className={`${styles["toggle-btn"]} ${isPremium ? styles["toggle-active"] : ""}`}
+                      >
+                        <span className={styles["toggle-slider"]} />
+                      </button>
+                      <span className={styles["toggle-label"]}>
+                        {isPremium ? "Premium" : "Free"}
+                      </span>
+                    </div>
+                    <p className={styles["help-text"]}>
+                      Premium documents require readers to redeem before viewing.
+                    </p>
                   </div>
-                  <p className={styles["help-text"]}>
-                    Premium documents require readers to redeem before viewing.
-                  </p>
-                </div>
+                )}
 
                 {/* Tags Multi-select with Combobox */}
                 <div className={styles["field-group"]}>
@@ -1236,14 +1228,14 @@ export default function UploadDocumentPage() {
 
             {/* Form Actions */}
             <div className={styles["form-actions"]}>
-              <button
+              {/* <button
                 type="button"
                 onClick={clearFormFields}
                 className={styles["btn-delete"]}
                 disabled={uploading}
               >
                 Delete
-              </button>
+              </button> */}
               <button
                 type="submit"
                 disabled={uploading}

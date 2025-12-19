@@ -28,6 +28,9 @@ public class DocumentSearchMetaResponse {
     /** Range point/price cho slider lọc Premium */
     private RangeDto priceRange;
 
+    /** Danh sách organization IDs mà user đã join (chỉ có khi authenticated) */
+    private List<UUID> joinedOrganizationIds;
+
     @Data
     @Builder
     @NoArgsConstructor

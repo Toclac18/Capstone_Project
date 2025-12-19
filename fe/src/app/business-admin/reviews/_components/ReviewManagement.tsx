@@ -1,93 +1,95 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { Eye, UserPlus, UserCog, Clock, CheckCircle, XCircle, AlertCircle, Search } from "lucide-react";
+import {
+  Eye,
+  UserPlus,
+  UserCog,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Search,
+  FileText,
+  Users,
+  RefreshCw,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  ClipboardCheck,
+  ClipboardList,
+} from "lucide-react";
 import { getDocuments } from "../../document/api";
-import type { DocumentListItem, DocumentQueryParams, DocumentListResponse } from "../../document/api";
+import type {
+  DocumentListItem,
+  DocumentQueryParams,
+  DocumentListResponse,
+} from "../../document/api";
 import { getAllReviewRequests } from "@/services/review-request.service";
 import type { ReviewRequestResponse } from "@/types/review-request";
 import { AssignReviewerModal } from "../../document/_components/AssignReviewerModal";
 import { ReviewDetailModal } from "./ReviewDetailModal";
-import { Pagination } from "@/app/business-admin/users/_components/Pagination";
-import styles from "../../document/styles.module.css";
+import { DocumentDetailModal } from "./DocumentDetailModal";
+import { Pagination } from "@/components/ui/pagination";
+import {
+  fetchReviewResults,
+  approveReviewResult,
+  type ReviewResult,
+} from "../../review-approval/api";
+import { ReviewDetailModal as ReviewResultDetailModal } from "../../review-approval/_components/ReviewDetailModal";
+import styles from "../styles.module.css";
 
-type TabType = "needs-assignment" | "pending" | "in-review" | "completed" | "all";
+type TabType =
+  | "needs-assignment"
+  | "pending"
+  | "in-review"
+  | "result-pending"
+  | "result-completed";
 
 export function ReviewManagement() {
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("needs-assignment");
   const [documents, setDocuments] = useState<DocumentListItem[]>([]);
-  const [reviewRequests, setReviewRequests] = useState<ReviewRequestResponse[]>([]);
+  const [reviewRequests, setReviewRequests] = useState<ReviewRequestResponse[]>(
+    [],
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  const [selectedDocument, setSelectedDocument] = useState<DocumentListItem | null>(null);
-  const [selectedReviewRequest, setSelectedReviewRequest] = useState<ReviewRequestResponse | null>(null);
+  const [selectedDocument, setSelectedDocument] =
+    useState<DocumentListItem | null>(null);
+  const [selectedReviewRequest, setSelectedReviewRequest] =
+    useState<ReviewRequestResponse | null>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showReviewDetailModal, setShowReviewDetailModal] = useState(false);
-  const [selectedReviewRequestId, setSelectedReviewRequestId] = useState<string | null>(null);
+  const [selectedReviewRequestId, setSelectedReviewRequestId] = useState<
+    string | null
+  >(null);
+  const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<"title" | "createdAt" | "deadline">("createdAt");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [selectedReviewerId, setSelectedReviewerId] = useState<string | null>(null);
-  const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | undefined>(
+    "desc",
+  );
 
-  // Build filters based on active tab
-  const getFiltersForTab = useCallback((tab: TabType): DocumentQueryParams => {
-    const baseFilters: DocumentQueryParams = {
-      page: currentPage,
-      limit: itemsPerPage,
-      isPremium: true,
-      deleted: false, // Exclude DELETED by default
-      sortBy: sortBy === "deadline" ? "createdAt" : sortBy, // Backend doesn't support deadline sort
-      sortOrder: sortOrder,
-    };
+  // Review Results states
+  const [reviewResults, setReviewResults] = useState<ReviewResult[]>([]);
+  const [reviewResultsLoading, setReviewResultsLoading] = useState(false);
+  const [selectedReviewResult, setSelectedReviewResult] =
+    useState<ReviewResult | null>(null);
+  const [showReviewResultModal, setShowReviewResultModal] = useState(false);
 
-    switch (tab) {
-      case "needs-assignment":
-        // Documents that are PENDING_REVIEW (chưa có reviewer accept)
-        return {
-          ...baseFilters,
-          status: "PENDING_REVIEW",
-        };
-      case "pending":
-        // Documents with review request status = PENDING
-        // Fetch all premium documents (any status) - will filter by review request status in component
-        return {
-          ...baseFilters,
-          // No status filter - fetch all premium documents and filter by review request status
-        };
-      case "in-review":
-        // Documents with status REVIEWING (đã có reviewer accept, đang review)
-        return {
-          ...baseFilters,
-          status: "REVIEWING",
-        };
-      case "completed":
-        // Documents that have been reviewed (status = ACTIVE or REJECTED after review)
-        // Only fetch premium documents with ACTIVE or REJECTED status
-        return {
-          ...baseFilters,
-          // Will filter by status in component - fetch all premium first
-        };
-      case "all":
-        return {
-          ...baseFilters,
-          // No status filter - show all premium documents
-        };
-      default:
-        return baseFilters;
-    }
-  }, [currentPage, itemsPerPage, sortBy, sortOrder]);
+  // Document Detail Modal state
+  const [showDocumentDetailModal, setShowDocumentDetailModal] = useState(false);
+  const [selectedDocForDetail, setSelectedDocForDetail] =
+    useState<DocumentListItem | null>(null);
+  const [selectedReviewRequestForDetail, setSelectedReviewRequestForDetail] =
+    useState<ReviewRequestResponse | null>(null);
+
 
   // Fetch review requests
   const fetchReviewRequests = useCallback(async () => {
     try {
-      // Fetch all review requests (use large page size to get all)
-      const response = await getAllReviewRequests(0, 10000); // Get all for mapping
+      const response = await getAllReviewRequests(0, 10000);
       const allRequests = response.content || [];
       setReviewRequests(allRequests);
     } catch (e) {
@@ -96,334 +98,264 @@ export function ReviewManagement() {
     }
   }, []);
 
+  // Fetch review results (for result-pending and result-completed tabs)
+  const fetchAllReviewResults = useCallback(async () => {
+    setReviewResultsLoading(true);
+    try {
+      const response = await fetchReviewResults({ page: 0, size: 1000 });
+      setReviewResults(response.data || []);
+    } catch (e) {
+      console.error("Failed to fetch review results:", e);
+      setReviewResults([]);
+    } finally {
+      setReviewResultsLoading(false);
+    }
+  }, []);
+
   // Fetch documents
-  const fetchDocuments = useCallback(async (tab: TabType) => {
+  const fetchDocuments = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // For tabs that need client-side filtering (pending, completed, all),
-      // fetch with larger page size to get more results, then filter client-side
-      const filters = getFiltersForTab(tab);
+      const filters: DocumentQueryParams = {
+        page: 1,
+        limit: 100,
+        isPremium: true,
+        deleted: false,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      };
+
       if (searchTerm) {
         filters.search = searchTerm;
       }
-      
-      // For tabs that filter client-side, fetch more items to account for filtering
-      if (tab === "pending" || tab === "completed" || tab === "all") {
-        filters.limit = 100; // Fetch more to account for client-side filtering
-      }
-      
+
       const response: DocumentListResponse = await getDocuments(filters);
-      
       setDocuments(response.documents);
-      // For tabs with client-side filtering, we'll calculate total from filtered results
-      // For other tabs, use backend total
-      if (tab === "pending" || tab === "completed" || tab === "all") {
-        setTotalItems(response.documents.length); // Will be updated after filtering
-      } else {
-        setTotalItems(response.total);
-      }
-      setCurrentPage(response.page);
     } catch (e: unknown) {
       const errorMessage =
         e instanceof Error ? e.message : "Failed to fetch documents";
       setError(errorMessage);
       setDocuments([]);
-      setTotalItems(0);
     } finally {
       setLoading(false);
     }
-  }, [getFiltersForTab, searchTerm]);
+  }, [searchTerm]);
 
   useEffect(() => {
     fetchReviewRequests();
-  }, [fetchReviewRequests]);
+    fetchAllReviewResults();
+  }, [fetchReviewRequests, fetchAllReviewResults]);
 
   useEffect(() => {
-    fetchDocuments(activeTab);
-  }, [activeTab, currentPage, fetchDocuments]);
+    fetchDocuments();
+  }, [fetchDocuments]);
 
-  // Get review request for a document (prioritize active ones)
-  const getReviewRequestForDocument = useCallback((documentId: string): ReviewRequestResponse | null => {
-    if (!reviewRequests || reviewRequests.length === 0) {
-      return null;
-    }
-    
-    // Normalize documentId to string for comparison
-    const docIdStr = String(documentId);
-    
-    // Get all review requests for this document
-    const allDocRequests = reviewRequests.filter(req => {
-      const reqDocId = String(req.document?.id || "");
-      return reqDocId === docIdStr;
-    });
-    
-    if (allDocRequests.length === 0) {
-      return null;
-    }
-    
-    // Prioritize active requests (PENDING or ACCEPTED)
-    const activeRequests = allDocRequests.filter(req => 
-      req.status === "PENDING" || req.status === "ACCEPTED"
-    );
-    
-    if (activeRequests.length > 0) {
-      // Sort by created date, newest first
-      return activeRequests.sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      )[0];
-    }
-    
-    // If no active, get the most recent one (any status)
-    return allDocRequests.sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )[0];
-  }, [reviewRequests]);
-
-  // Get unique reviewers from review requests
-  const availableReviewers = useMemo(() => {
-    const reviewerMap = new Map<string, { id: string; name: string; email: string }>();
-    reviewRequests.forEach(req => {
-      if (req.reviewer && !reviewerMap.has(req.reviewer.userId)) {
-        reviewerMap.set(req.reviewer.userId, {
-          id: req.reviewer.userId,
-          name: req.reviewer.fullName,
-          email: req.reviewer.email,
-        });
+  // Get review request for a document
+  const getReviewRequestForDocument = useCallback(
+    (documentId: string): ReviewRequestResponse | null => {
+      if (!reviewRequests || reviewRequests.length === 0) {
+        return null;
       }
-    });
-    return Array.from(reviewerMap.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [reviewRequests]);
 
-  // Get unique domains from documents
-  const availableDomains = useMemo(() => {
-    const domainMap = new Map<string, string>();
-    documents.forEach(doc => {
-      // Extract domain from specializationName (format: "Domain - Specialization")
-      if (doc.specializationName) {
-        const parts = doc.specializationName.split(" - ");
-        if (parts.length > 1) {
-          const domain = parts[0];
-          if (!domainMap.has(domain)) {
-            domainMap.set(domain, domain);
-          }
+      const docIdStr = String(documentId);
+      const allDocRequests = reviewRequests.filter((req) => {
+        const reqDocId = String(req.document?.id || "");
+        return reqDocId === docIdStr;
+      });
+
+      if (allDocRequests.length === 0) {
+        return null;
+      }
+
+      const activeRequests = allDocRequests.filter(
+        (req) => req.status === "PENDING" || req.status === "ACCEPTED",
+      );
+
+      if (activeRequests.length > 0) {
+        return activeRequests.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        )[0];
+      }
+
+      return allDocRequests.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )[0];
+    },
+    [reviewRequests],
+  );
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    let needsAssignment = 0;
+    let pending = 0;
+    let inReview = 0;
+
+    documents.forEach((doc) => {
+      const docIdStr = String(doc.id);
+
+      if (doc.status === "PENDING_REVIEW") {
+        const req = getReviewRequestForDocument(doc.id);
+        if (!req || (req.status !== "PENDING" && req.status !== "ACCEPTED")) {
+          needsAssignment++;
         }
       }
-    });
-    return Array.from(domainMap.values()).sort();
-  }, [documents]);
 
-  // Filter and sort documents by priority
+      const pendingRequests = reviewRequests.filter((req) => {
+        const reqDocId = String(req.document?.id || "");
+        return reqDocId === docIdStr && req.status === "PENDING";
+      });
+      if (pendingRequests.length > 0) {
+        pending++;
+      }
+
+      if (doc.status === "REVIEWING") {
+        const req = getReviewRequestForDocument(doc.id);
+        if (req && req.status === "ACCEPTED") {
+          inReview++;
+        }
+      }
+
+    });
+
+    // Review Results stats
+    const resultPending = reviewResults.filter(
+      (r) => r.status === "PENDING",
+    ).length;
+    const resultCompleted = reviewResults.filter(
+      (r) => r.status === "APPROVED" || r.status === "REJECTED",
+    ).length;
+
+    return {
+      needsAssignment,
+      pending,
+      inReview,
+      resultPending,
+      resultCompleted,
+    };
+  }, [documents, reviewRequests, getReviewRequestForDocument, reviewResults]);
+
+
+  // Filter and sort documents based on active tab
   const filteredAndSortedDocuments = useMemo(() => {
     let filtered = [...documents];
-    
-    // Filter by reviewer
-    if (selectedReviewerId) {
-      filtered = filtered.filter((doc) => {
-        const req = getReviewRequestForDocument(doc.id);
-        return req && req.reviewer?.userId === selectedReviewerId;
-      });
-    }
-    
-    // Filter by domain
-    if (selectedDomainId) {
-      filtered = filtered.filter((doc) => {
-        if (doc.specializationName) {
-          return doc.specializationName.startsWith(selectedDomainId);
-        }
-        return false;
-      });
-    }
-    
-    // Filter by tab based on review request status
+
+    // Filter by tab
     if (activeTab === "needs-assignment") {
-      // Documents with status PENDING_REVIEW and no active review request
       filtered = filtered.filter((doc) => {
         if (doc.status !== "PENDING_REVIEW") return false;
         const req = getReviewRequestForDocument(doc.id);
-        // No review request or only REJECTED/EXPIRED/COMPLETED
         return !req || (req.status !== "PENDING" && req.status !== "ACCEPTED");
       });
     } else if (activeTab === "pending") {
-      // Documents with review request status = PENDING
-      // Get all documents that have at least one PENDING review request
       filtered = filtered.filter((doc) => {
-        // Check all review requests for this document
         const docIdStr = String(doc.id);
-        const pendingRequests = reviewRequests.filter(req => {
+        const pendingRequests = reviewRequests.filter((req) => {
           const reqDocId = String(req.document?.id || "");
-          const isMatch = reqDocId === docIdStr && req.status === "PENDING";
-          if (isMatch) {
-            console.log("Found PENDING request for document:", {
-              docId: doc.id,
-              docTitle: doc.title,
-              reqId: req.id,
-              reqStatus: req.status,
-              reviewer: req.reviewer?.fullName,
-            });
-          }
-          return isMatch;
+          return reqDocId === docIdStr && req.status === "PENDING";
         });
         return pendingRequests.length > 0;
       });
     } else if (activeTab === "in-review") {
-      // Documents with status REVIEWING (đã có reviewer accept)
-      // Review request status phải là ACCEPTED
       filtered = filtered.filter((doc) => {
         if (doc.status !== "REVIEWING") return false;
         const req = getReviewRequestForDocument(doc.id);
         return req && req.status === "ACCEPTED";
       });
-    } else if (activeTab === "completed") {
-      // Documents that have been reviewed (status = ACTIVE or REJECTED)
-      // These are documents that went through review process and got final decision
-      filtered = filtered.filter((doc) => {
-        // Only show documents with ACTIVE or REJECTED status (final review decisions)
-        // Must have at least one review request (to ensure it went through review process)
-        if (doc.status !== "ACTIVE" && doc.status !== "REJECTED") {
-          return false;
-        }
-        // Check if document has any review request (to ensure it went through review)
-        const docIdStr = String(doc.id);
-        const hasReviewRequest = reviewRequests.some(req => {
-          const reqDocId = String(req.document?.id || "");
-          return reqDocId === docIdStr;
-        });
-        return hasReviewRequest;
-      });
     }
     // "all" tab shows all documents
-    
-    // Priority sorting:
-    // 1. Needs assignment (PENDING_REVIEW + premium + no review request)
-    // 2. PENDING review requests (by response deadline)
-    // 3. ACCEPTED review requests (by review deadline)
-    // 4. COMPLETED
-    // 5. EXPIRED/REJECTED
-    
-    return filtered.sort((a, b) => {
-      const reqA = getReviewRequestForDocument(a.id);
-      const reqB = getReviewRequestForDocument(b.id);
-      
-      // For "needs-assignment" tab: prioritize documents without review request or with REJECTED/EXPIRED
-      if (activeTab === "needs-assignment") {
-        if (!reqA && reqB) return -1;
-        if (reqA && !reqB) return 1;
-        if (reqA && reqB) {
-          // REJECTED/EXPIRED before others
-          if ((reqA.status === "REJECTED" || reqA.status === "EXPIRED") && 
-              (reqB.status !== "REJECTED" && reqB.status !== "EXPIRED")) return -1;
-          if ((reqB.status === "REJECTED" || reqB.status === "EXPIRED") && 
-              (reqA.status !== "REJECTED" && reqA.status !== "EXPIRED")) return 1;
-        }
-      }
-      
-      // For "pending" tab: sort by response deadline (earliest first, overdue first)
-      if (activeTab === "pending" && reqA && reqB) {
-        if (reqA.responseDeadline && reqB.responseDeadline) {
-          const now = new Date().getTime();
-          const deadlineA = new Date(reqA.responseDeadline).getTime();
-          const deadlineB = new Date(reqB.responseDeadline).getTime();
-          const overdueA = deadlineA < now;
-          const overdueB = deadlineB < now;
-          // Overdue first
-          if (overdueA && !overdueB) return -1;
-          if (!overdueA && overdueB) return 1;
-          // Then by deadline (earliest first)
-          return deadlineA - deadlineB;
-        }
-      }
-      
-      // For "in-review" tab: sort by review deadline (earliest first, overdue first)
-      if (activeTab === "in-review" && reqA && reqB) {
-        if (reqA.reviewDeadline && reqB.reviewDeadline) {
-          const now = new Date().getTime();
-          const deadlineA = new Date(reqA.reviewDeadline).getTime();
-          const deadlineB = new Date(reqB.reviewDeadline).getTime();
-          const overdueA = deadlineA < now;
-          const overdueB = deadlineB < now;
-          // Overdue first
-          if (overdueA && !overdueB) return -1;
-          if (!overdueA && overdueB) return 1;
-          // Then by deadline (earliest first)
-          return deadlineA - deadlineB;
-        }
-      }
-      
-      // For "completed" tab: sort by document updated date (newest first)
-      if (activeTab === "completed") {
-        const dateA = new Date(a.updatedAt || a.createdAt).getTime();
-        const dateB = new Date(b.updatedAt || b.createdAt).getTime();
-        return dateB - dateA;
-      }
-      
-      // Apply custom sort
-      if (sortBy === "title") {
-        const titleA = (a.title || "").toLowerCase();
-        const titleB = (b.title || "").toLowerCase();
-        return sortOrder === "asc" 
-          ? titleA.localeCompare(titleB)
-          : titleB.localeCompare(titleA);
-      } else if (sortBy === "deadline") {
-        // Sort by deadline (for pending/in-review tabs)
-        if (activeTab === "pending" && reqA && reqB && reqA.responseDeadline && reqB.responseDeadline) {
-          const deadlineA = new Date(reqA.responseDeadline).getTime();
-          const deadlineB = new Date(reqB.responseDeadline).getTime();
-          return sortOrder === "asc" ? deadlineA - deadlineB : deadlineB - deadlineA;
-        } else if (activeTab === "in-review" && reqA && reqB && reqA.reviewDeadline && reqB.reviewDeadline) {
-          const deadlineA = new Date(reqA.reviewDeadline).getTime();
-          const deadlineB = new Date(reqB.reviewDeadline).getTime();
-          return sortOrder === "asc" ? deadlineA - deadlineB : deadlineB - deadlineA;
-        }
-      }
-      
-      // Default: sort by created date
-      const dateA = new Date(a.createdAt).getTime();
-      const dateB = new Date(b.createdAt).getTime();
-      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
-    });
-  }, [documents, activeTab, getReviewRequestForDocument, selectedReviewerId, selectedDomainId, sortBy, sortOrder, reviewRequests]);
 
-  // Paginate filtered documents for tabs that filter client-side
-  const sortedDocuments = useMemo(() => {
-    const needsClientSidePagination = activeTab === "pending" || activeTab === "completed" || activeTab === "all";
-    if (!needsClientSidePagination) {
-      return filteredAndSortedDocuments;
+    // Sort by date
+    if (sortOrder) {
+      filtered = filtered.sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      });
     }
-    // Paginate client-side
+
+    return filtered;
+  }, [
+    documents,
+    activeTab,
+    getReviewRequestForDocument,
+    reviewRequests,
+    sortOrder,
+  ]);
+
+  // Paginate
+  const paginatedDocuments = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filteredAndSortedDocuments.slice(startIndex, endIndex);
-  }, [filteredAndSortedDocuments, activeTab, currentPage, itemsPerPage]);
+  }, [filteredAndSortedDocuments, currentPage, itemsPerPage]);
 
-  // Calculate total for pagination
-  const paginationTotal = useMemo(() => {
-    const needsClientSidePagination = activeTab === "pending" || activeTab === "completed" || activeTab === "all";
-    return needsClientSidePagination ? filteredAndSortedDocuments.length : totalItems;
-  }, [filteredAndSortedDocuments.length, activeTab, totalItems]);
+  const totalPages = Math.ceil(
+    filteredAndSortedDocuments.length / itemsPerPage,
+  );
+
+  const handleSearch = () => {
+    setSearchTerm(searchInput);
+    setCurrentPage(1);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSearch();
+  };
+
+  const handleClearFilters = () => {
+    setSearchInput("");
+    setSearchTerm("");
+    setSortOrder("desc");
+    setCurrentPage(1);
+  };
+
+  const handleDateSort = () => {
+    if (sortOrder === undefined) {
+      setSortOrder("desc");
+    } else if (sortOrder === "desc") {
+      setSortOrder("asc");
+    } else {
+      setSortOrder(undefined);
+    }
+  };
+
+  const getDateSortIcon = () => {
+    if (sortOrder === "asc") {
+      return <ArrowUp className="w-4 h-4 ml-1 text-primary" />;
+    } else if (sortOrder === "desc") {
+      return <ArrowDown className="w-4 h-4 ml-1 text-primary" />;
+    }
+    return <ArrowUpDown className="w-4 h-4 ml-1 text-gray-400" />;
+  };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  const handleAssignSuccess = () => {
-    fetchReviewRequests();
-    fetchDocuments(activeTab);
-    setShowAssignModal(false);
-    setSelectedDocument(null);
-    setSelectedReviewRequest(null); // Clear selected review request after assignment
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
   };
 
-  const handleViewDetail = (doc: DocumentListItem, reviewRequest: ReviewRequestResponse | null) => {
-    // If in completed tab and has review request, show review detail modal
-    if (activeTab === "completed" && reviewRequest) {
-      setSelectedReviewRequestId(reviewRequest.id);
-      setShowReviewDetailModal(true);
-    } else {
-      // Otherwise, navigate to document detail page
-      router.push(`/business-admin/document/${doc.id}`);
-    }
+  const handleAssignSuccess = () => {
+    fetchReviewRequests();
+    fetchDocuments();
+    setShowAssignModal(false);
+    setSelectedDocument(null);
+    setSelectedReviewRequest(null);
+  };
+
+  const handleViewDetail = (
+    doc: DocumentListItem,
+    reviewRequest: ReviewRequestResponse | null,
+  ) => {
+    setSelectedDocForDetail(doc);
+    setSelectedReviewRequestForDetail(reviewRequest);
+    setShowDocumentDetailModal(true);
   };
 
   const handleAssignClick = (doc: DocumentListItem) => {
@@ -432,449 +364,582 @@ export function ReviewManagement() {
     setShowAssignModal(true);
   };
 
-  const handleChangeReviewerClick = (doc: DocumentListItem, reviewRequest: ReviewRequestResponse) => {
-    console.log("[ReviewManagement] Change reviewer clicked:", {
-      documentId: doc.id,
-      reviewRequestId: reviewRequest.id,
-      reviewRequestStatus: reviewRequest.status,
-    });
+  const handleChangeReviewerClick = (
+    doc: DocumentListItem,
+    reviewRequest: ReviewRequestResponse,
+  ) => {
     setSelectedDocument(doc);
     setSelectedReviewRequest(reviewRequest);
     setShowAssignModal(true);
   };
 
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case "PENDING_REVIEW":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-      case "REVIEWING":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-      case "ACTIVE":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-      case "REJECTED":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Filter review results based on tab
+  const filteredReviewResults = useMemo(() => {
+    if (activeTab === "result-pending") {
+      return reviewResults.filter((r) => r.status === "PENDING");
+    } else if (activeTab === "result-completed") {
+      return reviewResults.filter(
+        (r) => r.status === "APPROVED" || r.status === "REJECTED",
+      );
+    }
+    return [];
+  }, [reviewResults, activeTab]);
+
+  // Paginate review results
+  const paginatedReviewResults = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredReviewResults.slice(startIndex, endIndex);
+  }, [filteredReviewResults, currentPage, itemsPerPage]);
+
+  const reviewResultsTotalPages = Math.ceil(
+    filteredReviewResults.length / itemsPerPage,
+  );
+
+  const handleViewReviewResult = (result: ReviewResult) => {
+    setSelectedReviewResult(result);
+    setShowReviewResultModal(true);
+  };
+
+  const handleReviewResultApprove = async (reason: string) => {
+    if (!selectedReviewResult) return;
+    try {
+      await approveReviewResult(selectedReviewResult.id, {
+        approved: true,
+        rejectionReason: reason || undefined,
+      });
+      setShowReviewResultModal(false);
+      setSelectedReviewResult(null);
+      fetchAllReviewResults();
+      fetchDocuments();
+    } catch (e) {
+      console.error("Failed to approve review result:", e);
+      throw e;
+    }
+  };
+
+  const handleReviewResultReject = async (reason: string) => {
+    if (!selectedReviewResult) return;
+    try {
+      await approveReviewResult(selectedReviewResult.id, {
+        approved: false,
+        rejectionReason: reason,
+      });;
+      setShowReviewResultModal(false);
+      setSelectedReviewResult(null);
+      fetchAllReviewResults();
+      fetchDocuments();
+    } catch (e) {
+      console.error("Failed to reject review result:", e);
+      throw e;
     }
   };
 
   const tabs = [
-    { id: "needs-assignment" as TabType, label: "Needs Assignment", count: null },
-    { id: "pending" as TabType, label: "Pending", count: null },
-    { id: "in-review" as TabType, label: "In Review", count: null },
-    { id: "completed" as TabType, label: "Completed", count: null },
-    { id: "all" as TabType, label: "All", count: null },
+    {
+      id: "needs-assignment" as TabType,
+      label: "Needs Assignment",
+      count: stats.needsAssignment,
+      icon: AlertCircle,
+    },
+    {
+      id: "pending" as TabType,
+      label: "Request Pending",
+      count: stats.pending,
+      icon: Clock,
+    },
+    {
+      id: "in-review" as TabType,
+      label: "In Review",
+      count: stats.inReview,
+      icon: Users,
+    },
+    {
+      id: "result-pending" as TabType,
+      label: "Result Pending",
+      count: stats.resultPending,
+      icon: ClipboardList,
+    },
+    {
+      id: "result-completed" as TabType,
+      label: "Result Completed",
+      count: stats.resultCompleted,
+      icon: ClipboardCheck,
+    },
   ];
 
+
   return (
-    <div className={styles["container"]}>
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className={styles["page-title"]}>Review Management</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Manage premium document reviews and assignments
-        </p>
+    <div className={styles.container}>
+      {/* Stats Cards */}
+      <div className={styles["stats-grid"]}>
+        <div
+          className={`${styles["stat-card"]} ${styles["stat-needs-assignment"]}`}
+        >
+          <div className={styles["stat-icon-box"]}>
+            <AlertCircle className="h-6 w-6" />
+          </div>
+          <div className={styles["stat-content"]}>
+            <span className={styles["stat-value"]}>{stats.needsAssignment}</span>
+            <span className={styles["stat-label"]}>Needs Assignment</span>
+          </div>
+        </div>
+        <div className={`${styles["stat-card"]} ${styles["stat-pending"]}`}>
+          <div className={styles["stat-icon-box"]}>
+            <Clock className="h-6 w-6" />
+          </div>
+          <div className={styles["stat-content"]}>
+            <span className={styles["stat-value"]}>{stats.pending}</span>
+            <span className={styles["stat-label"]}>Request Pending</span>
+          </div>
+        </div>
+        <div className={`${styles["stat-card"]} ${styles["stat-in-review"]}`}>
+          <div className={styles["stat-icon-box"]}>
+            <Users className="h-6 w-6" />
+          </div>
+          <div className={styles["stat-content"]}>
+            <span className={styles["stat-value"]}>{stats.inReview}</span>
+            <span className={styles["stat-label"]}>In Review</span>
+          </div>
+        </div>
+        <div
+          className={`${styles["stat-card"]} ${styles["stat-result-pending"]}`}
+        >
+          <div className={styles["stat-icon-box"]}>
+            <ClipboardList className="h-6 w-6" />
+          </div>
+          <div className={styles["stat-content"]}>
+            <span className={styles["stat-value"]}>{stats.resultPending}</span>
+            <span className={styles["stat-label"]}>Result Pending</span>
+          </div>
+        </div>
+        <div
+          className={`${styles["stat-card"]} ${styles["stat-result-completed"]}`}
+        >
+          <div className={styles["stat-icon-box"]}>
+            <ClipboardCheck className="h-6 w-6" />
+          </div>
+          <div className={styles["stat-content"]}>
+            <span className={styles["stat-value"]}>{stats.resultCompleted}</span>
+            <span className={styles["stat-label"]}>Result Completed</span>
+          </div>
+        </div>
       </div>
 
-      {/* Alerts */}
-      {error && (
-        <div className={styles["alert"] + " " + styles["alert-error"]}>
-          {error}
-        </div>
-      )}
-
       {/* Tabs */}
-      <div className="mb-6 rounded-[10px] bg-white p-2 shadow-1 dark:bg-gray-dark dark:shadow-card">
-        <div className="flex gap-1 border-b border-transparent">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id);
-                setCurrentPage(1);
-              }}
-              className={`rounded-t-md px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === tab.id
-                  ? "bg-primary text-white shadow-sm dark:bg-primary"
-                  : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+      <div className={styles["tabs-card"]}>
+        <div className={styles["tabs-row"]}>
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={`${styles["tab-btn"]} ${activeTab === tab.id ? styles["tab-active"] : ""}`}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{tab.label}</span>
+                <span className={styles["tab-count"]}>{tab.count}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Filters */}
-      <div className="mb-4 flex flex-wrap gap-4 items-end">
-        {/* Search */}
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <input
-            type="text"
-            placeholder="Search documents..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                setCurrentPage(1);
-                fetchDocuments(activeTab);
-              }
-            }}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-        </div>
-
-        {/* Filter by Reviewer */}
-        {(activeTab === "pending" || activeTab === "in-review" || activeTab === "completed" || activeTab === "all") && (
-          <div className="min-w-[180px]">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Reviewer
-            </label>
-            <select
-              value={selectedReviewerId || ""}
-              onChange={(e) => {
-                setSelectedReviewerId(e.target.value || null);
-                setCurrentPage(1);
-              }}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
-            >
-              <option value="">All Reviewers</option>
-              {availableReviewers.map((reviewer) => (
-                <option key={reviewer.id} value={reviewer.id}>
-                  {reviewer.name}
-                </option>
-              ))}
-            </select>
+      <div className={styles["filters-card"]}>
+        <div className={styles["filters-row"]}>
+          <div className={styles["search-box"]}>
+            <Search className={styles["search-icon"]} />
+            <input
+              type="text"
+              placeholder="Search documents..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className={styles["search-input"]}
+            />
+            <button onClick={handleSearch} className={styles["search-btn"]}>
+              Search
+            </button>
           </div>
-        )}
-
-        {/* Filter by Domain */}
-        {availableDomains.length > 0 && (
-          <div className="min-w-[180px]">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Domain
-            </label>
-            <select
-              value={selectedDomainId || ""}
-              onChange={(e) => {
-                setSelectedDomainId(e.target.value || null);
-                setCurrentPage(1);
-              }}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
-            >
-              <option value="">All Domains</option>
-              {availableDomains.map((domain) => (
-                <option key={domain} value={domain}>
-                  {domain}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Sort By */}
-        <div className="min-w-[150px]">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Sort By
-          </label>
-          <select
-            value={sortBy}
-            onChange={(e) => {
-              setSortBy(e.target.value as "title" | "createdAt" | "deadline");
-              setCurrentPage(1);
-            }}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
-          >
-            <option value="createdAt">Created Date</option>
-            <option value="title">Title</option>
-            {(activeTab === "pending" || activeTab === "in-review") && (
-              <option value="deadline">Deadline</option>
-            )}
-          </select>
-        </div>
-
-        {/* Sort Order */}
-        <div className="min-w-[120px]">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Order
-          </label>
-          <select
-            value={sortOrder}
-            onChange={(e) => {
-              setSortOrder(e.target.value as "asc" | "desc");
-              setCurrentPage(1);
-            }}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
-          >
-            <option value="desc">Descending</option>
-            <option value="asc">Ascending</option>
-          </select>
+          <button onClick={handleClearFilters} className={styles["clear-btn"]}>
+            <RefreshCw className="h-4 w-4" /> Reset
+          </button>
         </div>
       </div>
 
-      {/* Documents Table */}
-      <div className={`${styles["table-container"]} mt-6`}>
-        <div className="overflow-x-auto">
-          <table className={styles["table"]}>
-            <thead className={styles["table-header"]}>
-              <tr>
-                <th className={styles["table-header-cell"]}>Title</th>
-                {activeTab === "completed" && (
-                  <>
-                    <th className={styles["table-header-cell"]}>Premium</th>
-                    <th className={styles["table-header-cell"]}>Decision</th>
-                  </>
-                )}
-                <th className={styles["table-header-cell"]}>Document Status</th>
-                <th className={styles["table-header-cell"]}>Review Request Status</th>
-                <th className={styles["table-header-cell"]}>Reviewer</th>
-                <th className={styles["table-header-cell"]}>Deadline</th>
-                <th className={styles["table-header-cell"]}>Created At</th>
-                <th className={styles["table-header-cell"]}>Actions</th>
-              </tr>
-            </thead>
-            <tbody className={styles["table-body"]}>
-              {loading ? (
-                <tr>
-                  <td colSpan={activeTab === "completed" ? 9 : 7} className={styles["loading-container"]}>
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                      <span className="ml-2">Loading documents...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : sortedDocuments.length === 0 ? (
-                <tr>
-                  <td colSpan={activeTab === "completed" ? 9 : 7} className={styles["empty-container"]}>
-                    No documents found.
-                  </td>
-                </tr>
-              ) : (
-                sortedDocuments.map((doc) => {
-                  // Get review request for this document
-                  // Different tabs need different logic
-                  let reviewRequest: ReviewRequestResponse | null = null;
-                  
-                  const docIdStr = String(doc.id);
-                  
-                  if (activeTab === "pending") {
-                    // For pending tab, get the PENDING request specifically
-                    const pendingRequests = reviewRequests.filter(req => {
-                      const reqDocId = String(req.document?.id || "");
-                      return reqDocId === docIdStr && req.status === "PENDING";
-                    });
-                    if (pendingRequests.length > 0) {
-                      // Get the most recent PENDING request
-                      reviewRequest = pendingRequests.sort((a, b) => 
-                        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                      )[0];
-                    }
-                  } else if (activeTab === "completed") {
-                    // For completed tab, get the most recent review request (any status)
-                    // Prioritize ACCEPTED requests (most recent review)
-                    const allDocRequests = reviewRequests.filter(req => {
-                      const reqDocId = String(req.document?.id || "");
-                      return reqDocId === docIdStr;
-                    });
-                    if (allDocRequests.length > 0) {
-                      // Prioritize ACCEPTED, then get most recent
-                      const acceptedRequests = allDocRequests.filter(req => req.status === "ACCEPTED");
-                      if (acceptedRequests.length > 0) {
-                        reviewRequest = acceptedRequests.sort((a, b) => 
-                          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                        )[0];
-                      } else {
-                        reviewRequest = allDocRequests.sort((a, b) => 
-                          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                        )[0];
-                      }
-                    }
-                  } else {
-                    // For other tabs, use the standard logic
-                    reviewRequest = getReviewRequestForDocument(doc.id);
-                  }
-                  
-                  // Determine decision from document status (for completed tab)
-                  const decision = activeTab === "completed" 
-                    ? (doc.status === "ACTIVE" ? "APPROVED" : doc.status === "REJECTED" ? "REJECTED" : null)
-                    : null;
+      {/* Error Alert */}
+      {error && (
+        <div className={`${styles.alert} ${styles["alert-error"]}`}>{error}</div>
+      )}
 
-                  return (
-                    <tr key={doc.id} className={styles["table-row"]}>
-                      <td className={styles["table-cell"]}>
-                        <div className={styles["table-cell-main"]}>
-                          {doc.title || "N/A"}
-                        </div>
-                      </td>
-                      {activeTab === "completed" && (
-                        <>
-                          <td className={styles["table-cell"]}>
-                            {decision === "APPROVED" && doc.isPremium ? (
-                              <span
-                                className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-                              >
-                                Premium
-                              </span>
-                            ) : (
-                              <span className="text-gray-500">-</span>
-                            )}
-                          </td>
-                          <td className={styles["table-cell"]}>
-                            {decision ? (
-                              <span
-                                className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
-                                  decision === "APPROVED"
-                                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                    : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                                }`}
-                              >
-                                {decision === "APPROVED" ? (
-                                  <CheckCircle className="w-3 h-3" />
-                                ) : (
-                                  <XCircle className="w-3 h-3" />
-                                )}
-                                <span>{decision}</span>
-                              </span>
-                            ) : (
-                              <span className="text-gray-500">-</span>
-                            )}
-                          </td>
-                        </>
-                      )}
-                      <td className={styles["table-cell"]}>
-                        <span
-                          className={`${styles["status-badge"]} ${getStatusBadgeClass(doc.status)}`}
-                        >
-                          {doc.status
-                            ? doc.status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-                            : "N/A"}
-                        </span>
-                      </td>
-                      <td className={styles["table-cell"]}>
-                        {reviewRequest ? (
+      {/* Table */}
+      <div className={styles["table-card"]}>
+        {/* Review Results Table (for result-pending and result-completed tabs) */}
+        {(activeTab === "result-pending" || activeTab === "result-completed") ? (
+          reviewResultsLoading ? (
+            <div className={styles["loading-box"]}>
+              <div className={styles["spinner"]} />
+            </div>
+          ) : paginatedReviewResults.length === 0 ? (
+            <div className={styles["empty-box"]}>
+              <ClipboardList className="h-16 w-16 text-gray-300 dark:text-gray-600" />
+              <p className="mt-4 text-gray-500">No review results found</p>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className={styles.table}>
+                  <thead>
+                    <tr className={styles["table-head-row"]}>
+                      <th className={styles["th"]}>Document</th>
+                      <th className={styles["th"]}>Reviewer</th>
+                      <th className={styles["th"]}>Decision</th>
+                      <th className={styles["th"]}>Result Status</th>
+                      <th className={styles["th"]}>Submitted</th>
+                      <th className={styles["th"]}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedReviewResults.map((result) => (
+                      <tr key={result.id} className={styles["table-row"]}>
+                        <td className={styles["td"]}>
+                          <div className={styles["doc-info"]}>
+                            <div className={styles["doc-icon-box"]}>
+                              <FileText className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className={styles["doc-title"]}>
+                                {result.document.title}
+                              </p>
+                              <p className={styles["doc-meta"]}>
+                                {result.document.docType.name} •{" "}
+                                {result.document.domain.name}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className={styles["td"]}>
+                          <div className={styles["reviewer-info"]}>
+                            <div className={styles["avatar"]}>
+                              {getInitials(result.reviewer.fullName)}
+                            </div>
+                            <div>
+                              <p className={styles["reviewer-name"]}>
+                                {result.reviewer.fullName}
+                              </p>
+                              <p className={styles["reviewer-email"]}>
+                                {result.reviewer.email}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className={styles["td"]}>
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
-                              reviewRequest.status === "PENDING"
-                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                                : reviewRequest.status === "ACCEPTED"
-                                ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                                : reviewRequest.status === "REJECTED"
-                                ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                                : reviewRequest.status === "EXPIRED"
-                                ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
-                                : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                            className={`${styles["badge"]} ${
+                              result.decision === "APPROVED"
+                                ? styles["badge-active"]
+                                : styles["badge-rejected"]
                             }`}
                           >
-                            {reviewRequest.status === "PENDING" && <Clock className="w-3 h-3" />}
-                            {reviewRequest.status === "ACCEPTED" && <Clock className="w-3 h-3" />}
-                            {reviewRequest.status === "REJECTED" && <XCircle className="w-3 h-3" />}
-                            {reviewRequest.status === "EXPIRED" && <AlertCircle className="w-3 h-3" />}
-                            <span>{reviewRequest.status}</span>
-                          </span>
-                        ) : doc.status === "PENDING_REVIEW" ? (
-                          <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
-                            <AlertCircle className="w-4 h-4" />
-                            <span>No Review Request</span>
-                          </span>
-                        ) : (
-                          <span className="text-gray-500">-</span>
-                        )}
-                      </td>
-                      <td className={styles["table-cell"]}>
-                        {reviewRequest?.reviewer ? (
-                          <div className="text-sm">
-                            <div className="font-medium">{reviewRequest.reviewer.fullName || "N/A"}</div>
-                            {reviewRequest.reviewer.email && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {reviewRequest.reviewer.email}
-                              </div>
+                            {result.decision === "APPROVED" ? (
+                              <CheckCircle className="w-3.5 h-3.5" />
+                            ) : (
+                              <XCircle className="w-3.5 h-3.5" />
                             )}
-                          </div>
-                        ) : (
-                          <span className="text-gray-500">-</span>
-                        )}
-                      </td>
-                      <td className={styles["table-cell"]}>
-                        {reviewRequest ? (
-                          (() => {
-                            const deadline = reviewRequest.status === "PENDING" 
-                              ? reviewRequest.responseDeadline 
-                              : reviewRequest.status === "ACCEPTED"
-                              ? reviewRequest.reviewDeadline
-                              : null;
-                            
-                            if (!deadline) {
-                              return <span className="text-gray-500">-</span>;
-                            }
-                            
-                            const isOverdue = new Date(deadline) < new Date();
-                            return (
-                              <div className="text-sm">
-                                {new Date(deadline).toLocaleDateString()}
-                                {isOverdue && (
-                                  <span className="ml-1 text-red-600 dark:text-red-400 text-xs">
-                                    (Overdue)
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })()
-                        ) : (
-                          <span className="text-gray-500">-</span>
-                        )}
-                      </td>
-                      <td className={styles["table-cell"]}>
-                        {doc.createdAt
-                          ? new Date(doc.createdAt).toLocaleDateString()
-                          : "N/A"}
-                      </td>
-                      <td className={styles["table-cell"]}>
-                        <div className={styles["action-cell"]}>
-                          <button
-                            onClick={() => handleViewDetail(doc, reviewRequest)}
-                            className={styles["action-icon-btn"]}
-                            title="View Details"
+                            {result.decision}
+                          </span>
+                        </td>
+                        <td className={styles["td"]}>
+                          <span
+                            className={`${styles["status"]} ${
+                              result.status === "PENDING"
+                                ? styles["status-pending"]
+                                : result.status === "APPROVED"
+                                  ? styles["status-accepted"]
+                                  : styles["status-rejected"]
+                            }`}
                           >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          {doc.status === "PENDING_REVIEW" && !reviewRequest && (
+                            {result.status}
+                          </span>
+                        </td>
+                        <td className={styles["td"]}>
+                          <span className={styles["date-text"]}>
+                            {formatDate(result.submittedAt)}
+                          </span>
+                        </td>
+                        <td className={styles["td"]}>
+                          <div className={styles["actions"]}>
                             <button
-                              onClick={() => handleAssignClick(doc)}
-                              className={styles["action-icon-btn"]}
-                              title="Assign Reviewer"
+                              onClick={() => handleViewReviewResult(result)}
+                              className={styles["action-view"]}
+                              title="View Details"
                             >
-                              <UserPlus className="w-4 h-4" />
+                              <Eye className="h-4 w-4" />
                             </button>
-                          )}
-                          {reviewRequest && reviewRequest.status === "PENDING" && (
-                            <button
-                              onClick={() => handleChangeReviewerClick(doc, reviewRequest)}
-                              className={styles["action-icon-btn"]}
-                              title="Change Reviewer"
-                            >
-                              <UserCog className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {reviewResultsTotalPages > 1 && (
+                <div className={styles["pagination-box"]}>
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={reviewResultsTotalPages}
+                    totalItems={filteredReviewResults.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={handlePageChange}
+                    loading={reviewResultsLoading}
+                  />
+                </div>
               )}
-            </tbody>
-          </table>
-        </div>
+            </>
+          )
+        ) : loading ? (
+          <div className={styles["loading-box"]}>
+            <div className={styles["spinner"]} />
+          </div>
+        ) : paginatedDocuments.length === 0 ? (
+          <div className={styles["empty-box"]}>
+            <FileText className="h-16 w-16 text-gray-300 dark:text-gray-600" />
+            <p className="mt-4 text-gray-500">No documents found</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className={styles.table}>
+                <thead>
+                  <tr className={styles["table-head-row"]}>
+                    <th className={styles["th"]}>Document</th>
+                    <th className={styles["th"]}>Reviewer</th>
+                    <th className={styles["th"]}>Document Status</th>
+                    <th className={styles["th"]}>Review Status</th>
+                    <th className={styles["th"]}>Deadline</th>
+                    <th
+                      className={`${styles["th"]} ${styles["th-sortable"]}`}
+                      onClick={handleDateSort}
+                    >
+                      <span className="flex items-center cursor-pointer">
+                        Created
+                        {getDateSortIcon()}
+                      </span>
+                    </th>
+                    <th className={styles["th"]}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedDocuments.map((doc) => {
+                    const docIdStr = String(doc.id);
+                    let reviewRequest: ReviewRequestResponse | null = null;
 
-        {/* Pagination - use filtered count for tabs that filter client-side */}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={Math.ceil(paginationTotal / itemsPerPage)}
-          totalItems={paginationTotal}
-          itemsPerPage={itemsPerPage}
-          onPageChange={handlePageChange}
-          loading={loading}
-        />
+                    if (activeTab === "pending") {
+                      const pendingRequests = reviewRequests.filter((req) => {
+                        const reqDocId = String(req.document?.id || "");
+                        return reqDocId === docIdStr && req.status === "PENDING";
+                      });
+                      if (pendingRequests.length > 0) {
+                        reviewRequest = pendingRequests.sort(
+                          (a, b) =>
+                            new Date(b.createdAt).getTime() -
+                            new Date(a.createdAt).getTime(),
+                        )[0];
+                      }
+                    } else {
+                      reviewRequest = getReviewRequestForDocument(doc.id);
+                    }
+
+                    const deadline =
+                      reviewRequest?.status === "PENDING"
+                        ? reviewRequest.responseDeadline
+                        : reviewRequest?.status === "ACCEPTED"
+                          ? reviewRequest.reviewDeadline
+                          : null;
+                    const isOverdue = deadline
+                      ? new Date(deadline) < new Date()
+                      : false;
+
+                    return (
+                      <tr key={doc.id} className={styles["table-row"]}>
+                        <td className={styles["td"]}>
+                          <div className={styles["doc-info"]}>
+                            <div className={styles["doc-icon-box"]}>
+                              <FileText className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className={styles["doc-title"]}>
+                                {doc.title || "N/A"}
+                              </p>
+                              {doc.specializationName && (
+                                <p className={styles["doc-meta"]}>
+                                  {doc.specializationName}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className={styles["td"]}>
+                          {reviewRequest?.reviewer ? (
+                            <div className={styles["reviewer-info"]}>
+                              <div className={styles["avatar"]}>
+                                {getInitials(reviewRequest.reviewer.fullName)}
+                              </div>
+                              <div>
+                                <p className={styles["reviewer-name"]}>
+                                  {reviewRequest.reviewer.fullName}
+                                </p>
+                                <p className={styles["reviewer-email"]}>
+                                  {reviewRequest.reviewer.email}
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-gray-500">-</span>
+                          )}
+                        </td>
+                        <td className={styles["td"]}>
+                          <span
+                            className={`${styles["badge"]} ${
+                              doc.status === "PENDING_REVIEW"
+                                ? styles["badge-pending-review"]
+                                : doc.status === "REVIEWING"
+                                  ? styles["badge-reviewing"]
+                                  : doc.status === "ACTIVE"
+                                    ? styles["badge-active"]
+                                    : doc.status === "REJECTED"
+                                      ? styles["badge-rejected"]
+                                      : ""
+                            }`}
+                          >
+                            {doc.status?.replace(/_/g, " ") || "N/A"}
+                          </span>
+                        </td>
+                        <td className={styles["td"]}>
+                          {reviewRequest ? (
+                            <span
+                              className={`${styles["status"]} ${styles[`status-${reviewRequest.status.toLowerCase()}`]}`}
+                            >
+                              {reviewRequest.status === "PENDING" && (
+                                <Clock className="w-3.5 h-3.5" />
+                              )}
+                              {reviewRequest.status === "ACCEPTED" && (
+                                <Users className="w-3.5 h-3.5" />
+                              )}
+                              {reviewRequest.status === "REJECTED" && (
+                                <XCircle className="w-3.5 h-3.5" />
+                              )}
+                              {reviewRequest.status === "EXPIRED" && (
+                                <AlertCircle className="w-3.5 h-3.5" />
+                              )}
+                              {reviewRequest.status}
+                            </span>
+                          ) : doc.status === "PENDING_REVIEW" ? (
+                            <span
+                              className={`flex items-center gap-1 ${styles["status-no-request"]}`}
+                            >
+                              <AlertCircle className="w-4 h-4" />
+                              No Request
+                            </span>
+                          ) : (
+                            <span className="text-gray-500">-</span>
+                          )}
+                        </td>
+                        <td className={styles["td"]}>
+                          {deadline ? (
+                            <div>
+                              <span className={styles["date-text"]}>
+                                {formatDate(deadline)}
+                              </span>
+                              {isOverdue && (
+                                <span className={styles["overdue-text"]}>
+                                  (Overdue)
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-500">-</span>
+                          )}
+                        </td>
+                        <td className={styles["td"]}>
+                          <span className={styles["date-text"]}>
+                            {formatDate(doc.createdAt)}
+                          </span>
+                        </td>
+                        <td className={styles["td"]}>
+                          <div className={styles["actions"]}>
+                            <button
+                              onClick={() =>
+                                handleViewDetail(doc, reviewRequest)
+                              }
+                              className={styles["action-view"]}
+                              title="View Details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            {doc.status === "PENDING_REVIEW" &&
+                              !reviewRequest && (
+                                <button
+                                  onClick={() => handleAssignClick(doc)}
+                                  className={styles["action-assign"]}
+                                  title="Assign Reviewer"
+                                >
+                                  <UserPlus className="h-4 w-4" />
+                                </button>
+                              )}
+                            {reviewRequest &&
+                              reviewRequest.status === "PENDING" && (
+                                <button
+                                  onClick={() =>
+                                    handleChangeReviewerClick(doc, reviewRequest)
+                                  }
+                                  className={styles["action-change"]}
+                                  title="Change Reviewer"
+                                >
+                                  <UserCog className="h-4 w-4" />
+                                </button>
+                              )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {totalPages > 1 && (
+              <div className={styles["pagination-box"]}>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={filteredAndSortedDocuments.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={handlePageChange}
+                  loading={loading}
+                />
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Assign Reviewer Modal */}
@@ -883,9 +948,9 @@ export function ReviewManagement() {
           open={showAssignModal}
           documentId={selectedDocument.id}
           documentTitle={selectedDocument.title || "Document"}
-          documentDomain={undefined} // Can be added if available
+          documentDomain={undefined}
           documentSpecialization={selectedDocument.specializationName}
-          existingReviewRequestId={selectedReviewRequest?.id || undefined} // For change reviewer
+          existingReviewRequestId={selectedReviewRequest?.id || undefined}
           onClose={() => {
             setShowAssignModal(false);
             setSelectedDocument(null);
@@ -906,7 +971,32 @@ export function ReviewManagement() {
           reviewRequestId={selectedReviewRequestId}
         />
       )}
+
+      {/* Review Result Detail Modal */}
+      {showReviewResultModal && selectedReviewResult && (
+        <ReviewResultDetailModal
+          review={selectedReviewResult}
+          onClose={() => {
+            setShowReviewResultModal(false);
+            setSelectedReviewResult(null);
+          }}
+          onApprove={handleReviewResultApprove}
+          onReject={handleReviewResultReject}
+        />
+      )}
+
+      {/* Document Detail Modal */}
+      {showDocumentDetailModal && selectedDocForDetail && (
+        <DocumentDetailModal
+          document={selectedDocForDetail}
+          reviewRequest={selectedReviewRequestForDetail}
+          onClose={() => {
+            setShowDocumentDetailModal(false);
+            setSelectedDocForDetail(null);
+            setSelectedReviewRequestForDetail(null);
+          }}
+        />
+      )}
     </div>
   );
 }
-

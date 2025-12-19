@@ -1,5 +1,6 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.domain.enums.LogAction;
 import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
 import com.capstone.be.dto.request.document.DocumentSearchFilter;
@@ -11,6 +12,7 @@ import com.capstone.be.dto.response.document.*;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.DocumentService;
 import com.capstone.be.service.DocumentVoteService;
+import com.capstone.be.util.AuditLogHelper;
 import com.capstone.be.util.PagingUtil;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -38,6 +40,7 @@ public class DocumentController {
 
   private final DocumentService documentService;
   private final DocumentVoteService documentVoteService;
+  private final AuditLogHelper auditLogHelper;
 
   /**
    * Upload a document POST /api/v1/documents/upload
@@ -59,6 +62,28 @@ public class DocumentController {
     DocumentUploadResponse response = documentService.uploadDocument(
         uploaderId, info, file);
 
+    // Audit log - document uploaded
+    try {
+      var details = AuditLogHelper.details();
+      if (response.getId() != null) {
+        details.put("documentId", response.getId().toString());
+      }
+      details.put("title", info.getTitle());
+      details.put("isPremium", info.getIsPremium());
+      details.put("organizationId", info.getOrganizationId());
+      auditLogHelper.logSuccessWithResource(
+          LogAction.DOCUMENT_UPLOADED,
+          userPrincipal,
+          "DOCUMENT",
+          response.getId(),
+          details,
+          HttpStatus.CREATED.value()
+      );
+    } catch (Exception e) {
+      // Do not affect business logic if logging fails
+      log.warn("Failed to audit log DOCUMENT_UPLOADED: {}", e.getMessage());
+    }
+
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
@@ -78,20 +103,36 @@ public class DocumentController {
 
     documentService.redeemDocument(userId, documentId);
 
+    // Audit log - document redeemed
+    try {
+      var details = AuditLogHelper.details();
+      details.put("documentId", documentId.toString());
+      auditLogHelper.logSuccessWithResource(
+          LogAction.DOCUMENT_REDEEMED,
+          userPrincipal,
+          "DOCUMENT",
+          documentId,
+          details,
+          HttpStatus.NO_CONTENT.value()
+      );
+    } catch (Exception e) {
+      log.warn("Failed to audit log DOCUMENT_REDEEMED: {}", e.getMessage());
+    }
+
     return ResponseEntity.noContent().build();
   }
 
   /**
    * Get presigned URL for document access Access is granted if: - Document is PUBLIC, OR - User is
    * the uploader, OR - User is a member of the document's organization (for INTERNAL documents), OR
-   * - User has redeemed/purchased the document
+   * - User has redeemed/purchased the document, OR - User is BUSINESS_ADMIN (full access)
    *
    * @param userPrincipal Authenticated user
    * @param documentId    Document ID
    * @return Presigned URL response with expiration time
    */
   @GetMapping(value = "/{id}/presigned-url")
-  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN', 'BUSINESS_ADMIN')")
   public ResponseEntity<DocumentPresignedUrlResponse> getDocumentPresignedUrl(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @PathVariable(name = "id") UUID documentId) {
@@ -113,7 +154,7 @@ public class DocumentController {
    * @return Document detail response with all metadata
    */
   @GetMapping(value = "/{id}")
-  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN', 'BUSINESS_ADMIN')")
   public ResponseEntity<DocumentDetailResponse> getDocumentDetail(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @PathVariable(name = "id") UUID documentId) {
@@ -218,6 +259,22 @@ public class DocumentController {
 
     documentService.deleteDocument(uploaderId, documentId);
 
+    // Audit log - document deleted (soft delete)
+    try {
+      var details = AuditLogHelper.details();
+      details.put("documentId", documentId.toString());
+      auditLogHelper.logSuccessWithResource(
+          LogAction.DOCUMENT_DELETED,
+          userPrincipal,
+          "DOCUMENT",
+          documentId,
+          details,
+          HttpStatus.NO_CONTENT.value()
+      );
+    } catch (Exception e) {
+      log.warn("Failed to audit log DOCUMENT_DELETED: {}", e.getMessage());
+    }
+
     return ResponseEntity.noContent().build();
   }
 
@@ -268,14 +325,16 @@ public class DocumentController {
   }
 
   /**
-   * Search metadata cho public documents.
+   * Search metadata cho documents.
    * Dùng cho Filter Modal ở FE.
-   * Không yêu cầu authentication.
+   * Authentication optional - nếu có sẽ trả về joinedOrganizationIds.
    */
   @GetMapping("/search-meta")
-  public ResponseEntity<DocumentSearchMetaResponse> getPublicSearchMeta() {
-    log.info("Received request for public document search meta");
-    DocumentSearchMetaResponse meta = documentService.getPublicSearchMeta();
+  public ResponseEntity<DocumentSearchMetaResponse> getSearchMeta(
+      @AuthenticationPrincipal UserPrincipal userPrincipal) {
+    UUID userId = userPrincipal != null ? userPrincipal.getId() : null;
+    log.info("Received request for document search meta, userId: {}", userId);
+    DocumentSearchMetaResponse meta = documentService.getSearchMeta(userId);
     return ResponseEntity.ok(meta);
   }
 
@@ -342,6 +401,54 @@ public class DocumentController {
             documentService.getHomepageDocuments(userId, page, size);
 
     return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Get violations for a specific document
+   * Only the uploader and admins can view violations
+   *
+   * @param userPrincipal Authenticated user
+   * @param documentId Document ID
+   * @return List of violations
+   */
+  @GetMapping("/{id}/violations")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN', 'BUSINESS_ADMIN', 'SYSTEM_ADMIN')")
+  public ResponseEntity<java.util.List<DocumentViolationResponse>> getDocumentViolations(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "id") UUID documentId) {
+    UUID userId = userPrincipal.getId();
+    log.info("User {} requesting violations for document {}", userId, documentId);
+
+    java.util.List<DocumentViolationResponse> violations =
+        documentService.getDocumentViolations(userId, documentId);
+
+    return ResponseEntity.ok(violations);
+  }
+
+  /**
+   * Get review result for a rejected document
+   * Only the uploader and admins can view review result
+   *
+   * @param userPrincipal Authenticated user
+   * @param documentId Document ID
+   * @return Review result response
+   */
+  @GetMapping("/{id}/review-result")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN', 'BUSINESS_ADMIN', 'SYSTEM_ADMIN')")
+  public ResponseEntity<com.capstone.be.dto.response.review.ReviewResultResponse> getDocumentReviewResult(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "id") UUID documentId) {
+    UUID userId = userPrincipal.getId();
+    log.info("User {} requesting review result for document {}", userId, documentId);
+
+    com.capstone.be.dto.response.review.ReviewResultResponse reviewResult =
+        documentService.getDocumentReviewResult(userId, documentId);
+
+    if (reviewResult == null) {
+      return ResponseEntity.notFound().build();
+    }
+
+    return ResponseEntity.ok(reviewResult);
   }
 
 }

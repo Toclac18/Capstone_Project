@@ -2,6 +2,7 @@
 
 import styles from "../styles.module.css";
 import DocCard from "./DocCard";
+import HorizontalScroll from "./HorizontalScroll";
 import { useHomepage } from "../provider";
 import { useModalPreview } from "@/components/ModalPreview";
 import { useMemo } from "react";
@@ -11,6 +12,7 @@ export default function GuestPopularStrip() {
   const { topUpvoted, specGroups } = useHomepage();
   const { open } = useModalPreview();
 
+  // Hiển thị đúng thứ tự response của BE trả về (không sort lại)
   const items = useMemo(() => {
     const base: DocumentItem[] = [
       ...(topUpvoted ?? []),
@@ -24,9 +26,7 @@ export default function GuestPopularStrip() {
       return true;
     });
 
-    unique.sort((a, b) => (b.upvote_counts ?? 0) - (a.upvote_counts ?? 0));
-
-    return unique.slice(0, 8);
+    return unique.slice(0, 12);
   }, [topUpvoted, specGroups]);
 
   if (!items.length) return null;
@@ -37,13 +37,11 @@ export default function GuestPopularStrip() {
         <div className={styles.sectionHeader}>Popular right now</div>
       </div>
 
-      <div className={styles.horizontalScroll}>
+      <HorizontalScroll>
         {items.map((d) => (
-          <div key={d.id} className={styles.horizontalCardWrap}>
-            <DocCard key={d.id} {...d} onPreview={() => open(d)} />
-          </div>
+          <DocCard key={d.id} {...d} onPreview={() => open(d)} />
         ))}
-      </div>
+      </HorizontalScroll>
     </section>
   );
 }

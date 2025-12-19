@@ -1,10 +1,13 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.domain.enums.LogAction;
 import com.capstone.be.dto.common.PageInfo;
 import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.organization.ApproveOrganizationRequest;
 import com.capstone.be.dto.response.organization.PendingOrganizationResponse;
+import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.OrganizationApprovalService;
+import com.capstone.be.util.AuditLogHelper;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrganizationApprovalController {
 
   private final OrganizationApprovalService organizationApprovalService;
+  private final AuditLogHelper auditLogHelper;
 
   /**
    * Get all pending organizations (paginated)
@@ -77,11 +82,34 @@ public class OrganizationApprovalController {
   @PostMapping("/approve")
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
   public ResponseEntity<Void> approveOrRejectOrganization(
+      @AuthenticationPrincipal UserPrincipal adminPrincipal,
       @Valid @RequestBody ApproveOrganizationRequest request) {
     log.info("Approve/Reject organization request - adminUserId: {}, approved: {}",
         request.getUserId(), request.getApproved());
 
     organizationApprovalService.approveOrRejectOrganization(request);
+
+    // Audit log - organization approved or rejected
+    try {
+      var details = AuditLogHelper.details();
+      details.put("adminUserId", request.getUserId().toString());
+      details.put("approved", request.getApproved());
+      details.put("rejectionReason", request.getRejectionReason());
+
+      LogAction action = Boolean.TRUE.equals(request.getApproved())
+          ? LogAction.ORGANIZATION_APPROVED
+          : LogAction.ORGANIZATION_REJECTED;
+
+      auditLogHelper.logSuccessWithTarget(
+          action,
+          adminPrincipal,
+          request.getUserId(),
+          details,
+          org.springframework.http.HttpStatus.NO_CONTENT.value()
+      );
+    } catch (Exception e) {
+      log.warn("Failed to audit log ORGANIZATION_APPROVED/REJECTED: {}", e.getMessage());
+    }
 
     return ResponseEntity.noContent().build();
   }

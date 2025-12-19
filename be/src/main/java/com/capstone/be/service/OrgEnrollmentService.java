@@ -109,6 +109,15 @@ public interface OrgEnrollmentService {
   void leaveOrganization(UUID readerId, UUID organizationId);
 
   /**
+   * Re-invite a member who has LEFT the organization
+   * Only works for members with LEFT status
+   *
+   * @param organizationAdminId Organization admin user ID
+   * @param enrollmentId        Enrollment ID
+   */
+  void reInviteMember(UUID organizationAdminId, UUID enrollmentId);
+
+  /**
    * Get enrollment detail
    *
    * @param enrollmentId Enrollment ID

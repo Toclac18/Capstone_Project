@@ -135,6 +135,27 @@ public class OrgMemberController {
   }
 
   /**
+   * Re-invite a member who has LEFT the organization
+   * POST /api/v1/organization/members/{enrollmentId}/re-invite
+   *
+   * @param userPrincipal Organization admin
+   * @param enrollmentId  Enrollment ID of member with LEFT status
+   * @return 200 OK
+   */
+  @PostMapping("/{enrollmentId}/re-invite")
+  @PreAuthorize("hasRole('ORGANIZATION_ADMIN')")
+  public ResponseEntity<Void> reInviteMember(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "enrollmentId") UUID enrollmentId) {
+    UUID adminId = userPrincipal.getId();
+    log.info("Organization admin {} re-inviting member: {}", adminId, enrollmentId);
+
+    orgEnrollmentService.reInviteMember(adminId, enrollmentId);
+
+    return ResponseEntity.ok().build();
+  }
+
+  /**
    * Accept organization invitation using JWT token from email link
    * POST /api/v1/organization/members/accept-invitation
    *

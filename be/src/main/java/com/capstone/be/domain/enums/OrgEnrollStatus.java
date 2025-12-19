@@ -8,6 +8,7 @@ import lombok.Getter;
 public enum OrgEnrollStatus {
   PENDING_INVITE("Pending invite"),
   JOINED("Joined"),
+  LEFT("Left"),
   REMOVED("Removed");
 
   private final String displayName;

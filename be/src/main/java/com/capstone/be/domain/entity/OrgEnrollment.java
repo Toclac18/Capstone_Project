@@ -85,6 +85,10 @@ public class OrgEnrollment extends BaseEntity {
     return status == OrgEnrollStatus.REMOVED;
   }
 
+  public boolean isLeft() {
+    return status == OrgEnrollStatus.LEFT;
+  }
+
   public void acceptInvitation() {
     this.status = OrgEnrollStatus.JOINED;
   }
@@ -95,5 +99,13 @@ public class OrgEnrollment extends BaseEntity {
 
   public void removeMember() {
     this.status = OrgEnrollStatus.REMOVED;
+  }
+
+  public void leaveMember() {
+    this.status = OrgEnrollStatus.LEFT;
+  }
+
+  public void reInviteMember() {
+    this.status = OrgEnrollStatus.PENDING_INVITE;
   }
 }

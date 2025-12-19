@@ -21,9 +21,10 @@ export async function changeEnrollmentStatus(
 export async function inviteMember(
   enrollmentId: string,
 ): Promise<{ success: boolean; message?: string }> {
-  const res = await apiClient.post("org-admin/readers/invite", {
-    enrollmentId,
-  });
+  // Call the re-invite endpoint for LEFT members
+  const res = await apiClient.post(
+    `org-admin/readers/${enrollmentId}/re-invite`,
+  );
   return res.data;
 }
 

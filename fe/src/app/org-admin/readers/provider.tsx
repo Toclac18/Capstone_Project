@@ -148,6 +148,7 @@ export function ReadersProvider({ children }: { children: React.ReactNode }) {
               : r,
           ),
         );
+        showToast(toast.success("Success", "Re_invite reader successfully."));
       } catch (err: any) {
         const msg = typeof err?.message === "string" ? err.message : "Error";
         setError(msg);

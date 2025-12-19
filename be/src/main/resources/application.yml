@@ -1,0 +1,105 @@
+server:
+  port: 8080
+  shutdown: graceful
+
+spring:
+  mvc:
+    servlet:
+      path: /api  #prefix for endpoints
+  profiles:
+    active: dev
+  datasource:
+    #url: ${DB_URL}${DB_SSLMODE_QUERY}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}${DB_SSLMODE_QUERY}
+    username:  ${DB_USERNAME}
+    password:  ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+#      ddl-auto: update
+#      ddl-auto: create-drop
+    show-sql: ${JPA_SHOW_SQL:true}
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc.time_zone: UTC
+    open-in-view: false
+  data:
+    jpa:
+      repositories:
+        bootstrap-mode: lazy
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
+
+app:
+
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      expirationMs: ${JWT_EXPIRATION_MS:86400000}
+      emailVerificationExpirationMs: ${JWT_EMAIL_VERIFICATION_EXPIRATION_MS:600000}
+      issuer: ${JWT_ISSUER:capstone}
+
+  # OAuth2 - Uncomment when implementing Google/Social login
+  # oauth2:
+  #   authorizedRedirectUri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/callback}
+
+  mail:
+    from: ${MAIL_FROM:no-reply@capstone.com}
+    verificationBaseUrl: ${MAIL_VERIFICATION_BASE_URL:http://localhost:3000/verify-email}
+  audit:
+    log:
+      retention-enabled: ${AUDIT_LOG_RETENTION_ENABLED:true}
+      retention-days: ${AUDIT_LOG_RETENTION_DAYS:180}  # 6 months
+      retention-cron: ${AUDIT_LOG_RETENTION_CRON:0 0 2 * * ?}  # Daily at 2:00 AM
+
+  document:
+    defaultPremiumPrice: 120
+
+  s3:
+    document:
+      presignedExpInMinutes: 20
+
+  ai:
+    moderationService:
+      url: ${AI_MODERATION_SERVICE_URL:http://localhost:8000}
+      apiKey: ${AI_MODERATION_API_KEY}
+
+logging:
+  level:
+    org.hibernate: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /api/actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+
+springdoc:
+  swagger-ui:
+    url: /v3/api-docs
+  api-docs:
+    path: /v3/api-docs
+
+aws:
+  accessKeyId: ${AWS_ACCESS_KEY_ID:xxxxxx}
+  secretKey: ${AWS_SECRET_KEY:xxxxxx}
+  region: ${AWS_REGION:xxxxxx}
+  s3:
+    bucket: ${AWS_S3_BUCKET:xxxxxx}

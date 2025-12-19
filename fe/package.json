@@ -1,28 +1,58 @@
 {
-  "name": "fe",
-  "version": "0.1.0",
+  "name": "capstone-fe",
   "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": "22.19.0",
+    "npm": ">=10"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
   },
   "dependencies": {
-    "axios": "^1.12.2",
-    "next": "15.4.6",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "@hookform/resolvers": "5.2.2",
+    "apexcharts": "4.5.0",
+    "axios": "1.12.2",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "date-fns": "^4.1.0",
+    "dayjs": "1.11.13",
+    "flatpickr": "4.6.13",
+    "jose": "5.9.3",
+    "lucide-react": "0.546.0",
+    "mammoth": "^1.11.0",
+    "next": "^16.0.7",
+    "next-themes": "0.4.4",
+    "nextjs-toploader": "3.7.15",
+    "pdfjs-dist": "^5.4.296",
+    "react": "^19.2.1",
+    "react-apexcharts": "1.7.0",
+    "react-dom": "^19.2.1",
+    "react-hook-form": "7.65.0",
+    "react-pdf": "^10.2.0",
+    "recharts": "^3.5.1",
+    "tailwind-merge": "2.6.0",
+    "zod": "4.1.12"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.4.6",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "@eslint/js": "^9.39.1",
+    "@types/node": "24.7.0",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.46.3",
+    "@typescript-eslint/parser": "^8.46.3",
+    "autoprefixer": "10.4.20",
+    "eslint": "^9.39.1",
+    "eslint-config-next": "^16.0.1",
+    "postcss": "8",
+    "prettier": "3.4.2",
+    "prettier-plugin-tailwindcss": "0.6.11",
+    "tailwindcss": "3.4.16",
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.46.3"
   }
 }

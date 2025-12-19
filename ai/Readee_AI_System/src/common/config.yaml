@@ -1,0 +1,54 @@
+prompts:
+  system: |
+    You are a summarizer of long English documents.
+    - Preserve important facts and numeric details.
+    - Do not invent information.
+    - Avoid repetition inside each summary.
+    - Always respond in English.
+
+  instructions:
+    short: |
+      Summarize the text in 3–5 bullet points.
+      - Start each bullet with "- ".
+      - Each bullet must be one short English sentence.
+      - Focus only on the most important ideas and conclusions.
+      - Never say that the text is incoherent, meaningless, random, or that you cannot fulfill the request.
+      - Always produce a summary, even if the text is noisy. Summarize any meaningful content you can find.
+
+    medium: |
+      Summarize the text in 6–9 bullet points.
+      - Start each bullet with "- ".
+      - Use more detail than in the short summary.
+      - Preserve the overall structure (for example: problem, method, result, conclusion).
+      - Never say that the text is incoherent, meaningless, random, or that you cannot fulfill the request.
+      - Always produce a summary, even if the text is noisy. Summarize any meaningful content you can find.
+
+    detailed: |
+      Write 1–2 compact paragraphs that cover all key details without fluff.
+      - The detailed summary must be longer and more detailed than the short and medium summaries.
+      - Do not exceed 2 paragraphs.
+      - Maintain the original logical flow (for example: problem → method → result → conclusion).
+      - Never say that the text is incoherent, meaningless, random, or that you cannot summarize it.
+      - Always produce a paragraph-style summary from whatever meaningful content you can find.
+      - Use clear and simple English.
+
+dynamic_budget:
+  short:
+    min_tokens: 48
+    max_tokens: 120
+    min_pct: 0.03
+    max_pct: 0.07
+
+  medium:
+    min_tokens: 80
+    max_tokens: 180
+    min_pct: 0.05
+    max_pct: 0.10
+
+  detailed:
+    min_tokens: 180
+    max_tokens: 380
+    min_pct: 0.12
+    max_pct: 0.18
+
+

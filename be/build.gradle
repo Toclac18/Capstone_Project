@@ -1,41 +1,105 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.5.4'
-	id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.springframework.boot' version '3.3.3'
+    id 'io.spring.dependency-management' version '1.1.6'
+    id 'java'
 }
 
-group = 'com'
+group = 'com.capstone'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+    toolchain { languageVersion = JavaLanguageVersion.of(21) }
 }
 
-configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
+bootJar {
+    archiveFileName = "app.jar"
 }
 
 repositories {
-	mavenCentral()
+    maven { url 'https://maven.aliyun.com/repository/central' }
+    mavenCentral()
+}
+
+configurations {
+    compileOnly { extendsFrom annotationProcessor }
+}
+
+// === ADDED: MapStruct Version Variable ===
+ext {
+    // NOTE: If you previously had 'lombokVersion' here, ensure it's kept.
+    mapstructVersion = '1.5.5.Final'
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	compileOnly 'org.projectlombok:lombok'
-	runtimeOnly 'org.postgresql:postgresql'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.security:spring-security-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // Spring
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    // OAuth2 - Uncomment when implementing Google/Social login
+    // implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
+    // Apache POI — Excel reader
+    implementation 'org.apache.poi:poi:5.4.0'
+    implementation 'org.apache.poi:poi-ooxml:5.4.0'
+
+    // DB driver
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // JWT
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+    // AWS
+    implementation 'software.amazon.awssdk:s3:2.25.55'
+
+    // Password encoders
+    implementation 'org.springframework.security:spring-security-crypto'
+
+    // Load .env for Spring via spring-dotenv
+    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // Test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    // 1. MapStruct API (Required for the interface)
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+
+    // 2. MapStruct Processor (Required to generate the implementation)
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    testAnnotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+
+    // 3. Lombok-MapStruct Binding (Ensures Lombok and MapStruct processors work together)
+    annotationProcessor "org.projectlombok:lombok-mapstruct-binding:0.2.0"
+
+    //For PDF->Image
+    implementation 'org.apache.pdfbox:pdfbox:2.0.30'
+
+    // Word (DOCX) -> PDF
+//    implementation 'org.apache.poi:poi-ooxml:5.4.0'
+//    implementation 'fr.opensagres.xdocreport:org.apache.poi.xwpf.converter.pdf:1.0.6'
+
+    implementation 'commons-validator:commons-validator:1.10.0'
 }
 
-tasks.named('test') {
-	useJUnitPlatform()
+//MapStruct Compiler Configuration
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += [
+            '-Amapstruct.unmappedTargetPolicy=ignore',
+            '-Amapstruct.suppressGeneratorTimestamp=true',
+            '-Amapstruct.defaultComponentModel=spring'
+    ]
+    options.encoding = 'UTF-8'
 }
+
+tasks.withType(Test).configureEach { useJUnitPlatform() }

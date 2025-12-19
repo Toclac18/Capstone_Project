@@ -1,0 +1,312 @@
+/* --- LAYOUT & MODAL --- */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(15, 23, 42, 0.5); /* Backdrop mờ tối */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px); /* Hiệu ứng blur nhẹ phía sau */
+}
+
+.card {
+  width: 100%;
+  max-width: 500px;
+  background: var(--card, #ffffff);
+  border-radius: 18px;
+  border: 1px solid var(--border, #e5e7eb);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- HEADER --- */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-main, #111827);
+  margin: 0;
+}
+
+.closeBtn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.25rem;
+  color: var(--text-subtle, #9ca3af);
+  padding: 0.25rem;
+  border-radius: 50%;
+  line-height: 1;
+  transition: background 0.2s;
+}
+
+.closeBtn:hover {
+  background: var(--bg-elevated, #f3f4f6);
+  color: var(--text-main, #374151);
+}
+
+/* --- BODY & SCROLL --- */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 4px; /* Tránh nội dung dính sát thanh scroll */
+}
+
+/* Custom Scrollbar cho đẹp */
+.body::-webkit-scrollbar {
+  width: 6px;
+}
+.body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.body::-webkit-scrollbar-thumb {
+  background-color: #e5e7eb;
+  border-radius: 20px;
+}
+
+/* --- TABS / MODE SWITCH --- */
+.modeSwitch {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--bg-elevated, #f3f4f6);
+  gap: 2px;
+  align-self: flex-start;
+}
+
+.modeBtn,
+.modeBtnActive {
+  border: none;
+  background: transparent;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+  color: var(--text-subtle, #6b7280);
+}
+
+.modeBtn:hover {
+  color: var(--text-main, #374151);
+}
+
+.modeBtnActive {
+  background: var(--card, #ffffff);
+  color: var(--primary-strong, #0ea5e9);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* --- LIST & ITEMS (Phần quan trọng nhất) --- */
+.block {
+  margin-top: 0.25rem;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+/* Style cơ bản cho Item chưa chọn */
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--border, #e5e7eb);
+  cursor: pointer;
+  background: var(--card, #ffffff);
+  transition: all 0.2s ease;
+}
+
+.item:hover {
+  border-color: var(--primary-soft, #bae6fd);
+  background: var(--bg-elevated, #f8fafc);
+}
+
+/* Style cho Item ĐANG ĐƯỢC CHỌN (Active) */
+.itemActive {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 12px;
+  cursor: pointer;
+
+  /* Active styling */
+  border: 1px solid var(--primary, #0ea5e9);
+  background: var(--primary-soft, #f0f9ff);
+  box-shadow: 0 0 0 1px var(--primary, #0ea5e9); /* Double border effect */
+}
+
+/* Custom Radio Button Circle */
+.radioVisual {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border, #cbd5e1);
+  background: white;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+/* Khi item active thì radio đổi màu */
+.itemActive .radioVisual {
+  border-color: var(--primary, #0ea5e9);
+  border-width: 5px; /* Mẹo tạo dấu chấm tròn ở giữa bằng border */
+}
+
+/* Icon Folder */
+.folderIcon {
+  width: 22px;
+  height: 22px;
+  color: var(--text-subtle, #9ca3af);
+  flex-shrink: 0;
+}
+
+.itemActive .folderIcon {
+  color: var(--primary, #0ea5e9);
+}
+
+.itemInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.itemName {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-main, #1f2937);
+}
+
+.itemMeta {
+  font-size: 0.75rem;
+  color: var(--text-subtle, #6b7280);
+}
+
+/* --- FORMS & INPUTS --- */
+.label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 0.4rem;
+  color: var(--text-main, #374151);
+}
+
+.input {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--border, #e5e7eb);
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  background: var(--bg-input, #ffffff);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--primary, #0ea5e9);
+  box-shadow: 0 0 0 3px var(--primary-soft, #e0f2fe);
+}
+
+.helper {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--text-subtle, #9ca3af);
+}
+
+/* --- ALERTS & MESSAGES --- */
+.error {
+  background: #fef2f2;
+  color: #b91c1c;
+  padding: 0.5rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  border: 1px solid #fecaca;
+}
+
+.muted {
+  font-size: 0.85rem;
+  color: var(--text-subtle, #6b7280);
+  line-height: 1.5;
+}
+
+/* --- FOOTER & BUTTONS --- */
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border, #f3f4f6);
+}
+
+.primary,
+.secondary {
+  border-radius: 999px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.secondary {
+  background: transparent;
+  color: var(--text-main, #4b5563);
+  border-color: var(--border, #e5e7eb);
+}
+
+.secondary:hover {
+  background: var(--bg-elevated, #f3f4f6);
+  color: #111827;
+}
+
+.primary {
+  background: var(--primary, #0ea5e9);
+  color: white;
+  box-shadow: 0 1px 2px rgba(14, 165, 233, 0.3);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--primary-hover, #0284c7);
+  box-shadow: 0 4px 6px rgba(14, 165, 233, 0.4);
+}
+
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}

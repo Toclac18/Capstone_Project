@@ -1,0 +1,112 @@
+/* Verify Email – CSS module with dark mode using :global(html.dark) */
+
+/* Page background container */
+.page-container {
+  @apply flex min-h-screen items-center justify-center bg-gray-2;
+}
+:global(html.dark) .page-container {
+  @apply bg-dark;
+}
+
+/* Card */
+.card {
+  @apply w-full max-w-md rounded-[10px] bg-white px-7.5 py-10 shadow-1;
+}
+:global(html.dark) .card {
+  @apply bg-gray-dark shadow-card;
+}
+
+/* Logo row */
+.logo-row {
+  @apply mb-8 flex justify-center;
+}
+
+/* Spinner (large) */
+.spinner-lg {
+  @apply h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent;
+}
+
+/* Titles & text */
+.title {
+  @apply mb-3 text-2xl font-bold text-dark;
+}
+:global(html.dark) .title {
+  @apply text-white;
+}
+
+.title-success {
+  @apply mb-3 text-2xl font-bold text-green-600;
+}
+:global(html.dark) .title-success {
+  @apply text-green-400;
+}
+
+.title-error {
+  @apply mb-3 text-2xl font-bold text-red-600;
+}
+:global(html.dark) .title-error {
+  @apply text-red-400;
+}
+
+.body-text {
+  @apply text-dark-3;
+}
+:global(html.dark) .body-text {
+  @apply text-dark-6;
+}
+
+.body-text-spaced {
+  @apply mb-6 text-dark-3;
+}
+:global(html.dark) .body-text-spaced {
+  @apply text-dark-6;
+}
+
+/* Icons containers */
+.success-icon {
+  @apply mb-6 flex justify-center;
+}
+.success-icon > div {
+  @apply flex h-16 w-16 items-center justify-center rounded-full bg-green-100;
+}
+:global(html.dark) .success-icon > div {
+  @apply bg-green-900;
+}
+.success-icon svg {
+  @apply h-10 w-10 text-green-600;
+}
+:global(html.dark) .success-icon svg {
+  @apply text-green-400;
+}
+
+.error-icon {
+  @apply mb-6 flex justify-center;
+}
+.error-icon > div {
+  @apply flex h-16 w-16 items-center justify-center rounded-full bg-red-100;
+}
+:global(html.dark) .error-icon > div {
+  @apply bg-red-900;
+}
+.error-icon svg {
+  @apply h-10 w-10 text-red-600;
+}
+:global(html.dark) .error-icon svg {
+  @apply text-red-400;
+}
+
+/* Actions */
+.actions {
+  @apply flex flex-col gap-3;
+}
+.primary-btn {
+  @apply inline-flex justify-center rounded-lg bg-primary px-6 py-3 font-medium text-white transition hover:bg-opacity-90;
+}
+.link-primary {
+  @apply text-primary hover:underline;
+}
+
+.center {
+  @apply text-center;
+}
+

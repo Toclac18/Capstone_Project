@@ -8,7 +8,8 @@ import { useSearch } from "../provider";
 import styles from "../styles.module.css";
 
 type LocalFilters = {
-  organizationId?: string | null;
+  // nhiều organization (checkbox)
+  organizationIds?: string[] | null;
 
   // nhiều domain
   domainIds?: string[] | null;
@@ -39,6 +40,7 @@ export default function FilterModal({
 
   const [local, setLocal] = useState<LocalFilters>({});
 
+  const [showAllOrgs, setShowAllOrgs] = useState(false);
   const [showAllDomains, setShowAllDomains] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
 
@@ -50,7 +52,16 @@ export default function FilterModal({
       setLoading(true);
       try {
         const m = await fetchSearchMeta();
-        if (mounted) setMeta(m);
+        if (mounted) {
+          setMeta(m);
+          // Auto-check joined organizations
+          if (m.joinedOrganizationIds && m.joinedOrganizationIds.length > 0) {
+            setLocal((prev) => ({
+              ...prev,
+              organizationIds: m.joinedOrganizationIds ?? [],
+            }));
+          }
+        }
       } finally {
         setLoading(false);
       }
@@ -63,10 +74,14 @@ export default function FilterModal({
   // --- DATA MAPPING ---
 
   const organizations = useMemo(() => meta?.organizations ?? [], [meta]);
-
   const domains = useMemo(() => meta?.domains ?? [], [meta]);
   const tags = useMemo(() => meta?.tags ?? [], [meta]);
   const docTypes = useMemo(() => meta?.docTypes ?? [], [meta]);
+
+  const selectedOrgIds = useMemo(
+    () => local.organizationIds ?? [],
+    [local.organizationIds],
+  );
 
   const selectedDomainIds = useMemo(
     () => local.domainIds ?? [],
@@ -118,6 +133,11 @@ export default function FilterModal({
 
   // --- VISIBLE LISTS (6 default + see more) ---
 
+  const visibleOrgs = useMemo(
+    () => (showAllOrgs ? organizations : organizations.slice(0, 6)),
+    [organizations, showAllOrgs],
+  );
+
   const visibleDomains = useMemo(
     () => (showAllDomains ? domains : domains.slice(0, 6)),
     [domains, showAllDomains],
@@ -133,7 +153,7 @@ export default function FilterModal({
   const canApply = useMemo(
     () =>
       !!(
-        local.organizationId ||
+        selectedOrgIds.length > 0 ||
         (local.domainIds && local.domainIds.length > 0) ||
         local.specializationId ||
         local.docTypeId ||
@@ -144,10 +164,19 @@ export default function FilterModal({
         local.priceFrom ||
         local.priceTo
       ),
-    [local, selectedTagIds.length],
+    [local, selectedOrgIds.length, selectedTagIds.length],
   );
 
   // --- HANDLERS ---
+
+  const toggleOrg = (id: string) => {
+    setLocal((prev) => {
+      const curr = new Set(prev.organizationIds ?? []);
+      if (curr.has(id)) curr.delete(id);
+      else curr.add(id);
+      return { ...prev, organizationIds: Array.from(curr) };
+    });
+  };
 
   const toggleDomain = (id: string) => {
     setLocal((prev) => {
@@ -171,9 +200,7 @@ export default function FilterModal({
 
   const apply = () => {
     const payload: SearchFilters = {
-      organizationIds: local.organizationId
-        ? [local.organizationId]
-        : undefined,
+      organizationIds: selectedOrgIds.length ? selectedOrgIds : undefined,
 
       domainIds:
         local.domainIds && local.domainIds.length ? local.domainIds : undefined,
@@ -229,27 +256,45 @@ export default function FilterModal({
           <div className={styles.modalBody}>Loading…</div>
         ) : (
           <div className={styles.modalBody}>
-            {/* Organization */}
-            <label className={styles.field}>
-              <span className={styles.fieldLabel}>Organization</span>
-              <select
-                className={styles.select}
-                value={local.organizationId ?? ""}
-                onChange={(e) =>
-                  setLocal((s) => ({
-                    ...s,
-                    organizationId: e.target.value || null,
-                  }))
-                }
-              >
-                <option value="">Any</option>
-                {organizations.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {/* Organizations: checkbox grid, multi-select, auto-check joined */}
+            {organizations.length > 0 && (
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>
+                  Organizations
+                  {meta.joinedOrganizationIds &&
+                    meta.joinedOrganizationIds.length > 0 && (
+                      <span className={styles.fieldHint}>
+                        {" "}
+                        (Your organizations are pre-selected)
+                      </span>
+                    )}
+                </span>
+                <div className={styles.checkboxGrid}>
+                  {visibleOrgs.map((o) => {
+                    const checked = selectedOrgIds.includes(o.id);
+                    return (
+                      <label key={o.id} className={styles.checkbox}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleOrg(o.id)}
+                        />
+                        <span>{o.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {organizations.length > 6 && (
+                  <button
+                    type="button"
+                    className={styles.linkBtn}
+                    onClick={() => setShowAllOrgs((v) => !v)}
+                  >
+                    {showAllOrgs ? "See less" : "See more"}
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Domains: checkbox grid, multi-select */}
             {domains.length > 0 && (
@@ -406,7 +451,9 @@ export default function FilterModal({
             {/* Premium only toggle */}
             <div className={styles.field}>
               <label className={styles.toggleLabel}>
-                <span className={styles.fieldLabel}>Premium documents only</span>
+                <span className={styles.fieldLabel}>
+                  Premium documents only
+                </span>
                 <div className={styles.toggleWrapper}>
                   <input
                     type="checkbox"

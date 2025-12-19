@@ -12,6 +12,7 @@ export default function GuestPopularStrip() {
   const { topUpvoted, specGroups } = useHomepage();
   const { open } = useModalPreview();
 
+  // Hiển thị đúng thứ tự response của BE trả về (không sort lại)
   const items = useMemo(() => {
     const base: DocumentItem[] = [
       ...(topUpvoted ?? []),
@@ -24,8 +25,6 @@ export default function GuestPopularStrip() {
       seen.add(d.id);
       return true;
     });
-
-    unique.sort((a, b) => (b.upvote_counts ?? 0) - (a.upvote_counts ?? 0));
 
     return unique.slice(0, 12);
   }, [topUpvoted, specGroups]);

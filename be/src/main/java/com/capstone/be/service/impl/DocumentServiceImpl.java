@@ -1337,17 +1337,6 @@ public class DocumentServiceImpl implements DocumentService {
               .map(reviewRequest -> reviewRequest.getStatus() == ReviewRequestStatus.ACCEPTED)
               .orElse(false);
 
-      // Add presigned URL if user has access
-      String presignedUrl = null;
-      if (hasAccess && document.getFileKey() != null) {
-        presignedUrl = fileStorageService.generatePresignedUrl(
-                FileStorage.DOCUMENT_FOLDER,
-                document.getFileKey(),
-                getPresignedUrlExpirationMinutes()
-        );
-      }
-      response.setPresignedUrl(presignedUrl);
-
       userInfo = DocumentDetailResponse.UserDocumentInfo.builder()
               .hasAccess(hasAccess)
               .isUploader(isUploader)
@@ -1357,21 +1346,7 @@ public class DocumentServiceImpl implements DocumentService {
               .build();
 
     } else {
-      boolean hasAccess = false;
-      if (!Boolean.TRUE.equals(document.getIsPremium())) {
-        hasAccess = true;
-      }
-
-      // Add presigned URL if guest has access (non-premium documents)
-      String presignedUrl = null;
-      if (hasAccess && document.getFileKey() != null) {
-        presignedUrl = fileStorageService.generatePresignedUrl(
-                FileStorage.DOCUMENT_FOLDER,
-                document.getFileKey(),
-                getPresignedUrlExpirationMinutes()
-        );
-      }
-      response.setPresignedUrl(presignedUrl);
+      boolean hasAccess = !Boolean.TRUE.equals(document.getIsPremium());
 
       userInfo = DocumentDetailResponse.UserDocumentInfo.builder()
               .hasAccess(hasAccess)
@@ -1390,8 +1365,8 @@ public class DocumentServiceImpl implements DocumentService {
 
   @Override
   @Transactional(readOnly = true)
-  public DocumentSearchMetaResponse getPublicSearchMeta() {
-    log.info("Building search meta for public documents");
+  public DocumentSearchMetaResponse getSearchMeta(UUID userId) {
+    log.info("Building search meta for documents, userId: {}", userId);
 
     // Organizations
     List<OrganizationProfile> orgEntities =
@@ -1403,7 +1378,7 @@ public class DocumentServiceImpl implements DocumentService {
                     .id(org.getId())
                     .name(org.getName())
                     .logoUrl(org.getLogoKey())
-                    .docCount(null) // nếu muốn có docCount, cần query riêng
+                    .docCount(null)
                     .build())
             .sorted(Comparator.comparing(DocumentSearchMetaResponse.OrganizationOption::getName,
                     String.CASE_INSENSITIVE_ORDER))
@@ -1478,6 +1453,17 @@ public class DocumentServiceImpl implements DocumentService {
             .max(maxPrice)
             .build();
 
+    // Joined organization IDs (only if user is authenticated)
+    List<UUID> joinedOrgIds = null;
+    if (userId != null) {
+      List<OrgEnrollment> enrollments = orgEnrollmentRepository.findByMemberIdAndStatus(
+              userId, OrgEnrollStatus.JOINED);
+      joinedOrgIds = enrollments.stream()
+              .map(e -> e.getOrganization().getId())
+              .collect(Collectors.toList());
+      log.info("User {} has {} joined organizations", userId, joinedOrgIds.size());
+    }
+
     return DocumentSearchMetaResponse.builder()
             .organizations(orgOptions)
             .domains(domainOptions)
@@ -1486,6 +1472,7 @@ public class DocumentServiceImpl implements DocumentService {
             .tags(tagOptions)
             .years(years)
             .priceRange(priceRange)
+            .joinedOrganizationIds(joinedOrgIds)
             .build();
   }
   

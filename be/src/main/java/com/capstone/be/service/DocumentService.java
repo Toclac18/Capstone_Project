@@ -186,7 +186,12 @@ public interface DocumentService {
 
   Page<DocumentDetailResponse> getHomepageDocuments(UUID userId, int page, int size);
 
-  DocumentSearchMetaResponse getPublicSearchMeta();
+  /**
+   * Get search metadata for filter modal
+   * @param userId Optional user ID to get joined organizations
+   * @return Search metadata with filter options
+   */
+  DocumentSearchMetaResponse getSearchMeta(UUID userId);
 
   /**
    * Get document statistics for admin dashboard

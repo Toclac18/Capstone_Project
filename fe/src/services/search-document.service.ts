@@ -105,6 +105,7 @@ type RawSearchMetaData = {
     min: number;
     max: number;
   } | null;
+  joinedOrganizationIds?: string[] | null;
 };
 
 type RawSearchMetaResponse = {
@@ -338,6 +339,7 @@ export async function fetchSearchMeta(): Promise<SearchMeta> {
     priceRange: d.priceRange
       ? { min: d.priceRange.min, max: d.priceRange.max }
       : null,
+    joinedOrganizationIds: d.joinedOrganizationIds ?? null,
   };
 
   return meta;

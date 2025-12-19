@@ -23,6 +23,7 @@ type HomepageCtx = {
   continueReading: DocumentItem[];
   topUpvoted: DocumentItem[];
   specGroups: SpecGroup[];
+  allSpecGroups: SpecGroup[]; // All groups for RecentRail sorting
   totalSpecGroups: number;
   hasMoreSpecs: boolean;
   loadMoreSpecs: () => void;
@@ -120,6 +121,7 @@ export function HomepageProvider({ children }: { children: React.ReactNode }) {
         continueReading,
         topUpvoted,
         specGroups: visibleSpecGroups,
+        allSpecGroups,
         totalSpecGroups: allSpecGroups.length,
         hasMoreSpecs,
         loadMoreSpecs,

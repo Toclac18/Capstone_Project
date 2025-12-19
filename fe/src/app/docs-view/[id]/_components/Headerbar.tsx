@@ -8,7 +8,6 @@ import { cn } from "@/utils/utils";
 
 import { useDocsView } from "../DocsViewProvider";
 import styles from "../styles.module.css";
-import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
 import SaveListModal from "@/components/SaveListModal/SaveListModal";
 import { useRouter } from "next/navigation";
 
@@ -23,12 +22,6 @@ export default function HeaderBar() {
     hits,
     goNextHit,
     goPrevHit,
-    redeemed,
-    isRedeemModalOpen,
-    redeemLoading,
-    openRedeemModal,
-    closeRedeemModal,
-    redeem,
     userVote,
     voteLoading,
     handleUpvote,
@@ -39,14 +32,7 @@ export default function HeaderBar() {
 
   if (!detail) return null;
 
-  // premium + chưa redeem => tài liệu vẫn bị khóa
-  const isPremiumLocked = detail.isPremium && !redeemed;
-  // có thể download khi không bị khóa (free hoặc premium đã redeem)
-  const canDownload = !isPremiumLocked;
-  const points = detail.points ?? 0;
-
   const handleOpenSaveModal = () => {
-    if (isPremiumLocked) return;
     setIsSaveModalOpen(true);
   };
 
@@ -143,7 +129,7 @@ export default function HeaderBar() {
           </div>
         </div>
 
-        {/* RIGHT: Report + Save + Redeem / Download */}
+        {/* RIGHT: Report + Save + Download */}
         <div className={styles.headerRight}>
           {/* 5. Nút Report */}
           <button
@@ -160,24 +146,13 @@ export default function HeaderBar() {
           {/* Save */}
           <button
             type="button"
-            className={`${styles.btnGhost} ${
-              isPremiumLocked ? styles.btnDisabled : ""
-            }`}
-            disabled={isPremiumLocked}
+            className={styles.btnGhost}
             onClick={handleOpenSaveModal}
           >
             Save
           </button>
 
-          {isPremiumLocked ? (
-            <button
-              type="button"
-              className={styles.btnRedeem}
-              onClick={openRedeemModal}
-            >
-              Redeem
-            </button>
-          ) : canDownload && detail.fileUrl ? (
+          {detail.fileUrl ? (
             <Link href={detail.fileUrl} className={styles.btnPrimary} download>
               Download
             </Link>
@@ -188,19 +163,6 @@ export default function HeaderBar() {
           )}
         </div>
       </div>
-
-      {/* Modal Redeem */}
-      <ConfirmModal
-        open={isPremiumLocked && isRedeemModalOpen}
-        title="Redeem document"
-        content={`You will spend ${points} points to unlock this document.`}
-        subContent="After payment, this document will appear in your library and you won't need to purchase it again."
-        confirmLabel="Redeem"
-        cancelLabel="Cancel"
-        loading={redeemLoading}
-        onConfirm={redeem}
-        onCancel={closeRedeemModal}
-      />
 
       {/* Modal SaveList */}
       {detail && (

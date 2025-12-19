@@ -69,7 +69,8 @@ export function toDocumentItem(raw: any): DocumentItem {
     publicYear: year,
 
     isPremium: !!raw?.isPremium,
-    hasRedeemed: raw?.userInfo?.hasRedeemed ?? false,
+    // hasRedeemed sẽ được fetch khi mở modal preview
+    hasRedeemed: undefined,
     points: typeof raw?.price === "number" ? raw.price : null,
 
     description: str(raw?.description, ""),

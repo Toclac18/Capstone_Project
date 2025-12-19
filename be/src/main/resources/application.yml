@@ -88,7 +88,9 @@ app:
     useMock: ${USE_MOCK_AI:false}
     moderationService:
       url: ${AI_MODERATION_SERVICE_URL:http://localhost:8000}
-      apiKey: ${AI_MODERATION_API_KEY}
+      apiKey: ${AI_MODERATION_API_KEY:}
+  backend:
+    baseUrl: ${BACKEND_BASE_URL:https://readee-be-v0-2.onrender.com}
 
 logging:
   level:

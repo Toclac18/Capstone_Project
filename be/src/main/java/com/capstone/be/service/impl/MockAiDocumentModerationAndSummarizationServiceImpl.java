@@ -127,7 +127,8 @@ public class MockAiDocumentModerationAndSummarizationServiceImpl implements
   /**
    * Update document entity after AI processing completes
    */
-  private void updateDocumentAfterAiProcessing(UUID documentId, AiModerationResponse response) {
+  @Override
+  public void updateDocumentAfterAiProcessing(UUID documentId, AiModerationResponse response) {
     Document document = documentRepository.findById(documentId)
         .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
 
@@ -240,7 +241,8 @@ public class MockAiDocumentModerationAndSummarizationServiceImpl implements
   /**
    * Handle errors during AI processing
    */
-  private void handleAiProcessingError(UUID documentId, Exception e) {
+  @Override
+  public void handleAiProcessingError(UUID documentId, Exception e) {
     try {
       Document document = documentRepository.findById(documentId).orElse(null);
       if (document != null) {

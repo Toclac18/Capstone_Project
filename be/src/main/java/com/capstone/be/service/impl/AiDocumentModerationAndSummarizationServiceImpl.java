@@ -1,20 +1,24 @@
 package com.capstone.be.service.impl;
 
+import com.capstone.be.domain.entity.AiProcessingJob;
 import com.capstone.be.domain.entity.Document;
 import com.capstone.be.domain.entity.DocumentSummarization;
 import com.capstone.be.domain.entity.DocumentViolation;
 import com.capstone.be.domain.entity.ReaderProfile;
 import com.capstone.be.domain.entity.User;
+import com.capstone.be.domain.enums.AiJobStatus;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.dto.ai.AiModerationResponse;
 import com.capstone.be.exception.BusinessException;
 import com.capstone.be.exception.ResourceNotFoundException;
+import com.capstone.be.repository.AiProcessingJobRepository;
 import com.capstone.be.repository.DocumentRepository;
 import com.capstone.be.repository.DocumentViolationRepository;
 import com.capstone.be.repository.ReaderProfileRepository;
 import com.capstone.be.service.AiDocumentModerationAndSummarizationService;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.service.SystemConfigService;
+import com.capstone.be.dto.ai.JobSubmitResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +32,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -50,12 +55,16 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
   private final EmailService emailService;
   private final RestTemplate restTemplate;
   private final SystemConfigService systemConfigService;
+  private final AiProcessingJobRepository aiProcessingJobRepository;
 
   @Value("${app.ai.moderationService.url}")
   private String aiServiceUrl;
 
-  @Value("${app.ai.moderationService.apiKey}")
+  @Value("${app.ai.moderationService.apiKey:}")
   private String aiApiKey;
+
+  @Value("${app.backend.baseUrl:http://localhost:8080}")
+  private String backendBaseUrl;
 
   @Value("${app.document.points.ai-approval:20}")
   private int aiApprovalPointsFallback;
@@ -72,30 +81,59 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
   @Transactional
   public CompletableFuture<AiModerationResponse> processDocumentAsync(UUID documentId,
       MultipartFile file) {
-    log.info("Starting async AI processing for document ID: {}", documentId);
+    String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "unknown";
+    long fileSizeBytes = file.getSize();
+    double fileSizeMB = fileSizeBytes / (1024.0 * 1024.0);
+    String threadName = Thread.currentThread().getName();
+    
+    log.info("========================================");
+    log.info("🚀 Starting async AI processing");
+    log.info("   Document ID: {}", documentId);
+    log.info("   File name: {}", filename);
+    log.info("   File size: {:.2f} MB ({} bytes)", fileSizeMB, fileSizeBytes);
+    log.info("   Thread: {}", threadName);
+    log.info("========================================");
 
     try {
-      // Call AI service
-      AiModerationResponse response = callAiModerationService(file);
+      // Submit job to AI service with webhook callback
+      JobSubmitResponse jobResponse = submitJobToAiService(documentId, file);
 
-      // Update document based on AI response
-      updateDocumentAfterAiProcessing(documentId, response);
+      // Save job to database
+      saveJobToDatabase(documentId, jobResponse.getJobId(), file.getOriginalFilename());
 
-      log.info("Successfully completed AI processing for document ID: {}", documentId);
-      return CompletableFuture.completedFuture(response);
+      log.info("Job {} submitted for document ID: {}. Waiting for webhook callback.", 
+          jobResponse.getJobId(), documentId);
+      
+      // Return null for now - actual result will come via webhook
+      // The CompletableFuture will be completed when webhook is received
+      return new CompletableFuture<>(); // Will be completed by webhook handler
 
     } catch (Exception e) {
-      log.error("Error during AI processing for document ID: {}", documentId, e);
+      log.error("Error submitting job to AI service for document ID: {}", documentId, e);
       handleAiProcessingError(documentId, e);
       return CompletableFuture.failedFuture(e);
     }
   }
 
   /**
-   * Call external AI moderation service
+   * Submit job to AI service with webhook callback
    */
-  private AiModerationResponse callAiModerationService(MultipartFile file) throws IOException {
-    log.info("Calling AI moderation service at: {}/api/v1/process-document", aiServiceUrl);
+  private JobSubmitResponse submitJobToAiService(UUID documentId, MultipartFile file) 
+      throws IOException {
+    String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "unknown";
+    long fileSizeBytes = file.getSize();
+    double fileSizeMB = fileSizeBytes / (1024.0 * 1024.0);
+    
+    log.info("========================================");
+    log.info("📤 Submitting job to AI service");
+    log.info("   Document ID: {}", documentId);
+    log.info("   File name: {}", filename);
+    log.info("   File size: {:.2f} MB ({} bytes)", fileSizeMB, fileSizeBytes);
+    log.info("   AI Service URL: {}/api/v1/process-document", aiServiceUrl);
+    log.info("========================================");
+
+    // Build webhook callback URL
+    String callbackUrl = backendBaseUrl + "/api/v1/ai/webhook";
 
     // Prepare multipart request
     HttpHeaders headers = new HttpHeaders();
@@ -113,15 +151,20 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
     };
     body.add("file", fileResource);
 
+    // Build URL with callback_url as query parameter using UriComponentsBuilder
+    String url = UriComponentsBuilder.fromHttpUrl(aiServiceUrl)
+        .path("/api/v1/process-document")
+        .queryParam("callback_url", callbackUrl)
+        .toUriString();
+
     HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
     // Call AI service
-    String url = aiServiceUrl + "/api/v1/process-document";
-    ResponseEntity<AiModerationResponse> responseEntity = restTemplate.exchange(
+    ResponseEntity<JobSubmitResponse> responseEntity = restTemplate.exchange(
         url,
         HttpMethod.POST,
         requestEntity,
-        AiModerationResponse.class
+        JobSubmitResponse.class
     );
 
     if (!responseEntity.getStatusCode().is2xxSuccessful() || responseEntity.getBody() == null) {
@@ -129,14 +172,57 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
           HttpStatus.INTERNAL_SERVER_ERROR, "AI_SERVICE_ERROR");
     }
 
-    log.info("AI service responded with status: {}", responseEntity.getBody().getStatus());
-    return responseEntity.getBody();
+    JobSubmitResponse jobResponse = responseEntity.getBody();
+    if (jobResponse.getJobId() == null || jobResponse.getJobId().isEmpty()) {
+      log.error("AI service returned job response without job_id. Response: {}", jobResponse);
+      throw new BusinessException("AI service returned invalid response: missing job_id",
+          HttpStatus.INTERNAL_SERVER_ERROR, "AI_SERVICE_ERROR");
+    }
+
+    log.info("========================================");
+    log.info("✓ Job submitted successfully to AI service");
+    log.info("   Job ID: {}", jobResponse.getJobId());
+    log.info("   Status: {}", jobResponse.getStatus());
+    log.info("   Message: {}", jobResponse.getMessage());
+    log.info("========================================");
+    return jobResponse;
+  }
+
+  /**
+   * Save job to database
+   */
+  private void saveJobToDatabase(UUID documentId, String jobId, String filename) {
+    try {
+      if (jobId == null || jobId.isEmpty()) {
+        log.error("Cannot save job to database: jobId is null or empty for document {}", documentId);
+        return;
+      }
+
+      Document document = documentRepository.findById(documentId)
+          .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+
+      AiProcessingJob job = AiProcessingJob.builder()
+          .document(document)
+          .jobId(jobId)
+          .status(AiJobStatus.PENDING)
+          .filename(filename)
+          .callbackUrl(backendBaseUrl + "/api/v1/ai/webhook")
+          .build();
+
+      aiProcessingJobRepository.save(job);
+      log.info("Saved AI processing job {} for document {}", jobId, documentId);
+    } catch (Exception e) {
+      log.error("Failed to save AI processing job to database: {}", e.getMessage(), e);
+      // Don't throw - job was submitted successfully, just DB save failed
+    }
   }
 
   /**
    * Update document entity after AI processing completes
+   * Made public so webhook controller can call it
    */
-  private void updateDocumentAfterAiProcessing(UUID documentId, AiModerationResponse response) {
+  @Override
+  public void updateDocumentAfterAiProcessing(UUID documentId, AiModerationResponse response) {
     Document document = documentRepository.findById(documentId)
         .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
 
@@ -249,8 +335,10 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
 
   /**
    * Handle errors during AI processing
+   * Made public so webhook controller can call it
    */
-  private void handleAiProcessingError(UUID documentId, Exception e) {
+  @Override
+  public void handleAiProcessingError(UUID documentId, Exception e) {
     try {
       Document document = documentRepository.findById(documentId).orElse(null);
       if (document != null) {

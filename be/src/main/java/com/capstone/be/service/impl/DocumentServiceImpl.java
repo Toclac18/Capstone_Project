@@ -1020,7 +1020,7 @@ public class DocumentServiceImpl implements DocumentService {
           .docTypeName(document.getDocType().getName())
           .specializationName(document.getSpecialization().getName())
           .domainName(document.getSpecialization().getDomain().getName())
-              .summarizations(summarizations)
+          .summarizations(summarizations)
           .tagNames(tagNames)
           .organization(orgInfo)
           .uploader(uploaderInfo)

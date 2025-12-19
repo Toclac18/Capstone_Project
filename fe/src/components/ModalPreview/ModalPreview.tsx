@@ -4,12 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { ThumbsUp, ThumbsDown, Eye, Crown } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Eye, Crown, Loader2 } from "lucide-react";
 import styles from "./styles.module.css";
 import { useModalPreview } from "./Provider";
 import { sanitizeImageUrl } from "@/utils/imageUrl";
 import ConfirmModal from "@/components/ConfirmModal/ConfirmModal";
-import { redeemDoc } from "@/services/document.service";
+import { redeemDoc, fetchDocumentUserInfo } from "@/services/document.service";
 import { useToast } from "@/components/ui/toast";
 
 type Level = "short" | "medium" | "detailed";
@@ -24,16 +24,40 @@ export default function ModalPreview() {
   const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
   const [redeemLoading, setRedeemLoading] = useState(false);
   const [hasRedeemed, setHasRedeemed] = useState(false);
+  const [userInfoLoading, setUserInfoLoading] = useState(false);
   const { showToast } = useToast();
 
+  // Fetch userInfo khi mở modal để có data mới nhất từ DB
   useEffect(() => {
-    if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (isOpen && doc?.id) {
       setLevel("short");
-      setHasRedeemed(doc?.hasRedeemed ?? false);
       setIsRedeemModalOpen(false);
+
+      // Nếu là free doc, không cần fetch userInfo
+      if (!doc.isPremium) {
+        setHasRedeemed(true);
+        return;
+      }
+
+      // Fetch userInfo từ API
+      setUserInfoLoading(true);
+      fetchDocumentUserInfo(String(doc.id))
+        .then((userInfo) => {
+          if (userInfo) {
+            setHasRedeemed(userInfo.hasRedeemed || userInfo.isUploader);
+          } else {
+            // Guest user hoặc lỗi - mặc định chưa redeem
+            setHasRedeemed(false);
+          }
+        })
+        .catch(() => {
+          setHasRedeemed(false);
+        })
+        .finally(() => {
+          setUserInfoLoading(false);
+        });
     }
-  }, [isOpen, doc?.hasRedeemed]);
+  }, [isOpen, doc?.id, doc?.isPremium]);
 
   const summaryForLevel = useMemo(() => {
     if (!doc?.summarizations) return "";
@@ -210,7 +234,11 @@ export default function ModalPreview() {
               <button type="button" className={styles.btnGhost} onClick={close}>
                 Close
               </button>
-              {isPremiumLocked ? (
+              {userInfoLoading ? (
+                <button type="button" className={styles.btnPrimary} disabled>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </button>
+              ) : isPremiumLocked ? (
                 <button
                   type="button"
                   className={styles.btnRedeem}

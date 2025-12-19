@@ -34,7 +34,7 @@ public class ReviewRequestExpirationJob {
    * Runs every day at 00:00:00 (midnight)
    * Cron format: second minute hour day month weekday
    */
-  @Scheduled(cron = "0 0 0 * * *")
+  @Scheduled(cron = "0 */1 * * * *")
   @Transactional
   public void expirePendingReviewRequests() {
     Instant now = Instant.now();
@@ -83,7 +83,7 @@ public class ReviewRequestExpirationJob {
    * Note: This marks ACCEPTED requests as EXPIRED if review deadline passed without submission
    * Also resets Document status to PENDING_REVIEW so BA can assign another reviewer
    */
-  @Scheduled(cron = "0 0 0 * * *")
+  @Scheduled(cron = "0 */1 * * * *")
   @Transactional
   public void expireAcceptedReviewRequests() {
     Instant now = Instant.now();

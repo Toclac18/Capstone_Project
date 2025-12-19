@@ -24,6 +24,7 @@ import com.capstone.be.repository.UserRepository;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -115,7 +116,7 @@ public class UserAndProfileSeeder {
     int userCount = names.size();
     for (int i = 0; i < userCount; i++) {
       String email = "reader" + (i + 1) + "@gmail.com";
-      LocalDate dob = LocalDate.ofEpochDay(10950 + (i + 100) * (i + 100) % 730); //2000 + random
+      LocalDate dob = LocalDate.ofEpochDay(10950 + myRandom(730, i)); //2000 + random
 
       UserStatus status = UserStatus.ACTIVE;
       if (i >= userCount - 2) {
@@ -175,7 +176,7 @@ public class UserAndProfileSeeder {
 
       String email = "reviewer" + i + "@gmail.com";
 
-      LocalDate dob = LocalDate.ofEpochDay(7300 + (i + 100) * (i + 100) % 730);
+      LocalDate dob = LocalDate.ofEpochDay(7300 + myRandom(1000, i) );
 
       String orcid = i % 2 == 0 ? "ORCID-10000" + i : null;
       EducationLevel eduLevel = i % 3 == 0 ? EducationLevel.MASTER : EducationLevel.DOCTORATE;
@@ -372,5 +373,13 @@ public class UserAndProfileSeeder {
         .build();
 
     organizationProfileRepository.save(organizationProfile);
+  }
+
+  private int myRandom(int range, int seed) {
+    if (range <= 0) {
+      return 0;
+    }
+    Random random = new Random(seed);
+    return random.nextInt(range);
   }
 }

@@ -1,25 +1,28 @@
 /* =========================
-   ENABLE BUTTON (GREEN, LIKE DELETE)
+   BASE BUTTON (MATCH DELETE)
    ========================= */
 
 .enable-btn {
-  min-width: 96px;
+  width: 80px;
   height: 36px;
-  padding: 0 16px;
+  padding: 6px;
+
   box-sizing: border-box;
 
-  border-radius: 8px; /* giống delete */
-  border: 1.5px solid #16a34a; /* xanh lá */
+  border-radius: 8px;
+  border: 1px solid #16a34a;
   background-color: transparent;
 
-  color: #16a34a; /* text + icon cùng màu */
-  font-size: 14px;
+  color: #16a34a;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1;
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+
   cursor: pointer;
 
   transition:
@@ -30,7 +33,7 @@
 }
 
 .enable-btn:hover:not(:disabled) {
-  background-color: rgba(22, 163, 74, 0.06); /* nền xanh nhạt */
+  background-color: rgba(22, 163, 74, 0.06);
 }
 
 .enable-btn:active:not(:disabled) {
@@ -43,33 +46,32 @@
   cursor: not-allowed;
 }
 
-/* Nội dung (tick + text) nằm ngang */
-.enable-content {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
+/* =========================
+   CONTENT
+   ========================= */
 
-/* Tick icon */
-.enable-icon {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-
-/* ----- Loading state ----- */
-
+.enable-content,
 .enable-loading-wrap {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
+.enable-icon,
 .enable-loading-icon {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
 }
+
+.btn-text {
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* =========================
+   LOADING
+   ========================= */
 
 .enable-loading-circle {
   opacity: 0.25;
@@ -86,4 +88,21 @@
   100% {
     transform: rotate(360deg);
   }
+}
+
+/* =========================
+   RE-INVITE (YELLOW)
+   ========================= */
+
+.reinvite-btn {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.reinvite-btn:hover:not(:disabled) {
+  background-color: rgba(245, 158, 11, 0.08);
+}
+
+.reinvite-btn:active:not(:disabled) {
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.25);
 }

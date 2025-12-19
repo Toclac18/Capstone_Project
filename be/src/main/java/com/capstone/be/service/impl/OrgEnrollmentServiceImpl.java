@@ -88,7 +88,7 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
   public InviteMembersResponse inviteMembersByExcel(UUID organizationAdminId, MultipartFile file) {
     log.info("Inviting members via Excel for organization admin: {}", organizationAdminId);
 
-    // Validate Excel file
+    // Validate Excel file, throw Exception if invalid
     ExcelUtil.validateExcelFile(file);
 
     // Parse emails from Excel
@@ -675,12 +675,59 @@ public class OrgEnrollmentServiceImpl implements OrgEnrollmentService {
       );
     }
 
-    // Remove member (Soft delete) - same behavior as admin removing member
-    enrollment.removeMember();
+    // Set status to LEFT (different from admin removing which sets REMOVED)
+    enrollment.leaveMember();
     orgEnrollmentRepository.save(enrollment);
 
     log.info("Reader {} successfully left organization {}", readerId,
         enrollment.getOrganization().getName());
+  }
+
+  @Override
+  @Transactional
+  public void reInviteMember(UUID organizationAdminId, UUID enrollmentId) {
+    log.info("Organization admin {} re-inviting member from enrollment {}",
+        organizationAdminId, enrollmentId);
+
+    OrganizationProfile organization = getOrganizationByAdminId(organizationAdminId);
+    OrgEnrollment enrollment = getEnrollmentById(enrollmentId);
+
+    // Validate enrollment belongs to organization
+    if (!enrollment.getOrganization().getId().equals(organization.getId())) {
+      throw new BusinessException(
+          "Enrollment does not belong to this organization",
+          HttpStatus.FORBIDDEN,
+          "ENROLLMENT_FORBIDDEN"
+      );
+    }
+
+    // Validate enrollment is in LEFT status
+    if (enrollment.getStatus() != OrgEnrollStatus.LEFT) {
+      throw new BusinessException(
+          "Can only re-invite members who have left (status: LEFT)",
+          HttpStatus.BAD_REQUEST,
+          "INVALID_STATUS_FOR_REINVITE"
+      );
+    }
+
+    // Re-invite by setting status back to PENDING_INVITE
+    enrollment.reInviteMember();
+
+    // Update expiry to new date (30 days from now)
+    enrollment.setExpiry(Instant.now().plus(30, java.time.temporal.ChronoUnit.DAYS));
+
+    orgEnrollmentRepository.save(enrollment);
+
+    // Send re-invitation email
+    try {
+      sendInvitationEmail(enrollment, organization);
+    } catch (Exception e) {
+      log.error("Failed to send re-invitation email to {}: {}",
+          enrollment.getMemberEmail(), e.getMessage());
+    }
+
+    log.info("Organization admin {} successfully re-invited member {}",
+        organizationAdminId, enrollment.getMemberEmail());
   }
 
   @Override

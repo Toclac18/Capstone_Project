@@ -1,11 +1,11 @@
-// src/app/org-admin/readers/page.tsx
 "use client";
 
 import { useState } from "react";
 import styles from "./styles.module.css";
 import { ReadersProvider, useReaders } from "./provider";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
-import EnableButton from "./_components/EnableButton";
+import EnableButton from "./_components/Button";
+import { Pagination } from "@/components/ui/pagination";
 
 function ReadersContent() {
   const {
@@ -13,6 +13,7 @@ function ReadersContent() {
     loading,
     reload,
     toggleAccess,
+    reInvite,
     page,
     pageSize,
     total,
@@ -24,15 +25,12 @@ function ReadersContent() {
 
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
-  const end = Math.min(page * pageSize, total);
-  const hasPrev = page > 1;
-  const hasNext = end < total;
+  const totalPages = Math.max(1, Math.ceil((total || 0) / (pageSize || 1)));
 
   async function onEnable(enrollmentId: string) {
     setBusyId(enrollmentId);
     try {
-      await toggleAccess(enrollmentId, true); // → JOINED
+      await toggleAccess(enrollmentId, true);
     } finally {
       setBusyId(null);
     }
@@ -41,7 +39,7 @@ function ReadersContent() {
   async function onRemove(enrollmentId: string) {
     setBusyId(enrollmentId);
     try {
-      await toggleAccess(enrollmentId, false); // → REMOVED
+      await toggleAccess(enrollmentId, false);
     } finally {
       setBusyId(null);
     }
@@ -99,11 +97,7 @@ function ReadersContent() {
               <th className={styles["col-email"]}>Email</th>
               <th>Organization</th>
               <th>Status</th>
-              <th
-                className={`${styles["header-right"]} ${styles["col-coins"]}`}
-              >
-                Invited at
-              </th>
+              <th className={styles["header-right"]}>Invited at</th>
               <th className={styles["header-right"]}>Actions</th>
             </tr>
           </thead>
@@ -123,46 +117,24 @@ function ReadersContent() {
               </tr>
             ) : (
               readers.map((r) => {
-                const status = r.status; // "PENDING_INVITE" | "JOINED" | "REMOVED"
-
-                const isPending = status === "PENDING_INVITE";
-                const isJoined = status === "JOINED";
-
-                const badgeClass = isJoined
-                  ? styles["status-active"]
-                  : isPending
-                    ? styles["status-pending"]
-                    : styles["status-suspended"];
-
-                const statusLabel = status;
+                const isBusy = busyId === r.enrollmentId;
 
                 const invitedDisplay = r.invitedAt
                   ? new Date(r.invitedAt).toLocaleString()
                   : "-";
-
-                const isBusy = busyId === r.enrollmentId;
 
                 return (
                   <tr key={r.enrollmentId} className={styles["table-row"]}>
                     <td>{r.memberFullName}</td>
                     <td className={styles["col-email"]}>{r.memberEmail}</td>
                     <td>{r.organizationName}</td>
-                    <td>
-                      <span
-                        className={`${styles["status-badge"]} ${badgeClass}`}
-                      >
-                        {statusLabel}
-                      </span>
-                    </td>
-                    <td
-                      className={`${styles["cell-right"]} ${styles["col-coins"]}`}
-                    >
-                      {invitedDisplay}
-                    </td>
+                    <td>{r.status}</td>
+                    <td className={styles["cell-right"]}>{invitedDisplay}</td>
+
                     <td className={styles["cell-right"]}>
-                      {isPending ? (
+                      {r.status === "PENDING_INVITE" ? (
                         <span className={styles["action-placeholder"]}>-</span>
-                      ) : isJoined ? (
+                      ) : r.status === "JOINED" ? (
                         <DeleteConfirmation
                           onDelete={() => onRemove(r.enrollmentId)}
                           itemId={r.enrollmentId}
@@ -173,6 +145,22 @@ function ReadersContent() {
                           variant="outline"
                           className={styles["action-btn"]}
                         />
+                      ) : r.status === "LEFT" ? (
+                        <EnableButton
+                          onClick={() => {
+                            setBusyId(r.enrollmentId);
+                            reInvite(r.enrollmentId).finally(() =>
+                              setBusyId(null),
+                            );
+                          }}
+                          disabled={isBusy || loading}
+                          loading={isBusy}
+                          className={styles["action-btn"]}
+                          title="Re-invite reader"
+                          label="Re-invite"
+                          loadingLabel="Re-inviting..."
+                          variant="reinvite"
+                        />
                       ) : (
                         <EnableButton
                           onClick={() => onEnable(r.enrollmentId)}
@@ -182,6 +170,7 @@ function ReadersContent() {
                           title="Enable reader’s access"
                           label="Enable"
                           loadingLabel="Enabling..."
+                          variant="enable"
                         />
                       )}
                     </td>
@@ -193,29 +182,14 @@ function ReadersContent() {
         </table>
       </div>
 
-      {/* Pagination footer */}
-      <div className={styles["readers-pagination"]}>
-        <span className={styles["readers-range"]}>
-          {total === 0 ? "No results" : `Showing ${start}–${end} of ${total}`}
-        </span>
-        <div className={styles["readers-page-controls"]}>
-          <button
-            onClick={() => setPage(Math.max(1, page - 1))}
-            disabled={!hasPrev || loading}
-            className={styles["page-btn"]}
-          >
-            Prev
-          </button>
-          <span className={styles["readers-page"]}>Page {page}</span>
-          <button
-            onClick={() => setPage(page + 1)}
-            disabled={!hasNext || loading}
-            className={styles["page-btn"]}
-          >
-            Next
-          </button>
-        </div>
-      </div>
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        totalItems={total}
+        itemsPerPage={pageSize}
+        onPageChange={(nextPage) => setPage(nextPage)}
+        loading={loading}
+      />
     </div>
   );
 }

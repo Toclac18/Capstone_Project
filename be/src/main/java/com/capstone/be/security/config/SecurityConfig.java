@@ -16,12 +16,21 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.firewall.HttpFirewall;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
+
+  @Bean
+  public HttpFirewall allowAsyncDispatch() {
+    StrictHttpFirewall firewall = new StrictHttpFirewall();
+    firewall.setAllowSemicolon(true);
+    return firewall;
+  }
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final UserDetailsService userDetailsService;
@@ -49,12 +58,13 @@ public class SecurityConfig {
         .sessionManagement(session ->
             session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         )
+        .securityContext(context -> context.requireExplicitSave(false))
         .authorizeHttpRequests(auth -> auth
             // Public endpoints
             .requestMatchers(
-                    "/documents/homepage/**",
+                "/documents/homepage/**",
                 "/documents/search/**",
-                "documents/search-meta/**",
+                "/documents/search-meta/**",
                 "/auth/**",
                 "/statistics/homepage/**", // Public endpoints for trending documents and reviewers
                 "/policies/active", // Public endpoint for viewing active policy (for sign up)
@@ -66,7 +76,9 @@ public class SecurityConfig {
                 "/public/**",
                 "/dev/**",
                 "/contact-tickets/**", // Public endpoint for ticket creation, auth handled in controller
-                "/v1/ai/webhook" // Webhook endpoint for AI service callbacks (no auth required) - relative to servlet path /api
+                "/v1/ai/webhook", // Webhook endpoint for AI service callbacks (no auth required) - relative to servlet path /api
+                "/error", // Error page
+                "/api/error" // API error page
             ).permitAll()
             // All other requests need authentication
             .anyRequest().authenticated()

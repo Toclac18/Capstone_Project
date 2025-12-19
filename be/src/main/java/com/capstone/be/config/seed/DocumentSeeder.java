@@ -31,6 +31,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -130,7 +131,17 @@ public class DocumentSeeder {
         "International Relations and Diplomacy",
         "Basics of Law and Legal Systems",
         "Urban Planning and Smart Cities",
-        "Science, Technology, and Society");
+        "Science, Technology, and Society",
+        "Cybersecurity Fundamentals and Best Practices",
+        "Introduction to Cloud Computing",
+        "Neuroscience: Understanding the Human Brain",
+        "Game Theory and Strategic Decision Making",
+        "Renewable Energy Systems and Applications",
+        "User Experience (UX) Design Principles",
+        "Big Data Technologies and Analytics",
+        "International Finance and Monetary Systems",
+        "Artificial Intelligence Ethics and Governance",
+        "Introduction to Quantum Computing");
 
 
     List<User> allUsers = userRepository.findAll();
@@ -165,8 +176,8 @@ public class DocumentSeeder {
       }
     }
 
-    int n = docTitles.size();
-    int internalDocCount = 10; //need smaller than n
+    int n = 250;
+    int internalDocCount = 27; //need smaller than n
     // Part 1: Public Doc
     for (int i = 0; i < n-internalDocCount; i++) {
 
@@ -174,65 +185,15 @@ public class DocumentSeeder {
       Document savedDocument = documentRepository.save(document);
 
       //Tag
-      List<Tag> allTags = tagRepository.findAll().stream()
-          .filter(tag -> tag.getStatus() == TagStatus.ACTIVE)
-          .toList();
+      generateTag(i, savedDocument);
 
-      int docTagCount = 2 + myRandom(3, i);  //2-4 tag each Doc
-      for (int j = 0; j < docTagCount; j++) {
-        int seed = i * 10 + j;  //random
+      if (savedDocument.getStatus() == DocStatus.ACTIVE) {
+        //Comment: Each Document 0 , 5, 10,.. or 25 comment
+        generateComment(i, savedDocument, activeReaders);
 
-        DocumentTagLink dtl = DocumentTagLink.builder()
-            .document(savedDocument)
-            .tag(allTags.get(myRandom(allTags.size(), seed)))
-
-            .build();
-        documentTagLinkRepository.save(dtl);
+        //Vote: real Vote Entity (note voteCount in document)
+        generateVote(i, savedDocument, activeReaders);
       }
-
-
-      if (savedDocument.getStatus() != DocStatus.ACTIVE) {
-        continue;
-      }
-
-      //Comment: Each Document 0 , 5, 10,.. or 25 comment
-      int commentCount = myRandom(6, i) * 5;
-      for (int j = 0; j < commentCount; j++) {
-
-        String content = "This document is " +
-            dummyText.substring(myRandom(20, i * 10 + j)
-                , 20 + myRandom(50, i * 10 + j));
-
-        Comment comment = Comment.builder()
-            .user(activeReaders.get(myRandom(activeReaders.size(), i * 10 + j)))
-            .document(savedDocument)
-            .content(content)
-            .build();
-        commentRepository.save(comment);
-      }
-
-      //Vote: real Vote Entity (note voteCount in document)
-      int voteCount = myRandom(6, i);
-
-      Set<UUID> votedUserId = new HashSet<>();
-      for (int j = 0; j < voteCount; j++) {
-
-        User user = activeReaders.get(myRandom(activeReaders.size(), i * 10 + j));
-
-        if (votedUserId.contains(user.getId())) {
-          continue;
-        }
-
-        DocumentVote vote = DocumentVote.builder()
-            .user(user)
-            .document(savedDocument)
-            .voteValue(myRandom(3, i * 10 + j) == 1 ? -1 : 1)
-            .build();
-
-        documentVoteRepository.save(vote);
-        votedUserId.add(user.getId());
-      }
-
     }
 
     for (int i = n - internalDocCount ; i < n ; i++){
@@ -240,18 +201,88 @@ public class DocumentSeeder {
           activeReaders, docTypes, specs );
       doc.setOrganization(orgProfile);
       doc.setVisibility(DocVisibility.INTERNAL);
-      documentRepository.save(doc);
+      Document savedDoc = documentRepository.save(doc);
 
-      // #TODO: comment, vote...
+      //Tag
+      generateTag(i, savedDoc);
+
+      if (savedDoc.getStatus() == DocStatus.ACTIVE) {
+        //Comment: Each Document 0 , 5, 10,.. or 25 comment
+        generateComment(i, savedDoc, activeReaders);
+
+        //Vote: real Vote Entity (note voteCount in document)
+        generateVote(i, savedDoc, activeReaders);
+      }
     }
 
+  }
+
+  private void generateTag(int i, Document document){
+    List<Tag> allTags = tagRepository.findAll().stream()
+        .filter(tag -> tag.getStatus() == TagStatus.ACTIVE)
+        .toList();
+
+    int docTagCount = 2 + myRandom(3, i);  //2-4 tag each Doc
+    for (int j = 0; j < docTagCount; j++) {
+      int seed = i * 10 + j;  //random
+
+      DocumentTagLink dtl = DocumentTagLink.builder()
+          .document(document)
+          .tag(allTags.get(myRandom(allTags.size(), seed)))
+
+          .build();
+      documentTagLinkRepository.save(dtl);
+    }
+  }
+
+  private void generateComment(int i, Document document, List<User> activeReaders){
+    int commentCount = myRandom(6, i) * 5;
+    for (int j = 0; j < commentCount; j++) {
+
+      User commentMaker =  activeReaders.get(myRandom(activeReaders.size(), i * 10 + j));
+      String content = "This document is " +
+          dummyText.substring(myRandom(20, i * 10 + j)
+              , 20 + myRandom(50, i * 10 + j));
+
+      Comment comment = Comment.builder()
+          .user(commentMaker)
+          .document(document)
+          .content(content)
+          .build();
+      commentRepository.save(comment);
+    }
+  }
+
+  private void generateVote(int i, Document document, List<User> activeReaders){
+    int voteCount = myRandom(6, i);
+    Set<UUID> votedUserId = new HashSet<>();
+    for (int j = 0; j < voteCount; j++) {
+
+      User user = activeReaders.get(myRandom(activeReaders.size(), i * 10 + j));
+
+      if (votedUserId.contains(user.getId())) {
+        continue;
+      }
+
+      DocumentVote vote = DocumentVote.builder()
+          .user(user)
+          .document(document)
+          .voteValue(myRandom(3, i * 10 + j) == 1 ? -1 : 1)
+          .build();
+
+      documentVoteRepository.save(vote);
+      votedUserId.add(user.getId());
+    }
   }
 
   private Document buildDocument(int seed, List<String> docTitles,
       List<User> activeReaders, List<DocType> docTypes,
       List<Specialization> specs){
+    final int SAMPLE_THUMB_COUNT = 20;
+    final int SAMPLE_DOC_FILE = 20;
+
     UUID docId = SeedUtil.generateUUID("doc-" + seed);
-    String title = docTitles.get(seed);
+    String title = docTitles.get(seed % docTitles.size());
     String description = title
         + " is a very useful document for learning about Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor.";
 
@@ -265,9 +296,9 @@ public class DocumentSeeder {
 
     int price = isPremium ? 100 : 0;
 
-    String thumnailKey = String.format("_sample_thumb_%d.png", (seed % 5) + 1);
+    String thumnailKey = String.format("_sample_thumb_%d.png", (seed % 20) + 1);
 
-    String fileKey = String.format("_sample_doc_%d.pdf", (seed % 5) + 1);
+    String fileKey = String.format("_sample_doc_%d.pdf", (seed % 20) + 1);
 
     int pageCount = 1 + myRandom(10, seed);
 
@@ -312,8 +343,8 @@ public class DocumentSeeder {
     if (range <= 0) {
       return 0;
     }
-    int x = (seed + 100) * (seed + 100); //random *
-    return x % range;
+    Random random = new Random(seed);
+    return random.nextInt(range);
   }
 
 }

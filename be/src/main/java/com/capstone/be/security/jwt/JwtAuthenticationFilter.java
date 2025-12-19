@@ -26,6 +26,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final CustomUserDetailsService userDetailsService;
 
   @Override
+  protected boolean shouldNotFilterAsyncDispatch() {
+    return false; // Filter async dispatches to maintain security context
+  }
+
+  @Override
+  protected boolean shouldNotFilterErrorDispatch() {
+    return true; // Don't filter error dispatches to avoid AccessDenied on error pages
+  }
+
+  @Override
   protected void doFilterInternal(
       HttpServletRequest request,
       HttpServletResponse response,

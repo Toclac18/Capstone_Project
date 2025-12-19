@@ -302,8 +302,8 @@ public class DocumentController {
   }
 
   /**
-   * Search public documents Returns paginated list of PUBLIC and VERIFIED documents No
-   * authentication required - open to everyone
+   * Search public documents Returns paginated list of PUBLIC and VERIFIED documents
+   * No authentication required - open to everyone
    *
    * @return Paged response of search results
    * @body filter Search filters (all optional)

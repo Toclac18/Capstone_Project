@@ -204,11 +204,11 @@ export const SYSTEM_ADMIN_NAV_DATA = [
         icon: Icons.HomeIcon,
         url: "/admin/dashboard",
       },
-      {
-        title: "Role Management",
-        icon: Icons.UsersIcon,
-        url: "/admin/role-management",
-      },
+      // {
+      //   title: "Role Management",
+      //   icon: Icons.UsersIcon,
+      //   url: "/admin/role-management",
+      // },
       {
         title: "System Logs",
         icon: Icons.ActivityIcon,

@@ -675,12 +675,22 @@ public class DocumentServiceImpl implements DocumentService {
       throw ResourceNotFoundException.userById(uploaderId);
     }
 
+    // Apply default sort by createdAt DESC if no sort specified
+    Pageable sortedPageable = pageable;
+    if (pageable.getSort().isUnsorted()) {
+      sortedPageable = PageRequest.of(
+          pageable.getPageNumber(),
+          pageable.getPageSize(),
+          Sort.by(Sort.Direction.DESC, "createdAt")
+      );
+    }
+
     // Build specification with filter
     Specification<Document> spec = DocumentUploadHistorySpecification.buildUploadHistorySpec(
         uploaderId, filter);
 
     // Fetch documents with specification and pagination
-    Page<Document> documentsPage = documentRepository.findAll(spec, pageable);
+    Page<Document> documentsPage = documentRepository.findAll(spec, sortedPageable);
 
     // Map to response DTO
     Page<DocumentUploadHistoryResponse> responsePage = documentsPage.map(document -> {
@@ -716,6 +726,16 @@ public class DocumentServiceImpl implements DocumentService {
       throw ResourceNotFoundException.userById(userId);
     }
 
+    // Apply default sort by createdAt DESC if no sort specified
+    Pageable sortedPageable = pageable;
+    if (pageable.getSort().isUnsorted()) {
+      sortedPageable = PageRequest.of(
+          pageable.getPageNumber(),
+          pageable.getPageSize(),
+          Sort.by(Sort.Direction.DESC, "createdAt")
+      );
+    }
+
     // Get reader profile ID for redemption queries
     ReaderProfile readerProfile = readerProfileRepository.findByUserId(userId).orElse(null);
     UUID readerProfileId = readerProfile != null ? readerProfile.getId() : null;
@@ -724,7 +744,7 @@ public class DocumentServiceImpl implements DocumentService {
     var spec = DocumentLibrarySpecification.buildLibrarySpec(userId, readerProfileId, filter);
 
     // Fetch documents with specification
-    Page<Document> documentsPage = documentRepository.findAll(spec, pageable);
+    Page<Document> documentsPage = documentRepository.findAll(spec, sortedPageable);
 
     // Map to response DTO
     final UUID finalReaderProfileId = readerProfileId;

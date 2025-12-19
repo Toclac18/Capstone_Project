@@ -96,22 +96,33 @@ public class UserAndProfileSeeder {
 
   private void seedReaders() {
     // Active readers
-    String[] names = {
-        "Nguyen Van Anh", "Tran Thi Binh",
-        "Dinh Van Cuong", "Vu Van Duong",
-        "Hoang Van Em", "Nguyen Huong Giang"
-    };
-    int userCount = names.length;
+    List<String> names = List.of(
+        "Nguyen Van An", "Tran Thi Bich", "Le Minh Chau", "Pham Quang Dung",
+        "Hoang Thu Ha", "Vu Tuan Huy", "Do Thi Lan", "Bui Duc Long",
+        "Dang Ngoc Mai", "Nguyen Thanh Nam", "Tran Hong Nhung", "Le Quoc Phong",
+        "Pham Thi Quynh", "Hoang Minh Son", "Vu Thi Thao", "Do Van Thang",
+        "Bui Ngoc Trang", "Dang Duc Trung", "Nguyen Thi Van", "Tran Minh Tuan",
+        "Le Thu Yen", "Pham Huu Khang", "Hoang Thi Lien", "Vu Quang Minh",
+        "Do Thu Phuong", "Bui Thanh Hai", "Dang Thi Hoa", "Nguyen Duc Hiep",
+        "Tran Ngoc Khanh", "Le Van Khoa", "Pham Thi Mai", "Hoang Quoc Lam",
+        "Vu Thi Nga", "Do Minh Phuc", "Bui Thu Giang", "Dang Van Huy",
+        "Nguyen Thi Kim", "Tran Duc Manh", "Le Ngoc Nhi", "Pham Thanh Phuong",
+        "Hoang Minh Quan", "Vu Van Sang", "Do Thi Thanh", "Bui Quoc Toan",
+        "Dang Thu Trang", "Nguyen Minh Tri", "Tran Thi Yen", "Le Duc Anh",
+        "Pham Ngoc Son"
+    );
+
+    int userCount = names.size();
     for (int i = 0; i < userCount; i++) {
       String email = "reader" + (i + 1) + "@gmail.com";
       LocalDate dob = LocalDate.ofEpochDay(10950 + (i + 100) * (i + 100) % 730); //2000 + random
 
       UserStatus status = UserStatus.ACTIVE;
-      if (i == userCount - 1) {
+      if (i >= userCount - 2) {
         status = UserStatus.PENDING_EMAIL_VERIFY;
       }
 
-      createReaderUser(i + 1, email, names[i], status, dob);
+      createReaderUser(i + 1, email, names.get(i), status, dob);
     }
 
   }
@@ -134,7 +145,17 @@ public class UserAndProfileSeeder {
         "TS. Bui Thuy Dung",
         "ThS. Tran Quoc En",
         "TS. Dinh Duc Giang",
-        "CN. Bui Thu Huong"
+        "CN. Bui Thu Huong",
+        "TS. Le Minh Hieu",
+        "ThS. Pham Thi Khanh",
+        "GS. Nguyen Van Long",
+        "TS. Hoang Thu Mai",
+        "ThS. Do Quang Nam",
+        "TS. Vu Thi Phuong",
+        "CN. Tran Minh Tuan",
+        "TS. Nguyen Ngoc Anh",
+        "ThS. Le Duc Thang",
+        "GS. Pham Hong Son"
     );
 
     for (int i = 0; i < names.size(); i++) {
@@ -181,14 +202,13 @@ public class UserAndProfileSeeder {
   private void seedOrganizations() {
     int seed = 0;
 
-    // Active organizations
     createOrganizationUser(
         seed++, "org1@gmail.com",
-        "Nguyen Van Tuan", UserStatus.ACTIVE,
-        "Dai hoc Bach Khoa Ha Noi", OrgType.UNIVERSITY,
-        "contact@hust.edu.vn", "024-3869-2008",
-        "So 1 Dai Co Viet, Hai Ba Trung, Ha Noi",
-        "0100101968",
+        "Truong Gia Binh", UserStatus.ACTIVE,
+        "FPT University", OrgType.UNIVERSITY,
+        "info@fpt.edu.vn", "023-444-555",
+        "Thon 3, Thach Hoa, Thach That, Ha Noi",
+        "01927109257",
         null
     );
 
@@ -202,14 +222,14 @@ public class UserAndProfileSeeder {
         null
     );
 
-// Pending approval organization
+    // Active organizations
     createOrganizationUser(
         seed++, "org3@gmail.com",
-        "Le Minh Quan", UserStatus.PENDING_APPROVE,
-        "Truong Dai hoc FPT", OrgType.UNIVERSITY,
-        "admission@fpt.edu.vn", "024-7300-5588",
-        "Khu Cong nghe cao Hoa Lac, Km29 Dai lo Thang Long, Ha Noi",
-        "0101388139",
+        "Nguyen Van Tuan", UserStatus.ACTIVE,
+        "Dai hoc Bach Khoa Ha Noi", OrgType.UNIVERSITY,
+        "contact@hust.edu.vn", "024-3869-2008",
+        "So 1 Dai Co Viet, Hai Ba Trung, Ha Noi",
+        "0100101968",
         null
     );
 

@@ -16,7 +16,9 @@ import { Pagination } from "@/components/ui/pagination";
 import { UploadHistoryFilters } from "./_components/UploadHistoryFilters";
 import { useToast } from "@/components/ui/toast";
 import { getDocumentViolations, type DocumentViolation } from "@/services/document-violations.service";
+import { getDocumentReviewResult, type ReviewResultResponse } from "@/services/document-review-result.service";
 import { ViolationsModal } from "./_components/ViolationsModal";
+import { ReviewResultModal } from "./_components/ReviewResultModal";
 import styles from "./styles.module.css";
 import { AlertCircle, FileText, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle } from "lucide-react";
 
@@ -47,6 +49,11 @@ export default function UploadHistoryPage() {
   const [selectedDocument, setSelectedDocument] = useState<DocumentHistory | null>(null);
   const [violations, setViolations] = useState<DocumentViolation[]>([]);
   const [loadingViolations, setLoadingViolations] = useState(false);
+
+  // Review result modal state
+  const [showReviewResultModal, setShowReviewResultModal] = useState(false);
+  const [reviewResult, setReviewResult] = useState<ReviewResultResponse | null>(null);
+  const [loadingReviewResult, setLoadingReviewResult] = useState(false);
 
   const fetchData = useCallback(
     async (params: UploadHistoryQueryParams) => {
@@ -222,10 +229,39 @@ export default function UploadHistoryPage() {
     }
   };
 
-  // Check if document should show "View Reason" button
+  // Check if document should show "View Reason" button (AI rejected)
   const shouldShowViewReason = (doc: DocumentHistory): boolean => {
-    // Show for non-premium documents that are rejected
+    // Show for documents that are AI rejected (status = AI_REJECTED)
     return doc.status === "AI_REJECTED";
+  };
+
+  // Check if document should show "View Review" button (reviewer rejected - premium)
+  const shouldShowViewReview = (doc: DocumentHistory): boolean => {
+    // Show for premium documents that are rejected by reviewer (status = REJECTED, not AI_REJECTED)
+    return doc.status === "REJECTED";
+  };
+
+  // Handle view review result
+  const handleViewReviewResult = async (doc: DocumentHistory) => {
+    setSelectedDocument(doc);
+    setShowReviewResultModal(true);
+    setLoadingReviewResult(true);
+    setReviewResult(null);
+
+    try {
+      const data = await getDocumentReviewResult(doc.id);
+      setReviewResult(data);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to load review result";
+      showToast({
+        type: "error",
+        title: "Error",
+        message: msg,
+        duration: 5000,
+      });
+    } finally {
+      setLoadingReviewResult(false);
+    }
   };
 
 
@@ -320,16 +356,28 @@ export default function UploadHistoryPage() {
                     </span>
                   </TableCell>
                   <TableCell className={styles["actions-cell"]}>
-                    {shouldShowViewReason(doc) && (
-                      <button
-                        onClick={() => handleViewViolations(doc)}
-                        className={styles["btn-view-reason"]}
-                        title="View rejection reasons"
-                      >
-                        <AlertTriangle className="w-4 h-4" />
-                        View Reason
-                      </button>
-                    )}
+                    <div className="flex gap-2">
+                      {shouldShowViewReason(doc) && (
+                        <button
+                          onClick={() => handleViewViolations(doc)}
+                          className={styles["btn-view-reason"]}
+                          title="View AI rejection reasons"
+                        >
+                          <AlertTriangle className="w-4 h-4" />
+                          View Reason
+                        </button>
+                      )}
+                      {shouldShowViewReview(doc) && (
+                        <button
+                          onClick={() => handleViewReviewResult(doc)}
+                          className={styles["btn-view-reason"]}
+                          title="View review result"
+                        >
+                          <AlertTriangle className="w-4 h-4" />
+                          View Reason
+                        </button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -360,6 +408,19 @@ export default function UploadHistoryPage() {
         documentName={selectedDocument?.documentName || ""}
         violations={violations}
         loading={loadingViolations}
+      />
+
+      {/* Review Result Modal */}
+      <ReviewResultModal
+        isOpen={showReviewResultModal}
+        onClose={() => {
+          setShowReviewResultModal(false);
+          setSelectedDocument(null);
+          setReviewResult(null);
+        }}
+        documentName={selectedDocument?.documentName || ""}
+        reviewResult={reviewResult}
+        loading={loadingReviewResult}
       />
     </main>
   );

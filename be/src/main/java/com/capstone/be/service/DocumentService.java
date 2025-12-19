@@ -210,4 +210,15 @@ public interface DocumentService {
    */
   java.util.List<DocumentViolationResponse> getDocumentViolations(
       UUID userId, UUID documentId);
+
+  /**
+   * Get review result for a rejected document
+   * Only the uploader can view their document's review result
+   *
+   * @param userId     User ID requesting review result
+   * @param documentId Document ID
+   * @return Review result response or null if not found
+   */
+  com.capstone.be.dto.response.review.ReviewResultResponse getDocumentReviewResult(
+      UUID userId, UUID documentId);
 }

@@ -11,28 +11,46 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.data.jpa.domain.Specification;
 
 /**
- * Specification for searching public documents
- * Only returns PUBLIC, VERIFIED documents
+ * Specification for searching documents.
+ * Returns PUBLIC documents for everyone.
+ * If user has joined organizations, also returns INTERNAL documents from those orgs.
  */
 public class DocumentSearchSpecification {
 
   /**
-   * Build specification for public document search
-   * Always filters for PUBLIC visibility and VERIFIED status
+   * Build specification for document search.
    *
    * @param filter Search filters (all optional)
+   * @param joinedOrgIds List of organization IDs the user has joined (nullable)
    * @return Specification for the query
    */
-  public static Specification<Document> buildSearchSpec(DocumentSearchFilter filter) {
+  public static Specification<Document> buildSearchSpec(DocumentSearchFilter filter, List<UUID> joinedOrgIds) {
     return (root, query, cb) -> {
       List<Predicate> predicates = new ArrayList<>();
 
-      // CORE REQUIREMENTS: Only PUBLIC and VERIFIED documents
-      predicates.add(cb.equal(root.get("visibility"), DocVisibility.PUBLIC));
+      // Always require ACTIVE status
       predicates.add(cb.equal(root.get("status"), DocStatus.ACTIVE));
+
+      // Visibility logic:
+      // - PUBLIC documents are visible to everyone
+      // - INTERNAL documents are visible only if user has joined that organization
+      if (joinedOrgIds != null && !joinedOrgIds.isEmpty()) {
+        // User is authenticated and has joined some organizations
+        // Show: PUBLIC docs OR INTERNAL docs from joined orgs
+        Predicate isPublic = cb.equal(root.get("visibility"), DocVisibility.PUBLIC);
+        Predicate isInternalFromJoinedOrg = cb.and(
+            cb.equal(root.get("visibility"), DocVisibility.INTERNAL),
+            root.get("organization").get("id").in(joinedOrgIds)
+        );
+        predicates.add(cb.or(isPublic, isInternalFromJoinedOrg));
+      } else {
+        // Anonymous user or user hasn't joined any org - only PUBLIC docs
+        predicates.add(cb.equal(root.get("visibility"), DocVisibility.PUBLIC));
+      }
 
       if (filter == null) {
         return cb.and(predicates.toArray(new Predicate[0]));

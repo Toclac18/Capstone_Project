@@ -302,14 +302,17 @@ public class DocumentController {
   }
 
   /**
-   * Search public documents Returns paginated list of PUBLIC and VERIFIED documents
-   * No authentication required - open to everyone
+   * Search documents.
+   * Returns PUBLIC documents for everyone.
+   * If authenticated and user has joined organizations, also returns INTERNAL documents
+   * from those organizations.
    *
    * @return Paged response of search results
    * @body filter Search filters (all optional)
    */
   @PostMapping(value = "/search")
   public ResponseEntity<PagedResponse<DocumentSearchResponse>> searchPublicDocuments(
+          @AuthenticationPrincipal UserPrincipal userPrincipal,
           @Valid @RequestBody DocumentSearchFilter filter) {
 
     Pageable pageable = PageRequest.of(
@@ -318,8 +321,9 @@ public class DocumentController {
             PagingUtil.parseSort(filter.getSorts())
     );
 
+    UUID userId = userPrincipal != null ? userPrincipal.getId() : null;
     Page<DocumentSearchResponse> searchResults =
-            documentService.searchPublicDocuments(filter, pageable);
+            documentService.searchPublicDocuments(filter, pageable, userId);
 
     return ResponseEntity.ok(PagedResponse.of(searchResults));
   }

@@ -34,7 +34,7 @@ export default function FilterModal({
   open: boolean;
   onClose: () => void;
 }) {
-  const { setFilters } = useSearch();
+  const { filters, setFilters } = useSearch();
   const [meta, setMeta] = useState<SearchMeta | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -44,9 +44,29 @@ export default function FilterModal({
   const [showAllDomains, setShowAllDomains] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
 
-  // Load meta khi mở modal
+  // Load meta và sync local state với filters từ context khi mở modal
   useEffect(() => {
     if (!open) return;
+
+    // Sync local state với filters đã apply từ context
+    setLocal({
+      organizationIds: filters.organizationIds ?? null,
+      domainIds: filters.domainIds ?? null,
+      specializationId: filters.specializationIds?.[0] ?? null,
+      docTypeId: filters.docTypeIds?.[0] ?? null,
+      tagIds: filters.tagIds ?? null,
+      yearFrom: filters.yearFrom ?? null,
+      yearTo: filters.yearTo ?? null,
+      isPremium: filters.isPremium ?? null,
+      priceFrom: filters.priceFrom ?? null,
+      priceTo: filters.priceTo ?? null,
+    });
+
+    // Reset show more states
+    setShowAllOrgs(false);
+    setShowAllDomains(false);
+    setShowAllTags(false);
+
     let mounted = true;
     (async () => {
       setLoading(true);
@@ -54,21 +74,17 @@ export default function FilterModal({
         const m = await fetchSearchMeta();
         if (mounted) {
           setMeta(m);
-          // Auto-check joined organizations
-          if (m.joinedOrganizationIds && m.joinedOrganizationIds.length > 0) {
-            setLocal((prev) => ({
-              ...prev,
-              organizationIds: m.joinedOrganizationIds ?? [],
-            }));
-          }
         }
+      } catch (err) {
+        console.error("[FilterModal] fetchSearchMeta error:", err);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     })();
     return () => {
       mounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   // --- DATA MAPPING ---
@@ -148,24 +164,59 @@ export default function FilterModal({
     [tags, showAllTags],
   );
 
-  // --- ENABLE APPLY BUTTON ---
+  // --- CHECK IF LOCAL STATE DIFFERS FROM APPLIED FILTERS ---
+  // Enable Apply when local state is different from current applied filters
+  const hasChanges = useMemo(() => {
+    const appliedOrgIds = filters.organizationIds ?? [];
+    const appliedDomainIds = filters.domainIds ?? [];
+    const appliedTagIds = filters.tagIds ?? [];
+    const appliedSpecId = filters.specializationIds?.[0] ?? null;
+    const appliedDocTypeId = filters.docTypeIds?.[0] ?? null;
 
-  const canApply = useMemo(
-    () =>
-      !!(
-        selectedOrgIds.length > 0 ||
-        (local.domainIds && local.domainIds.length > 0) ||
-        local.specializationId ||
-        local.docTypeId ||
-        selectedTagIds.length > 0 ||
-        local.yearFrom ||
-        local.yearTo ||
-        local.isPremium ||
-        local.priceFrom ||
-        local.priceTo
-      ),
-    [local, selectedOrgIds.length, selectedTagIds.length],
-  );
+    // Compare arrays
+    const arraysEqual = (a: string[], b: string[]) =>
+      a.length === b.length && a.every((v) => b.includes(v));
+
+    const orgChanged = !arraysEqual(selectedOrgIds, appliedOrgIds);
+    const domainChanged = !arraysEqual(selectedDomainIds, appliedDomainIds);
+    const tagChanged = !arraysEqual(selectedTagIds, appliedTagIds);
+    const specChanged = (local.specializationId ?? null) !== appliedSpecId;
+    const docTypeChanged = (local.docTypeId ?? null) !== appliedDocTypeId;
+    const yearFromChanged =
+      (local.yearFrom ?? null) !== (filters.yearFrom ?? null);
+    const yearToChanged = (local.yearTo ?? null) !== (filters.yearTo ?? null);
+    const premiumChanged =
+      (local.isPremium ?? null) !== (filters.isPremium ?? null);
+    const priceFromChanged =
+      (local.priceFrom ?? null) !== (filters.priceFrom ?? null);
+    const priceToChanged =
+      (local.priceTo ?? null) !== (filters.priceTo ?? null);
+
+    return (
+      orgChanged ||
+      domainChanged ||
+      tagChanged ||
+      specChanged ||
+      docTypeChanged ||
+      yearFromChanged ||
+      yearToChanged ||
+      premiumChanged ||
+      priceFromChanged ||
+      priceToChanged
+    );
+  }, [
+    filters,
+    selectedOrgIds,
+    selectedDomainIds,
+    selectedTagIds,
+    local.specializationId,
+    local.docTypeId,
+    local.yearFrom,
+    local.yearTo,
+    local.isPremium,
+    local.priceFrom,
+    local.priceTo,
+  ]);
 
   // --- HANDLERS ---
 
@@ -221,6 +272,10 @@ export default function FilterModal({
       priceTo: local.isPremium ? (local.priceTo ?? undefined) : undefined,
     };
 
+    console.log(
+      "[FilterModal] Apply payload:",
+      JSON.stringify(payload, null, 2),
+    );
     setFilters(payload);
     onClose();
   };
@@ -256,19 +311,10 @@ export default function FilterModal({
           <div className={styles.modalBody}>Loading…</div>
         ) : (
           <div className={styles.modalBody}>
-            {/* Organizations: checkbox grid, multi-select, auto-check joined */}
+            {/* Organizations: checkbox grid, multi-select */}
             {organizations.length > 0 && (
               <div className={styles.field}>
-                <span className={styles.fieldLabel}>
-                  Organizations
-                  {meta.joinedOrganizationIds &&
-                    meta.joinedOrganizationIds.length > 0 && (
-                      <span className={styles.fieldHint}>
-                        {" "}
-                        (Your organizations are pre-selected)
-                      </span>
-                    )}
-                </span>
+                <span className={styles.fieldLabel}>Organizations</span>
                 <div className={styles.checkboxGrid}>
                   {visibleOrgs.map((o) => {
                     const checked = selectedOrgIds.includes(o.id);
@@ -484,7 +530,7 @@ export default function FilterModal({
           <button
             className={styles.primaryBtn}
             onClick={apply}
-            disabled={!canApply}
+            disabled={!hasChanges}
           >
             Apply
           </button>

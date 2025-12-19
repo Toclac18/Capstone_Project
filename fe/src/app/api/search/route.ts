@@ -1,13 +1,14 @@
 // src/app/api/search/route.ts
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from "next/server";
-import { headers, cookies } from "next/headers";
+import { NextRequest } from "next/server";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { jsonResponse, proxyJsonResponse } from "@/server/response";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
 import { searchDocumentMocks } from "@/mock/search-document.mock";
 
-// Nếu muốn có mock search theo page
+// Mock search với pagination
 function buildPagedFromMocks(filter: any) {
   const page = filter.page ?? 0;
   const size = filter.size ?? 20;
@@ -35,37 +36,37 @@ function buildPagedFromMocks(filter: any) {
   };
 }
 
-async function forwardToBE(path: string, body: any) {
-  const h = headers();
-  const cookieStore = cookies();
-
-  const headerAuth = (await h).get("authorization") || "";
-  const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
-  const effectiveAuth = headerAuth || cookieAuth;
-
-  return fetch(`${BE_BASE}${path}`, {
-    method: "POST",
-    headers: {
-      ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
-}
-
 async function handlePOST(req: NextRequest): Promise<Response> {
-  const filterBody = await req.json();
+  const filterBody = await req.json().catch(() => ({}));
+
+  console.log(
+    "[API /search] Request body:",
+    JSON.stringify(filterBody, null, 2),
+  );
 
   if (USE_MOCK) {
     const body = buildPagedFromMocks(filterBody);
-    return NextResponse.json(body, { status: 200 });
+    return jsonResponse(body, { status: 200, mode: "mock" });
   }
 
-  // NHÁNH REAL BE
-  const upstream = await forwardToBE("/api/documents/search", filterBody);
-  const body = await upstream.json();
-  return NextResponse.json(body, { status: upstream.status });
+  // Real BE
+  const authHeader = await getAuthHeader("search");
+
+  const fh = new Headers({ "Content-Type": "application/json" });
+  if (authHeader) fh.set("Authorization", authHeader);
+
+  console.log("[API /search] Calling BE:", `${BE_BASE}/api/documents/search`);
+
+  const upstream = await fetch(`${BE_BASE}/api/documents/search`, {
+    method: "POST",
+    headers: fh,
+    body: JSON.stringify(filterBody),
+    cache: "no-store",
+  });
+
+  console.log("[API /search] BE response status:", upstream.status);
+
+  return proxyJsonResponse(upstream, { mode: "real" });
 }
 
 export const POST = (...args: Parameters<typeof handlePOST>) =>

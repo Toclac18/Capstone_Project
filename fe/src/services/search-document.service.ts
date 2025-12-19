@@ -5,8 +5,7 @@ import type {
   SearchMeta,
   Paged,
 } from "@/types/document-search";
-
-const API_BASE = "/api";
+import { apiClient } from "./http";
 
 /* ---------------------- RAW TYPES (BE response) ---------------------- */
 
@@ -248,6 +247,8 @@ function buildSearchBody(params: {
     body.sorts = sorts;
   }
 
+  console.log("[buildSearchBody] Final body:", JSON.stringify(body, null, 2));
+
   return body;
 }
 
@@ -261,20 +262,8 @@ export async function searchDocuments(args: {
 }): Promise<Paged<DocumentSearchItem>> {
   const body = buildSearchBody(args);
 
-  const res = await fetch(`${API_BASE}/search`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    throw new Error(`Failed to search documents: ${res.status}`);
-  }
-
-  const raw: RawSearchResponse = await res.json();
+  const res = await apiClient.post<RawSearchResponse>("/search", body);
+  const raw = res.data;
   const pageInfo = raw.pageInfo;
 
   const page = pageInfo ? pageInfo.page + 1 : args.page;
@@ -291,17 +280,8 @@ export async function searchDocuments(args: {
 
 // Gọi /api/search-meta → proxy tới BE /search-meta
 export async function fetchSearchMeta(): Promise<SearchMeta> {
-  const res = await fetch(`${API_BASE}/search-meta`, {
-    method: "GET",
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch search meta: ${res.status}`);
-  }
-
-  const json: RawSearchMetaResponse = await res.json();
-  const d = json.data;
+  const res = await apiClient.get<RawSearchMetaResponse>("/search-meta");
+  const d = res.data.data;
 
   const meta: SearchMeta = {
     organizations: (d.organizations || []).map((o) => ({

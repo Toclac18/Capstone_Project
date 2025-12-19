@@ -504,8 +504,8 @@ export default function UploadDocumentPage() {
     } else {
       const charCount = description.trim().length;
       
-      if (charCount < 200) {
-        newErrors.description = `Description must contain at least 200 characters (current: ${charCount} characters)`;
+      if (charCount < 50) {
+        newErrors.description = `Description must contain at least 50 characters (current: ${charCount} characters)`;
       } else if (charCount > 2000) {
         newErrors.description = `Description must not exceed 2000 characters (current: ${charCount} characters)`;
       }
@@ -924,7 +924,7 @@ export default function UploadDocumentPage() {
                   />
                   <div className={styles["field-help"]}>
                     <p className={styles["help-text"]}>
-                      Your description must be between 200 and 2000 characters.
+                      Your description must be between 50 and 2000 characters.
                     </p>
                     <span className={styles["char-counter"]}>
                       {description.length}/2000

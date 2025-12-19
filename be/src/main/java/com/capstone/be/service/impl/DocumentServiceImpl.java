@@ -1131,6 +1131,17 @@ public class DocumentServiceImpl implements DocumentService {
 
     Integer downvoteCount = document.getUpvoteCount() - document.getVoteScore();
     response.setDownvoteCount(Math.max(0, downvoteCount));
+    
+    // Generate presigned URL for document file (for admin to preview)
+    if (document.getFileKey() != null) {
+      Integer expirationMinutes = getPresignedUrlExpirationMinutes();
+      String fileUrl = fileStorageService.generatePresignedUrl(
+          FileStorage.DOCUMENT_FOLDER,
+          document.getFileKey(),
+          expirationMinutes
+      );
+      response.setFileUrl(fileUrl);
+    }
 
     List<DocumentTagLink> tagLinks = documentTagLinkRepository.findByDocument(document);
     List<DocumentDetailResponse.TagInfo> tagInfos = tagLinks.stream()

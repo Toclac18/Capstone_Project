@@ -118,8 +118,14 @@ export const AlertDialogProvider: React.FC<React.PropsWithChildren> = ({
             title: "SESSION EXPIRED",
             description: "Your session has expired. Please sign in again.",
             primaryActionLabel: "Sign In",
-            onPrimaryAction: () => {
+            onPrimaryAction: async () => {
               hideAlert();
+              // Clear cookies before redirecting to sign-in
+              try {
+                await fetch("/api/auth/logout", { method: "POST" });
+              } catch (e) {
+                console.error("Failed to clear session cookies:", e);
+              }
               currentRouter.push("/auth/sign-in");
             },
           });

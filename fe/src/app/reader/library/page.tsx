@@ -32,7 +32,7 @@ import {
   Calendar,
   FileType,
   FolderOpen,
-  HardDrive,
+  GraduationCap,
 } from "lucide-react";
 
 type LoadState = "loading" | "success" | "empty" | "error";
@@ -141,14 +141,6 @@ export default function LibraryPage() {
     const day = String(date.getDate()).padStart(2, "0");
     const year = date.getFullYear();
     return `${month}/${day}/${year}`;
-  }, []);
-
-  const formatFileSize = useCallback((bytes: number): string => {
-    if (bytes === 0) return "0 B";
-    const k = 1024;
-    const sizes = ["B", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   }, []);
 
   const handleEdit = useCallback((document: LibraryDocument) => {
@@ -383,13 +375,13 @@ export default function LibraryPage() {
                       </div>
                     </div>
                     <div className={styles["metadata-item"]}>
-                      <HardDrive className={styles["metadata-icon"]} />
+                      <GraduationCap className={styles["metadata-icon"]} />
                       <div className={styles["metadata-content"]}>
                         <span className={styles["metadata-label"]}>
-                          File Size
+                          Specialization
                         </span>
                         <span className={styles["metadata-value"]}>
-                          {formatFileSize(doc.fileSize)}
+                          {doc.specializationName || "N/A"}
                         </span>
                       </div>
                     </div>

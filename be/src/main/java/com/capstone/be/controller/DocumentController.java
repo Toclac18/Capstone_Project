@@ -425,4 +425,30 @@ public class DocumentController {
     return ResponseEntity.ok(violations);
   }
 
+  /**
+   * Get review result for a rejected document
+   * Only the uploader and admins can view review result
+   *
+   * @param userPrincipal Authenticated user
+   * @param documentId Document ID
+   * @return Review result response
+   */
+  @GetMapping("/{id}/review-result")
+  @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN', 'BUSINESS_ADMIN', 'SYSTEM_ADMIN')")
+  public ResponseEntity<com.capstone.be.dto.response.review.ReviewResultResponse> getDocumentReviewResult(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable(name = "id") UUID documentId) {
+    UUID userId = userPrincipal.getId();
+    log.info("User {} requesting review result for document {}", userId, documentId);
+
+    com.capstone.be.dto.response.review.ReviewResultResponse reviewResult =
+        documentService.getDocumentReviewResult(userId, documentId);
+
+    if (reviewResult == null) {
+      return ResponseEntity.notFound().build();
+    }
+
+    return ResponseEntity.ok(reviewResult);
+  }
+
 }

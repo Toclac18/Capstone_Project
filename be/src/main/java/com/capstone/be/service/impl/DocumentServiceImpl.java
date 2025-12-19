@@ -1601,4 +1601,133 @@ public class DocumentServiceImpl implements DocumentService {
         .collect(Collectors.toList());
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public com.capstone.be.dto.response.review.ReviewResultResponse getDocumentReviewResult(
+      UUID userId, UUID documentId) {
+    // Fetch document
+    Document document = documentRepository.findById(documentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+
+    // Fetch user
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+    // Authorization: Only uploader or admin can view review result
+    boolean isUploader = document.getUploader().getId().equals(userId);
+    boolean isAdmin = user.getRole().name().contains("ADMIN");
+
+    if (!isUploader && !isAdmin) {
+      throw new ForbiddenException("You are not authorized to view review result for this document");
+    }
+
+    // Find the latest review result for this document
+    Page<ReviewResult> reviewResults = reviewResultRepository.findByDocument_Id(
+        documentId, PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "submittedAt")));
+
+    if (reviewResults.isEmpty()) {
+      return null;
+    }
+
+    ReviewResult reviewResult = reviewResults.getContent().get(0);
+
+    // Map to response DTO
+    return mapToReviewResultResponse(reviewResult);
+  }
+
+  private com.capstone.be.dto.response.review.ReviewResultResponse mapToReviewResultResponse(
+      ReviewResult reviewResult) {
+    Document doc = reviewResult.getDocument();
+    User reviewer = reviewResult.getReviewer();
+    User uploader = doc.getUploader();
+
+    // Build document info
+    com.capstone.be.dto.response.review.ReviewResultResponse.DocumentInfo documentInfo = 
+        com.capstone.be.dto.response.review.ReviewResultResponse.DocumentInfo.builder()
+            .id(doc.getId())
+            .title(doc.getTitle())
+            .thumbnailUrl(doc.getThumbnailKey() != null
+                ? fileStorageService.generatePresignedUrl(FileStorage.DOCUMENT_THUMB_FOLDER, doc.getThumbnailKey(), 60)
+                : null)
+            .fileUrl(doc.getFileKey() != null
+                ? fileStorageService.generatePresignedUrl(FileStorage.DOCUMENT_FOLDER, doc.getFileKey(), 60)
+                : null)
+            .build();
+
+    if (doc.getDocType() != null) {
+      documentInfo.setDocType(
+          com.capstone.be.dto.response.review.ReviewResultResponse.DocTypeInfo.builder()
+              .id(doc.getDocType().getId())
+              .code(doc.getDocType().getCode())
+              .name(doc.getDocType().getName())
+              .build());
+    }
+
+    if (doc.getSpecialization() != null) {
+      documentInfo.setSpecialization(
+          com.capstone.be.dto.response.review.ReviewResultResponse.SpecializationInfo.builder()
+              .id(doc.getSpecialization().getId())
+              .code(doc.getSpecialization().getCode())
+              .name(doc.getSpecialization().getName())
+              .build());
+
+      if (doc.getSpecialization().getDomain() != null) {
+        documentInfo.setDomain(
+            com.capstone.be.dto.response.review.ReviewResultResponse.DomainInfo.builder()
+                .id(doc.getSpecialization().getDomain().getId())
+                .code(doc.getSpecialization().getDomain().getCode())
+                .name(doc.getSpecialization().getDomain().getName())
+                .build());
+      }
+    }
+
+    // Build reviewer info
+    com.capstone.be.dto.response.review.ReviewResultResponse.ReviewerInfo reviewerInfo = 
+        com.capstone.be.dto.response.review.ReviewResultResponse.ReviewerInfo.builder()
+            .id(reviewer.getId())
+            .fullName(reviewer.getFullName())
+            .email(reviewer.getEmail())
+            .avatarUrl(reviewer.getAvatarKey() != null
+                ? fileStorageService.generatePresignedUrl(FileStorage.AVATAR_FOLDER, reviewer.getAvatarKey(), 60)
+                : null)
+            .build();
+
+    // Build uploader info
+    com.capstone.be.dto.response.review.ReviewResultResponse.UploaderInfo uploaderInfo = 
+        com.capstone.be.dto.response.review.ReviewResultResponse.UploaderInfo.builder()
+            .id(uploader.getId())
+            .fullName(uploader.getFullName())
+            .email(uploader.getEmail())
+            .build();
+
+    // Build approval info if exists
+    com.capstone.be.dto.response.review.ReviewResultResponse.ApprovalInfo approvalInfo = null;
+    if (reviewResult.getApprovedBy() != null) {
+      approvalInfo = com.capstone.be.dto.response.review.ReviewResultResponse.ApprovalInfo.builder()
+          .approvedById(reviewResult.getApprovedBy().getId())
+          .approvedByName(reviewResult.getApprovedBy().getFullName())
+          .approvedAt(reviewResult.getApprovedAt())
+          .rejectionReason(reviewResult.getRejectionReason())
+          .build();
+    }
+
+    return com.capstone.be.dto.response.review.ReviewResultResponse.builder()
+        .id(reviewResult.getId())
+        .reviewRequestId(reviewResult.getReviewRequest().getId())
+        .document(documentInfo)
+        .reviewer(reviewerInfo)
+        .uploader(uploaderInfo)
+        .report(reviewResult.getComment())
+        .reportFileUrl(reviewResult.getReportFilePath() != null
+            ? fileStorageService.generatePresignedUrl(FileStorage.REVIEW_REPORT_FOLDER, reviewResult.getReportFilePath(), 60)
+            : null)
+        .decision(reviewResult.getDecision())
+        .status(reviewResult.getStatus())
+        .submittedAt(reviewResult.getSubmittedAt())
+        .approval(approvalInfo)
+        .createdAt(reviewResult.getCreatedAt())
+        .updatedAt(reviewResult.getUpdatedAt())
+        .build();
+  }
+
 }

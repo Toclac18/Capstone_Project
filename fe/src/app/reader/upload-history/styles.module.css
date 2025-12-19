@@ -355,6 +355,76 @@
   @apply rounded-[32px] overflow-hidden shadow-2xl;
 }
 
+.modal-card-violations {
+  @apply rounded-[32px] overflow-hidden shadow-2xl bg-white;
+}
+:global(html.dark) .modal-card-violations {
+  @apply bg-gray-800;
+}
+
+.modal-icon-wrapper-violations {
+  @apply flex items-center justify-center w-14 h-14 rounded-2xl bg-white shadow-sm flex-shrink-0 border border-red-200;
+}
+:global(html.dark) .modal-icon-wrapper-violations {
+  @apply bg-gray-700 border-red-800;
+}
+
+.modal-close-button-violations {
+  @apply p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors;
+}
+:global(html.dark) .modal-close-button-violations {
+  @apply text-gray-400 hover:text-gray-200 hover:bg-gray-700;
+}
+
+.violation-card {
+  @apply border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm;
+}
+:global(html.dark) .violation-card {
+  @apply border-gray-700 bg-gray-800;
+}
+
+.violation-classification {
+  @apply text-red-600;
+}
+:global(html.dark) .violation-classification {
+  @apply text-red-400;
+}
+
+.violation-content-section {
+  @apply px-6 py-5 border-t border-gray-200;
+}
+:global(html.dark) .violation-content-section {
+  @apply border-gray-700;
+}
+
+.violation-content-label {
+  @apply text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2;
+}
+:global(html.dark) .violation-content-label {
+  @apply text-gray-300;
+}
+
+.violations-note-icon {
+  @apply flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600;
+}
+:global(html.dark) .violations-note-icon {
+  @apply bg-blue-900/30 text-blue-400;
+}
+
+.violations-note-title {
+  @apply font-semibold text-gray-900 mb-1;
+}
+:global(html.dark) .violations-note-title {
+  @apply text-white;
+}
+
+.violations-note-text {
+  @apply text-gray-600;
+}
+:global(html.dark) .violations-note-text {
+  @apply text-gray-400;
+}
+
 .modal-header-violations {
   @apply flex items-start justify-between p-8 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-rose-50 via-red-50 to-pink-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800;
 }
@@ -376,11 +446,17 @@
 }
 
 .violations-intro {
-  @apply mb-6 p-5 bg-red-50 dark:bg-red-900/10 rounded-2xl border-l-4 border-red-500;
+  @apply mb-6 p-5 bg-red-50 rounded-2xl border-l-4 border-red-500 flex items-start gap-3;
+}
+:global(html.dark) .violations-intro {
+  @apply bg-red-900/10;
 }
 
 .violations-intro p {
-  @apply text-sm text-gray-800 dark:text-gray-200 leading-relaxed font-normal;
+  @apply text-sm text-gray-800 leading-relaxed font-normal;
+}
+:global(html.dark) .violations-intro p {
+  @apply text-gray-200;
 }
 
 .violation-item {
@@ -452,4 +528,382 @@
 }
 :global(html.dark) .visibility-public {
   @apply bg-blue-900/30 text-blue-400;
+}
+
+
+/* Review Result Modal Styles */
+.modal-container-review {
+  @apply relative z-10 w-full max-w-3xl mx-4;
+}
+
+.modal-header-review {
+  @apply flex items-start justify-between p-8 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800;
+}
+
+.modal-icon-wrapper-review {
+  @apply flex items-center justify-center w-14 h-14 rounded-2xl bg-white dark:bg-gray-700 shadow-sm flex-shrink-0 border border-blue-200 dark:border-blue-800;
+}
+
+.modal-title-review {
+  @apply text-xl font-bold text-gray-900 dark:text-white tracking-tight;
+}
+
+.modal-subtitle-review {
+  @apply text-sm text-gray-600 dark:text-gray-400 mt-2 font-normal;
+}
+
+.modal-content-review {
+  @apply p-8 max-h-[70vh] overflow-y-auto bg-white dark:bg-gray-800;
+}
+
+.modal-footer-review {
+  @apply flex items-center justify-end p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800;
+}
+
+.modal-close-button {
+  @apply p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition-colors;
+}
+
+/* Review Section */
+.review-section {
+  @apply pb-5 border-b border-gray-200 dark:border-gray-700 last:border-b-0 last:pb-0;
+}
+
+.review-section-title {
+  @apply text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center;
+}
+
+.review-card {
+  @apply p-4 rounded-2xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700;
+}
+
+.review-info-grid {
+  @apply grid grid-cols-2 gap-5;
+}
+
+.review-info-item {
+  @apply flex flex-col gap-1;
+}
+
+.review-info-label {
+  @apply text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider;
+}
+
+.review-info-value {
+  @apply text-sm font-medium text-gray-900 dark:text-white;
+}
+
+.review-report {
+  @apply p-5 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap;
+}
+
+.review-rejection {
+  @apply p-5 rounded-2xl bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 text-sm text-red-800 dark:text-red-300 leading-relaxed;
+}
+
+.review-action-btn {
+  @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 text-primary font-semibold text-sm hover:bg-primary/20 transition-colors;
+}
+
+/* View Review Button */
+.btn-view-review {
+  @apply inline-flex items-center justify-center gap-1 rounded-lg border-2 border-blue-500 bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-100 hover:border-blue-600 transition-all shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap;
+}
+:global(html.dark) .btn-view-review {
+  @apply border-blue-500 bg-blue-900/20 text-blue-400 hover:bg-blue-900/30 hover:border-blue-400;
+}
+
+
+/* Fullscreen Modal Styles for Review Result */
+.modal-overlay-fullscreen {
+  @apply fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm;
+}
+
+.modal-fullscreen {
+  @apply relative z-10 mx-4 flex h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-[32px] bg-white shadow-2xl border border-stroke;
+}
+:global(html.dark) .modal-fullscreen {
+  @apply bg-dark-2 border-stroke-dark;
+}
+
+.modal-header-fullscreen {
+  @apply flex items-center justify-between border-b border-stroke px-6 py-4;
+}
+:global(html.dark) .modal-header-fullscreen {
+  @apply border-stroke-dark;
+}
+
+.modal-icon-box {
+  @apply flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100;
+}
+:global(html.dark) .modal-icon-box {
+  @apply bg-blue-900/30;
+}
+
+.modal-title-fullscreen {
+  @apply text-lg font-semibold text-dark;
+}
+:global(html.dark) .modal-title-fullscreen {
+  @apply text-white;
+}
+
+.modal-subtitle-fullscreen {
+  @apply text-sm text-gray-500;
+}
+:global(html.dark) .modal-subtitle-fullscreen {
+  @apply text-gray-400;
+}
+
+.modal-close-btn-fullscreen {
+  @apply rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors;
+}
+:global(html.dark) .modal-close-btn-fullscreen {
+  @apply text-gray-400 hover:bg-dark-3 hover:text-white;
+}
+
+.modal-body-split {
+  @apply flex flex-1 overflow-hidden;
+}
+
+/* Preview Panel */
+.preview-panel {
+  @apply flex w-1/2 flex-col border-r border-stroke;
+}
+:global(html.dark) .preview-panel {
+  @apply border-stroke-dark;
+}
+
+.preview-tabs {
+  @apply flex border-b border-stroke;
+}
+:global(html.dark) .preview-tabs {
+  @apply border-stroke-dark;
+}
+
+.preview-tab {
+  @apply flex flex-1 items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-gray-500 hover:bg-gray-50;
+}
+:global(html.dark) .preview-tab {
+  @apply text-gray-400 hover:bg-dark-3;
+}
+
+.preview-tab-active {
+  @apply border-b-2 border-primary bg-gray-50 text-primary;
+}
+:global(html.dark) .preview-tab-active {
+  @apply bg-dark-3 text-white;
+}
+
+.preview-content {
+  @apply flex-1 overflow-hidden bg-gray-100;
+}
+:global(html.dark) .preview-content {
+  @apply bg-dark-3;
+}
+
+.preview-actions {
+  @apply flex gap-2 border-t border-stroke p-3;
+}
+:global(html.dark) .preview-actions {
+  @apply border-stroke-dark;
+}
+
+.preview-btn {
+  @apply flex items-center gap-1.5 rounded-lg border border-stroke bg-white px-3 py-2 text-sm text-dark hover:bg-gray-50;
+}
+:global(html.dark) .preview-btn {
+  @apply border-stroke-dark bg-dark-3 text-white hover:bg-dark-4;
+}
+
+.pdf-loading-box {
+  @apply flex flex-col items-center justify-center h-full text-gray-500;
+}
+:global(html.dark) .pdf-loading-box {
+  @apply text-gray-400;
+}
+
+/* Info Panel */
+.info-panel {
+  @apply w-1/2 overflow-y-auto p-5;
+}
+
+.info-section {
+  @apply mb-5;
+}
+
+.info-title {
+  @apply mb-3 text-sm font-semibold text-dark flex items-center;
+}
+:global(html.dark) .info-title {
+  @apply text-white;
+}
+
+.info-card {
+  @apply mb-2 rounded-lg border border-stroke bg-gray-1 p-3;
+}
+:global(html.dark) .info-card {
+  @apply border-stroke-dark bg-dark-3;
+}
+
+.info-row {
+  @apply grid grid-cols-2 gap-2;
+}
+
+.info-label {
+  @apply text-xs text-gray-500 mb-1;
+}
+:global(html.dark) .info-label {
+  @apply text-gray-400;
+}
+
+.info-value {
+  @apply text-sm font-medium text-dark;
+}
+:global(html.dark) .info-value {
+  @apply text-white;
+}
+
+/* Reviewer Card */
+.reviewer-card {
+  @apply flex items-center gap-3 rounded-lg border border-stroke bg-gray-1 p-3;
+}
+:global(html.dark) .reviewer-card {
+  @apply border-stroke-dark bg-dark-3;
+}
+
+.avatar-lg {
+  @apply flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-medium text-white;
+}
+
+.reviewer-name-lg {
+  @apply text-sm font-medium text-dark;
+}
+:global(html.dark) .reviewer-name-lg {
+  @apply text-white;
+}
+
+.reviewer-email-lg {
+  @apply text-xs text-gray-500;
+}
+:global(html.dark) .reviewer-email-lg {
+  @apply text-gray-400;
+}
+
+/* Decision Badges */
+.decision-card-wrapper {
+  @apply mb-3;
+}
+
+.decision-badge-approved {
+  @apply inline-flex items-center gap-2 rounded-lg bg-green-50 px-4 py-2.5 text-sm font-medium text-green-700;
+}
+:global(html.dark) .decision-badge-approved {
+  @apply bg-green-900/20 text-green-400;
+}
+
+.decision-badge-rejected {
+  @apply inline-flex items-center gap-2 rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700;
+}
+:global(html.dark) .decision-badge-rejected {
+  @apply bg-red-900/20 text-red-400;
+}
+
+/* Status Badges */
+.status-badge-approved {
+  @apply inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800;
+}
+:global(html.dark) .status-badge-approved {
+  @apply bg-green-900/30 text-green-400;
+}
+
+.status-badge-rejected {
+  @apply inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800;
+}
+:global(html.dark) .status-badge-rejected {
+  @apply bg-red-900/30 text-red-400;
+}
+
+.status-badge-pending {
+  @apply inline-flex items-center gap-1.5 rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-800;
+}
+:global(html.dark) .status-badge-pending {
+  @apply bg-yellow-900/30 text-yellow-400;
+}
+
+/* Comment Card */
+.comment-card {
+  @apply rounded-lg border border-stroke bg-gray-1 p-3;
+}
+:global(html.dark) .comment-card {
+  @apply border-stroke-dark bg-dark-3;
+}
+
+.comment-text {
+  @apply mt-1 text-sm text-gray-700 whitespace-pre-wrap;
+}
+:global(html.dark) .comment-text {
+  @apply text-gray-300;
+}
+
+/* Status Card */
+.status-card {
+  @apply space-y-2 rounded-lg border border-stroke bg-gray-1 p-3;
+}
+:global(html.dark) .status-card {
+  @apply border-stroke-dark bg-dark-3;
+}
+
+.status-row {
+  @apply flex items-center justify-between;
+}
+
+.status-label {
+  @apply text-sm text-gray-500;
+}
+:global(html.dark) .status-label {
+  @apply text-gray-400;
+}
+
+.status-value {
+  @apply text-sm font-medium text-dark;
+}
+:global(html.dark) .status-value {
+  @apply text-white;
+}
+
+/* Rejection Card */
+.rejection-card {
+  @apply mt-3 rounded-lg border border-red-200 bg-red-50 p-3;
+}
+:global(html.dark) .rejection-card {
+  @apply border-red-900/50 bg-red-900/20;
+}
+
+.rejection-title {
+  @apply text-sm font-medium text-red-700;
+}
+:global(html.dark) .rejection-title {
+  @apply text-red-400;
+}
+
+.rejection-text {
+  @apply mt-1 text-sm text-red-600;
+}
+:global(html.dark) .rejection-text {
+  @apply text-red-300;
+}
+
+/* Modal Footer */
+.modal-footer {
+  @apply mt-auto pt-4 border-t border-stroke;
+}
+:global(html.dark) .modal-footer {
+  @apply border-stroke-dark;
+}
+
+.modal-button-cancel {
+  @apply w-full rounded-lg border border-stroke bg-white px-4 py-2.5 text-sm font-medium text-dark hover:bg-gray-50 transition-colors;
+}
+:global(html.dark) .modal-button-cancel {
+  @apply border-stroke-dark bg-dark-3 text-white hover:bg-dark-4;
 }

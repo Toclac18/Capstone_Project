@@ -97,6 +97,7 @@ async function handleGET(request: Request) {
         fileSize: 0,
         status: doc.status || "",
         canRequestReview: doc.status === "REJECTED" && !doc.redemptionCount,
+        isPremium: doc.isPremium ?? false,
       })),
       total: pageInfo.totalElements ?? documents.length,
       page: (pageInfo.page ?? 0) + 1,

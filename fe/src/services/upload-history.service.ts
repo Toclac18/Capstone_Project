@@ -1,6 +1,6 @@
 import { apiClient } from "./http";
 
-export type DocumentHistoryStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type DocumentHistoryStatus = "PENDING" | "APPROVED" | "REJECTED" | "AI_REJECTED";
 
 export type DocumentHistory = {
   id: string;
@@ -12,6 +12,7 @@ export type DocumentHistory = {
   fileSize: number; // in bytes
   status: DocumentHistoryStatus;
   canRequestReview: boolean; // true if rejected and first time (can request re-review)
+  isPremium: boolean; // true if document is premium
 };
 
 export type UploadHistoryQueryParams = {

@@ -30,9 +30,9 @@ function toModalPreviewDoc(doc: DocumentSearchItem) {
     publicYear,
     uploader: doc.uploader.fullName,
     isPremium: doc.isPremium,
-    // Search API không trả về userInfo, mặc định true để hiển thị "View details"
-    // User sẽ xử lý redeem ở trang detail
-    hasRedeemed: true,
+    // hasRedeemed sẽ được fetch khi mở modal preview
+    // Truyền undefined để modal tự fetch từ API
+    hasRedeemed: undefined,
     points: doc.price,
     thumbnail: doc.thumbnailUrl || undefined,
     description: doc.description,

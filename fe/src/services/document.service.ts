@@ -187,3 +187,39 @@ export async function fetchDocPresignedUrl(id: string) {
 
   return payload.data;
 }
+
+/**
+ * Fetch only userInfo for a document (for modal preview)
+ * Returns hasRedeemed, isUploader, hasAccess, etc.
+ */
+export type DocumentUserInfo = {
+  hasAccess: boolean;
+  isUploader: boolean;
+  hasRedeemed: boolean;
+  isMemberOfOrganization: boolean;
+  isReviewer?: boolean;
+};
+
+export async function fetchDocumentUserInfo(
+  id: string,
+): Promise<DocumentUserInfo | null> {
+  try {
+    const encodedId = encodeURIComponent(id);
+    const res = await apiClient.get(`/docs-view/${encodedId}`);
+    const payload = res.data as BackendDocumentDetailResponse;
+
+    if (!payload.success || !payload.data.userInfo) {
+      return null;
+    }
+
+    return {
+      hasAccess: payload.data.userInfo.hasAccess,
+      isUploader: payload.data.userInfo.isUploader,
+      hasRedeemed: payload.data.userInfo.hasRedeemed,
+      isMemberOfOrganization: payload.data.userInfo.isMemberOfOrganization,
+      isReviewer: false, // BE có thể chưa trả field này
+    };
+  } catch {
+    return null;
+  }
+}

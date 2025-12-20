@@ -51,6 +51,7 @@ import com.capstone.be.service.SystemConfigService;
 import com.capstone.be.util.StringUtil;
 import com.capstone.be.dto.ai.AiModerationResponse;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -235,7 +236,25 @@ public class DocumentServiceImpl implements DocumentService {
     log.info("Submitting async AI processing task for document ID: {}", documentId);
     
     try {
-      CompletableFuture<AiModerationResponse> aiFuture = aiModerationService.processDocumentAsync(documentId, fileToUpload);
+      // CRITICAL: Read file bytes BEFORE calling async method
+      // MultipartFile is cleaned up when request handler completes, so we need to read it synchronously
+      byte[] fileBytes;
+      String originalFilename;
+      String contentType;
+      try {
+        fileBytes = fileToUpload.getBytes();
+        originalFilename = fileToUpload.getOriginalFilename();
+        contentType = fileToUpload.getContentType();
+        log.info("Read {} bytes from file {} for async processing", fileBytes.length, originalFilename);
+      } catch (IOException e) {
+        log.error("Failed to read file bytes for document ID: {}", documentId, e);
+        throw new RuntimeException("Failed to read uploaded file", e);
+      }
+      
+      // Create a wrapper MultipartFile from bytes
+      MultipartFile fileWrapper = new ByteArrayMultipartFile(fileBytes, originalFilename, contentType);
+      
+      CompletableFuture<AiModerationResponse> aiFuture = aiModerationService.processDocumentAsync(documentId, fileWrapper);
       log.info("Async AI processing task submitted successfully for document ID: {}", documentId);
       
       aiFuture.thenAccept(aiResponse -> {

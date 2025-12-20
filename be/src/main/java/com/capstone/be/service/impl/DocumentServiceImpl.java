@@ -969,11 +969,21 @@ public class DocumentServiceImpl implements DocumentService {
   @Override
   @Transactional(readOnly = true)
   public Page<DocumentSearchResponse> searchPublicDocuments(DocumentSearchFilter filter,
-      Pageable pageable) {
-    log.info("Searching public documents with filter: {} and pagination: {}", filter, pageable);
+      Pageable pageable, UUID userId) {
+    log.info("Searching documents with filter: {}, pagination: {}, userId: {}", filter, pageable, userId);
 
-    // Build specification for public documents only
-    Specification<Document> spec = DocumentSearchSpecification.buildSearchSpec(filter);
+    // Get joined organization IDs for the user (if authenticated)
+    List<UUID> joinedOrgIds = null;
+    if (userId != null) {
+      joinedOrgIds = orgEnrollmentRepository.findByMemberIdAndStatus(userId, OrgEnrollStatus.JOINED)
+          .stream()
+          .map(enrollment -> enrollment.getOrganization().getId())
+          .toList();
+      log.info("User {} has joined organizations: {}", userId, joinedOrgIds);
+    }
+
+    // Build specification with joined org IDs for INTERNAL doc access
+    Specification<Document> spec = DocumentSearchSpecification.buildSearchSpec(filter, joinedOrgIds);
 
     // Fetch documents with specification and pagination
     Page<Document> documentsPage = documentRepository.findAll(spec, pageable);
@@ -1410,18 +1420,43 @@ public class DocumentServiceImpl implements DocumentService {
   public DocumentSearchMetaResponse getSearchMeta(UUID userId) {
     log.info("Building search meta for documents, userId: {}", userId);
 
-    // Organizations
+    // Organizations - get orgs that have public documents
     List<OrganizationProfile> orgEntities =
             documentRepository.findOrganizationsForPublicSearch();
-
-    List<DocumentSearchMetaResponse.OrganizationOption> orgOptions = orgEntities.stream()
+    
+    // Create a map to track organizations by ID
+    Map<UUID, DocumentSearchMetaResponse.OrganizationOption> orgMap = new LinkedHashMap<>();
+    
+    orgEntities.stream()
             .filter(Objects::nonNull)
-            .map(org -> DocumentSearchMetaResponse.OrganizationOption.builder()
-                    .id(org.getId())
-                    .name(org.getName())
-                    .logoUrl(org.getLogoKey())
-                    .docCount(null)
-                    .build())
+            .forEach(org -> orgMap.put(org.getId(), 
+                    DocumentSearchMetaResponse.OrganizationOption.builder()
+                            .id(org.getId())
+                            .name(org.getName())
+                            .logoUrl(org.getLogoKey())
+                            .docCount(null)
+                            .build()));
+    
+    // If user is authenticated, also include organizations they have joined
+    // (even if those orgs don't have public documents yet)
+    if (userId != null) {
+      List<OrgEnrollment> enrollments = orgEnrollmentRepository.findByMemberIdAndStatus(
+              userId, OrgEnrollStatus.JOINED);
+      for (OrgEnrollment enrollment : enrollments) {
+        OrganizationProfile org = enrollment.getOrganization();
+        if (org != null && !orgMap.containsKey(org.getId())) {
+          orgMap.put(org.getId(),
+                  DocumentSearchMetaResponse.OrganizationOption.builder()
+                          .id(org.getId())
+                          .name(org.getName())
+                          .logoUrl(org.getLogoKey())
+                          .docCount(null)
+                          .build());
+        }
+      }
+    }
+    
+    List<DocumentSearchMetaResponse.OrganizationOption> orgOptions = orgMap.values().stream()
             .sorted(Comparator.comparing(DocumentSearchMetaResponse.OrganizationOption::getName,
                     String.CASE_INSENSITIVE_ORDER))
             .collect(Collectors.toList());
@@ -1496,6 +1531,7 @@ public class DocumentServiceImpl implements DocumentService {
             .build();
 
     // Joined organization IDs (only if user is authenticated)
+    // Note: enrollments already fetched above when building orgOptions
     List<UUID> joinedOrgIds = null;
     if (userId != null) {
       List<OrgEnrollment> enrollments = orgEnrollmentRepository.findByMemberIdAndStatus(

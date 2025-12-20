@@ -57,6 +57,11 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
   const [pageCount, setPageCount] = useState(1);
 
   const reload = useCallback(async () => {
+    console.log(
+      "[SearchProvider] reload called with filters:",
+      JSON.stringify(filters, null, 2),
+    );
+    console.log("[SearchProvider] page:", page, "perPage:", perPage);
     setLoading(true);
     try {
       const data: Paged<DocumentSearchItem> = await searchDocuments({
@@ -64,9 +69,17 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
         page,
         perPage,
       });
+      console.log(
+        "[SearchProvider] searchDocuments result - items count:",
+        data.items.length,
+        "total:",
+        data.total,
+      );
       setItems(data.items);
       setTotal(data.total);
       setPageCount(Math.max(1, data.pageCount || 1));
+    } catch (err) {
+      console.error("[SearchProvider] searchDocuments error:", err);
     } finally {
       setLoading(false);
     }
@@ -77,17 +90,27 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
     reload();
   }, [reload]);
 
-  // Khi filter đổi hoặc perPage đổi, reset page về 1
+  // Custom setFilters that also resets page to 1
+  const handleSetFilters = useCallback((newFilters: SearchFilters) => {
+    console.log(
+      "[SearchProvider] handleSetFilters called with:",
+      JSON.stringify(newFilters, null, 2),
+    );
+    setPage(1); // Reset page first
+    setFilters(newFilters);
+  }, []);
+
+  // Reset page when perPage changes
   useEffect(() => {
     setPage(1);
-  }, [filters, perPage]);
+  }, [perPage]);
 
   const value = useMemo(
     () => ({
       items,
       loading,
       filters,
-      setFilters,
+      setFilters: handleSetFilters,
       perPage,
       setPerPage,
       page,
@@ -96,7 +119,17 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
       pageCount,
       reload,
     }),
-    [items, loading, filters, perPage, page, total, pageCount, reload],
+    [
+      items,
+      loading,
+      filters,
+      handleSetFilters,
+      perPage,
+      page,
+      total,
+      pageCount,
+      reload,
+    ],
   );
 
   return (

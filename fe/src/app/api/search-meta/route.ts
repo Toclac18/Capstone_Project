@@ -1,11 +1,12 @@
 // src/app/api/search-meta/route.ts
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from "next/server";
-import { headers, cookies } from "next/headers";
+import { NextRequest } from "next/server";
 import { BE_BASE, USE_MOCK } from "@/server/config";
+import { getAuthHeader } from "@/server/auth";
+import { jsonResponse } from "@/server/response";
 import { withErrorBoundary } from "@/server/withErrorBoundary";
-import { searchDocumentMocks } from "@/mock/search-document.mock"; // <-- data mock của /search
+import { searchDocumentMocks } from "@/mock/search-document.mock";
 
 // --------- RAW TYPE: giống hệt BE /search-meta ---------
 type RawSearchMetaData = {
@@ -45,12 +46,7 @@ type RawSearchMetaData = {
     min: number;
     max: number;
   } | null;
-};
-
-type RawSearchMetaResponse = {
-  success: boolean;
-  data: RawSearchMetaData;
-  timestamp: string;
+  joinedOrganizationIds?: string[] | null;
 };
 
 // --------- helper: slug để làm id mock ---------
@@ -128,7 +124,7 @@ function buildMetaFromMocks(): RawSearchMetaData {
       }
     }
 
-    // specialization (mock: gắn specialization vào domain của doc)
+    // specialization
     if (doc.specializationName) {
       const specKey = doc.specializationName;
       const domainKey = doc.domainName || "unknown-domain";
@@ -222,48 +218,55 @@ function buildMetaFromMocks(): RawSearchMetaData {
       minPrice == null || maxPrice == null
         ? null
         : { min: minPrice, max: maxPrice },
+    joinedOrganizationIds: null,
   };
 }
 
-// --------- forwardToBE cho nhánh real ---------
-async function forwardToBE(path: string) {
-  const h = headers();
-  const cookieStore = cookies();
-
-  const headerAuth = (await h).get("authorization") || "";
-  const cookieAuth = (await cookieStore).get("Authorization")?.value || "";
-  const effectiveAuth = headerAuth || cookieAuth;
-
-  return fetch(`${BE_BASE}${path}`, {
-    method: "GET",
-    headers: {
-      ...(effectiveAuth ? { Authorization: effectiveAuth } : {}),
-      "Content-Type": "application/json",
-    },
-    cache: "no-store",
-  });
-}
-
-// --------- handler chính: USE_MOCK vs BE thật ---------
+// --------- handler chính ---------
 async function handleGET(_req: NextRequest): Promise<Response> {
+  console.log("[search-meta] USE_MOCK:", USE_MOCK);
+
   if (USE_MOCK) {
     const data = buildMetaFromMocks();
-    const body: RawSearchMetaResponse = {
-      success: true,
-      data,
-      timestamp: new Date().toISOString(),
-    };
-    return NextResponse.json(body, { status: 200 });
+    return jsonResponse(
+      { success: true, data, timestamp: new Date().toISOString() },
+      { status: 200, mode: "mock" },
+    );
   }
 
-  // NHÁNH REAL BE
+  // Real BE
+  const authHeader = await getAuthHeader("search-meta");
+  console.log("[search-meta] authHeader:", authHeader ? "present" : "null");
+
+  const fh = new Headers({ "Content-Type": "application/json" });
+  if (authHeader) fh.set("Authorization", authHeader);
+
+  const url = `${BE_BASE}/api/documents/search-meta`;
+  console.log("[search-meta] fetching:", url);
+
   try {
-    const upstream = await forwardToBE("/api/documents/search-meta");
-    const body = await upstream.json();
-    return NextResponse.json(body, { status: upstream.status });
-  } catch (e: any) {
-    return NextResponse.json(
-      { message: "Upstream search-meta failed", error: String(e) },
+    const upstream = await fetch(url, {
+      method: "GET",
+      headers: fh,
+      cache: "no-store",
+    });
+
+    console.log("[search-meta] upstream status:", upstream.status);
+    const text = await upstream.text();
+    console.log("[search-meta] upstream body:", text.substring(0, 500));
+
+    return new Response(text, {
+      status: upstream.status,
+      headers: { "content-type": "application/json", "x-mode": "real" },
+    });
+  } catch (err) {
+    console.error("[search-meta] fetch error:", err);
+    return jsonResponse(
+      {
+        success: false,
+        message: "Failed to fetch from BE",
+        error: String(err),
+      },
       { status: 502 },
     );
   }
@@ -271,5 +274,5 @@ async function handleGET(_req: NextRequest): Promise<Response> {
 
 export const GET = (...args: Parameters<typeof handleGET>) =>
   withErrorBoundary(() => handleGET(...args), {
-    context: "api/documents/search-meta/route.ts/GET",
+    context: "api/search-meta/route.ts/GET",
   });

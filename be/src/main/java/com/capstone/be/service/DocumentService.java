@@ -109,14 +109,18 @@ public interface DocumentService {
   Page<DocumentReadHistoryResponse> getReadHistory(UUID userId, Pageable pageable);
 
   /**
-   * Search public documents with filters Only returns PUBLIC and VERIFIED documents
+   * Search documents with filters.
+   * Returns PUBLIC documents for everyone.
+   * If userId is provided and user has joined organizations, also returns INTERNAL documents
+   * from those organizations.
    *
    * @param filter   Search criteria (all optional)
    * @param pageable Pagination parameters
+   * @param userId   Current user ID (nullable for anonymous users)
    * @return Page of search results
    */
   Page<DocumentSearchResponse> searchPublicDocuments(DocumentSearchFilter filter,
-      Pageable pageable);
+      Pageable pageable, UUID userId);
 
   // ===== Admin-only methods =====
 

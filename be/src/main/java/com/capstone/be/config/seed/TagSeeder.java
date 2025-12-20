@@ -5,6 +5,7 @@ import com.capstone.be.config.seed.event.UserSeededEvent;
 import com.capstone.be.domain.entity.Tag;
 import com.capstone.be.domain.enums.TagStatus;
 import com.capstone.be.repository.TagRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -39,16 +40,53 @@ public class TagSeeder {
       return;
     }
 
-    int tagCount = 15;
-    for (int i = 0; i < tagCount; i++) {
+    List<String> tagNames = List.of(
+        // Technology & Programming
+        "algorithms",
+        "data-structures",
+        "clean-code",
+        "design-patterns",
+        "system-design",
+        "software-architecture",
+        "debugging",
+        "refactoring",
+        "performance",
+        "concurrency",
+        "memory-management",
+        "api-design",
+        "microservices",
+        "cicd",
+        "devops",
+        "docker",
+        "kubernetes",
+        "cloud-computing",
+        "cybersecurity",
+        "unit-testing",
+        "integration-testing"
+    );
+
+
+    int n = tagNames.size();
+    for (int i = 0 ; i< n; i++){
       TagStatus status = TagStatus.ACTIVE;
-      if (i == tagCount - 2) {
+      if (i == n - 2) {
         status = TagStatus.PENDING;
-      } else if (i == tagCount - 1) {
+      } else if (i == n - 1) {
         status = TagStatus.REJECTED;
       }
-      createTag(i, "tag" + i, status);
+      createTag(i, tagNames.get(i), status);
     }
+
+//    int tagCount = 15;
+//    for (int i = 0; i < tagCount; i++) {
+//      TagStatus status = TagStatus.ACTIVE;
+//      if (i == tagCount - 2) {
+//        status = TagStatus.PENDING;
+//      } else if (i == tagCount - 1) {
+//        status = TagStatus.REJECTED;
+//      }
+//      createTag(i, "tag" + i, status);
+//    }
 
     eventPublisher.publishEvent(new TagSeededEvent());
 

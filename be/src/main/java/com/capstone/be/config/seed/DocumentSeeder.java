@@ -179,7 +179,7 @@ public class DocumentSeeder {
     int n = 250;
     int internalDocCount = 27; //need smaller than n
     // Part 1: Public Doc
-    for (int i = 0; i < n-internalDocCount; i++) {
+    for (int i = 0; i < n - internalDocCount; i++) {
 
       Document document = buildDocument(i, docTitles, activeReaders, docTypes, specs);
       Document savedDocument = documentRepository.save(document);
@@ -278,8 +278,8 @@ public class DocumentSeeder {
   private Document buildDocument(int seed, List<String> docTitles,
       List<User> activeReaders, List<DocType> docTypes,
       List<Specialization> specs){
-    final int SAMPLE_THUMB_COUNT = 20;
-    final int SAMPLE_DOC_FILE = 20;
+    final int SAMPLE_THUMB_COUNT = 30;
+    final int SAMPLE_DOC_FILE = 30;
 
     UUID docId = SeedUtil.generateUUID("doc-" + seed);
     String title = docTitles.get(seed % docTitles.size());

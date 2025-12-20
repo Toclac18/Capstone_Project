@@ -48,21 +48,21 @@ public class TagSeeder {
         "design-patterns",
         "system-design",
         "software-architecture",
+        "cicd",
         "debugging",
         "refactoring",
-        "performance",
-        "concurrency",
-        "memory-management",
-        "api-design",
-        "microservices",
-        "cicd",
-        "devops",
-        "docker",
-        "kubernetes",
-        "cloud-computing",
-        "cybersecurity",
-        "unit-testing",
-        "integration-testing"
+        "performance"
+//        "concurrency",
+//        "memory-management",
+//        "api-design",
+//        "microservices",
+//        "devops",
+//        "docker",
+//        "kubernetes",
+//        "cloud-computing",
+//        "cybersecurity",
+//        "unit-testing",
+//        "integration-testing"
     );
 
 

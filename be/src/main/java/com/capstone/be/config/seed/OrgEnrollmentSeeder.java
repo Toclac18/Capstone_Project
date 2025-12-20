@@ -13,7 +13,6 @@ import com.capstone.be.repository.OrgEnrollmentRepository;
 import com.capstone.be.repository.OrganizationProfileRepository;
 import com.capstone.be.repository.UserRepository;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -44,14 +43,10 @@ public class OrgEnrollmentSeeder {
   @EventListener(UserSeededEvent.class)
   public void run() {
     log.info("🌱 start seeding Org Enrollment");
-
-    List<String> readerEmails = new ArrayList<>();
-    for (int i = 1 ; i <= 10; i++) {
-      readerEmails.add(
-          String.format("reader%d@gmail.com", i)
-      );
-    }
-
+    List<String> readerEmails = List.of(
+        "reader1@gmail.com",
+        "reader2@gmail.com"
+    );
     String orgAdminEmail = "org1@gmail.com";
 
     createOrgEnrollment(readerEmails, orgAdminEmail);

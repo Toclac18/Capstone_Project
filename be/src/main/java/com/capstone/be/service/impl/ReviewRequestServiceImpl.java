@@ -36,12 +36,14 @@ import com.capstone.be.service.DocumentConversionService;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.service.SystemConfigService;
 import com.capstone.be.service.FileStorageService;
+import com.capstone.be.event.DocumentStatusChangedEvent;
 import com.capstone.be.service.ReviewRequestService;
 import com.capstone.be.service.helper.ReviewManagementListBuilder;
 import com.capstone.be.util.ByteArrayMultipartFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -74,9 +76,9 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
   private final FileStorageService fileStorageService;
   private final DocumentTagLinkRepository documentTagLinkRepository;
   private final DocumentConversionService documentConversionService;
-  private final EmailService emailService;
   private final SystemConfigService systemConfigService;
   private final ReviewManagementListBuilder listBuilder;
+  private final ApplicationEventPublisher events;
   private final com.capstone.be.service.helper.NotificationHelper notificationHelper;
 
   @Value("${app.document.points.ba-approval:100}")
@@ -897,18 +899,16 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
         int points = getBaApprovalPoints();
         awardPointsToUploader(uploader, points, document.getId());
 
-        // Send approval email to uploader
-        try {
-          emailService.sendDocumentStatusUpdateEmail(
-              uploaderEmail,
-              uploaderName,
-              document.getTitle(),
-              DocStatus.ACTIVE,
-              "Your premium document has been reviewed and approved. You have been awarded " + points + " points!"
-          );
-        } catch (Exception e) {
-          log.error("Failed to send document approval email to {}: {}", uploaderEmail, e.getMessage());
-        }
+        // Email gửi SAU KHI transaction commit — xem DocumentStatusChangedListener
+        events.publishEvent(new DocumentStatusChangedEvent(
+            document.getId(),
+            document.getTitle(),
+            uploaderEmail,
+            uploaderName,
+            DocStatus.ACTIVE,
+            "Your premium document has been reviewed and approved. You have been awarded "
+                + points + " points!"
+        ));
 
         // Send notification to Reader (uploader)
         notificationHelper.sendSuccessNotification(
@@ -929,19 +929,17 @@ public class ReviewRequestServiceImpl implements ReviewRequestService {
         document.setStatus(DocStatus.REJECTED);
         log.info("Review result approved. Document {} is now REJECTED", document.getId());
 
-        // Send rejection email to uploader
-        try {
-          String reason = reviewResult.getComment() != null ? reviewResult.getComment() : "Document did not meet our quality standards";
-          emailService.sendDocumentStatusUpdateEmail(
-              uploaderEmail,
-              uploaderName,
-              document.getTitle(),
-              DocStatus.REJECTED,
-              reason
-          );
-        } catch (Exception e) {
-          log.error("Failed to send document rejection email to {}: {}", uploaderEmail, e.getMessage());
-        }
+        // Email gửi SAU KHI transaction commit — xem DocumentStatusChangedListener
+        events.publishEvent(new DocumentStatusChangedEvent(
+            document.getId(),
+            document.getTitle(),
+            uploaderEmail,
+            uploaderName,
+            DocStatus.REJECTED,
+            reviewResult.getComment() != null
+                ? reviewResult.getComment()
+                : "Document did not meet our quality standards"
+        ));
 
         // Send notification to Reader (uploader)
         String reason = reviewResult.getComment() != null ? reviewResult.getComment() : "Document did not meet our quality standards";

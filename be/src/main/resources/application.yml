@@ -98,6 +98,11 @@ app:
     moderationService:
       url: ${AI_MODERATION_SERVICE_URL:http://localhost:8000}
       apiKey: ${AI_MODERATION_API_KEY:}
+    webhook:
+      # Shared secret để ký callback từ AI service (HMAC-SHA256 trên raw body).
+      # Phải giống hệt AI_WEBHOOK_SECRET ở AI service. Để trống = mọi callback bị từ chối 401.
+      secret: ${AI_WEBHOOK_SECRET:}
+      toleranceSeconds: ${AI_WEBHOOK_TOLERANCE_SECONDS:300}
   backend:
     baseUrl: ${BACKEND_BASE_URL:https://readee-be-v0-2.onrender.com}
 

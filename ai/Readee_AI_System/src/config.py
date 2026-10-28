@@ -52,6 +52,10 @@ HIST_PATH.parent.mkdir(parents=True, exist_ok=True)
 # ============================================
 API_KEY = os.getenv("API_KEY", None)  # Set trong .env để bảo mật
 
+# Shared secret để ký webhook callback về backend (HMAC-SHA256 trên raw body).
+# Phải giống hệt AI_WEBHOOK_SECRET ở backend, nếu không backend trả 401.
+WEBHOOK_SECRET = os.getenv("AI_WEBHOOK_SECRET", "")
+
 # ============================================
 # Moderation Thresholds
 # ============================================

@@ -392,7 +392,7 @@ public class DocumentController {
    * API Homepage: Dành cho cả Guest và User
    */
   @GetMapping("/homepage")
-  public ResponseEntity<Page<DocumentDetailResponse>> getHomepageDocuments(
+  public ResponseEntity<ApiResponse<List<DocumentDetailResponse>>> getHomepageDocuments(
           @AuthenticationPrincipal UserPrincipal userPrincipal,
           @RequestParam(name = "page", defaultValue = "0") int page,
           @RequestParam(name = "size", defaultValue = "20") int size
@@ -402,10 +402,10 @@ public class DocumentController {
 
     log.info("Homepage request: page={}, size={}, userId={}", page, size, userId);
 
-    Page<DocumentDetailResponse> response =
+    Page<DocumentDetailResponse> documents =
             documentService.getHomepageDocuments(userId, page, size);
 
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok(ApiResponse.page(documents));
   }
 
   /**

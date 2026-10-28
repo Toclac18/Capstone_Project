@@ -94,6 +94,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # next-env.d.ts và .next/types/ đều bị gitignore, mà khai báo module cho
+      # *.svg nằm trong đó (next/image-types/global). Không sinh lại thì tsc báo
+      # TS2307 cho mọi import ảnh — lần CI đầu của PR này fail đúng vì vậy.
+      # next build cũng sinh chúng, nhưng Typecheck chạy trước build nên phải tự sinh.
+      - name: Generate Next types
+        run: npx next typegen
+
       # Typecheck trước build: nhanh hơn nhiều nên lỗi kiểu hiện ra sớm.
       # (next build cũng typecheck, bước này chỉ để fail nhanh.)
       - name: Typecheck

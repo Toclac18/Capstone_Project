@@ -90,9 +90,16 @@ Phân loại 138 file:
 
 | Loại | Số file | LOC | Xử lý |
 |---|---:|---:|---|
-| Proxy thuần | **108** | **8.238** | Gộp được về 1 handler + 1 bảng route |
-| Có biến đổi dữ liệu | 20 | ~3.3k | Giữ, chuyển vào `features/*/api` |
-| Stream / upload | 10 | ~1.8k | Giữ riêng |
+| **A** — passthrough hoàn toàn | **24** | **1.449** | Gộp về 1 handler + 1 bảng route |
+| **B** — chỉ khác hình dạng response lỗi | **17** | **1.244** | Gộp, hành vi lỗi đổi (có chủ đích) |
+| **C** — parse rồi trả lại nguyên body | **31** | **2.239** | Gộp, khác biệt cosmetic |
+| Khác thật (transform, formdata, stream, side effect) | 66 | 8.419 | Giữ file riêng |
+
+> **Bản rà soát đầu tiên ghi "108 proxy thuần / 8.238 LOC" — con số đó đếm quá.**
+> Nó dựa trên một phép lọc lỏng (không `.map`/`.filter`/`.reduce`, không formdata,
+> không stream) và bỏ sót các route định hình lại response bằng cách khác.
+> Bảng trên dùng tiêu chí chặt hơn: *proxy thuần không bao giờ cần đọc body hay
+> status của upstream*. Thực tế gộp được **72 route / 4.920 LOC**.
 
 Mức độ *không* đồng nhất giữa 138 file:
 
@@ -116,7 +123,7 @@ Tức là **52 route không dùng `proxyJsonResponse`**, **21 route không gắn
 /api/org-admin/documents         → /api/organization/documents
 ```
 
-⇒ Không thể dùng catch-all đơn thuần; cần **bảng route khai báo**. Đây chính là lý do 108 file tồn tại.
+⇒ Không thể dùng catch-all đơn thuần; cần **bảng route khai báo**. Đây chính là lý do những file đó tồn tại.
 
 **P1-2. FE: mock đan vào đường chạy production.**
 - 8.264 LOC trong `src/mock` (29 file), 61 file import `@/mock`.
@@ -163,7 +170,7 @@ Ví dụ feature *document*: `app/reader/upload-document/` + `app/api/documents/
 
 > Bản rà soát đầu tiên xếp hai file này vào P0 với kết luận "chạy nhầm prod". Sai: lúc đó chỉ grep thấy dòng `//@Profile("dev")` và suy ra annotation bị comment trong khi class vẫn sống. Thực tế cả file bị comment. Đã kiểm lại từng dòng.
 
-**P2-4. `config/` là ngăn kéo tạp:** `GlobalExceptionHandler` (419 LOC), `ResponseWrapperAdvice`, `LogRetentionJob`, `seed/` (17 file), `migration/`, `filter/`, `constant/`, `annotation/` — lẫn hạ tầng, cross-cutting và dữ liệu mẫu.
+**P2-3. `config/` là ngăn kéo tạp:** `GlobalExceptionHandler` (419 LOC), `ResponseWrapperAdvice`, `LogRetentionJob`, `seed/` (17 file), `migration/`, `filter/`, `constant/`, `annotation/` — lẫn hạ tầng, cross-cutting và dữ liệu mẫu.
 
 **P2-4. Bảo mật tách đôi:** `security/` và `config/filter/` + `config/annotation/` cùng lo một việc ở hai gốc khác nhau.
 

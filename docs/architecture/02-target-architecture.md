@@ -148,8 +148,8 @@ fe/src/
 │   ├── (business-admin)/
 │   ├── (system-admin)/
 │   └── api/
-│       ├── [...path]/route.ts     ← 1 proxy chung thay cho 108 file
-│       └── <special>/route.ts     ← 30 route upload/stream/transform giữ riêng
+│       ├── [...path]/route.ts     ← 1 proxy chung thay cho 72 file
+│       └── <special>/route.ts     ← 66 route upload/stream/transform giữ riêng
 │
 ├── features/                      ← mỗi feature tự chứa trọn vẹn
 │   └── document/
@@ -172,7 +172,7 @@ fe/src/
 
 `page.tsx` chỉ còn: đọc params → gọi `features/*/api` → render component. Không fetch logic, không business logic.
 
-### 2.2 Gộp 108 BFF route về bảng khai báo
+### 2.2 Gộp 72 BFF route về bảng khai báo
 
 Vấn đề đã đo: đường dẫn FE theo **vai trò**, BE theo **tài nguyên** ⇒ không catch-all thẳng được. Giải pháp là một bảng route + một handler:
 
@@ -190,7 +190,7 @@ export const ROUTES: RouteMap = {
 ```
 
 ```ts
-// app/api/[...path]/route.ts  — một file thay cho 108
+// app/api/[...path]/route.ts  — một file thay cho 72
 const handler = (req: NextRequest, ctx: Ctx) => proxy(req, ctx, ROUTES);
 export const GET = handler;
 export const POST = handler;
@@ -201,9 +201,15 @@ export const DELETE = handler;
 
 `proxy()` làm **một lần** cho tất cả: resolve route → kiểm role → gắn cookie auth → forward query/body → chuẩn hóa response → error boundary.
 
-**Thu được:** 108 file / 8.238 LOC → ~2 file / ~250 LOC. Và điều quan trọng hơn con số: 21 route đang thiếu auth header, 19 route thiếu error boundary **biến mất như một lớp vấn đề** — không còn chỗ để quên.
+**Thu được:** 72 file / 4.920 LOC → 4 file / 344 dòng. Và điều quan trọng hơn con số: 21 route đang thiếu auth header, 19 route thiếu error boundary **biến mất như một lớp vấn đề** — không còn chỗ để quên.
 
-30 route còn lại (20 transform + 10 stream/upload) giữ file riêng, nhưng dùng chung `proxy()` làm nền.
+Route nào **không** gộp được: đọc rồi định hình lại body, formdata, stream, đường dẫn BE
+dựng từ body request, hoặc có side effect (`auth/login` ghi cookie JWT). 66 route giữ file riêng.
+
+66 route còn lại giữ file riêng — Next.js ưu tiên route cụ thể hơn catch-all nên hai cách sống song song.
+
+> Kernel đặt ở `server/bff.ts`, **không** phải `server/proxy.ts`: `src/proxy.ts` đã là
+> middleware của Next.js 16 (xem [01-assessment.md](01-assessment.md)), hai tên cạnh nhau sẽ gây lẫn.
 
 ### 2.3 Mock: từ nhánh runtime thành lớp thay thế
 

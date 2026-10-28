@@ -32,6 +32,8 @@ Refactor chi tiết từng luồng nghiệp vụ làm **sau**, dựa trên nền
 
 Ba mục khác từng bị xếp P0 nhưng kiểm lại thì **không phải lỗi**: cookie name lệch (FE tự set và tự đọc qua cùng một hằng số), `NEXT_PUBLIC_API_BASE_URL` rò vào bundle client (đã `next build` rồi grep: 0 file), và "thiếu `middleware.ts`" (Next.js 16 đổi tên thành `proxy.ts`; file đã có, đã biên dịch, đang chạy — thêm `middleware.ts` sẽ làm vỡ build). Chi tiết trong [01-assessment.md](01-assessment.md).
 
-**Đòn bẩy lớn nhất:** 108/138 BFF route của FE là proxy thuần, 8.238 LOC lặp lại cùng một việc — gộp được về ~250 LOC bằng một bảng route khai báo. Xóa luôn cả một lớp vấn đề: 21 route đang thiếu auth header, 19 route thiếu error boundary.
+**Đòn bẩy lớn nhất:** 72/138 BFF route của FE chỉ chuyển tiếp, 4.920 LOC lặp lại cùng một việc — gộp được về 344 dòng bằng một bảng route khai báo. Xóa luôn cả một lớp vấn đề: 21 route đang thiếu auth header, 19 route thiếu error boundary.
+
+> Con số này ban đầu được ghi là 108 route / 8.238 LOC. Khi thực thi Phase 2 thì phép lọc ban đầu tỏ ra quá lỏng — xem [01-assessment.md](01-assessment.md) §P1-1.
 
 **Công sức:** ≈ 20 người-ngày, tương đương 3–4 tuần lịch cho 4 người làm xen kẽ phát triển tính năng. Chỉ Phase 3 (dời thư mục) cần đóng băng nhánh, đúng 1 ngày.

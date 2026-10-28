@@ -6,7 +6,7 @@ import type {
   ReportHandlingStatistics,
   StatisticsQueryParams,
 } from "@/types/statistics";
-import type { UserStatistics } from "@/app/business-admin/dashboard/_components/UserStatisticsTab";
+import type { UserStatistics } from "@/types/statistics";
 import type { ReviewerStatistics, StatisticsQueryParams as ReviewerStatsQueryParams } from "@/types/reviewer-statistics";
 
 export async function getPersonalStatistics(

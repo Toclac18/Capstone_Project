@@ -2,6 +2,7 @@ package com.capstone.be.controller;
 
 import com.capstone.be.domain.enums.ReviewResultStatus;
 import com.capstone.be.dto.common.ApiResponse;
+import com.capstone.be.exception.ErrorCode;
 import com.capstone.be.dto.request.review.ApproveReviewResultRequest;
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
 import com.capstone.be.dto.request.review.ReviewManagementFilterRequest;
@@ -155,7 +156,8 @@ public class AdminReviewRequestController {
       log.error("Error during manual expiration job: {}", e.getMessage(), e);
       return ResponseEntity
           .status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body(ApiResponse.error("Failed to run expiration job: " + e.getMessage()));
+          .body(ApiResponse.failure("Failed to run expiration job: " + e.getMessage(),
+              ErrorCode.INTERNAL_SERVER_ERROR.getCode()));
     }
   }
 

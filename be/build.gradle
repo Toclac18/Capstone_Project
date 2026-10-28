@@ -72,6 +72,9 @@ dependencies {
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
+    // Guardrail kiến trúc — chạy như test JUnit thường, không cần hạ tầng thêm
+    testImplementation 'com.tngtech.archunit:archunit-junit5:1.3.0'
+
     // 1. MapStruct API (Required for the interface)
     implementation "org.mapstruct:mapstruct:${mapstructVersion}"
 

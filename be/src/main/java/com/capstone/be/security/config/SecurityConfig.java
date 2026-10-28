@@ -1,7 +1,9 @@
 package com.capstone.be.security.config;
 
 import com.capstone.be.security.jwt.JwtAuthenticationFilter;
+import com.capstone.be.security.webhook.AiWebhookSignatureFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -51,7 +53,17 @@ public class SecurityConfig {
   }
 
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain filterChain(
+      HttpSecurity http,
+      @Value("${app.ai.webhook.secret:}") String aiWebhookSecret,
+      @Value("${app.ai.webhook.toleranceSeconds:300}") long aiWebhookToleranceSeconds)
+      throws Exception {
+
+    // Đăng ký trực tiếp trong chain (không @Component) để filter chạy SAU
+    // SecurityContextHolderFilter — đặt Authentication trước đó sẽ bị ghi đè.
+    AiWebhookSignatureFilter aiWebhookSignatureFilter =
+        new AiWebhookSignatureFilter(aiWebhookSecret, aiWebhookToleranceSeconds);
+
     http
         .csrf(AbstractHttpConfigurer::disable)
         .cors(AbstractHttpConfigurer::disable)
@@ -76,14 +88,17 @@ public class SecurityConfig {
                 "/public/**",
                 "/dev/**",
                 "/contact-tickets/**", // Public endpoint for ticket creation, auth handled in controller
-                "/v1/ai/webhook", // Webhook endpoint for AI service callbacks (no auth required) - relative to servlet path /api
                 "/error", // Error page
                 "/api/error" // API error page
             ).permitAll()
+            // Callback từ AI service: xác thực bằng HMAC trong AiWebhookSignatureFilter,
+            // filter đó cấp quyền ROLE_AI_SERVICE khi chữ ký hợp lệ.
+            .requestMatchers("/v1/ai/webhook").hasRole(AiWebhookSignatureFilter.ROLE)
             // All other requests need authentication
             .anyRequest().authenticated()
         )
         .authenticationProvider(authenticationProvider())
+        .addFilterBefore(aiWebhookSignatureFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();

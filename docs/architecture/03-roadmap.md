@@ -63,11 +63,20 @@ Mỗi mục là một PR nhỏ, review nhanh, merge ngay. Không phụ thuộc l
 
 Đây là phase mở khóa mọi thứ phía FE: chừng nào còn 3 hình dạng response, FE còn phải `any`.
 
-1. Chuyển 5 endpoint trả `Page<T>` thô sang `ApiResponse<PageData<T>>`.
-2. Gộp `PagedResponse<T>` vào `ApiResponse<PageData<T>>` — một kiểu bọc duy nhất.
-3. `GlobalExceptionHandler` thêm `errorCode` ổn định (dùng enum `ErrorCode` đã có).
-4. `ResponseWrapperAdvice` chuyển sang chế độ tường minh; bỏ nhánh bỏ qua `Page<?>`.
-5. FE: `http.ts` thêm `unwrap<T>()` duy nhất; xóa các nhánh đoán hình dạng.
+1. Thêm `pageInfo` / `errorCode` / `fieldErrors` vào `ApiResponse` + factory `ApiResponse.page()`.
+2. Gộp `PagedResponse<T>` vào `ApiResponse<List<T>>` rồi xoá lớp riêng — JSON không đổi,
+   nên 39 endpoint phân trang không làm vỡ FE.
+3. Chuyển 5 endpoint trả `Page<T>` thô sang `ApiResponse.page()` — **đây là chỗ đổi hình
+   dạng trên dây**, nên 5 handler FE tiêu thụ chúng phải sửa cùng commit.
+4. `GlobalExceptionHandler`: `errorCode` ra cấp ngoài (dùng enum `ErrorCode` đã có).
+   13/23 handler hiện không gán mã nào — phải gán hết.
+5. `ResponseWrapperAdvice`: bỏ nhánh bỏ qua `Page<?>`, bọc nó lại kèm log cảnh báo.
+6. FE: `types/api.ts` mô tả hợp đồng; `http.ts` thêm `unwrap<T>()` và `errorCode` vào
+   `ApiError`; xoá các nhánh đoán hình dạng ở 5 handler nói trên.
+
+> Viết lại 38 service FE để dùng `unwrap` **không** thuộc Phase 1: chúng trả cả vỏ
+> response và component đọc `.data` / `.pageInfo` trực tiếp, đổi hết là ~70 file.
+> Việc đó đi cùng Phase 3 khi code chuyển sang feature module.
 
 **Thứ tự:** làm BE trước, FE theo sau trong cùng PR. Phải cùng PR — đây là breaking change của contract.
 

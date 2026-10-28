@@ -1,7 +1,7 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.domain.enums.LogAction;
-import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.document.DocumentLibraryFilter;
 import com.capstone.be.dto.request.document.DocumentSearchFilter;
 import com.capstone.be.dto.request.document.DocumentUploadHistoryFilter;
@@ -15,6 +15,7 @@ import com.capstone.be.service.DocumentVoteService;
 import com.capstone.be.util.AuditLogHelper;
 import com.capstone.be.util.PagingUtil;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -178,7 +179,7 @@ public class DocumentController {
    */
   @GetMapping(value = "/my-uploads")
   @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
-  public ResponseEntity<PagedResponse<DocumentUploadHistoryResponse>> getMyUploadHistory(
+  public ResponseEntity<ApiResponse<List<DocumentUploadHistoryResponse>>> getMyUploadHistory(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @ModelAttribute DocumentUploadHistoryFilter filter,
       Pageable pageable) {
@@ -189,7 +190,7 @@ public class DocumentController {
     Page<DocumentUploadHistoryResponse> historyPage = documentService.getUploadHistory(uploaderId,
         filter, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(historyPage));
+    return ResponseEntity.ok(ApiResponse.page(historyPage));
   }
 
   /**
@@ -203,7 +204,7 @@ public class DocumentController {
    */
   @GetMapping(value = "/library")
   @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
-  public ResponseEntity<PagedResponse<DocumentLibraryResponse>> getLibrary(
+  public ResponseEntity<ApiResponse<List<DocumentLibraryResponse>>> getLibrary(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @ModelAttribute DocumentLibraryFilter filter,
       Pageable pageable) {
@@ -214,7 +215,7 @@ public class DocumentController {
     Page<DocumentLibraryResponse> libraryPage = documentService.getLibrary(userId, filter,
         pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(libraryPage));
+    return ResponseEntity.ok(ApiResponse.page(libraryPage));
   }
 
   /**
@@ -288,7 +289,7 @@ public class DocumentController {
    */
   @GetMapping(value = "/read-history")
   @PreAuthorize("hasAnyRole('READER', 'ORGANIZATION_ADMIN')")
-  public ResponseEntity<PagedResponse<DocumentReadHistoryResponse>> getReadHistory(
+  public ResponseEntity<ApiResponse<List<DocumentReadHistoryResponse>>> getReadHistory(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       Pageable pageable) {
     UUID userId = userPrincipal.getId();
@@ -298,7 +299,7 @@ public class DocumentController {
     Page<DocumentReadHistoryResponse> historyPage = documentService.getReadHistory(userId,
         pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(historyPage));
+    return ResponseEntity.ok(ApiResponse.page(historyPage));
   }
 
   /**
@@ -311,7 +312,7 @@ public class DocumentController {
    * @body filter Search filters (all optional)
    */
   @PostMapping(value = "/search")
-  public ResponseEntity<PagedResponse<DocumentSearchResponse>> searchPublicDocuments(
+  public ResponseEntity<ApiResponse<List<DocumentSearchResponse>>> searchPublicDocuments(
           @AuthenticationPrincipal UserPrincipal userPrincipal,
           @Valid @RequestBody DocumentSearchFilter filter) {
 
@@ -325,7 +326,7 @@ public class DocumentController {
     Page<DocumentSearchResponse> searchResults =
             documentService.searchPublicDocuments(filter, pageable, userId);
 
-    return ResponseEntity.ok(PagedResponse.of(searchResults));
+    return ResponseEntity.ok(ApiResponse.page(searchResults));
   }
 
   /**

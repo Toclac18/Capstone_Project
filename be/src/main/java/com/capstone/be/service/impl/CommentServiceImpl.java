@@ -1,9 +1,9 @@
 package com.capstone.be.service.impl;
 
+import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.domain.entity.Comment;
 import com.capstone.be.domain.entity.Document;
 import com.capstone.be.domain.entity.User;
-import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.comment.CreateCommentRequest;
 import com.capstone.be.dto.request.comment.UpdateCommentRequest;
 import com.capstone.be.dto.response.comment.CommentResponse;
@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -114,7 +115,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<CommentResponse> getCommentsByDocument(UUID documentId, Pageable pageable) {
+    public ApiResponse<List<CommentResponse>> getCommentsByDocument(UUID documentId, Pageable pageable) {
         log.info("Fetching comments for document: {}", documentId);
 
         // Validate document exists
@@ -128,7 +129,7 @@ public class CommentServiceImpl implements CommentService {
         // Map to response
         Page<CommentResponse> responsePage = commentPage.map(commentMapper::toResponse);
 
-        return PagedResponse.of(responsePage);
+        return ApiResponse.page(responsePage);
     }
 
     @Override

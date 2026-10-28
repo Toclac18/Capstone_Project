@@ -93,24 +93,47 @@ events.publish(new DocumentApprovedEvent(doc.getId(), doc.getOwnerId()));
 
 ### 1.4 Hợp đồng API — một hình dạng duy nhất
 
-Bỏ `Page<T>` thô và bỏ auto-wrap ngầm. Mọi endpoint trả **đúng một** trong hai:
+Bỏ `Page<T>` thô, bỏ lớp `PagedResponse` riêng. Chỉ còn **một** lớp `ApiResponse`
+với các field phụ `NON_NULL`, nên response thực tế chỉ chứa phần có ý nghĩa:
 
 ```jsonc
 // Không phân trang
-{ "success": true, "message": null, "data": { ... }, "timestamp": "..." }
+{ "success": true, "data": { ... }, "timestamp": "..." }
 
-// Có phân trang — vẫn là ApiResponse, phần trang nằm trong data
-{ "success": true, "message": null,
-  "data": { "items": [ ... ],
-            "page": { "number": 0, "size": 20, "totalElements": 134, "totalPages": 7 } },
+// Có phân trang — data là MẢNG, thông tin trang ở pageInfo cùng cấp
+{ "success": true,
+  "data": [ ... ],
+  "pageInfo": { "page": 0, "size": 20, "totalElements": 134, "totalPages": 7,
+                "first": true, "last": false, "hasNext": true, "hasPrevious": false },
   "timestamp": "..." }
 
-// Lỗi — RFC 7807 + mã lỗi ổn định để FE so khớp
-{ "success": false, "message": "...", "errorCode": "DOCUMENT_NOT_FOUND",
+// Lỗi — errorCode ổn định từ enum ErrorCode, để FE so khớp thay vì so chuỗi message
+{ "success": false, "message": "Document not found",
+  "errorCode": "3002", "timestamp": "..." }
+
+// Lỗi validation — thêm fieldErrors
+{ "success": false, "message": "Validation failed", "errorCode": "1002",
   "fieldErrors": { "title": "..." }, "timestamp": "..." }
 ```
 
-`ResponseWrapperAdvice` chuyển từ "tự đoán" sang "chỉ bọc khi controller trả raw DTO", và **cấm** trả `Page<?>` (ArchUnit chặn ở signature controller).
+> **Vì sao `pageInfo` ở cấp ngoài, không lồng trong `data`.**
+> Bản đầu của tài liệu này đề xuất `data: { items, page }`. Khi thực thi thì phương án
+> đó bị loại: `pageInfo` đang được đọc ở **46 file** FE, `totalPages` ở **68 file**,
+> `totalElements` ở **52 file** — phần lớn là component phân trang, và FE không có test
+> nào để đỡ. Lồng thêm một cấp bắt sửa ~70 file UI để đổi lấy một thay đổi thuần hình thức.
+>
+> Gộp `pageInfo` vào chính `ApiResponse` dưới dạng field optional đạt đúng mục tiêu —
+> một lớp duy nhất, FE không còn phải đoán — mà JSON của 39 endpoint phân trang **không
+> đổi một ký tự**, nên chúng không làm vỡ gì. Chỉ 5 endpoint `Page<T>` thô là đổi thật.
+
+`errorCode` là **mã số dạng chuỗi** (`"3002"`), lấy từ enum `ErrorCode`; không phải tên
+hằng số. Trước đây mã này bị nhét vào `data` dưới dạng `{"errorCode": "..."}`, khiến
+`data` mang hai nghĩa khác nhau tuỳ `success`.
+
+`ResponseWrapperAdvice` không còn "tự đoán": nó bọc DTO thô vào `ApiResponse`, và với
+`Page<?>` thì bọc qua `ApiResponse.page()` **kèm log cảnh báo** thay vì bỏ qua như trước.
+Đây là lưới an toàn lúc chạy; chặn từ gốc là việc của luật ArchUnit
+`controllers_never_return_raw_page` (xem [04-conventions.md](04-conventions.md) §3, Phase 5).
 
 ### 1.5 Schema DB
 

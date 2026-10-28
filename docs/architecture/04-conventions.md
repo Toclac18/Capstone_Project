@@ -125,7 +125,7 @@ class ArchitectureTest {
           .areAnnotatedWith(RestController.class)
           .should().haveRawReturnType(
               assignableTo(org.springframework.data.domain.Page.class))
-          .because("dùng ApiResponse<PageData<T>>; xem 02 §1.4");
+          .because("dùng ApiResponse.page(...); xem 02 §1.4");
 
   @ArchTest
   static final ArchRule entities_never_leave_the_backend =

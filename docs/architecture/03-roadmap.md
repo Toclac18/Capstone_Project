@@ -18,7 +18,7 @@ Vì vậy lộ trình tuân thủ 3 quy tắc:
 |---|---|---|---|
 | **0** | Vá P0 — an toàn production | Thấp | Không |
 | **1** | Hợp đồng API một hình dạng | Trung bình | Không |
-| **2** | Gộp 108 BFF route | Thấp | Không |
+| **2** | Gộp 72 BFF route | Thấp | Không |
 | **3** | Dời cấu trúc thư mục BE + FE | Cao (conflict) | **Có — 1 ngày** |
 | **4** | Tách God Service + event | Trung bình | Không |
 | **5** | Guardrail + CI | Thấp | Không |
@@ -75,19 +75,26 @@ Mỗi mục là một PR nhỏ, review nhanh, merge ngay. Không phụ thuộc l
 
 ---
 
-## Phase 2 — Gộp 108 BFF route
+## Phase 2 — Gộp 72 BFF route
 
 Làm **tăng dần**, không big-bang. Thứ tự an toàn:
 
-1. Viết `server/proxy.ts` + `server/route-map.ts` + `app/api/[...path]/route.ts`.
-2. Chuyển **1 nhóm** sang bảng route (gợi ý: `business-admin/*`, 28 route) → xóa 28 file → test → merge.
+1. Viết `server/bff.ts` + `server/route-map.ts` + `server/route-types.ts` + `app/api/[...path]/route.ts`.
+   Tên `bff.ts` chứ không phải `proxy.ts`: `src/proxy.ts` đã là middleware của Next.js 16.
+2. Chuyển **1 nhóm** sang bảng route (gợi ý: `business-admin/*`, 13 route) → xóa file → test → merge.
 3. Lặp theo nhóm: `org-admin/*`, `reader/*`, `documents/*`, `system-admin/*`, phần còn lại.
-4. 30 route transform/stream: giữ file, nhưng viết lại trên nền `proxy()`.
+4. 66 route còn lại (transform, formdata, stream, side effect): giữ file riêng.
 5. Mock lùi sau `server/backend/` interface; chuyển `src/mock` → `src/mocks` ngoài `src/`.
 
 Mỗi nhóm là một PR. Nếu nhóm nào hỏng, rollback chỉ nhóm đó.
 
-**Thu được:** −8.238 LOC, và 21 route thiếu auth + 19 route thiếu error boundary được vá theo cấu trúc.
+**Thu được:** −4.920 LOC (72 file) thay bằng 344 dòng kernel; `route.ts` giảm từ 138 còn 67 file. Và 21 route thiếu auth + 19 route thiếu error boundary được vá theo cấu trúc.
+
+> Ước lượng ban đầu là −8.238 LOC cho 108 route. Phép lọc "proxy thuần" lúc đó quá
+> lỏng; số thực đo khi thực thi là 72 route — xem [01-assessment.md](01-assessment.md) §P1-1.
+>
+> Một route **không** được di trú dù trông như proxy: `auth/login` gọi `cookieStore.set()`
+> để ghi cookie JWT. Tiêu chí lọc phải loại cả side effect, không chỉ biến đổi dữ liệu.
 
 **Ước lượng:** 3–4 ngày, chia được cho 2 người theo nhóm route.
 

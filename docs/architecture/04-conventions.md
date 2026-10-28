@@ -232,8 +232,8 @@ export default [
 | Hiện tại | Đích |
 |---|---|
 | `app/reader/**`, `app/reviewer/**`, … | `app/(reader)/**`, `app/(reviewer)/**` |
-| `app/api/**` (108 proxy thuần) | **xóa** → `app/api/[...path]/route.ts` + `server/route-map.ts` |
-| `app/api/**` (30 route đặc biệt) | giữ, viết lại trên nền `server/proxy.ts` |
+| `app/api/**` (72 route chỉ chuyển tiếp) | **xóa** → `app/api/[...path]/route.ts` + `server/route-map.ts` |
+| `app/api/**` (66 route còn lại) | giữ file riêng; Next ưu tiên route cụ thể hơn catch-all |
 | `services/<x>.service.ts` | `features/<x>/api/<x>.api.ts` |
 | `services/http.ts` | `shared/lib/http.ts` |
 | `types/<x>.ts` | `features/<x>/types/` · phần chung → `shared/types/api.ts` (sinh tự động) |

@@ -49,6 +49,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -58,6 +59,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import com.capstone.be.event.OrganizationStatusChangedEvent;
+import com.capstone.be.event.UserRoleChangedEvent;
+import com.capstone.be.event.UserStatusChangedEvent;
 import com.capstone.be.service.AdminUserService;
 
 
@@ -75,8 +79,7 @@ public class AdminUserServiceImpl implements AdminUserService {
   private final ReviewerDomainLinkRepository reviewerDomainLinkRepository;
   private final ReviewerSpecLinkRepository reviewerSpecLinkRepository;
   private final OrganizationProfileRepository organizationProfileRepository;
-  private final OrgEnrollmentRepository orgEnrollmentRepository;
-  private final EmailService emailService;
+  private final ApplicationEventPublisher events;
 
 
   @Override
@@ -146,17 +149,10 @@ public class AdminUserServiceImpl implements AdminUserService {
     log.info("Reader status updated successfully for user: {} - reason: {}", userId,
         request.getReason());
 
-    // Notify reader about status change (best-effort)
-    try {
-      emailService.sendUserStatusUpdateEmail(
-          user.getEmail(),
-          user.getFullName(),
-          request.getStatus(),
-          request.getReason()
-      );
-    } catch (Exception e) {
-      log.warn("Failed to send reader status update email for user {}: {}", userId, e.getMessage());
-    }
+    // Email gửi SAU KHI transaction commit — xem UserNotificationListener
+    events.publishEvent(new UserStatusChangedEvent(
+        userId, user.getEmail(), user.getFullName(),
+        request.getStatus(), request.getReason()));
 
     return buildAdminReaderResponse(user);
   }
@@ -228,17 +224,10 @@ public class AdminUserServiceImpl implements AdminUserService {
     log.info("Reviewer status updated successfully for user: {} - reason: {}", userId,
         request.getReason());
 
-    // Notify reviewer about status change (best-effort)
-    try {
-      emailService.sendUserStatusUpdateEmail(
-          user.getEmail(),
-          user.getFullName(),
-          request.getStatus(),
-          request.getReason()
-      );
-    } catch (Exception e) {
-      log.warn("Failed to send reviewer status update email for user {}: {}", userId, e.getMessage());
-    }
+    // Email gửi SAU KHI transaction commit — xem UserNotificationListener
+    events.publishEvent(new UserStatusChangedEvent(
+        userId, user.getEmail(), user.getFullName(),
+        request.getStatus(), request.getReason()));
 
     return buildAdminReviewerResponse(user);
   }
@@ -313,20 +302,12 @@ public class AdminUserServiceImpl implements AdminUserService {
     log.info("Organization status updated successfully for user: {} - reason: {}", userId,
         request.getReason());
 
-    // Notify organization admin about status change (best-effort)
-    try {
-      emailService.sendOrganizationStatusUpdateEmail(
-          user.getEmail(),
-          user.getFullName(),
-          request.getStatus(),
-          request.getReason()
-      );
-    } catch (Exception e) {
-      log.warn("Failed to send organization status update email for user {}: {}", userId, e.getMessage());
-    }
-
-    // Notify all organization members about status change (best-effort)
-    notifyOrganizationMembers(user, request.getStatus(), request.getReason());
+    // Email cho admin tổ chức VÀ fan-out cho mọi thành viên, gửi SAU KHI transaction
+    // commit — xem UserNotificationListener. Trước đây vòng lặp phân trang gửi hàng
+    // trăm email chạy ngay trong transaction ghi này.
+    events.publishEvent(new OrganizationStatusChangedEvent(
+        userId, user.getEmail(), user.getFullName(),
+        request.getStatus(), request.getReason()));
 
     return buildAdminOrganizationResponse(user);
   }
@@ -389,18 +370,10 @@ public class AdminUserServiceImpl implements AdminUserService {
     log.info("User role changed successfully - user: {}, oldRole: {}, newRole: {}, changedBy: {}, reason: {}",
         userId, oldRole, request.getRole(), changedBy, request.getReason());
 
-    // Notify user about role change (best-effort)
-    try {
-      emailService.sendUserRoleChangeEmail(
-          user.getEmail(),
-          user.getFullName(),
-          oldRole,
-          request.getRole(),
-          request.getReason()
-      );
-    } catch (Exception e) {
-      log.warn("Failed to send user role change email for user {}: {}", userId, e.getMessage());
-    }
+    // Email gửi SAU KHI transaction commit — xem UserNotificationListener
+    events.publishEvent(new UserRoleChangedEvent(
+        userId, user.getEmail(), user.getFullName(),
+        oldRole, request.getRole(), request.getReason()));
 
     // TODO: Add audit logging here when audit log service is available
     // auditLogService.logRoleChange(userId, oldRole, request.getRole(), changedBy, request.getReason());
@@ -517,72 +490,6 @@ public class AdminUserServiceImpl implements AdminUserService {
     });
 
     return builder.build();
-  }
-
-  /**
-   * Notify all organization members about organization status change.
-   * Only sends to members with JOINED status.
-   * Pattern similar to processInvitations in OrgEnrollmentServiceImpl.
-   */
-  private void notifyOrganizationMembers(User organizationAdmin, UserStatus newStatus, String reason) {
-    try {
-      // Get organization profile
-      OrganizationProfile organization = organizationProfileRepository
-          .findByAdminId(organizationAdmin.getId())
-          .orElse(null);
-
-      if (organization == null) {
-        log.warn("Organization profile not found for admin: {}", organizationAdmin.getId());
-        return;
-      }
-
-      // Get all members with JOINED status (pagination to get all)
-      int pageSize = 100;
-      int page = 0;
-      boolean hasMore = true;
-      int totalNotified = 0;
-
-      while (hasMore) {
-        Pageable pageable = PageRequest.of(page, pageSize);
-        
-        Page<OrgEnrollment> enrollments = 
-            orgEnrollmentRepository.findByOrganizationAndStatus(
-                organization, 
-                OrgEnrollStatus.JOINED, 
-                pageable
-            );
-
-        // Send email to each member (similar to processInvitations pattern)
-        for (OrgEnrollment enrollment : enrollments.getContent()) {
-          if (enrollment.getMember() != null && enrollment.getMember().getEmail() != null) {
-            try {
-              emailService.sendOrganizationMemberStatusUpdateEmail(
-                  enrollment.getMember().getEmail(),
-                  enrollment.getMember().getFullName(),
-                  organization.getName(),
-                  newStatus,
-                  reason
-              );
-              totalNotified++;
-            } catch (Exception e) {
-              log.warn("Failed to send organization member status update email to {}: {}", 
-                  enrollment.getMember().getEmail(), e.getMessage());
-              // Don't throw - continue with other members
-            }
-          }
-        }
-
-        hasMore = enrollments.hasNext();
-        page++;
-      }
-
-      log.info("Notified {} organization members about status change for organization: {}", 
-          totalNotified, organization.getName());
-
-    } catch (Exception e) {
-      log.warn("Failed to notify organization members about status change: {}", e.getMessage());
-      // Don't throw - this is best-effort notification
-    }
   }
 
   private UserManagementResponse buildUserManagementResponse(User user) {

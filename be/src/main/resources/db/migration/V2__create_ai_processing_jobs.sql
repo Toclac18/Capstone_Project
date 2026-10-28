@@ -1,6 +1,10 @@
 -- Chuyển từ config/migration/AiProcessingJobTableMigration.java (DDL viết tay bằng JdbcTemplate).
 -- Giữ IF NOT EXISTS để migration idempotent: các DB hiện có đã được bảng này tạo sẵn
 -- bởi component cũ hoặc bởi ddl-auto, nên V2 phải chạy được mà không lỗi trên cả hai trường hợp.
+--
+-- KHÁC bản Java một chỗ: FK trỏ document (số ít), không phải documents.
+-- Entity Document không có @Table nên naming strategy mặc định cho ra "document".
+-- Bản Java trỏ sai tên bảng nhưng nuốt exception, nên lỗi này chưa bao giờ lộ ra.
 
 CREATE TABLE IF NOT EXISTS ai_processing_jobs (
     id                      UUID PRIMARY KEY,
@@ -16,7 +20,7 @@ CREATE TABLE IF NOT EXISTS ai_processing_jobs (
     created_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_ai_processing_jobs_document
-        FOREIGN KEY (document_id) REFERENCES documents (id) ON DELETE CASCADE
+        FOREIGN KEY (document_id) REFERENCES document (id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_ai_processing_jobs_job_id      ON ai_processing_jobs (job_id);

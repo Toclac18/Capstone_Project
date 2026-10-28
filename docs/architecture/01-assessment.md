@@ -198,7 +198,27 @@ Ví dụ feature *document*: `app/reader/upload-document/` + `app/api/documents/
 - Không Dockerfile, không nằm trong `render.yaml`, không nằm trong CI, không lock dependency, không test.
 - `test6.pdf` (169 KB) commit ở thư mục gốc `ai/`.
 
-**P2-13. CI yếu:** chỉ `gradle build` + `next build`. Trigger `push` bị comment. Không chạy test, không chạy `npm run lint` (script có sẵn), không đụng tới `ai/`.
+**P2-13. CI có cổng nhưng không chặn được gì.**
+
+Đã đọc lại `.github/workflows/ci.yml` từng dòng. Những gì CI **đã làm**:
+
+| | |
+|---|---|
+| BE | `./gradlew build` — **có** chạy test |
+| FE | `npm run lint`, rồi `npm run build` — `next build` **có** typecheck |
+| | `dorny/paths-filter` để job chỉ chạy khi phần tương ứng đổi |
+
+Khoảng trống thật là ba chỗ:
+
+1. **Trigger `push` bị comment** ⇒ code merge thẳng vào `dev` không được kiểm gì. Chỉ PR mới chạy CI.
+2. **`npm run lint` không có ngân sách warning** ⇒ nó pass dù có bao nhiêu warning cũng được, nên nợ lint tăng mà không ai thấy.
+3. **`ai/` bị bỏ ngoài hoàn toàn** — không có job nào chạm tới.
+
+Cộng thêm: fail test không để lại báo cáo, nên log CI chỉ nói "test failed" mà không nói test nào.
+
+> Và một điểm cần nói rõ: `./gradlew build` **có** cổng test, nhưng `src/test` chỉ chứa `ExampleTest.java` (xem **P1-7**) nên cổng đó không kiểm gì cả. Cổng tồn tại mà rỗng thì khác với không có cổng — sửa cách khác nhau: cái trước cần viết test, cái sau cần sửa workflow.
+>
+> Bản rà soát đầu tiên viết "không chạy test, không chạy `npm run lint`" — **sai cả hai**. Lúc đó tôi suy từ việc không thấy test nào mà không đọc hết workflow.
 
 **P2-14. Không có shared contract:** springdoc đã bật nhưng OpenAPI spec không được dùng để sinh type FE ⇒ 37 file trong `src/types` chép tay từ DTO backend, trôi dạt âm thầm.
 
@@ -210,7 +230,7 @@ Cấu trúc hiện tại **đúng sách giáo khoa cho một ứng dụng nhỏ*
 
 1. **Không có ranh giới** — BE phẳng theo tầng, FE phẳng theo kiểu file. Không nơi nào trong repo nói được "feature X gồm những gì" hay "ai được gọi ai".
 2. **Không có hợp đồng đơn nhất** — 3 hình dạng response, type FE chép tay, 303 `any`. Mỗi lần nối FE-BE là một lần thương lượng lại.
-3. **Không có lưới an toàn** — không migration, không test, không guardrail, CI chỉ build. Mọi refactor đều là đặt cược.
+3. **Không có lưới an toàn** — không migration, không guardrail, và CI tuy có cổng test lẫn lint nhưng không chặn được gì: `src/test` gần như rỗng, lint không có ngân sách, trigger `push` bị tắt. Mọi refactor đều là đặt cược.
 
 Ba điểm này phải xử lý **trước** khi refactor từng luồng, đúng như định hướng "hoàn thiện global trước". Nếu refactor chi tiết trước, kết quả sẽ phải làm lại khi ranh giới module thay đổi.
 

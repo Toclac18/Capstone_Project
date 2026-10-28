@@ -159,6 +159,27 @@ testImplementation 'com.tngtech.archunit:archunit-junit5:1.3.0'
 
 ## 4. ESLint boundaries — guardrail frontend
 
+> **Bản đang chạy khác bản dưới đây.** `eslint.config.mjs` hiện dùng
+> `no-restricted-imports` sẵn có, không có plugin: cấu trúc hiện tại phẳng theo kiểu
+> file nên ràng buộc chỉ là "thư mục A không import thư mục B", luật sẵn có đủ sức.
+> Ba nhóm đang được ép ở mức `error` vì đang sạch:
+>
+> ```
+> services/            không import app/, components/, mock/
+> types/, utils/       không import app/, services/, components/, mock/
+> components/, hooks/  không import app/, mock/
+> ```
+>
+> `app/` → `mock/` còn 60 file nên chỉ `warn`, tính vào ngân sách `--max-warnings`.
+>
+> **Cấu hình dưới đây dành cho Phase 3**, khi `features/<name>` đã tồn tại và cần chặn
+> `features/a ↔ features/b` bằng capture cùng tên — đó là việc `no-restricted-imports`
+> không làm được, và là lý do duy nhất đáng thêm plugin.
+>
+> Một cái bẫy phải nhớ khi sửa file này: ESLint flat config **ghi đè cả rule**, không gộp
+> pattern. Hai block cùng đặt `no-restricted-imports` cho cùng một file thì block sau xoá
+> sạch block trước. Mỗi nhóm file phải tự liệt kê lại mọi pattern nó cần.
+
 ```js
 // eslint.config.mjs
 import boundaries from "eslint-plugin-boundaries";

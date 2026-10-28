@@ -1,8 +1,12 @@
 import type { NextConfig } from "next";
 
 const FE_DOMAIN = process.env.NEXT_PUBLIC_FE_DOMAIN || "http://localhost:3000";
+// Giữ NEXT_PUBLIC_API_BASE_URL làm fallback để không vỡ env đang có.
+// Xem src/server/config.ts để biết vì sao tên mới là server-only.
 const BE_DOMAIN =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+  process.env.API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "http://localhost:8080";
 const S3_DOMAINS =
   "https://s3.amazonaws.com https://*.s3.amazonaws.com https://*.s3.ap-southeast-1.amazonaws.com";
 

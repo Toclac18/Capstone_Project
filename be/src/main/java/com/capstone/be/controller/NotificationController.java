@@ -1,12 +1,13 @@
 package com.capstone.be.controller;
 
-import com.capstone.be.dto.common.PagedResponse;
+import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.dto.response.user.NotificationResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.NotificationService;
 import com.capstone.be.service.NotificationEventService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -59,7 +60,7 @@ public class NotificationController {
   @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get my notifications",
              description = "Get notifications for current user with optional unread filter")
-  public ResponseEntity<PagedResponse<NotificationResponse>> getMyNotifications(
+  public ResponseEntity<ApiResponse<List<NotificationResponse>>> getMyNotifications(
       @AuthenticationPrincipal UserPrincipal principal,
       @RequestParam(name = "unreadOnly", required = false, defaultValue = "false") Boolean unreadOnly,
       @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -76,7 +77,7 @@ public class NotificationController {
       page = notificationService.getMyNotifications(userId, pageable);
     }
 
-    return ResponseEntity.ok(PagedResponse.of(page));
+    return ResponseEntity.ok(ApiResponse.page(page));
   }
 
   /**

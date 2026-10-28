@@ -23,7 +23,7 @@ import { ReportStatisticsTab } from "./_components/ReportStatisticsTab";
 import { OrganizationStatisticsTab } from "./_components/OrganizationStatisticsTab";
 import type { GlobalOrganizationStatistics } from "./_components/OrganizationStatisticsTab";
 import { UserStatisticsTab } from "./_components/UserStatisticsTab";
-import type { UserStatistics } from "./_components/UserStatisticsTab";
+import type { UserStatistics } from "@/types/statistics";
 
 type LoadState = "loading" | "success" | "error";
 type TabType = "overview" | "documents" | "reports" | "organizations" | "users";

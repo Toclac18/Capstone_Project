@@ -1,38 +1,11 @@
 "use client";
 
-import type { LoadState } from "@/types/statistics";
+import type { LoadState, UserStatistics } from "@/types/statistics";
 import dynamic from "next/dynamic";
 import type { ApexOptions } from "apexcharts";
 import { Users, TrendingUp, UserPlus } from "lucide-react";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
-
-export interface RoleBreakdown {
-  role: string;
-  total: number;
-  active: number;
-  inactive: number;
-  pendingVerification: number;
-}
-
-export interface UserStatistics {
-  summary: {
-    totalUsers: number;
-    activeUsers: number;
-    inactiveUsers: number;
-    pendingVerificationUsers: number;
-    totalReaders: number;
-    totalReviewers: number;
-    totalOrganizationAdmins: number;
-    newUsersThisMonth: number;
-    newUsersLastMonth: number;
-    growthRate: number;
-  };
-  userGrowth: Array<{ date: string; count: number }>;
-  activeUsersGrowth: Array<{ date: string; count: number }>;
-  roleBreakdown: RoleBreakdown[];
-  statusBreakdown: Array<{ status: string; count: number }>;
-}
 
 interface UserStatisticsTabProps {
   state: LoadState;

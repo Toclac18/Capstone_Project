@@ -49,6 +49,10 @@ dependencies {
     // DB driver
     runtimeOnly 'org.postgresql:postgresql'
 
+    // DB migration — thay cho ddl-auto + DDL viết tay. Xem resources/db/migration/README.md
+    implementation 'org.flywaydb:flyway-core'
+    runtimeOnly 'org.flywaydb:flyway-database-postgresql'
+
     // JWT
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'

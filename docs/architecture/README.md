@@ -20,7 +20,7 @@ Refactor chi tiết từng luồng nghiệp vụ làm **sau**, dựa trên nền
 
 1. **Không có ranh giới.** BE đóng gói phẳng theo tầng (36 controller, 39 service, 35 repository cùng cấp); FE phẳng theo kiểu file. Không nơi nào nói được "feature X gồm những gì" hay "ai được gọi ai".
 2. **Không có hợp đồng đơn nhất.** BE trả 3 hình dạng response khác nhau; FE chép tay 37 file type; 303 chỗ `any` dù `strict: true`.
-3. **Không có lưới an toàn.** Không migration DB (prod chạy `ddl-auto=update`), không test (chỉ `ExampleTest.java`), CI chỉ build.
+3. **Không có lưới an toàn.** Không migration DB (prod chạy `ddl-auto=update`), không test (chỉ `ExampleTest.java`), không guardrail. CI có cổng test và lint nhưng không chặn được gì: cổng test rỗng, lint không có ngân sách warning, trigger `push` bị tắt.
 
 **Việc cần làm ngay** (xem [Phase 0](03-roadmap.md#phase-0--vá-p0-ưu-tiên-tuyệt-đối)) — đây là lỗi production, không phải nợ kỹ thuật:
 

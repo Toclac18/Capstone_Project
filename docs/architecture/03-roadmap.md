@@ -154,15 +154,34 @@ Không làm cùng lúc tất cả. Thứ tự theo mức đau:
 
 ## Phase 5 — Guardrail + CI
 
-Làm **song song từ Phase 0**, bật chặn sau Phase 3.
+Làm **song song từ Phase 0**. Không cần chờ Phase 3: `FreezingArchRule` cho phép bật
+luật ngay trên nợ hiện tại, và ngân sách `--max-warnings` làm điều tương tự cho ESLint.
 
-1. `be/src/test/java/.../architecture/ArchitectureTest.java` — ban đầu để các luật mới ở mức *log*, bật `fail` sau Phase 3.
-2. FE `eslint-plugin-boundaries` — tương tự, `warn` → `error`.
-3. CI: thêm `npm run lint`, `tsc --noEmit`, bật lại trigger `push: [dev]`.
-4. Job `contract`: sinh lại `api.ts` từ OpenAPI, `git diff --exit-code`.
-5. Thêm `ai/` vào CI: `ruff` + `pytest`.
+**Đã làm:**
 
-**Ước lượng:** 2 ngày.
+1. `be/src/test/.../architecture/ArchitectureTest.java` — 10 luật. 6 luật đang sạch đặt
+   `fail` ngay; 4 luật còn vi phạm dùng `FreezingArchRule`: nợ hiện tại ghi vào
+   `be/archunit_store`, chỉ vi phạm **mới** làm fail. Không cần đợi Phase 3 mới bật.
+2. FE: ranh giới tầng bằng `no-restricted-imports` sẵn có, đặt `error` cho 3 nhóm đang
+   sạch (`services/`, `types/`+`utils/`, `components/`+`hooks/`).
+   **Không** dùng `eslint-plugin-boundaries`: cấu trúc hiện tại phẳng theo kiểu file nên
+   luật sẵn có đủ sức; plugin đó chỉ đáng thêm ở Phase 3 khi có `features/<name>` và cần
+   chặn `features/a ↔ features/b` bằng capture cùng tên.
+3. CI: bật lại `push: [dev]`; thêm bước `tsc --noEmit` riêng (fail nhanh hơn `next build`);
+   lint đổi sang `--max-warnings <số hiện tại>`; upload test report khi fail.
+4. `ai/` vào CI: `python -m compileall` + `ruff --select=E9,F63,F7,F82` (lỗi cú pháp, so
+   sánh sai kiểu, câu lệnh sai chỗ, tên chưa định nghĩa — gần như không false positive).
+
+**Chưa làm:**
+
+| Việc | Vì sao |
+|---|---|
+| Job `contract`: sinh lại `api.ts` từ OpenAPI rồi `git diff --exit-code` | Cần dựng được BE trong CI để lấy `/v3/api-docs`, tức cần Postgres service container. Việc riêng. |
+| `pytest` cho `ai/` | Chưa có test nào, và cài `requirements.txt` cần GPU/torch — quá nặng cho CI runner. |
+| Luật ranh giới module trong ArchUnit | Cần `modules/` tồn tại, tức sau Phase 3. |
+| Hạ dần ngân sách `--max-warnings` | Ratchet: dọn bớt warning thì hạ số xuống. 317/408 warning là `no-explicit-any`. |
+
+**Ước lượng:** 2 ngày (phần đã làm).
 
 ---
 

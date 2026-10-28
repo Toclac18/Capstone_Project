@@ -288,11 +288,13 @@ Giai đoạn global **chưa** cần Redis/Celery. Đủ và rẻ:
 
 | Lớp | Công cụ | Chặn điều gì |
 |---|---|---|
-| BE | **ArchUnit** (test thường) | import chéo module, controller→repository, `shared`→`modules`, seeder thiếu `@Profile`, controller trả `Page<?>` |
-| FE | **eslint-plugin-boundaries** | `features/a` → `features/b`, `app/` → `features/*/components` nội bộ, import `@/mocks` từ code thật |
+| BE | **ArchUnit** (test thường) | **đang chạy:** controller→repository, controller→entity, `@Transactional` ở controller, controller trả `Page<?>`, seeder thiếu `@Profile`, field injection, tầng service/repository/entity. 4 luật đầu dùng `FreezingArchRule` vì còn vi phạm |
+| BE | ArchUnit (tiếp) | **cần Phase 3:** import chéo module, `shared`→`modules` |
+| FE | `no-restricted-imports` (sẵn có) | `services/`, `types/`, `utils/`, `components/`, `hooks/` không import lên tầng ngoài hay vào `mock/` — **đang chạy** |
+| FE | **eslint-plugin-boundaries** | `features/a` → `features/b` bằng capture cùng tên — **cần Phase 3**, trước đó `no-restricted-imports` đủ |
 | FE | `no-restricted-imports` | `@/app/(template)` sau khi đã tách |
 | Contract | `openapi-typescript` + diff check | FE type lệch DTO backend |
-| CI | test + lint + typecheck | tất cả những cái trên |
+| CI | test + lint + typecheck | tất cả những cái trên, cộng **ngân sách warning** (`--max-warnings`) để nợ lint không tăng |
 
 ArchUnit là lựa chọn chính vì nó là **test JUnit bình thường** — chạy trong `gradle build` sẵn có, không cần thêm hạ tầng, và báo lỗi ngay tại PR.
 
@@ -302,13 +304,18 @@ ArchUnit là lựa chọn chính vì nó là **test JUnit bình thường** — 
 
 ```yaml
 jobs:
-  backend:   gradle build          # đã có test → ArchUnit chạy ở đây
-  frontend:  npm ci → lint → tsc --noEmit → next build
-  contract:  sinh lại api.ts → git diff --exit-code
-  ai:        ruff → pytest
+  backend:   gradle build                      # ArchUnit chạy ở đây            ✓
+  frontend:  tsc --noEmit → lint → next build  # lint có --max-warnings         ✓
+  ai:        compileall → ruff                 # pytest: chưa có test nào       ◐
+  contract:  sinh lại api.ts → git diff --exit-code                            ✗
 ```
 
-Bật lại trigger `push: [dev]` (hiện đang bị comment).
+`✓` đã có · `◐` một phần · `✗` chưa làm — xem [03-roadmap.md](03-roadmap.md) Phase 5.
+
+Bật lại trigger `push: [dev]` (hiện đang bị comment), và thêm **ngân sách warning** cho
+lint (`--max-warnings <số hiện tại>`) — không có nó thì `npm run lint` pass dù nợ lint
+tăng bao nhiêu cũng được. Fail test thì upload báo cáo, nếu không log CI chỉ nói
+"test failed" mà không nói luật nào bị vi phạm.
 
 ---
 

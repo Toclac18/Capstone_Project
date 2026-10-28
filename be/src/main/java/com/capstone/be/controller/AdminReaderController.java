@@ -1,10 +1,12 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.domain.enums.UserStatus;
 import com.capstone.be.dto.request.admin.UpdateUserStatusRequest;
 import com.capstone.be.dto.response.admin.AdminReaderResponse;
 import com.capstone.be.service.UserService;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +41,7 @@ public class AdminReaderController {
    * GET /api/v1/admin/readers
    */
   @GetMapping
-  public ResponseEntity<Page<AdminReaderResponse>> getAllReaders(
+  public ResponseEntity<ApiResponse<List<AdminReaderResponse>>> getAllReaders(
       @RequestParam(name = "status", required = false) UserStatus status,
       @RequestParam(name = "search", required = false) String search,
       @RequestParam(name = "page", defaultValue = "0") int page,
@@ -83,7 +85,7 @@ public class AdminReaderController {
 
     Page<AdminReaderResponse> readers = userService.getAllReaders(status, trimmedSearch, pageable);
 
-    return ResponseEntity.ok(readers);
+    return ResponseEntity.ok(ApiResponse.page(readers));
   }
 
   /**

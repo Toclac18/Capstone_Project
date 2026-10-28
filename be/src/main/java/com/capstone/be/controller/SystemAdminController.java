@@ -1,5 +1,6 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.domain.enums.LogAction;
 import com.capstone.be.dto.request.admin.ChangeRoleRequest;
 import com.capstone.be.dto.request.admin.UserQueryRequest;
@@ -11,6 +12,7 @@ import com.capstone.be.service.UserService;
 import com.capstone.be.util.HttpRequestUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -51,7 +53,7 @@ public class SystemAdminController {
    * Note: Using POST to support complex query parameters in request body
    */
   @PostMapping
-  public ResponseEntity<Page<UserManagementResponse>> getAllUsers(
+  public ResponseEntity<ApiResponse<List<UserManagementResponse>>> getAllUsers(
       @RequestBody(required = false) UserQueryRequest request) {
 
     if (request == null) {
@@ -99,7 +101,7 @@ public class SystemAdminController {
         request.getSearch(), request.getRole(), request.getStatus(),
         request.getDateFrom(), request.getDateTo(), pageable);
 
-    return ResponseEntity.ok(users);
+    return ResponseEntity.ok(ApiResponse.page(users));
   }
 
   /**

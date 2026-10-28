@@ -1,10 +1,12 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.domain.enums.UserStatus;
 import com.capstone.be.dto.request.admin.UpdateUserStatusRequest;
 import com.capstone.be.dto.response.admin.AdminOrganizationResponse;
 import com.capstone.be.service.UserService;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +41,7 @@ public class AdminOrganizationController {
    * GET /api/v1/admin/organizations
    */
   @GetMapping
-  public ResponseEntity<Page<AdminOrganizationResponse>> getAllOrganizations(
+  public ResponseEntity<ApiResponse<List<AdminOrganizationResponse>>> getAllOrganizations(
       @RequestParam(name = "status", required = false) UserStatus status,
       @RequestParam(name = "search", required = false) String search,
       @RequestParam(name = "page", defaultValue = "0") int page,
@@ -92,7 +94,7 @@ public class AdminOrganizationController {
     Page<AdminOrganizationResponse> organizations = userService.getAllOrganizations(status, trimmedSearch,
         pageable);
 
-    return ResponseEntity.ok(organizations);
+    return ResponseEntity.ok(ApiResponse.page(organizations));
   }
 
   /**

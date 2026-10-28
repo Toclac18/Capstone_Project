@@ -42,6 +42,7 @@ import com.capstone.be.repository.specification.DocumentUploadHistorySpecificati
 import com.capstone.be.service.AiDocumentModerationAndSummarizationService;
 import com.capstone.be.service.DocumentAccessService;
 import com.capstone.be.service.DocumentConversionService;
+import com.capstone.be.event.DocumentStatusChangedEvent;
 import com.capstone.be.service.DocumentService;
 import com.capstone.be.service.DocumentUploadService;
 import com.capstone.be.service.DocumentThumbnailService;
@@ -59,6 +60,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -99,9 +101,9 @@ public class DocumentServiceImpl implements DocumentService {
   private final DocumentAccessService documentAccessService;
   private final OrgEnrollmentRepository orgEnrollmentRepository;
   private final NotificationHelper notificationHelper;
-  private final EmailService emailService;
   private final DocumentTagWriter documentTagWriter;
   private final DocumentConfigValues documentConfigValues;
+  private final ApplicationEventPublisher events;
   private final DocumentUploadService documentUploadService;
 
   /**
@@ -869,7 +871,7 @@ public class DocumentServiceImpl implements DocumentService {
 
     log.info("Successfully activated document {}", documentId);
 
-    notifyDocumentOwnerStatusChange(document, DocStatus.ACTIVE, "Activated by Business Admin");
+    publishStatusChanged(document, DocStatus.ACTIVE, "Activated by Business Admin");
   }
 
   @Override
@@ -885,7 +887,7 @@ public class DocumentServiceImpl implements DocumentService {
 
     log.info("Successfully deactivated document {}", documentId);
 
-    notifyDocumentOwnerStatusChange(document, DocStatus.INACTIVE, "Deactivated by Business Admin");
+    publishStatusChanged(document, DocStatus.INACTIVE, "Deactivated by Business Admin");
   }
 
   @Override
@@ -901,30 +903,7 @@ public class DocumentServiceImpl implements DocumentService {
 
     log.info("Successfully updated document {} status to {}", documentId, status);
 
-    notifyDocumentOwnerStatusChange(document, status, "Status updated by Business Admin");
-  }
-
-  /**
-   * Notify document uploader about status changes.
-   * This is a best-effort notification and should not break business flow.
-   */
-  private void notifyDocumentOwnerStatusChange(Document document, DocStatus newStatus, String reason) {
-    try {
-      User uploader = document.getUploader();
-      if (uploader == null || uploader.getEmail() == null) {
-        return;
-      }
-
-      emailService.sendDocumentStatusUpdateEmail(
-          uploader.getEmail(),
-          uploader.getFullName(),
-          document.getTitle(),
-          newStatus,
-          reason
-      );
-    } catch (Exception e) {
-      log.warn("Failed to send document status update email for document {}: {}", document.getId(), e.getMessage());
-    }
+    publishStatusChanged(document, status, "Status updated by Business Admin");
   }
 
   private DocumentDetailResponse mapDocumentToDetailResponse(Document document, UUID userId) {
@@ -1277,6 +1256,26 @@ public class DocumentServiceImpl implements DocumentService {
             .createdAt(v.getCreatedAt())
             .build())
         .collect(Collectors.toList());
+  }
+
+
+  /**
+   * Phát event để {@link com.capstone.be.event.DocumentStatusChangedListener} gửi email
+   * SAU KHI transaction commit.
+   *
+   * <p>Giá trị được đọc ngay ở đây, lúc còn trong transaction — event không mang entity
+   * vì listener chạy sau commit, khi quan hệ lazy đã không đọc được nữa.
+   */
+  private void publishStatusChanged(Document document, DocStatus newStatus, String reason) {
+    User uploader = document.getUploader();
+    events.publishEvent(new DocumentStatusChangedEvent(
+        document.getId(),
+        document.getTitle(),
+        uploader != null ? uploader.getEmail() : null,
+        uploader != null ? uploader.getFullName() : null,
+        newStatus,
+        reason
+    ));
   }
 
   @Override

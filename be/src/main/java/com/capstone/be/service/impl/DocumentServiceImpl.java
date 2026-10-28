@@ -46,6 +46,7 @@ import com.capstone.be.service.DocumentService;
 import com.capstone.be.service.DocumentThumbnailService;
 import com.capstone.be.service.EmailService;
 import com.capstone.be.service.FileStorageService;
+import com.capstone.be.service.helper.DocumentTagWriter;
 import com.capstone.be.service.helper.NotificationHelper;
 import com.capstone.be.service.SystemConfigService;
 import com.capstone.be.util.StringUtil;
@@ -81,7 +82,6 @@ public class DocumentServiceImpl implements DocumentService {
   private final OrganizationProfileRepository organizationProfileRepository;
   private final SpecializationRepository specializationRepository;
   private final DocTypeRepository docTypeRepository;
-  private final TagRepository tagRepository;
   private final DocumentRepository documentRepository;
   private final DocumentTagLinkRepository documentTagLinkRepository;
   private final DocumentRedemptionRepository documentRedemptionRepository;
@@ -102,6 +102,7 @@ public class DocumentServiceImpl implements DocumentService {
   private final EmailService emailService;
   private final DocumentConversionService documentConversionService;
   private final SystemConfigService systemConfigService;
+  private final DocumentTagWriter documentTagWriter;
 
   @Value("${app.document.defaultPremiumPrice:100}")
   private Integer defaultPremiumPriceFallback;
@@ -169,7 +170,7 @@ public class DocumentServiceImpl implements DocumentService {
     OrganizationProfile organization = getOrganizationIfProvided(request.getOrganizationId());
 
     // Handle tags (existing and new)
-    Set<Tag> allTags = handleTags(request.getTagCodes(), request.getNewTags());
+    Set<Tag> allTags = documentTagWriter.handleTags(request.getTagCodes(), request.getNewTags());
 
     // Upload file to S3
     String fileKey = fileStorageService.uploadFile(fileToUpload, FileStorage.DOCUMENT_FOLDER, null);
@@ -197,7 +198,7 @@ public class DocumentServiceImpl implements DocumentService {
     log.info("Created document with ID: {}", document.getId());
 
     // Save document-tag relationships
-    saveDocumentTagLinks(document, allTags);
+    documentTagWriter.saveDocumentTagLinks(document, allTags);
     log.info("Saved {} document-tag relationships", allTags.size());
 
     // Notify BUSINESS_ADMIN if document needs reviewer assignment
@@ -380,141 +381,6 @@ public class DocumentServiceImpl implements DocumentService {
   }
 
   /**
-   * Handle existing tags and create new tags with PENDING status
-   *
-   * @return Set of all tags (existing + newly created)
-   */
-  private Set<Tag> handleTags(List<Long> tagCodes, List<String> newTags) {
-    Set<Tag> allTags = new HashSet<>();
-
-    // ===== 1. Handle existing tags by codes =====
-    if (tagCodes != null && !tagCodes.isEmpty()) {
-
-      // Fetch all ACTIVE tags by code (single query)
-      Set<Tag> existingTags = tagRepository.findAllByStatusAndCodeIn(TagStatus.ACTIVE, tagCodes);
-
-      // Extract actual existing codes
-      Set<Long> existingCodes = existingTags.stream()
-          .map(Tag::getCode)
-          .collect(Collectors.toSet());
-
-      // If any requested code is missing → invalid
-      if (existingCodes.size() < tagCodes.size()) {
-        List<Long> invalidTagCodes = tagCodes.stream()
-            .filter(code -> !existingCodes.contains(code))
-            .toList();
-
-        throw new InvalidRequestException(
-            "Invalid tag codes: " + invalidTagCodes,
-            "INVALID_TAG"
-        );
-      }
-
-      allTags.addAll(existingTags);
-      log.info("Found {} existing active tags", existingTags.size());
-    }
-
-    // ===== 2. Handle new tags (by name) =====
-    if (newTags != null && !newTags.isEmpty()) {
-      // Validate new tag names
-      java.util.regex.Pattern validTagPattern = java.util.regex.Pattern.compile("^[\\p{L}\\p{N}\\s\\-]+$");
-      
-      for (String rawName : newTags) {
-        if (rawName != null && !rawName.trim().isEmpty()) {
-          String trimmedName = rawName.trim();
-          if (trimmedName.length() > 50) {
-            throw new InvalidRequestException(
-                "Tag name must not exceed 50 characters: " + trimmedName,
-                "INVALID_TAG_NAME"
-            );
-          }
-          if (!validTagPattern.matcher(trimmedName).matches()) {
-            throw new InvalidRequestException(
-                "Tag name can only contain letters, numbers, spaces, and hyphens: " + trimmedName,
-                "INVALID_TAG_NAME"
-            );
-          }
-        }
-      }
-      
-      // Map normalizedName -> originalName (keep original name for display)
-      Map<String, String> normalizedToOriginal = new HashMap<>();
-
-      for (String rawName : newTags) {
-        if (rawName == null) {
-          continue;
-        }
-        String trimmedName = rawName.trim();
-        if (trimmedName.isEmpty()) {
-          continue;
-        }
-
-        String normalized = StringUtil.normalize(trimmedName);
-        if (normalized.isEmpty()) {
-          continue;
-        }
-
-        // If duplicate normalized name within the same request → keep the first one
-        normalizedToOriginal.putIfAbsent(normalized, trimmedName);
-      }
-
-      if (!normalizedToOriginal.isEmpty()) {
-        Set<String> normalizedNames = normalizedToOriginal.keySet();
-
-        // Find existing tags by normalizedName (single query)
-        Set<Tag> existingTags = tagRepository.findAllByNormalizedNameIn(normalizedNames);
-
-        Map<String, Tag> existinTagMap = existingTags.stream()
-            .collect(Collectors.toMap(Tag::getNormalizedName, tag -> tag));
-
-        // Create new tags for names that do not exist
-        List<Tag> tagsToCreate = new ArrayList<>();
-        for (Map.Entry<String, String> entry : normalizedToOriginal.entrySet()) {
-          String normalized = entry.getKey();
-          String originalName = entry.getValue();
-
-          if (existinTagMap.containsKey(normalized)) {
-            log.warn("Tag with name '{}' already exists (normalized: '{}'), skipping creation",
-                originalName, normalized);
-
-            //Add to result
-            allTags.add(existinTagMap.get(normalized));
-            continue;
-          }
-
-          Tag newTag = Tag.builder()
-              .name(originalName)
-              .normalizedName(normalized)
-              .status(TagStatus.PENDING) // waiting for admin approval
-              .build();
-
-          tagsToCreate.add(newTag);
-        }
-
-        if (!tagsToCreate.isEmpty()) {
-          List<Tag> savedNewTags = tagRepository.saveAll(tagsToCreate);
-          allTags.addAll(savedNewTags);
-          log.info("Created {} new tags with PENDING status for admin approval",
-              savedNewTags.size());
-          
-          // Notify BUSINESS_ADMIN about new tags
-          String tagNames = savedNewTags.stream()
-              .map(Tag::getName)
-              .collect(Collectors.joining(", "));
-          notificationHelper.sendNotificationToBusinessAdmins(
-              com.capstone.be.domain.enums.NotificationType.INFO,
-              "New Tags Created",
-              String.format("User has created %d new tag(s) that need approval: %s", 
-                  savedNewTags.size(), tagNames)
-          );
-        }
-      }
-    }
-
-    return allTags;
-  }
-
-  /**
    * Create document entity
    */
   private Document createDocument(
@@ -550,20 +416,6 @@ public class DocumentServiceImpl implements DocumentService {
         .upvoteCount(0)
         .voteScore(0)
         .build();
-  }
-
-  /**
-   * Save document-tag relationships
-   */
-  private void saveDocumentTagLinks(Document document, Set<Tag> tags) {
-    Set<DocumentTagLink> links = tags.stream()
-        .map(tag -> DocumentTagLink.builder()
-            .document(document)
-            .tag(tag)
-            .build())
-        .collect(Collectors.toSet());
-
-    documentTagLinkRepository.saveAll(links);
   }
 
   @Override
@@ -843,7 +695,7 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     // Process tags
-    Set<Tag> allTags = handleTags(request.getTagCodes(), request.getNewTags());
+    Set<Tag> allTags = documentTagWriter.handleTags(request.getTagCodes(), request.getNewTags());
 
     // Update document fields
     document.setTitle(request.getTitle());
@@ -869,7 +721,7 @@ public class DocumentServiceImpl implements DocumentService {
     documentTagLinkRepository.deleteAllByDocumentId(document.getId());
 
     // Save new links
-    saveDocumentTagLinks(document, allTags);
+    documentTagWriter.saveDocumentTagLinks(document, allTags);
     log.info("Updated {} document-tag relationships", allTags.size());
 
     // Build and return response using mapper

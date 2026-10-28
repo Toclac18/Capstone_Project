@@ -86,7 +86,6 @@ public class SecurityConfig {
                 "/swagger-ui.html",
 
                 "/public/**",
-                "/dev/**",
                 "/contact-tickets/**", // Public endpoint for ticket creation, auth handled in controller
                 "/error", // Error page
                 "/api/error" // API error page

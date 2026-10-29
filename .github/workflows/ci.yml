@@ -107,10 +107,10 @@ jobs:
         run: npx tsc --noEmit
 
       # Ngân sách warning: 0 error, và KHÔNG được vượt số warning hiện tại.
-      # Không bắt dọn 408 warning đang có, nhưng chặn con số đó tăng.
+      # Không bắt dọn 353 warning đang có, nhưng chặn con số đó tăng.
       # Dọn bớt được thì hạ số này xuống — xem docs/architecture/04-conventions.md §7.
       - name: Lint
-        run: npx eslint . --ext .js,.jsx,.ts,.tsx --max-warnings 408
+        run: npx eslint . --ext .js,.jsx,.ts,.tsx --max-warnings 353
 
       - name: Build
         run: npm run build

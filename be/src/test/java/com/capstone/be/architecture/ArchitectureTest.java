@@ -120,14 +120,18 @@ class ArchitectureTest {
               .because("controller nhận và trả DTO; để entity lọt ra API là "
                   + "gắn hình dạng bảng vào hợp đồng công khai"));
 
+  /**
+   * Luật này KHÔNG đóng băng: Phase 1 đã bỏ hết 5 endpoint trả Page<T> thô, nên nó
+   * sạch và mọi vi phạm mới làm fail ngay. Đây là ratchet hoạt động đúng — luật bắt
+   * đầu ở trạng thái đóng băng với 5 vi phạm, và siết thành chặt khi nợ đã dọn xong.
+   */
   @ArchTest
   static final ArchRule controller_khong_duoc_tra_Page_tho =
-      FreezingArchRule.freeze(
-          noMethods()
-              .that().areDeclaredInClassesThat().areAnnotatedWith(RestController.class)
-              .should(returnTypeMentioning("org.springframework.data.domain.Page"))
-              .because("Page<T> thô là hình dạng response thứ ba mà Phase 1 xoá bỏ; "
-                  + "dùng ApiResponse.page(...) — xem docs/architecture/02 §1.4"));
+      noMethods()
+          .that().areDeclaredInClassesThat().areAnnotatedWith(RestController.class)
+          .should(returnTypeMentioning("org.springframework.data.domain.Page"))
+          .because("Page<T> thô là hình dạng response thứ ba mà Phase 1 xoá bỏ; "
+              + "dùng ApiResponse.page(...) — xem docs/architecture/02 §1.4");
 
   /**
    * Kiểu trả về có nhắc tới một lớp nào đó, kể cả ở tham số generic.

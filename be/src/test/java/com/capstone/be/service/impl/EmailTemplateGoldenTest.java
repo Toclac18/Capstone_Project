@@ -42,7 +42,9 @@ class EmailTemplateGoldenTest {
 
   private static EmailServiceImpl newService() {
     JavaMailSender sender = org.mockito.Mockito.mock(JavaMailSender.class);
-    EmailServiceImpl s = new EmailServiceImpl(sender);
+    // Renderer thật, nạp template từ classpath — đó chính là thứ cần kiểm.
+    EmailServiceImpl s = new EmailServiceImpl(
+        sender, new com.capstone.be.service.helper.EmailTemplateRenderer());
     set(s, "fromEmail", "no-reply@capstone.test");
     set(s, "verificationBaseUrl", "https://app.test/auth/verify-email");
     set(s, "joinOrganizationBaseUrl", "https://app.test/reader/join-organization");

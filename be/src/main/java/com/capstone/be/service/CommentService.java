@@ -1,11 +1,12 @@
 package com.capstone.be.service;
 
-import com.capstone.be.dto.common.PagedResponse;
+import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.dto.request.comment.CreateCommentRequest;
 import com.capstone.be.dto.request.comment.UpdateCommentRequest;
 import com.capstone.be.dto.response.comment.CommentResponse;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface CommentService {
@@ -16,7 +17,7 @@ public interface CommentService {
 
     void deleteComment(UUID commentId, UUID userId);
 
-    PagedResponse<CommentResponse> getCommentsByDocument(UUID documentId, Pageable pageable);
+    ApiResponse<List<CommentResponse>> getCommentsByDocument(UUID documentId, Pageable pageable);
 
     CommentResponse getCommentById(UUID commentId);
 }

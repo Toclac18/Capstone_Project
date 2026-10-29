@@ -1,8 +1,8 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.domain.enums.ReportReason;
 import com.capstone.be.domain.enums.ReportStatus;
-import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.report.CreateReportRequest;
 import com.capstone.be.dto.request.report.UpdateReportRequest;
 import com.capstone.be.dto.response.report.ReportResponse;
@@ -11,6 +11,7 @@ import com.capstone.be.service.DocumentReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -79,7 +80,7 @@ public class DocumentReportController {
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
   @Operation(summary = "Get all reports (BA only)",
       description = "Get all document reports with optional filters")
-  public ResponseEntity<PagedResponse<ReportResponse>> getAllReports(
+  public ResponseEntity<ApiResponse<List<ReportResponse>>> getAllReports(
       @RequestParam(name = "status", required = false) ReportStatus status,
       @RequestParam(name = "reason", required = false) ReportReason reason,
       @RequestParam(name = "documentId", required = false) UUID documentId,
@@ -91,7 +92,7 @@ public class DocumentReportController {
     Page<ReportResponse> reports = documentReportService.getAllReports(
         status, reason, documentId, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(reports));
+    return ResponseEntity.ok(ApiResponse.page(reports));
   }
 
   /**
@@ -150,7 +151,7 @@ public class DocumentReportController {
   @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get my reports",
       description = "Get all reports submitted by the current user")
-  public ResponseEntity<PagedResponse<ReportResponse>> getMyReports(
+  public ResponseEntity<ApiResponse<List<ReportResponse>>> getMyReports(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
@@ -159,6 +160,6 @@ public class DocumentReportController {
 
     Page<ReportResponse> reports = documentReportService.getMyReports(userId, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(reports));
+    return ResponseEntity.ok(ApiResponse.page(reports));
   }
 }

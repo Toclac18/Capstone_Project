@@ -1,12 +1,12 @@
 package com.capstone.be.controller;
 
 import com.capstone.be.dto.common.ApiResponse;
-import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.domain.CreateDomainRequest;
 import com.capstone.be.dto.request.domain.UpdateDomainRequest;
 import com.capstone.be.dto.response.domain.DomainDetailResponse;
 import com.capstone.be.service.DomainService;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +41,7 @@ public class AdminDomainController {
    */
   @GetMapping
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
-  public ResponseEntity<PagedResponse<DomainDetailResponse>> getAllDomains(
+  public ResponseEntity<ApiResponse<List<DomainDetailResponse>>> getAllDomains(
       @RequestParam(name = "name", required = false) String name,
       @RequestParam(name = "dateFrom", required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant dateFrom,
       @RequestParam(name = "dateTo", required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant dateTo,
@@ -51,7 +51,7 @@ public class AdminDomainController {
     
     Page<DomainDetailResponse> page = domainService.getAllDomainsForAdmin(name, dateFrom, dateTo, pageable);
 
-    PagedResponse<DomainDetailResponse> response = PagedResponse.of(page,
+    ApiResponse<List<DomainDetailResponse>> response = ApiResponse.page(page,
         "Domains retrieved successfully");
 
     return ResponseEntity.ok(response);

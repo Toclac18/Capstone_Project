@@ -1,14 +1,15 @@
 package com.capstone.be.controller;
 
 import com.capstone.be.domain.enums.LogAction;
+import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.dto.common.PageInfo;
-import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.reviewer.ApproveReviewerRequest;
 import com.capstone.be.dto.response.reviewer.PendingReviewerResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.ReviewerApprovalService;
 import com.capstone.be.util.AuditLogHelper;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,19 +44,14 @@ public class ReviewerApprovalController {
    */
   @GetMapping("/pending")
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
-  public ResponseEntity<PagedResponse<PendingReviewerResponse>> getPendingReviewers(
+  public ResponseEntity<ApiResponse<List<PendingReviewerResponse>>> getPendingReviewers(
       Pageable pageable) {
     log.info("Get pending reviewers request - page: {}, size: {}",
         pageable.getPageNumber(), pageable.getPageSize());
 
     Page<PendingReviewerResponse> page = reviewerApprovalService.getPendingReviewers(pageable);
 
-    PagedResponse<PendingReviewerResponse> response = PagedResponse.<PendingReviewerResponse>builder()
-        .success(true)
-        .message("Pending reviewers retrieved successfully")
-        .data(page.getContent())
-        .pageInfo(PageInfo.from(page))
-        .build();
+    ApiResponse<List<PendingReviewerResponse>> response = ApiResponse.page(page, "Pending reviewers retrieved successfully");
 
     return ResponseEntity.ok(response);
   }

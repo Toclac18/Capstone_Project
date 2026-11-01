@@ -114,7 +114,7 @@ def _routes(app) -> set[tuple[str, str]]:
 
 
 def test_khong_thieu_route_nao(app):
-    assert EXPECTED_ROUTES <= _routes(app)
+    assert _routes(app) >= EXPECTED_ROUTES
 
 
 def test_khong_them_route_la(app):

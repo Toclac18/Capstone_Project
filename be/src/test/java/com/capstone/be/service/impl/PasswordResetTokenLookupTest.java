@@ -41,6 +41,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * email template: FE dựa vào đúng các thông điệp lỗi này
  * ({@code fe/src/app/auth/forgot-password}), nên đổi chúng là đổi hợp đồng.
  *
+ * <p>Hai test cuối là regression cho chính lý do sửa: bản cũ gọi {@code findAll()} rồi
+ * chạy bcrypt tuần tự cho từng dòng để tìm token.
  */
 @ExtendWith(MockitoExtension.class)
 class PasswordResetTokenLookupTest {
@@ -160,6 +162,41 @@ class PasswordResetTokenLookupTest {
 
     // Người dùng còn dùng lại được token để thử mật khẩu khác.
     assertThat(stored.getUsed()).isFalse();
+  }
+
+  @Test
+  @DisplayName("Tra token KHÔNG tải cả bảng về RAM")
+  void lookupDoesNotLoadWholeTable() {
+    // Regression: bản cũ gọi `findAll()` — tải MỌI dòng từng được tạo (kể cả đã
+    // dùng, đã hết hạn) rồi lọc trong RAM, mỗi lần có người đặt lại mật khẩu.
+    // Bảng chỉ lớn lên vì `deleteExpiredTokens` không có ai gọi.
+    PasswordResetToken stored = validToken();
+    tokenInStore(stored);
+    when(passwordEncoder.matches(eq(NEW_PASSWORD), anyString())).thenReturn(false);
+    when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn("$2a$10$new");
+
+    service.resetPasswordWithToken(RAW_TOKEN, NEW_PASSWORD);
+
+    verify(passwordResetTokenRepository, org.mockito.Mockito.never()).findAll();
+    verify(passwordResetTokenRepository).findValidTokenByHash(anyString(), any());
+  }
+
+  @Test
+  @DisplayName("Chi phí tra token không phụ thuộc số token trong bảng")
+  void lookupCostIsIndependentOfTokenCount() {
+    // Bản cũ chạy bcrypt tuần tự cho TỪNG token chưa dùng và chưa hết hạn.
+    // bcrypt chậm có chủ ý, nên số lần gọi nó là thứ phải chốt.
+    PasswordResetToken stored = validToken();
+    tokenInStore(stored);
+    when(passwordEncoder.matches(eq(NEW_PASSWORD), anyString())).thenReturn(false);
+    when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn("$2a$10$new");
+
+    service.resetPasswordWithToken(RAW_TOKEN, NEW_PASSWORD);
+
+    // Đúng MỘT lần matches, và đó là lần so mật khẩu mới với mật khẩu cũ —
+    // không có lần nào dùng để đi tìm token.
+    verify(passwordEncoder, org.mockito.Mockito.times(1)).matches(anyString(), anyString());
+    verify(passwordEncoder).matches(eq(NEW_PASSWORD), eq("$2a$10$hash-of-the-OLD-password"));
   }
 
   @Test

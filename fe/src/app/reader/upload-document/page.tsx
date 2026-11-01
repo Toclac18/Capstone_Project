@@ -35,6 +35,7 @@ export default function UploadDocumentPage() {
   const typeIdRef = useRef<HTMLSelectElement>(null);
   const domainRef = useRef<HTMLSelectElement>(null);
   const tagDropdownRef = useRef<HTMLDivElement>(null);
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -110,43 +111,25 @@ export default function UploadDocumentPage() {
     loadOptions();
   }, [showToast]);
 
-  // Fetch specializations when domain changes
+  // Fetch specializations when domain changes.
+  // Chỉ phụ thuộc selectedDomainId: để cả selectedSpecializationId trong deps
+  // thì mỗi lần người dùng CHỌN một chuyên ngành là effect chạy lại và gọi
+  // lại API, dù danh sách không đổi.
   useEffect(() => {
-    if (selectedDomainId) {
-      const loadSpecializations = async () => {
-        try {
-          const results = await fetchSpecializations([selectedDomainId]);
-          setSpecializations(results);
-          // Reset specialization if current one doesn't belong to selected domain
-          if (selectedSpecializationId && !results.some((s) => s.id === selectedSpecializationId)) {
-            setSelectedSpecializationId("");
-          }
-        } catch {
-          // Ignore errors
-        }
-      };
-      loadSpecializations();
-    } else {
+    if (!selectedDomainId) {
       setSpecializations([]);
       setSelectedSpecializationId("");
+      return;
     }
-  }, [selectedDomainId, selectedSpecializationId]);
-
-  // Load tags (no search param)
-  useEffect(() => {
-    const loadTags = async () => {
-        try {
-        const results = await fetchTags();
-          setTags(results);
-        if (tagSearch.trim()) {
-          setShowTagDropdown(true);
-        }
-        } catch {
+    const loadSpecializations = async () => {
+      try {
+        setSpecializations(await fetchSpecializations([selectedDomainId]));
+      } catch {
         // Ignore errors
-        }
-      };
-    loadTags();
-  }, [tagSearch]);
+      }
+    };
+    loadSpecializations();
+  }, [selectedDomainId]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -167,6 +150,15 @@ export default function UploadDocumentPage() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showTagDropdown]);
+
+  // Huỷ hẹn điều hướng nếu người dùng rời trang trước khi nó chạy
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
 
   // Cleanup file preview URL when component unmounts
   useEffect(() => {
@@ -639,9 +631,12 @@ export default function UploadDocumentPage() {
       // Reset form
       resetForm();
 
-      // Redirect to documents list after 2 seconds
-      setTimeout(() => {
-        router.push("/reader/upload-document");
+      // Sang danh sách tài liệu đã upload, chờ 2s để người dùng kịp đọc toast.
+      // Trước đây dòng này push về "/reader/upload-document" — tức CHÍNH trang
+      // đang đứng, nên upload xong không đi đâu cả dù chú thích nói "redirect
+      // to documents list".
+      redirectTimerRef.current = setTimeout(() => {
+        router.push("/reader/upload-history");
       }, 2000);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Failed to upload document";
@@ -1122,7 +1117,14 @@ export default function UploadDocumentPage() {
                       <input
                         type="text"
                         value={tagSearch}
-                        onChange={(e) => setTagSearch(e.target.value)}
+                        onChange={(e) => {
+                          setTagSearch(e.target.value);
+                          // Trước đây việc mở dropdown khi gõ nằm trong một
+                          // effect fetch lại toàn bộ tag mỗi ký tự.
+                          if (e.target.value.trim()) {
+                            setShowTagDropdown(true);
+                          }
+                        }}
                         onFocus={() => setShowTagDropdown(true)}
                         placeholder="Search or add new tag"
                         className={styles["tag-search-input"]}

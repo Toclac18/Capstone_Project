@@ -112,6 +112,13 @@ jobs:
       - name: Lint
         run: npx eslint . --ext .js,.jsx,.ts,.tsx --max-warnings 353
 
+      # vitest đã cài và `npm test` đã có trong package.json từ trước, nhưng
+      # CI chưa bao giờ gọi — 16 test trong src/server/bff.test.ts chạy xanh ở
+      # máy mà không chặn được gì. Giống hệt chuyện `gradle build` có cổng test
+      # mà src/test chỉ có ExampleTest (xem 01-assessment.md P2-13).
+      - name: Test
+        run: npm test
+
       - name: Build
         run: npm run build
 

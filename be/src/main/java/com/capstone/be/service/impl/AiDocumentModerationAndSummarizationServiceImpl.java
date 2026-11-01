@@ -398,7 +398,12 @@ public class AiDocumentModerationAndSummarizationServiceImpl implements
       AiModerationResponse.Violation v = response.getViolations().get(i);
       sb.append("\n").append(i + 1).append(". ");
       sb.append("Type: ").append(v.getType());
-      sb.append(", Page: ").append(v.getPage());
+      // AI bỏ hẳn field page khi không xác định được trang (ảnh trong DOCX:
+      // phân trang do trình soạn thảo quyết định lúc render). In "Page: null"
+      // vào email người dùng thì tệ hơn là không nói gì.
+      if (v.getPage() != null) {
+        sb.append(", Page: ").append(v.getPage());
+      }
       if (v.getSnippet() != null && !v.getSnippet().isEmpty()) {
         String snippet = v.getSnippet().length() > 50
             ? v.getSnippet().substring(0, 50) + "..."

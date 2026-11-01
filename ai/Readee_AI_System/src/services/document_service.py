@@ -28,7 +28,7 @@ import fitz  # PyMuPDF
 from docx import Document
 from PIL import Image
 
-from src.services.ocr_client import run_ocr_on_file, run_ocr_on_file_parallel, run_ocr_on_pages
+from src.services.ocr_client import run_ocr_on_pages
 
 
 class DocumentService:
@@ -258,7 +258,7 @@ class DocumentService:
         
         # Nếu không có trang nào cần OCR → dùng text trực tiếp
         if not pages_to_ocr:
-            logger.info(f"All pages have sufficient direct text. Using direct text extraction (fast path).")
+            logger.info("All pages have sufficient direct text. Using direct text extraction (fast path).")
             with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".txt", encoding="utf-8") as tf:
                 tf.write(direct_text)
                 text_path = tf.name

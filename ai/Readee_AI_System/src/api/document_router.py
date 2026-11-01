@@ -9,9 +9,9 @@ Pipeline:
 - Trả về status + violations + summaries + text_path.
 """
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Query, Header, Depends, Body
+from fastapi import APIRouter, HTTPException, UploadFile, File, Query, Header, Depends
 from pydantic import BaseModel, Field
-from typing import Dict, Any, List, Optional, Tuple, Union
+from typing import Dict, Any, List, Optional, Tuple
 import logging
 import tempfile
 import os
@@ -453,8 +453,8 @@ async def process_document(
     """
     try:
         filename = file.filename or "unknown"
-        logger.info(f"========================================")
-        logger.info(f"📄 Received document upload request")
+        logger.info("========================================")
+        logger.info("📄 Received document upload request")
         logger.info(f"   File name: {filename}")
         
         file_extension = Path(filename).suffix.lower()
@@ -480,11 +480,11 @@ async def process_document(
             )
         
         if file_size == 0:
-            logger.warning(f"   ❌ File is empty")
+            logger.warning("   ❌ File is empty")
             raise HTTPException(status_code=400, detail="File is empty")
         
-        logger.info(f"   ✓ File validation passed")
-        logger.info(f"========================================")
+        logger.info("   ✓ File validation passed")
+        logger.info("========================================")
 
         # Save uploaded file temporarily
         with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp:
@@ -534,274 +534,7 @@ async def process_document(
         logger.error(f"Error submitting document: {e}", exc_info=True)
         raise HTTPException(
             status_code=500, detail=f"Failed to submit document: {str(e)}"
-        )
-    start_time = time.time()
-    ocr_ms = 0.0
-    img_mod_ms = 0.0
-    text_mod_ms = 0.0
-    summary_ms = 0.0
-    temp_file_path: str | None = None
-    images = None
-    full_text = None
-    chunks = None
-
-    try:
-        logger.info(f"Processing document: {file.filename}")
-
-        file_extension = Path(file.filename).suffix.lower() if file.filename else ""
-        if file_extension not in [".pdf", ".docx"]:
-            raise HTTPException(
-                status_code=400, detail="File must be PDF or DOCX format"
-            )
-
-        # Kiểm tra kích thước file (giới hạn 10MB)
-        MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB in bytes
-        content = await file.read()
-        file_size = len(content)
-        
-        if file_size > MAX_FILE_SIZE:
-            raise HTTPException(
-                status_code=400,
-                detail=f"File size ({file_size / 1024 / 1024:.2f}MB) exceeds maximum allowed size of 10MB"
-            )
-        
-        if file_size == 0:
-            raise HTTPException(
-                status_code=400,
-                detail="File is empty"
-            )
-
-        # Save uploaded file temporarily
-        with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp:
-            temp.write(content)
-            temp_file_path = temp.name
-        # Clear file content từ memory ngay sau khi write
-        del content
-
-        doc_service = get_doc_service()
-        text_service = get_text_service()
-        image_service = get_image_service()
-
-        violations: List[Dict[str, Any]] = []
-        image_page_numbers: List[int] | None = None
-        page_ranges: Dict[int, Tuple[int, int]] | None = None
-        text_path: str | None = None  # Đường dẫn file txt từ OCR/DOCX
-
-        # ----- Extract text + images (OCR / DOCX parsing) -----
-        t0 = time.time()
-        if file_extension == ".pdf":
-            # Sử dụng parallel OCR để tăng tốc độ
-            full_text, text_path, images, image_page_numbers, page_ranges = await doc_service.process_pdf(temp_file_path, use_parallel=True)
-        else:
-            full_text, text_path, images, image_page_numbers, page_ranges = doc_service.process_docx(temp_file_path)
-        ocr_ms = (time.time() - t0) * 1000.0
-
-        # ----- Image và Text moderation (chạy song song để tăng tốc) -----
-        img_results = None
-        txt_results = None
-        chunks = None
-        chunk_page_numbers = None
-        img_mod_ms = 0.0
-        text_mod_ms = 0.0
-        
-        # Chuẩn bị tasks để chạy song song
-        tasks = []
-        task_types = []
-        
-        if images:
-            tasks.append(asyncio.to_thread(image_service.predict_batch, images))
-            task_types.append("image")
-        
-        if full_text.strip():
-            chunks, chunk_page_numbers = split_text_into_chunks(full_text, max_tokens=100, page_ranges=page_ranges)
-            tasks.append(asyncio.to_thread(text_service.predict_batch, chunks))
-            task_types.append("text")
-        
-        # Chạy song song image và text moderation
-        if tasks:
-            t1 = time.time()
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            total_moderation_ms = (time.time() - t1) * 1000.0
-            
-            # Phân loại kết quả và tính timing
-            result_idx = 0
-            for task_type in task_types:
-                result = results[result_idx]
-                result_idx += 1
-                
-                if isinstance(result, Exception):
-                    logger.error(f"Error in {task_type} moderation: {result}", exc_info=True)
-                    continue
-                    
-                if task_type == "image":
-                    img_results = result
-                    img_mod_ms = total_moderation_ms
-                elif task_type == "text":
-                    txt_results = result
-                    text_mod_ms = total_moderation_ms
-        
-        # Xử lý image violations
-        if img_results:
-            for idx, res in enumerate(img_results):
-                if res["is_toxic"] and res["confidence"] >= IMAGE_THRESHOLD:
-                    # Lấy page number cho ảnh này
-                    page_num = image_page_numbers[idx] if image_page_numbers and idx < len(image_page_numbers) else None
-                    
-                    # Đảm bảo confidence trong [0, 1] và tính phần trăm
-                    confidence_value = float(res["confidence"])
-                    confidence_value = max(0.0, min(1.0, confidence_value))  # Clamp trong [0, 1]
-                    confidence_percent = confidence_value * 100.0
-                    
-                    violation = {
-                        "type": "image",
-                        "index": idx,
-                        "prediction": res["prediction"],
-                        "confidence": confidence_value,  # Tỉ lệ [0, 1]
-                        "confidence_percent": round(confidence_percent, 2),  # Phần trăm [0, 100]
-                    }
-                    # Thêm page number nếu có
-                    if page_num is not None:
-                        violation["page"] = page_num
-                    
-                    violations.append(violation)
-                    # stop at first violation
-                    break
-            # Clear images ngay sau khi moderation xong (tiết kiệm RAM)
-            del images, img_results
-            images = None
-            if image_page_numbers:
-                del image_page_numbers
-            image_page_numbers = None
-        
-        # Xử lý text violations (chỉ nếu không có image violation)
-        if not violations and txt_results:
-            for idx, res in enumerate(txt_results):
-                if res["is_toxic"] and res["confidence"] >= TEXT_THRESHOLD:
-                    # Lấy toàn bộ chunk thay vì chỉ 200 ký tự đầu
-                    snippet = chunks[idx] if idx < len(chunks) else ""
-                    # Lấy page number cho chunk này
-                    page_num = chunk_page_numbers[idx] if idx < len(chunk_page_numbers) else None
-                    
-                    # Đảm bảo confidence trong [0, 1] và tính phần trăm
-                    confidence_value = float(res["confidence"])
-                    confidence_value = max(0.0, min(1.0, confidence_value))  # Clamp trong [0, 1]
-                    confidence_percent = confidence_value * 100.0
-                    
-                    violation = {
-                        "type": "text",
-                        "index": idx,
-                        "snippet": snippet,  # Toàn bộ chunk vi phạm
-                        "prediction": res["prediction"],
-                        "confidence": confidence_value,  # Tỉ lệ [0, 1]
-                        "confidence_percent": round(confidence_percent, 2),  # Phần trăm [0, 100]
-                    }
-                    # Thêm page number nếu có
-                    if page_num is not None:
-                        violation["page"] = page_num
-                    
-                    violations.append(violation)
-                    break
-            # Clear chunks sau khi moderation xong
-            del chunks, chunk_page_numbers, txt_results
-            chunks = None
-        
-        # Clear memory (chỉ collect generation 0 - nhanh hơn)
-        gc.collect(0)
-
-        if violations:
-            # Clear full_text nếu có violations (không cần summary)
-            if full_text:
-                del full_text
-                full_text = None
-            logger.info(
-                f"Document blocked. Violations: {len(violations)}. "
-                f"Total time: {time.time() - start_time:.2f}s"
-            )
-            return DocumentResponse(
-                status="fail",
-                violations=violations,
-                summaries=None,
-                timings={
-                    "ocr_ms": ocr_ms,
-                    "image_moderation_ms": img_mod_ms,
-                    "text_moderation_ms": text_mod_ms,
-                    "summary_ms": summary_ms,
-                    "total_ms": (time.time() - start_time) * 1000.0,
-                },
-            )
-
-        # ----- Summary -----
-        summary_service = get_summary_service()
-        t3 = time.time()
-        # Speed mode mặc định = True để tối ưu tốc độ
-        try:
-            summary_result = await summary_service.summarize_triple(
-                text=full_text, speed=True
-            )
-        except Exception as e:
-            # Log OOM error với message rõ ràng
-            if "out of memory" in str(e).lower() or "CUDA" in str(e):
-                logger.error(
-                    f"GPU out of memory during summary. "
-                    f"Consider reducing MAX_GPU_CONCURRENCY or using smaller model."
-                )
-            raise
-        finally:
-            # Clear full_text sau khi summary xong
-            if full_text:
-                del full_text
-                full_text = None
-        summary_ms = (time.time() - t3) * 1000.0
-
-        logger.info(
-            f"Document processed successfully. Total time: {time.time() - start_time:.2f}s"
-        )
-        return DocumentResponse(
-            status="pass",
-            violations=[],
-            summaries=summary_result.get("results") if summary_result else None,
-            timings={
-                "ocr_ms": ocr_ms,
-                "image_moderation_ms": img_mod_ms,
-                "text_moderation_ms": text_mod_ms,
-                "summary_ms": summary_ms,
-                "total_ms": (time.time() - start_time) * 1000.0,
-            },
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error processing document: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500, detail=f"Document processing failed: {str(e)}"
-        )
-    finally:
-        # Cleanup tất cả
-        if 'images' in locals() and images:
-            del images
-        if 'full_text' in locals() and full_text:
-            del full_text
-        if 'chunks' in locals() and chunks:
-            del chunks
-        if 'image_page_numbers' in locals() and image_page_numbers:
-            del image_page_numbers
-        if 'page_ranges' in locals() and page_ranges:
-            del page_ranges
-        # Xóa file txt từ OCR/DOCX sau khi đã xử lý xong
-        if 'text_path' in locals() and text_path and os.path.exists(text_path):
-            try:
-                os.unlink(text_path)
-                logger.info(f"Deleted OCR text file: {text_path}")
-            except Exception as e:
-                logger.warning(f"Failed to delete OCR text file {text_path}: {e}")
-        # Xóa file PDF/DOCX tạm
-        if temp_file_path and os.path.exists(temp_file_path):
-            try:
-                os.unlink(temp_file_path)
-            except Exception:
-                pass
-        # Force garbage collection để giải phóng memory (full collect ở cuối)
-        gc.collect()
+        ) from e
 
 
 @router.get("/process-document/{job_id}/status", response_model=JobStatusResponse)

@@ -103,8 +103,7 @@ def health():
 
 if __name__ == "__main__":
     import uvicorn
-    import sys
-    
+
     # Tắt màu trong uvicorn logs
     uvicorn.run(
         "app:app", 

@@ -16,6 +16,7 @@ import os
 import tempfile
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import torch
@@ -25,8 +26,6 @@ from pdf2image import convert_from_path
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
-
-app = FastAPI(title="OCR Service")
 
 # Đường dẫn poppler. Để trống trên Linux/macOS (poppler nằm trong PATH);
 # trên Windows trỏ tới ...\poppler-xx\Library\bin.
@@ -63,9 +62,13 @@ class OcrPageResponse(BaseModel):
     text: str
 
 
-@app.on_event("startup")
-async def startup_event():
-    """Log GPU info khi service start."""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Startup/shutdown. Dùng lifespan thay `@app.on_event` (đã deprecated trong
+    FastAPI, và in DeprecationWarning ở mỗi lần chạy test).
+    Shutdown: tắt thread pool, nếu không thread render trang còn treo lại.
+    """
     logger.info("=" * 60)
     logger.info("OCR Service Starting...")
     if torch.cuda.is_available():
@@ -80,6 +83,15 @@ async def startup_event():
     logger.info(f"Poppler path: {POPPLER_PATH or '(dùng PATH)'}")
     logger.info(f"Thư mục đầu vào được phép: {[str(d) for d in ALLOWED_INPUT_DIRS]}")
     logger.info("=" * 60)
+
+    try:
+        yield
+    finally:
+        logger.info("Shutting down OCR thread pool...")
+        executor.shutdown(wait=True)
+
+
+app = FastAPI(title="OCR Service", lifespan=lifespan)
 
 
 def _resolve_pdf_path(

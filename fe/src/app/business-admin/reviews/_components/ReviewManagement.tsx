@@ -38,6 +38,11 @@ import {
 } from "../../review-approval/api";
 import { ReviewDetailModal as ReviewResultDetailModal } from "../../review-approval/_components/ReviewDetailModal";
 import styles from "../styles.module.css";
+import {
+  currentRequestFor,
+  indexRequestsByDocument,
+  pendingRequestFor,
+} from "./reviewRequestIndex";
 
 type TabType =
   | "needs-assignment"
@@ -152,40 +157,29 @@ export function ReviewManagement() {
     fetchDocuments();
   }, [fetchDocuments]);
 
-  // Get review request for a document
-  const getReviewRequestForDocument = useCallback(
-    (documentId: string): ReviewRequestResponse | null => {
-      if (!reviewRequests || reviewRequests.length === 0) {
-        return null;
-      }
-
-      const docIdStr = String(documentId);
-      const allDocRequests = reviewRequests.filter((req) => {
-        const reqDocId = String(req.document?.id || "");
-        return reqDocId === docIdStr;
-      });
-
-      if (allDocRequests.length === 0) {
-        return null;
-      }
-
-      const activeRequests = allDocRequests.filter(
-        (req) => req.status === "PENDING" || req.status === "ACCEPTED",
-      );
-
-      if (activeRequests.length > 0) {
-        return activeRequests.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        )[0];
-      }
-
-      return allDocRequests.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      )[0];
-    },
+  // Chỉ mục request theo tài liệu — xem `reviewRequestIndex.ts` để biết vì
+  // sao cần nó (ba chỗ từng quét cả danh sách request cho từng tài liệu, và
+  // số phép so sánh đã đếm được).
+  const requestsByDocumentId = useMemo(
+    () => indexRequestsByDocument(reviewRequests),
     [reviewRequests],
+  );
+
+  const getReviewRequestForDocument = useCallback(
+    (documentId: string): ReviewRequestResponse | null =>
+      currentRequestFor(requestsByDocumentId, documentId),
+    [requestsByDocumentId],
+  );
+
+  const getPendingRequest = useCallback(
+    (documentId: string): ReviewRequestResponse | null =>
+      pendingRequestFor(requestsByDocumentId, documentId),
+    [requestsByDocumentId],
+  );
+
+  const hasPendingRequest = useCallback(
+    (documentId: string): boolean => getPendingRequest(documentId) !== null,
+    [getPendingRequest],
   );
 
   // Calculate stats
@@ -195,8 +189,6 @@ export function ReviewManagement() {
     let inReview = 0;
 
     documents.forEach((doc) => {
-      const docIdStr = String(doc.id);
-
       if (doc.status === "PENDING_REVIEW") {
         const req = getReviewRequestForDocument(doc.id);
         if (!req || (req.status !== "PENDING" && req.status !== "ACCEPTED")) {
@@ -204,11 +196,7 @@ export function ReviewManagement() {
         }
       }
 
-      const pendingRequests = reviewRequests.filter((req) => {
-        const reqDocId = String(req.document?.id || "");
-        return reqDocId === docIdStr && req.status === "PENDING";
-      });
-      if (pendingRequests.length > 0) {
+      if (hasPendingRequest(doc.id)) {
         pending++;
       }
 
@@ -236,7 +224,7 @@ export function ReviewManagement() {
       resultPending,
       resultCompleted,
     };
-  }, [documents, reviewRequests, getReviewRequestForDocument, reviewResults]);
+  }, [documents, getReviewRequestForDocument, hasPendingRequest, reviewResults]);
 
 
   // Filter and sort documents based on active tab
@@ -251,14 +239,7 @@ export function ReviewManagement() {
         return !req || (req.status !== "PENDING" && req.status !== "ACCEPTED");
       });
     } else if (activeTab === "pending") {
-      filtered = filtered.filter((doc) => {
-        const docIdStr = String(doc.id);
-        const pendingRequests = reviewRequests.filter((req) => {
-          const reqDocId = String(req.document?.id || "");
-          return reqDocId === docIdStr && req.status === "PENDING";
-        });
-        return pendingRequests.length > 0;
-      });
+      filtered = filtered.filter((doc) => hasPendingRequest(doc.id));
     } else if (activeTab === "in-review") {
       filtered = filtered.filter((doc) => {
         if (doc.status !== "REVIEWING") return false;
@@ -282,7 +263,7 @@ export function ReviewManagement() {
     documents,
     activeTab,
     getReviewRequestForDocument,
-    reviewRequests,
+    hasPendingRequest,
     sortOrder,
   ]);
 
@@ -750,24 +731,12 @@ export function ReviewManagement() {
                 </thead>
                 <tbody>
                   {paginatedDocuments.map((doc) => {
-                    const docIdStr = String(doc.id);
-                    let reviewRequest: ReviewRequestResponse | null = null;
-
-                    if (activeTab === "pending") {
-                      const pendingRequests = reviewRequests.filter((req) => {
-                        const reqDocId = String(req.document?.id || "");
-                        return reqDocId === docIdStr && req.status === "PENDING";
-                      });
-                      if (pendingRequests.length > 0) {
-                        reviewRequest = pendingRequests.sort(
-                          (a, b) =>
-                            new Date(b.createdAt).getTime() -
-                            new Date(a.createdAt).getTime(),
-                        )[0];
-                      }
-                    } else {
-                      reviewRequest = getReviewRequestForDocument(doc.id);
-                    }
+                    // Tab "pending" quan tâm đúng request đang chờ phản hồi;
+                    // các tab khác lấy request hiện hành của tài liệu.
+                    const reviewRequest =
+                      activeTab === "pending"
+                        ? getPendingRequest(doc.id)
+                        : getReviewRequestForDocument(doc.id);
 
                     const deadline =
                       reviewRequest?.status === "PENDING"

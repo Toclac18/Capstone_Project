@@ -11,7 +11,9 @@ import torch
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.document_router import router as document_router, process_document_internal
+from src.api.document_router import router as document_router
+from src.api.summary_router import router as summary_router
+from src.services.document_pipeline import process_document_internal
 from src.services.queue_manager import get_queue_manager
 
 # Setup logging với màu trắng (không dùng màu)
@@ -95,8 +97,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Router chính: /api/v1/process-document (đã nối OCR + moderation + summary)
+# /api/v1/process-document — nhận file, trả job_id, kết quả qua webhook/polling
 app.include_router(document_router)
+# /api/v1/summarize-text, /summarize-text-file — summarize text trực tiếp
+app.include_router(summary_router)
 
 
 @app.get("/health")

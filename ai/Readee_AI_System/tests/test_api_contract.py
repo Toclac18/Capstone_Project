@@ -29,10 +29,31 @@ class _Stub:
         return _Stub()
 
 
+def _module_getattr(attr: str):
+    """
+    Thuộc tính nào chưa khai báo thì trả về `_Stub`.
+
+    Cần thiết vì annotation kiểu `torch.Tensor` được evaluate NGAY lúc `def`
+    trên Python < 3.14 (từ 3.14, PEP 649 hoãn lại). Không có cái này thì
+    stub phải liệt kê đủ mọi tên mà `src/` dùng trong annotation, và thiếu
+    một tên là import lỗi — đúng cách CI 3.11 đã fail trong khi máy dev 3.14
+    thì không thấy gì.
+
+    Dunder vẫn raise AttributeError: máy import dò `__path__`, `__all__`...
+    và trả `_Stub` cho chúng làm nó hiểu sai.
+    """
+    if attr.startswith("__") and attr.endswith("__"):
+        raise AttributeError(attr)
+    return _Stub
+
+
 def _register(name: str, **attrs) -> types.ModuleType:
     module = types.ModuleType(name)
     for key, value in attrs.items():
         setattr(module, key, value)
+    # Thuộc tính khai báo tường minh ở trên vẫn thắng: __getattr__ của module
+    # (PEP 562) chỉ được gọi khi tra cứu thường thất bại.
+    module.__getattr__ = _module_getattr
     sys.modules[name] = module
     return module
 

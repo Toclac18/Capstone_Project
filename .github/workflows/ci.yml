@@ -138,6 +138,10 @@ jobs:
       - name: Compile check
         run: python -m compileall -q ai/Readee_AI_System/src ai/OCR_Service/src
 
+      # Chạy local thì dùng đúng 3.11 như ở đây. Từ Python 3.14 (PEP 649)
+      # annotation được evaluate lười, nên annotation lỗi im lặng trên máy
+      # dev 3.14 mà làm vỡ import ở bước này.
+      # tests/test_annotations_resolve.py chặn đúng lớp lỗi đó.
       - name: Pytest
         working-directory: ai/Readee_AI_System
         run: python -m pytest

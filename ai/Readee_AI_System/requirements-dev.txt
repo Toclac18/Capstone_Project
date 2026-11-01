@@ -1,5 +1,11 @@
 # Chỉ cho test + lint trong CI. requirements.txt thật cần torch/GPU nên CI
 # không cài được; test ở tests/ stub các lib ML để chạy không cần model.
+#
+# CI chạy Python 3.11 (.github/workflows/ci.yml). Nên chạy local cùng 3.11:
+# từ 3.14, PEP 649 hoãn evaluate annotation, nên annotation lỗi (ví dụ một
+# tên mà stub không có) im lặng trên 3.14 và làm vỡ import trên 3.11.
+# `tests/test_annotations_resolve.py` buộc resolve annotation nên bắt được
+# lớp lỗi đó ở mọi phiên bản, nhưng khác biệt khác thì không có gì chặn.
 pytest==8.3.4
 ruff==0.8.4
 pyyaml>=6.0

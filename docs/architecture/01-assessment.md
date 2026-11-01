@@ -9,7 +9,7 @@
 Capstone_Project/
 ├── be/   Spring Boot 3.3.3 · Java 21 · Gradle   430 file · 41.401 LOC
 ├── fe/   Next.js 16 · React 19 · TS strict      626 file · 85.528 LOC
-├── ai/   FastAPI · Python (2 service rời)        18 file ·  3.747 LOC
+├── ai/   FastAPI · Python (2 service rời)        18 file ·  3.747 LOC  ← nay 27 file
 └── .github/workflows/ci.yml                     build-only, không test/lint
 ```
 
@@ -193,10 +193,20 @@ Ví dụ feature *document*: `app/reader/upload-document/` + `app/api/documents/
 **P2-11. Component quá lớn:** **58 component React vượt 300 LOC**, 12 `page.tsx` vượt 150 LOC. Lớn nhất: `upload-document/page.tsx` 1.270, `Signup.tsx` 1.060, `ReviewManagement.tsx` 1.002, `EditDocumentModal.tsx` 760, `profile/page.tsx` 760.
 
 **P2-12. AI service đứng ngoài hệ thống:**
-- Hàng đợi **trong bộ nhớ** (`asyncio.Queue` + `Dict[str, Job]`, 1 worker tuần tự) ⇒ restart là mất sạch job đang chạy, BE treo chờ webhook không bao giờ tới.
-- `document_router.py` 1.055 LOC — toàn bộ API trong một file.
-- Không Dockerfile, không nằm trong `render.yaml`, không nằm trong CI, không lock dependency, không test.
-- `test6.pdf` (169 KB) commit ở thư mục gốc `ai/`.
+- Hàng đợi **trong bộ nhớ** (`asyncio.Queue` + `Dict[str, Job]`, 1 worker tuần tự) ⇒ restart là mất sạch job đang chạy, BE treo chờ webhook không bao giờ tới. **Còn nguyên** — xem §3 của `02-target-architecture.md`.
+- ~~`document_router.py` 1.055 LOC~~ → đã tách thành 6 module; 267 dòng trong đó là code không bao giờ chạy tới (bản sao của pipeline cũ nằm sau `raise`).
+- Không Dockerfile, không nằm trong `render.yaml` — **còn nguyên**. CI: đã có job `AI - Test & Lint`. Test: đã có 96 test chạy không cần GPU. Lock dependency: **còn nguyên** (vẫn `requirements.txt`, chưa có pyproject/lock).
+- ~~`test6.pdf` (169 KB) commit ở thư mục gốc `ai/`~~ → đã bỏ khỏi index.
+
+**P2-12b. Lỗi đúng/sai trong phần AI** (phát hiện khi review, không có trong bản rà soát đầu):
+- `ImageModerationService.predict_batch` — đường duy nhất pipeline dùng — **thiếu softmax**, nên `confidence` là logit thô. Ngưỡng chặn 0.5 đang so với logit: mọi cặp logit âm thì **không bao giờ chặn**, dù model nói toxic 69–99%. `predict()` một ảnh thì có softmax; chỉ đường batch thiếu. Nguyên nhân cấu trúc: hai đường chép riêng phần hậu xử lý.
+- Lỗi model kiểm duyệt bị `gather(return_exceptions=True)` bắt rồi `continue` ⇒ model OOM là document được **duyệt**. "Không kiểm được" bị tính thành "sạch".
+- `split_text_into_chunks` suy vị trí chunk từ độ dài chunk đã ghép, mà `" ".join` thu khoảng trắng về 1 ký tự ⇒ sai lệch cộng dồn, số trang vi phạm lệch dần (9/23 chunk sai trên PDF 10 trang có thụt lề).
+- Ảnh trong DOCX: `current_paragraph_count` khởi tạo 0 và không bao giờ tăng ⇒ **mọi** ảnh báo "trang 1".
+- `requirements.txt` của Readee_AI_System **không có torch/torchvision** dù 3 file import.
+- OCR_Service: `path` là query param không kiểm, không auth, bind `0.0.0.0` ⇒ đọc được file bất kỳ trên máy. Poppler hard-code `C:\poppler-25.11.0\...` ⇒ không chạy ngoài Windows.
+
+Tất cả đã sửa, mỗi lỗi một commit.
 
 **P2-13. CI có cổng nhưng không chặn được gì.**
 

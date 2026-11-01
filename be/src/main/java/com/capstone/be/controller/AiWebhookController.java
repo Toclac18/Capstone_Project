@@ -1,13 +1,11 @@
 package com.capstone.be.controller;
 
 import com.capstone.be.domain.entity.AiProcessingJob;
-import com.capstone.be.domain.entity.Document;
 import com.capstone.be.domain.enums.AiJobStatus;
 import com.capstone.be.dto.ai.WebhookPayload;
 import com.capstone.be.repository.AiProcessingJobRepository;
 import com.capstone.be.repository.DocumentRepository;
 import com.capstone.be.service.AiDocumentModerationAndSummarizationService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

@@ -5,7 +5,6 @@ import com.capstone.be.domain.entity.Specialization;
 import com.capstone.be.dto.request.specialization.CreateSpecializationRequest;
 import com.capstone.be.dto.request.specialization.UpdateSpecializationRequest;
 import com.capstone.be.dto.response.specialization.SpecializationDetailResponse;
-import com.capstone.be.exception.DuplicateResourceException;
 import com.capstone.be.exception.InvalidRequestException;
 import com.capstone.be.exception.ResourceNotFoundException;
 import com.capstone.be.mapper.SpecializationMapper;

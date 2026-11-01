@@ -4,8 +4,6 @@ import com.capstone.be.domain.entity.Document;
 import com.capstone.be.domain.entity.DocumentReadHistory;
 import com.capstone.be.domain.entity.OrgEnrollment;
 import com.capstone.be.domain.entity.OrganizationProfile;
-import com.capstone.be.dto.response.statistics.GlobalDocumentStatisticsResponse.OrganizationBreakdown;
-import com.capstone.be.dto.response.statistics.GlobalDocumentStatisticsResponse.TypeBreakdown;
 import com.capstone.be.repository.CommentRepository;
 import com.capstone.be.repository.DocumentReadHistoryRepository;
 import com.capstone.be.repository.DocumentRepository;

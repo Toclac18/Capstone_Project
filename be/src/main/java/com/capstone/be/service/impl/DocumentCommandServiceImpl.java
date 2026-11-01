@@ -33,8 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.capstone.be.service.DocumentCommandService;
-import com.capstone.be.event.DocumentStatusChangedEvent;
-import org.springframework.context.ApplicationEventPublisher;
 
 /**
  * Thân các phương thức chuyển NGUYÊN VĂN từ DocumentServiceImpl, không đổi logic.

@@ -1,7 +1,6 @@
 package com.capstone.be.service.helper;
 
 import com.capstone.be.domain.entity.Document;
-import com.capstone.be.domain.entity.ReviewResult;
 import com.capstone.be.domain.entity.ReviewRequest;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.ReviewRequestStatus;

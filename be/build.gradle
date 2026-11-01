@@ -2,6 +2,7 @@ plugins {
     id 'org.springframework.boot' version '3.3.3'
     id 'io.spring.dependency-management' version '1.1.6'
     id 'java'
+    id 'checkstyle'
 }
 
 group = 'com.capstone'
@@ -113,3 +114,16 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 tasks.withType(Test).configureEach { useJUnitPlatform() }
+
+// Cổng import: chặn import không dùng mọc lại sau đợt tách god service.
+// Chỉ có luật về import — xem config/checkstyle/checkstyle.xml để biết vì sao hẹp.
+// Plugin checkstyle tự nối checkstyleMain/checkstyleTest vào `check`, mà `build`
+// phụ thuộc `check`, nên CI hiện có (`./gradlew build`) bắt được không cần sửa workflow.
+checkstyle {
+    toolVersion = '10.20.1'
+    configFile = file('config/checkstyle/checkstyle.xml')
+    // 0 vi phạm: ai/ và fe/ phải dùng ngân sách vì còn nợ, chỗ này đã dọn sạch
+    // nên đặt thẳng về 0.
+    maxWarnings = 0
+    maxErrors = 0
+}

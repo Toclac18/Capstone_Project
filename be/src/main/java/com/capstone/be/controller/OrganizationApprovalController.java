@@ -2,7 +2,6 @@ package com.capstone.be.controller;
 
 import com.capstone.be.domain.enums.LogAction;
 import com.capstone.be.dto.common.ApiResponse;
-import com.capstone.be.dto.common.PageInfo;
 import com.capstone.be.dto.request.organization.ApproveOrganizationRequest;
 import com.capstone.be.dto.response.organization.PendingOrganizationResponse;
 import com.capstone.be.security.model.UserPrincipal;

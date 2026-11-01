@@ -10,7 +10,6 @@ import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.DocVisibility;
 import com.capstone.be.dto.response.statistics.GlobalDocumentStatisticsResponse;
 import com.capstone.be.dto.response.statistics.GlobalDocumentStatisticsResponse.OrganizationBreakdown;
-import com.capstone.be.dto.response.statistics.GlobalDocumentStatisticsResponse.PremiumBreakdown;
 import com.capstone.be.dto.response.statistics.GlobalDocumentStatisticsResponse.TypeBreakdown;
 import com.capstone.be.repository.CommentRepository;
 import com.capstone.be.repository.DocumentReadHistoryRepository;

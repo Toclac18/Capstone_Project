@@ -1,7 +1,5 @@
 package com.capstone.be.service.impl;
 
-import com.capstone.be.domain.enums.UserRole;
-import com.capstone.be.domain.enums.UserStatus;
 import com.capstone.be.repository.UserRepository;
 import java.time.Instant;
 import java.time.LocalDate;

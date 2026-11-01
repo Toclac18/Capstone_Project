@@ -4,7 +4,13 @@ Chia full_text thành chunk cho text moderation, kèm số trang của mỗi chu
 Module này cố ý **không import torch/transformers**: nó là logic thuần nên
 test được mà không cần GPU hay model (xem `tests/test_text_chunker.py`).
 """
+import re
 from typing import Dict, List, Tuple
+
+# Một "từ" = chuỗi ký tự không phải khoảng trắng. Dùng finditer thay vì
+# str.split() để biết vị trí của từ trong text GỐC — xem ghi chú ở
+# split_text_into_chunks.
+_WORD_RE = re.compile(r"\S+")
 
 
 def split_text_into_chunks(
@@ -15,6 +21,11 @@ def split_text_into_chunks(
     """
     Tách text thành chunks và map về page numbers.
     Returns: (chunks, chunk_page_numbers)
+
+    Vị trí của chunk được lấy từ text GỐC, không suy ra từ độ dài chunk đã
+    ghép. `" ".join(words)` thu mọi chuỗi khoảng trắng về 1 ký tự, nên dòng
+    trống và thụt lề làm độ dài chunk ngắn hơn đoạn gốc — sai lệch đó cộng
+    dồn qua từng chunk và đẩy số trang lệch dần về phía trước.
     """
     max_chars = max_tokens * 4
 
@@ -23,49 +34,41 @@ def split_text_into_chunks(
         page_num = find_page_for_position(0, len(text), page_ranges)
         return [text], [page_num]
 
-    chunks = []
-    chunk_page_numbers = []
-    # Tách text thành từ (chỉ ở khoảng trắng)
-    words = text.split()
-    current_chunk: List[str] = []
-    current_length = 0
-    current_start_pos = 0
+    chunks: List[str] = []
+    chunk_page_numbers: List[int] = []
 
-    for word in words:
+    current_words: List[str] = []
+    current_length = 0
+    current_start_pos = 0  # offset trong `text` của từ đầu chunk
+    current_end_pos = 0  # offset kết thúc của từ cuối đã thêm
+
+    def flush() -> None:
+        chunks.append(" ".join(current_words))
+        chunk_page_numbers.append(
+            find_page_for_position(current_start_pos, current_end_pos, page_ranges)
+        )
+
+    for match in _WORD_RE.finditer(text):
+        word = match.group()
         # Độ dài từ + 1 khoảng trắng
         word_length = len(word) + 1
 
         # Nếu thêm từ này vượt quá max_chars và đã có từ trong chunk
         # -> Lưu chunk hiện tại, bắt đầu chunk mới
-        if current_length + word_length > max_chars and current_chunk:
-            chunk_text = " ".join(current_chunk)
-            chunks.append(chunk_text)
+        if current_length + word_length > max_chars and current_words:
+            flush()
+            current_words = []
+            current_length = 0
 
-            # Tìm page number cho chunk này
-            chunk_end_pos = current_start_pos + len(chunk_text)
-            page_num = find_page_for_position(
-                current_start_pos, chunk_end_pos, page_ranges
-            )
-            chunk_page_numbers.append(page_num)
-
-            current_chunk = [word]
-            current_length = word_length
-            # Cập nhật start position cho chunk mới
-            current_start_pos = chunk_end_pos + 1  # +1 cho space giữa chunks
-        else:
-            # Thêm từ vào chunk hiện tại
-            current_chunk.append(word)
-            current_length += word_length
+        if not current_words:
+            current_start_pos = match.start()
+        current_words.append(word)
+        current_length += word_length
+        current_end_pos = match.end()
 
     # Thêm chunk cuối cùng nếu còn
-    if current_chunk:
-        chunk_text = " ".join(current_chunk)
-        chunks.append(chunk_text)
-        chunk_end_pos = current_start_pos + len(chunk_text)
-        page_num = find_page_for_position(
-            current_start_pos, chunk_end_pos, page_ranges
-        )
-        chunk_page_numbers.append(page_num)
+    if current_words:
+        flush()
 
     return chunks, chunk_page_numbers
 

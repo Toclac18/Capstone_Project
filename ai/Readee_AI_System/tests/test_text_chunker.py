@@ -77,3 +77,70 @@ class TestFindPageForPosition:
     def test_vi_tri_vuot_qua_moi_trang_tra_ve_trang_cuoi(self):
         ranges = {1: (0, 100), 2: (100, 250)}
         assert find_page_for_position(5000, 5100, ranges) == 2
+
+
+class TestSoTrangCuaChunk:
+    """
+    Regression: trước đây vị trí chunk được suy ra từ độ dài chunk đã ghép
+    (`" ".join(words)`), vốn thu mọi chuỗi khoảng trắng về 1 ký tự. Dòng trống
+    và thụt lề trong PDF làm độ dài hụt đi, sai lệch cộng dồn và đẩy số trang
+    lệch dần. Với PDF 10 trang có thụt lề + dòng trống: 9/23 chunk sai trang.
+
+    Mỗi TỪ trong text thử nghiệm đều mang số trang (`p3w17`), nên từ đầu của
+    chunk cho biết trang thật — không phụ thuộc chunk bắt đầu ở đâu trong đoạn.
+    """
+
+    @staticmethod
+    def _trang_that(chunk: str) -> int:
+        return int(chunk.split()[0].split("w")[0].lstrip("p"))
+
+    def test_pdf_nhieu_dong_trong_va_thut_le_van_dung_trang(self):
+        def page(p: int) -> str:
+            lines = []
+            for para in range(8):
+                for _ in range(2):
+                    lines.append(
+                        "    " + " ".join(f"p{p}w{i:02d}" for i in range(9))
+                    )
+                lines.append("")  # dòng trống giữa đoạn
+            return "\n".join(lines)
+
+        full_text, page_ranges = pdf_like_pages([page(p) for p in range(1, 11)])
+        chunks, pages = split_text_into_chunks(
+            full_text, max_tokens=100, page_ranges=page_ranges
+        )
+
+        assert len(chunks) > 10, "cần nhiều chunk để sai lệch có cơ hội cộng dồn"
+        sai = [
+            (self._trang_that(c), reported)
+            for c, reported in zip(chunks, pages)
+            if self._trang_that(c) != reported
+        ]
+        assert sai == []
+
+    def test_khoang_trang_lien_tiep_dai_khong_lam_lech_trang(self):
+        def page(p: int) -> str:
+            return "\n\n\n".join(
+                "        " + " ".join(f"p{p}w{i:02d}" for i in range(12))
+                for _ in range(6)
+            )
+
+        full_text, page_ranges = pdf_like_pages([page(p) for p in range(1, 7)])
+        chunks, pages = split_text_into_chunks(
+            full_text, max_tokens=60, page_ranges=page_ranges
+        )
+        assert [self._trang_that(c) for c in chunks] == pages
+
+    def test_so_trang_khong_bao_gio_giam(self):
+        full_text, page_ranges = pdf_like_pages(
+            [
+                "\n".join(" ".join(f"p{p}w{i:02d}" for i in range(6)) for _ in range(40))
+                for p in range(1, 9)
+            ]
+        )
+        _, pages = split_text_into_chunks(
+            full_text, max_tokens=80, page_ranges=page_ranges
+        )
+        assert pages == sorted(pages)
+        assert pages[0] == 1
+        assert pages[-1] == 8

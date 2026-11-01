@@ -4,7 +4,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from huggingface_hub import login, HfFolder
 
-from .settings import MODEL_ID, GPU_MAX_MEM, OFFLOAD_DIR, LOCAL_ONLY, HF_TOKEN
+from ..config import MODEL_ID, GPU_MAX_MEM, OFFLOAD_DIR, LOCAL_ONLY, HF_TOKEN
 
 logger = logging.getLogger(__name__)
 

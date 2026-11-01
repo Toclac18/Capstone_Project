@@ -4,12 +4,14 @@ uvicorn[standard]==0.30.3
 python-multipart==0.0.6
 
 # PDF processing
-PyMuPDF==1.23.8
+# pdf2image cần poppler cài ở hệ thống (apt install poppler-utils /
+# brew install poppler / Windows: tải poppler rồi đặt POPPLER_PATH)
 pdf2image==1.16.3
 Pillow==10.1.0
 
 # OCR
 paddleocr>=2.7.0
 
-# Utilities
-torch>=2.0.0
+# torch: chỉ dùng để đọc thông tin GPU và gọi empty_cache; PaddleOCR tự chạy
+# trên paddlepaddle. Ghim < 3 để không kéo bản major mới.
+torch>=2.0.0,<3

@@ -386,7 +386,9 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     // Generate new reset token (valid for 10 minutes)
     String resetToken = TokenUtil.generateResetToken();
-    String tokenHash = passwordEncoder.encode(resetToken);
+    // SHA-256, không bcrypt: xem ghi chú ở TokenUtil.sha256Hex. Băm có salt thì
+    // không tra được bằng truy vấn, và đó là lý do bản cũ phải quét cả bảng.
+    String tokenHash = TokenUtil.sha256Hex(resetToken);
     Instant tokenExpiry = Instant.now().plusSeconds(600); // 10 minutes
 
     PasswordResetToken passwordResetToken = PasswordResetToken.builder()
@@ -407,31 +409,23 @@ public class UserAccountServiceImpl implements UserAccountService {
   public void resetPasswordWithToken(String resetToken, String newPassword) {
     log.info("Reset password with token");
 
-    // Hash the token to find it in DB
-    // We need to find the token differently since we can't hash and search
-    // Instead, we'll iterate through recent tokens and verify
-    List<PasswordResetToken> recentTokens = passwordResetTokenRepository
-        .findAll()
-        .stream()
-        .filter(t -> !t.getUsed() && !t.isExpired())
-        .toList();
+    // Một truy vấn, dùng unique index trên token_hash.
+    //
+    // Bản cũ gọi `findAll()` — tải MỌI dòng từng được tạo, kể cả đã dùng và đã hết
+    // hạn — rồi lọc trong RAM, rồi chạy bcrypt tuần tự cho từng dòng còn lại để tìm
+    // token. Đo trên máy dev: 53,9 ms mỗi lần bcrypt.matches() ở strength 10, nên 10
+    // token đang chờ là 0,54 giây và 50 token là 2,7 giây chỉ để TÌM token. Số dòng
+    // `findAll()` tải về thì không có giới hạn, vì `deleteExpiredTokens` không có ai
+    // gọi (xem PasswordResetTokenCleanupScheduler, thêm ở commit sau).
+    PasswordResetToken validToken = passwordResetTokenRepository
+        .findValidTokenByHash(TokenUtil.sha256Hex(resetToken), Instant.now())
+        .orElseThrow(() -> new InvalidRequestException("Invalid or expired reset token"));
 
-    PasswordResetToken validToken = null;
-    for (PasswordResetToken token : recentTokens) {
-      if (passwordEncoder.matches(resetToken, token.getTokenHash())) {
-        validToken = token;
-        break;
-      }
-    }
-
-    if (validToken == null) {
-      throw new InvalidRequestException("Invalid or expired reset token");
-    }
-
-    // Check if token has been used
-    if (validToken.getUsed()) {
-      throw new InvalidRequestException("Reset token has already been used");
-    }
+    // Không còn kiểm `validToken.getUsed()` ở đây: truy vấn đã lọc `used = false`.
+    // Nhánh đó trong bản cũ cũng không bao giờ chạy được, vì `recentTokens` đã lọc
+    // `!t.getUsed()` trước rồi — nên thông điệp "Reset token has already been used"
+    // chưa bao giờ tới được người dùng. Token đã dùng vẫn báo "Invalid or expired
+    // reset token" như trước, hành vi không đổi.
 
     User user = validToken.getUser();
 

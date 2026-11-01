@@ -80,6 +80,13 @@ app:
       retention-days: ${AUDIT_LOG_RETENTION_DAYS:180}  # 6 months
       retention-cron: ${AUDIT_LOG_RETENTION_CRON:0 0 2 * * ?}  # Daily at 2:00 AM
 
+  auth:
+    passwordResetToken:
+      # Token chỉ sống 10 phút; giữ thêm đệm để còn tra lịch sử khi cần điều tra.
+      retentionDays: ${PASSWORD_RESET_TOKEN_RETENTION_DAYS:7}
+      # 2:30 sáng — lệch 30 phút với hai job dọn khác để không chồng nhau.
+      cleanupCron: ${PASSWORD_RESET_TOKEN_CLEANUP_CRON:0 30 2 * * ?}
+
   document:
     defaultPremiumPrice: 100
     conversion:

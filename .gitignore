@@ -27,3 +27,5 @@ fe/.env
 fe/.env.*
 fe/!.env.local.example
 fe/next-env.d.ts
+# Cache incremental của tsc, sinh ra khi chạy `tsc --noEmit`
+fe/*.tsbuildinfo

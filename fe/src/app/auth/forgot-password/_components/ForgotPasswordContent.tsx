@@ -24,6 +24,18 @@ export default function ForgotPasswordContent() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  // Đã đặt lại mật khẩu xong, đang chờ chuyển sang trang đăng nhập.
+  // Giữ nút khoá trong khoảng chờ đó — xem ghi chú ở handleResetPassword.
+  const [passwordReset, setPasswordReset] = useState(false);
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
   const [error, setError] = useState<string | null>(null);
   const [otpInputs, setOtpInputs] = useState<string[]>([
     "",
@@ -341,7 +353,11 @@ export default function ForgotPasswordContent() {
         title: "Success",
         message: "Your password has been reset successfully.",
       });
-      setTimeout(() => {
+      // `finally` phía dưới luôn chạy `setLoading(false)`, nên trước đây nút
+      // BẬT LẠI ngay trong 2 giây chờ, với resetToken ĐÃ DÙNG RỒI. Bấm lần nữa
+      // là nhận lỗi token không hợp lệ ngay sau thông báo thành công.
+      setPasswordReset(true);
+      redirectTimerRef.current = setTimeout(() => {
         router.push("/auth/sign-in");
       }, 2000);
     } catch (e: unknown) {
@@ -526,11 +542,13 @@ export default function ForgotPasswordContent() {
                 <div className="mb-4.5 mt-6">
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || passwordReset}
                     className={styles["submit-btn"]}
                   >
-                    {loading ? "Resetting..." : "Reset password"}
-                    {loading && <span className={styles.spinner} />}
+                    {loading || passwordReset ? "Resetting..." : "Reset password"}
+                    {(loading || passwordReset) && (
+                      <span className={styles.spinner} />
+                    )}
                   </button>
                 </div>
               </form>

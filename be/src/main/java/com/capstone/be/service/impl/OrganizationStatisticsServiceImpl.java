@@ -3,7 +3,6 @@ package com.capstone.be.service.impl;
 import com.capstone.be.domain.entity.Comment;
 import com.capstone.be.domain.entity.Document;
 import com.capstone.be.domain.entity.DocumentReadHistory;
-import com.capstone.be.domain.entity.DocumentRedemption;
 import com.capstone.be.domain.entity.DocumentVote;
 import com.capstone.be.domain.entity.OrgEnrollment;
 import com.capstone.be.domain.entity.OrganizationProfile;

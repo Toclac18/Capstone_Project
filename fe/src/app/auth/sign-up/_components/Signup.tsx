@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { EmailIcon, PasswordIcon, UserIcon } from "@/assets/icons";
-import React, { useState, useCallback } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import InputGroup from "@/components/(template)/FormElements/InputGroup";
 import Logo from "@/assets/logos/logo-icon.svg";
 import LogoDark from "@/assets/logos/logo-icon-dark.svg";
@@ -126,6 +126,18 @@ export default function Signup() {
   const { showToast } = useToast();
   const [userType, setUserType] = useState<UserType>("reader");
   const [data, setData] = useState<Partial<FormData>>(INITIAL_FORM_DATA);
+  // Đăng ký đã thành công, đang chờ chuyển sang trang đăng nhập. Giữ nút
+  // khoá trong khoảng chờ đó — xem ghi chú ở handleSubmit.
+  const [registered, setRegistered] = useState(false);
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ [k: string]: string }>({});
@@ -416,7 +428,13 @@ export default function Signup() {
         message: SUCCESS_MESSAGES[userType],
         duration: 5000,
       });
-      setTimeout(() => {
+      // Khoá nút cho tới khi điều hướng xong. `finally` phía dưới luôn chạy
+      // `setLoading(false)`, nên trước đây nút BẬT LẠI ngay trong 3 giây chờ
+      // mà form vẫn còn nguyên dữ liệu: bấm lần nữa là gửi đăng ký trùng, và
+      // người dùng thấy "Registration Failed" ngay sau "Registration
+      // Successful".
+      setRegistered(true);
+      redirectTimerRef.current = setTimeout(() => {
         window.location.href = "/auth/sign-in";
       }, 3000);
     } catch (error) {
@@ -1026,9 +1044,9 @@ export default function Signup() {
             <button
               type="submit"
               className={styles["submit-btn"]}
-              disabled={loading || !agreedToTerms}
+              disabled={loading || registered || !agreedToTerms}
             >
-              {loading ? (
+              {loading || registered ? (
                 <>
                   Creating Account
                   <span className={styles.spinner} />

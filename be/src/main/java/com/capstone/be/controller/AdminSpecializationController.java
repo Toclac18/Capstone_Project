@@ -1,12 +1,12 @@
 package com.capstone.be.controller;
 
 import com.capstone.be.dto.common.ApiResponse;
-import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.specialization.CreateSpecializationRequest;
 import com.capstone.be.dto.request.specialization.UpdateSpecializationRequest;
 import com.capstone.be.dto.response.specialization.SpecializationDetailResponse;
 import com.capstone.be.service.SpecializationService;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +43,7 @@ public class AdminSpecializationController {
    */
   @GetMapping
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
-  public ResponseEntity<PagedResponse<SpecializationDetailResponse>> getAllSpecializations(
+  public ResponseEntity<ApiResponse<List<SpecializationDetailResponse>>> getAllSpecializations(
       @RequestParam(name = "domainId", required = false) UUID domainId,
       @RequestParam(name = "name", required = false) String name,
       Pageable pageable) {
@@ -53,7 +53,7 @@ public class AdminSpecializationController {
     Page<SpecializationDetailResponse> page = specializationService.getAllSpecializations(domainId,
         name, pageable);
 
-    PagedResponse<SpecializationDetailResponse> response = PagedResponse.of(page,
+    ApiResponse<List<SpecializationDetailResponse>> response = ApiResponse.page(page,
         "Specializations retrieved successfully");
 
     return ResponseEntity.ok(response);

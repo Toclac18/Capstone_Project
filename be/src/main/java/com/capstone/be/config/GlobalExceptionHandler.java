@@ -1,6 +1,7 @@
 package com.capstone.be.config;
 
 import com.capstone.be.dto.common.ApiResponse;
+import com.capstone.be.exception.ErrorCode;
 import com.capstone.be.exception.BusinessException;
 import com.capstone.be.exception.DuplicateResourceException;
 import com.capstone.be.exception.EmailException;
@@ -51,15 +52,7 @@ public class GlobalExceptionHandler {
     log.error("Business exception at {}: {} (code: {})",
         req.getRequestURI(), ex.getMessage(), ex.getErrorCode());
 
-    ApiResponse<Object> response = ApiResponse.builder()
-        .success(false)
-        .message(ex.getMessage())
-        .build();
-
-    // Add error code to response data
-    Map<String, String> errorDetails = new HashMap<>();
-    errorDetails.put("errorCode", ex.getErrorCode());
-    response.setData(errorDetails);
+    ApiResponse<Object> response = ApiResponse.failure(ex.getMessage(), ex.getErrorCode());
 
     return ResponseEntity.status(ex.getStatus()).body(response);
   }
@@ -165,9 +158,9 @@ public class GlobalExceptionHandler {
       Exception ex, HttpServletRequest req) {
     log.error("Authentication error at {}: {}", req.getRequestURI(), ex.getMessage());
 
-    ApiResponse<Object> response = ApiResponse.error(
-        ex.getMessage() != null ? ex.getMessage() : "Authentication failed"
-    );
+    ApiResponse<Object> response = ApiResponse.failure(
+        ex.getMessage() != null ? ex.getMessage() : "Authentication failed",
+        ErrorCode.INVALID_CREDENTIALS.getCode());
 
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
   }
@@ -180,9 +173,8 @@ public class GlobalExceptionHandler {
       AccessDeniedException ex, HttpServletRequest req) {
     log.error("Access denied at {}: {}", req.getRequestURI(), ex.getMessage());
 
-    ApiResponse<Object> response = ApiResponse.error(
-        "You don't have permission to access this resource"
-    );
+    ApiResponse<Object> response = ApiResponse.failure(
+        "You don't have permission to access this resource", ErrorCode.FORBIDDEN.getCode());
 
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
   }
@@ -200,10 +192,8 @@ public class GlobalExceptionHandler {
         errors.put(error.getField(), error.getDefaultMessage())
     );
 
-    ApiResponse<Map<String, String>> response = ApiResponse.error(
-        "Validation failed",
-        errors
-    );
+    ApiResponse<Map<String, String>> response = ApiResponse.failure(
+        "Validation failed", ErrorCode.VALIDATION_ERROR.getCode(), errors);
 
     return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(response);
   }
@@ -221,10 +211,8 @@ public class GlobalExceptionHandler {
         errors.put(violation.getPropertyPath().toString(), violation.getMessage())
     );
 
-    ApiResponse<Map<String, String>> response = ApiResponse.error(
-        "Validation failed",
-        errors
-    );
+    ApiResponse<Map<String, String>> response = ApiResponse.failure(
+        "Validation failed", ErrorCode.VALIDATION_ERROR.getCode(), errors);
 
     return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(response);
   }
@@ -240,9 +228,9 @@ public class GlobalExceptionHandler {
       Exception ex, HttpServletRequest req) {
     log.error("Bad request at {}: {}", req.getRequestURI(), ex.getMessage());
 
-    ApiResponse<Object> response = ApiResponse.error(
-        ex.getMessage() != null ? ex.getMessage() : "Bad request"
-    );
+    ApiResponse<Object> response = ApiResponse.failure(
+        ex.getMessage() != null ? ex.getMessage() : "Bad request",
+        ErrorCode.INVALID_REQUEST.getCode());
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
   }
@@ -256,7 +244,7 @@ public class GlobalExceptionHandler {
     log.error("Missing request parameter at {}: {}", req.getRequestURI(), ex.getMessage());
 
     String message = String.format("Required parameter '%s' is missing", ex.getParameterName());
-    ApiResponse<Object> response = ApiResponse.error(message);
+    ApiResponse<Object> response = ApiResponse.failure(message, ErrorCode.INVALID_REQUEST.getCode());
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
   }
@@ -270,7 +258,7 @@ public class GlobalExceptionHandler {
     log.error("Missing file upload at {}: {}", req.getRequestURI(), ex.getMessage());
 
     String message = String.format("Required file '%s' is missing", ex.getRequestPartName());
-    ApiResponse<Object> response = ApiResponse.error(message);
+    ApiResponse<Object> response = ApiResponse.failure(message, ErrorCode.INVALID_REQUEST.getCode());
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
   }
@@ -283,9 +271,8 @@ public class GlobalExceptionHandler {
       MultipartException ex, HttpServletRequest req) {
     log.error("Multipart exception at {}: {}", req.getRequestURI(), ex.getMessage());
 
-    ApiResponse<Object> response = ApiResponse.error(
-        "Request must be multipart/form-data with a file"
-    );
+    ApiResponse<Object> response = ApiResponse.failure(
+        "Request must be multipart/form-data with a file", ErrorCode.FILE_UPLOAD_FAILED.getCode());
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
   }
@@ -298,9 +285,9 @@ public class GlobalExceptionHandler {
       HttpRequestMethodNotSupportedException ex, HttpServletRequest req) {
     log.error("Method not allowed at {}: {}", req.getRequestURI(), ex.getMessage());
 
-    ApiResponse<Object> response = ApiResponse.error(
-        String.format("Method %s is not supported for this endpoint", ex.getMethod())
-    );
+    ApiResponse<Object> response = ApiResponse.failure(
+        String.format("Method %s is not supported for this endpoint", ex.getMethod()),
+        ErrorCode.METHOD_NOT_ALLOWED.getCode());
 
     return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(response);
   }
@@ -313,9 +300,8 @@ public class GlobalExceptionHandler {
       HttpMediaTypeNotSupportedException ex, HttpServletRequest req) {
     log.error("Unsupported media type at {}: {}", req.getRequestURI(), ex.getMessage());
 
-    ApiResponse<Object> response = ApiResponse.error(
-        "Unsupported media type. Please use application/json"
-    );
+    ApiResponse<Object> response = ApiResponse.failure(
+        "Unsupported media type. Please use application/json", ErrorCode.UNSUPPORTED_MEDIA_TYPE.getCode());
 
     return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(response);
   }
@@ -337,7 +323,7 @@ public class GlobalExceptionHandler {
       }
     }
 
-    ApiResponse<Object> response = ApiResponse.error(message);
+    ApiResponse<Object> response = ApiResponse.failure(message, ErrorCode.DATA_INTEGRITY_VIOLATION.getCode());
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
   }
 
@@ -352,7 +338,7 @@ public class GlobalExceptionHandler {
     HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
     String message = ex.getReason() != null ? ex.getReason() : "An error occurred";
 
-    ApiResponse<Object> response = ApiResponse.error(message);
+    ApiResponse<Object> response = ApiResponse.failure(message, ErrorCode.INVALID_REQUEST.getCode());
     return ResponseEntity.status(status != null ? status : HttpStatus.INTERNAL_SERVER_ERROR)
         .body(response);
   }
@@ -365,9 +351,8 @@ public class GlobalExceptionHandler {
       HttpMessageNotReadableException ex, HttpServletRequest req) {
     log.error("Invalid request body at {}: {}", req.getRequestURI(), ex.getMessage());
 
-    ApiResponse<Object> response = ApiResponse.error(
-        "Invalid or missing request body"
-    );
+    ApiResponse<Object> response = ApiResponse.failure(
+        "Invalid or missing request body", ErrorCode.INVALID_REQUEST.getCode());
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
   }
@@ -377,9 +362,8 @@ public class GlobalExceptionHandler {
       NoResourceFoundException ex, HttpServletRequest req) {
     log.error("No Resource Found {} : {}", req.getRequestURI(), ex.getMessage());
 
-    ApiResponse<Object> response = ApiResponse.error(
-        ex.getMessage()
-    );
+    ApiResponse<Object> response = ApiResponse.failure(
+        ex.getMessage(), ErrorCode.RESOURCE_NOT_FOUND.getCode());
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
   }
@@ -392,9 +376,8 @@ public class GlobalExceptionHandler {
       Exception ex, HttpServletRequest req) {
     log.error("Internal server error at {}: {}", req.getRequestURI(), ex.getMessage(), ex);
 
-    ApiResponse<Object> response = ApiResponse.error(
-        "An internal server error occurred. Please try again later."
-    );
+    ApiResponse<Object> response = ApiResponse.failure(
+        "An internal server error occurred. Please try again later.", ErrorCode.INTERNAL_SERVER_ERROR.getCode());
 
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
   }
@@ -404,16 +387,14 @@ public class GlobalExceptionHandler {
   /**
    * Create error response with error code
    */
+  /**
+   * Response lỗi chuẩn: errorCode là field riêng ở cấp ngoài.
+   *
+   * <p>Trước đây mã lỗi bị nhét vào {@code data} dưới dạng
+   * {@code {"errorCode": "..."}}, khiến {@code data} mang hai nghĩa khác nhau
+   * tuỳ success true/false và frontend phải đào vào đó để lấy mã.
+   */
   private ApiResponse<Object> createErrorResponse(String message, String errorCode) {
-    ApiResponse<Object> response = ApiResponse.builder()
-        .success(false)
-        .message(message)
-        .build();
-
-    Map<String, String> errorDetails = new HashMap<>();
-    errorDetails.put("errorCode", errorCode);
-    response.setData(errorDetails);
-
-    return response;
+    return ApiResponse.failure(message, errorCode);
   }
 }

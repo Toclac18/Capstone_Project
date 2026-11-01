@@ -2,13 +2,13 @@ package com.capstone.be.controller;
 
 import com.capstone.be.domain.enums.TagStatus;
 import com.capstone.be.dto.common.ApiResponse;
-import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.tag.CreateTagRequest;
 import com.capstone.be.dto.request.tag.ReviewTagRequest;
 import com.capstone.be.dto.request.tag.UpdateTagRequest;
 import com.capstone.be.dto.response.tag.TagResponse;
 import com.capstone.be.service.TagService;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,11 +49,11 @@ public class AdminTagController {
    * @param dateFrom Filter by creation date from (optional)
    * @param dateTo   Filter by creation date to (optional)
    * @param pageable Pagination parameters
-   * @return PagedResponse of TagResponse
+   * @return ApiResponse chứa danh sách TagResponse kèm pageInfo
    */
   @GetMapping
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
-  public ResponseEntity<PagedResponse<TagResponse>> getAllTags(
+  public ResponseEntity<ApiResponse<List<TagResponse>>> getAllTags(
       @RequestParam(name = "status", required = false) TagStatus status,
       @RequestParam(name = "name", required = false) String name,
       @RequestParam(name = "dateFrom", required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant dateFrom,
@@ -64,7 +64,7 @@ public class AdminTagController {
     
     Page<TagResponse> page = tagService.getAllTagsForAdmin(status, name, dateFrom, dateTo, pageable);
 
-    PagedResponse<TagResponse> response = PagedResponse.of(page, "Tags retrieved successfully");
+    ApiResponse<List<TagResponse>> response = ApiResponse.page(page, "Tags retrieved successfully");
 
     return ResponseEntity.ok(response);
   }

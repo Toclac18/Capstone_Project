@@ -196,3 +196,33 @@ export interface ResolutionTimeBreakdown {
 // Load State Type
 export type LoadState = "loading" | "success" | "error";
 
+// Chuyển từ app/business-admin/dashboard/_components/UserStatisticsTab.tsx.
+// services/statistics.service.ts cần kiểu này; service import từ một component
+// trang là đảo tầng — luật ESLint boundaries chặn đúng chiều đó.
+
+export interface RoleBreakdown {
+  role: string;
+  total: number;
+  active: number;
+  inactive: number;
+  pendingVerification: number;
+}
+
+export interface UserStatistics {
+  summary: {
+    totalUsers: number;
+    activeUsers: number;
+    inactiveUsers: number;
+    pendingVerificationUsers: number;
+    totalReaders: number;
+    totalReviewers: number;
+    totalOrganizationAdmins: number;
+    newUsersThisMonth: number;
+    newUsersLastMonth: number;
+    growthRate: number;
+  };
+  userGrowth: Array<{ date: string; count: number }>;
+  activeUsersGrowth: Array<{ date: string; count: number }>;
+  roleBreakdown: RoleBreakdown[];
+  statusBreakdown: Array<{ status: string; count: number }>;
+}

@@ -3,6 +3,8 @@ Queue Manager for sequential document processing.
 Chỉ xử lý 1 request tại một thời điểm để tránh GPU memory issues.
 """
 import asyncio
+import hashlib
+import hmac
 import logging
 import uuid
 import time
@@ -12,6 +14,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import json
 import httpx
+
+try:
+    from ..config import WEBHOOK_SECRET
+except ImportError:  # chạy trực tiếp, không qua package
+    import os
+    WEBHOOK_SECRET = os.getenv("AI_WEBHOOK_SECRET", "")
 
 logger = logging.getLogger(__name__)
 
@@ -169,6 +177,32 @@ class QueueManager:
         
         return job_id
     
+    @staticmethod
+    def _signature_headers(raw_body: bytes) -> Dict[str, str]:
+        """
+        Ký raw body bằng HMAC-SHA256 để backend xác thực callback.
+
+        Chuỗi được ký là "{timestamp}.{body}" — timestamp nằm trong chữ ký nên
+        một callback bị chặn lại không dùng lại được sau khi hết hạn.
+        """
+        if not WEBHOOK_SECRET:
+            logger.warning(
+                "AI_WEBHOOK_SECRET chưa được cấu hình — backend sẽ từ chối callback (401). "
+                "Đặt biến này giống hệt ở cả hai service."
+            )
+            return {}
+
+        timestamp = str(int(time.time()))
+        signed = timestamp.encode("utf-8") + b"." + raw_body
+        digest = hmac.new(
+            WEBHOOK_SECRET.encode("utf-8"), signed, hashlib.sha256
+        ).hexdigest()
+
+        return {
+            "X-Readee-Timestamp": timestamp,
+            "X-Readee-Signature": f"sha256={digest}",
+        }
+
     async def _call_webhook(self, job_id: str, callback_url: str, result: Optional[Dict[str, Any]], error: Optional[str]):
         """
         Gọi webhook callback khi job completed hoặc failed.
@@ -190,11 +224,18 @@ class QueueManager:
             if error:
                 payload["error"] = error
             
+            # Serialize MỘT LẦN rồi gửi đúng bytes đó: backend verify HMAC trên raw body,
+            # nên không thể để httpx tự serialize lại (khoảng trắng khác là sai chữ ký).
+            raw_body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+
+            headers = {"Content-Type": "application/json"}
+            headers.update(self._signature_headers(raw_body))
+
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(
                     callback_url,
-                    json=payload,
-                    headers={"Content-Type": "application/json"}
+                    content=raw_body,
+                    headers=headers
                 )
                 response.raise_for_status()
                 logger.info(f"Webhook callback successful for job {job_id} to {callback_url}")

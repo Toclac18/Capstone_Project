@@ -1,7 +1,6 @@
 package com.capstone.be.controller;
 
 import com.capstone.be.dto.common.ApiResponse;
-import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.comment.CreateCommentRequest;
 import com.capstone.be.dto.request.comment.UpdateCommentRequest;
 import com.capstone.be.dto.response.comment.CommentResponse;
@@ -21,6 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -117,14 +117,14 @@ public class CommentController {
     @GetMapping("/document/{documentId}")
     @Operation(summary = "Get comments by document",
                description = "Get all comments for a specific document with pagination")
-    public ResponseEntity<PagedResponse<CommentResponse>> getCommentsByDocument(
+    public ResponseEntity<ApiResponse<List<CommentResponse>>> getCommentsByDocument(
             @PathVariable(name = "documentId") UUID documentId,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
         log.info("Fetching comments for document {}, page: {}, size: {}",
                  documentId, pageable.getPageNumber(), pageable.getPageSize());
 
-        PagedResponse<CommentResponse> response = commentService.getCommentsByDocument(documentId, pageable);
+        ApiResponse<List<CommentResponse>> response = commentService.getCommentsByDocument(documentId, pageable);
 
         return ResponseEntity.ok(response);
     }

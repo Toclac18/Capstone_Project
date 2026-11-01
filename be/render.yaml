@@ -54,6 +54,9 @@ services:
         sync: false
       - key: AWS_S3_BUCKET
         sync: false
+      # AI service
+      - key: AI_WEBHOOK_SECRET
+        sync: false   # phải đặt giống hệt ở AI service
       # JPA
       - key: JPA_DDL_AUTO
         value: update

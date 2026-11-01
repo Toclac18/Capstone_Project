@@ -7,6 +7,7 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import type { ErrorDialogPayload } from "@/server/withErrorBoundary";
+import type { ApiResponse, PageInfo } from "@/types/api";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL?.trim() || "/api"
@@ -24,12 +25,18 @@ export interface ApiErrorPayload {
   message: string;
   data?: unknown;
   dialog?: ErrorDialogPayload;
+  /** Mã lỗi ổn định từ backend — so khớp cái này, đừng so chuỗi message. */
+  errorCode?: string;
+  /** Lỗi validation theo từng field. */
+  fieldErrors?: Record<string, string>;
 }
 
 export class ApiError extends Error implements ApiErrorPayload {
   status: number | null;
   data?: unknown;
   dialog?: ErrorDialogPayload;
+  errorCode?: string;
+  fieldErrors?: Record<string, string>;
   isHandledGlobally: boolean = false;
 
   constructor(payload: ApiErrorPayload) {
@@ -38,6 +45,13 @@ export class ApiError extends Error implements ApiErrorPayload {
     this.status = payload.status;
     this.data = payload.data;
     this.dialog = payload.dialog;
+    this.errorCode = payload.errorCode;
+    this.fieldErrors = payload.fieldErrors;
+  }
+
+  /** `err.is("3002")` thay cho so chuỗi message. */
+  is(code: string): boolean {
+    return this.errorCode === code;
   }
 }
 
@@ -112,6 +126,8 @@ apiClient.interceptors.response.use(
       message: getErrorMessage(error),
       data,
       dialog,
+      errorCode: data?.errorCode,
+      fieldErrors: data?.fieldErrors,
     });
 
     if (apiClientErrorHandler) {
@@ -125,5 +141,36 @@ apiClient.interceptors.response.use(
     return Promise.reject(apiError);
   },
 );
+
+// ───────────── Đọc response ─────────────
+
+/**
+ * Lấy phần dữ liệu ra khỏi vỏ ApiResponse.
+ *
+ * Một chỗ duy nhất biết hình dạng response, thay cho việc mỗi nơi tự đoán giữa
+ * `res.data`, `res.data.data`, `res.data.content`… như trước Phase 1.
+ */
+export function unwrap<T>(res: { data: ApiResponse<T> }): T {
+  const body = res.data;
+  if (body?.success === false) {
+    throw new ApiError({
+      status: null,
+      message: body.message ?? "Request failed",
+      errorCode: body.errorCode,
+      fieldErrors: body.fieldErrors,
+      data: body.data,
+    });
+  }
+  return body?.data as T;
+}
+
+/** Như {@link unwrap} nhưng trả kèm thông tin trang. */
+export function unwrapPage<T>(res: { data: ApiResponse<T[]> }): {
+  items: T[];
+  pageInfo: PageInfo | null;
+} {
+  const items = unwrap<T[]>(res) ?? [];
+  return { items, pageInfo: res.data?.pageInfo ?? null };
+}
 
 export default apiClient;

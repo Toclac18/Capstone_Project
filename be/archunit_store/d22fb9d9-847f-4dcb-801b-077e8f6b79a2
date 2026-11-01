@@ -1,0 +1,2 @@
+Method <com.capstone.be.controller.AdminDocumentController.fixDocumentStatus()> is annotated with @Transactional in (AdminDocumentController.java:230)
+Method <com.capstone.be.controller.AiWebhookController.handleWebhook(com.capstone.be.dto.ai.WebhookPayload)> is annotated with @Transactional in (AiWebhookController.java:43)

@@ -1,12 +1,12 @@
 package com.capstone.be.controller;
 
 import com.capstone.be.dto.common.ApiResponse;
-import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.doctype.CreateDocTypeRequest;
 import com.capstone.be.dto.request.doctype.UpdateDocTypeRequest;
 import com.capstone.be.dto.response.doctype.DocTypeDetailResponse;
 import com.capstone.be.service.DocTypeService;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +42,7 @@ public class AdminDocTypeController {
    */
   @GetMapping
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
-  public ResponseEntity<PagedResponse<DocTypeDetailResponse>> getAllDocTypes(
+  public ResponseEntity<ApiResponse<List<DocTypeDetailResponse>>> getAllDocTypes(
       @RequestParam(name = "name", required = false) String name,
       @RequestParam(name = "dateFrom", required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant dateFrom,
       @RequestParam(name = "dateTo", required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant dateTo,
@@ -52,7 +52,7 @@ public class AdminDocTypeController {
     
     Page<DocTypeDetailResponse> page = docTypeService.getAllDocTypesForAdmin(name, dateFrom, dateTo, pageable);
 
-    PagedResponse<DocTypeDetailResponse> response = PagedResponse.of(page,
+    ApiResponse<List<DocTypeDetailResponse>> response = ApiResponse.page(page,
         "Document types retrieved successfully");
 
     return ResponseEntity.ok(response);

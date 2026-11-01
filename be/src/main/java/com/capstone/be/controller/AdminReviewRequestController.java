@@ -2,7 +2,7 @@ package com.capstone.be.controller;
 
 import com.capstone.be.domain.enums.ReviewResultStatus;
 import com.capstone.be.dto.common.ApiResponse;
-import com.capstone.be.dto.common.PagedResponse;
+import com.capstone.be.exception.ErrorCode;
 import com.capstone.be.dto.request.review.ApproveReviewResultRequest;
 import com.capstone.be.dto.request.review.AssignReviewerRequest;
 import com.capstone.be.dto.request.review.ReviewManagementFilterRequest;
@@ -24,6 +24,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -76,7 +77,7 @@ public class AdminReviewRequestController {
    */
   @GetMapping("/admin/documents/{documentId}/review-requests")
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
-  public ResponseEntity<PagedResponse<ReviewRequestResponse>> getDocumentReviewRequests(
+  public ResponseEntity<ApiResponse<List<ReviewRequestResponse>>> getDocumentReviewRequests(
       @PathVariable(name = "documentId") UUID documentId,
       @RequestParam(name = "page", defaultValue = "0") int page,
       @RequestParam(name = "size", defaultValue = "10") int size) {
@@ -89,7 +90,7 @@ public class AdminReviewRequestController {
     Page<ReviewRequestResponse> result = reviewRequestService.getDocumentReviewRequests(
         documentId, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(result, "Document review requests retrieved successfully"));
+    return ResponseEntity.ok(ApiResponse.page(result, "Document review requests retrieved successfully"));
   }
 
   /**
@@ -102,7 +103,7 @@ public class AdminReviewRequestController {
    */
   @GetMapping("/admin/review-requests")
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
-  public ResponseEntity<PagedResponse<ReviewRequestResponse>> getAllReviewRequests(
+  public ResponseEntity<ApiResponse<List<ReviewRequestResponse>>> getAllReviewRequests(
       @RequestParam(name = "page", defaultValue = "0") int page,
       @RequestParam(name = "size", defaultValue = "10") int size) {
 
@@ -112,7 +113,7 @@ public class AdminReviewRequestController {
 
     Page<ReviewRequestResponse> result = reviewRequestService.getAllReviewRequests(pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(result, "All review requests retrieved successfully"));
+    return ResponseEntity.ok(ApiResponse.page(result, "All review requests retrieved successfully"));
   }
 
   /**
@@ -155,7 +156,8 @@ public class AdminReviewRequestController {
       log.error("Error during manual expiration job: {}", e.getMessage(), e);
       return ResponseEntity
           .status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body(ApiResponse.error("Failed to run expiration job: " + e.getMessage()));
+          .body(ApiResponse.failure("Failed to run expiration job: " + e.getMessage(),
+              ErrorCode.INTERNAL_SERVER_ERROR.getCode()));
     }
   }
 
@@ -171,7 +173,7 @@ public class AdminReviewRequestController {
    */
   @GetMapping("/admin/review-results/pending")
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
-  public ResponseEntity<PagedResponse<ReviewResultResponse>> getPendingReviewResults(
+  public ResponseEntity<ApiResponse<List<ReviewResultResponse>>> getPendingReviewResults(
       @RequestParam(name = "page", defaultValue = "0") int page,
       @RequestParam(name = "size", defaultValue = "10") int size) {
 
@@ -181,7 +183,7 @@ public class AdminReviewRequestController {
 
     Page<ReviewResultResponse> result = reviewRequestService.getPendingReviewResults(pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(result, "Pending review results retrieved successfully"));
+    return ResponseEntity.ok(ApiResponse.page(result, "Pending review results retrieved successfully"));
   }
 
   /**
@@ -195,7 +197,7 @@ public class AdminReviewRequestController {
    */
   @GetMapping("/admin/review-results")
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
-  public ResponseEntity<PagedResponse<ReviewResultResponse>> getAllReviewResults(
+  public ResponseEntity<ApiResponse<List<ReviewResultResponse>>> getAllReviewResults(
       @RequestParam(name = "status", required = false) ReviewResultStatus status,
       @RequestParam(name = "page", defaultValue = "0") int page,
       @RequestParam(name = "size", defaultValue = "10") int size) {
@@ -207,7 +209,7 @@ public class AdminReviewRequestController {
 
     Page<ReviewResultResponse> result = reviewRequestService.getAllReviewResults(status, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(result, "Review results retrieved successfully"));
+    return ResponseEntity.ok(ApiResponse.page(result, "Review results retrieved successfully"));
   }
 
   /**
@@ -257,7 +259,7 @@ public class AdminReviewRequestController {
    */
   @GetMapping("/admin/review-management")
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
-  public ResponseEntity<PagedResponse<ReviewManagementItem>> getReviewManagementList(
+  public ResponseEntity<ApiResponse<List<ReviewManagementItem>>> getReviewManagementList(
       @RequestParam(name = "tab", required = false) String tab,
       @RequestParam(name = "reviewerId", required = false) java.util.UUID reviewerId,
       @RequestParam(name = "domain", required = false) String domain,
@@ -280,6 +282,6 @@ public class AdminReviewRequestController {
 
     Page<ReviewManagementItem> page = reviewRequestService.getReviewManagementList(filter, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(page, "Review management data retrieved successfully"));
+    return ResponseEntity.ok(ApiResponse.page(page, "Review management data retrieved successfully"));
   }
 }

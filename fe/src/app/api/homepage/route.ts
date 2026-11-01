@@ -132,10 +132,9 @@ async function handleGET(req: NextRequest): Promise<Response> {
       }
 
       const raw = JSON.parse(txt);
-      const pageData = raw?.data || raw;
-
-      const items = pageData?.content || [];
-      const total = pageData?.totalElements ?? items.length;
+      // ApiResponse phân trang: data là mảng, pageInfo mô tả trang
+      const items = raw?.data ?? [];
+      const total = raw?.pageInfo?.totalElements ?? items.length;
 
       return jsonResponse(
         { items, total, page, pageSize },
@@ -172,9 +171,7 @@ async function handleGET(req: NextRequest): Promise<Response> {
 
     const txt = await res.text();
     const raw = JSON.parse(txt);
-    const pageData = raw?.data || raw;
-
-    const docs: any[] = pageData?.content || [];
+    const docs: any[] = raw?.data ?? [];
 
     // ────────────────────────────────────────────────
     // 1. Continue reading → gọi BE /read-history nếu login

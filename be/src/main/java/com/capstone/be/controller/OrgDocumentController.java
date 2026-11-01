@@ -1,11 +1,12 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.DocVisibility;
-import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.response.organization.OrgDocumentResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.OrgDocumentService;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +40,7 @@ public class OrgDocumentController {
    */
   @GetMapping
   @PreAuthorize("hasRole('ORGANIZATION_ADMIN')")
-  public ResponseEntity<PagedResponse<OrgDocumentResponse>> getOrganizationDocuments(
+  public ResponseEntity<ApiResponse<List<OrgDocumentResponse>>> getOrganizationDocuments(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @RequestParam(name = "search", required = false) String search,
       @RequestParam(name = "status", required = false) DocStatus status,
@@ -52,7 +53,7 @@ public class OrgDocumentController {
     Page<OrgDocumentResponse> documents = orgDocumentService.getOrganizationDocuments(
         adminId, search, status, visibility, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(documents));
+    return ResponseEntity.ok(ApiResponse.page(documents));
   }
 
   /**

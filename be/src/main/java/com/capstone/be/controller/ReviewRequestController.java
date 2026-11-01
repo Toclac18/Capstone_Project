@@ -2,7 +2,6 @@ package com.capstone.be.controller;
 
 import com.capstone.be.domain.enums.ReviewDecision;
 import com.capstone.be.dto.common.ApiResponse;
-import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.review.RespondReviewRequestRequest;
 import com.capstone.be.dto.request.review.ReviewHistoryFilterRequest;
 import com.capstone.be.dto.request.review.SubmitReviewRequest;
@@ -24,6 +23,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -49,7 +49,7 @@ public class ReviewRequestController {
    */
   @GetMapping("/pending")
   @PreAuthorize("hasRole('REVIEWER')")
-  public ResponseEntity<PagedResponse<ReviewRequestResponse>> getPendingRequests(
+  public ResponseEntity<ApiResponse<List<ReviewRequestResponse>>> getPendingRequests(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @RequestParam(name = "page", defaultValue = "0") int page,
       @RequestParam(name = "size", defaultValue = "10") int size) {
@@ -63,7 +63,7 @@ public class ReviewRequestController {
     Page<ReviewRequestResponse> result = reviewRequestService.getReviewerPendingRequests(
         reviewerId, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(result, "Pending review requests retrieved successfully"));
+    return ResponseEntity.ok(ApiResponse.page(result, "Pending review requests retrieved successfully"));
   }
 
   /**
@@ -77,7 +77,7 @@ public class ReviewRequestController {
    */
   @GetMapping
   @PreAuthorize("hasRole('REVIEWER')")
-  public ResponseEntity<PagedResponse<ReviewRequestResponse>> getAllRequests(
+  public ResponseEntity<ApiResponse<List<ReviewRequestResponse>>> getAllRequests(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @RequestParam(name = "page", defaultValue = "0") int page,
       @RequestParam(name = "size", defaultValue = "10") int size) {
@@ -91,7 +91,7 @@ public class ReviewRequestController {
     Page<ReviewRequestResponse> result = reviewRequestService.getReviewerAllRequests(
         reviewerId, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(result, "All review requests retrieved successfully"));
+    return ResponseEntity.ok(ApiResponse.page(result, "All review requests retrieved successfully"));
   }
 
   /**
@@ -135,7 +135,7 @@ public class ReviewRequestController {
    */
   @GetMapping("/todo")
   @PreAuthorize("hasRole('REVIEWER')")
-  public ResponseEntity<PagedResponse<ReviewRequestResponse>> getToDoDocuments(
+  public ResponseEntity<ApiResponse<List<ReviewRequestResponse>>> getToDoDocuments(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @RequestParam(name = "page", defaultValue = "0") int page,
       @RequestParam(name = "size", defaultValue = "10") int size) {
@@ -149,7 +149,7 @@ public class ReviewRequestController {
     Page<ReviewRequestResponse> result = reviewRequestService.getReviewerToDoDocuments(
         reviewerId, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(result, "To-do documents retrieved successfully"));
+    return ResponseEntity.ok(ApiResponse.page(result, "To-do documents retrieved successfully"));
   }
 
   /**
@@ -198,7 +198,7 @@ public class ReviewRequestController {
    */
   @GetMapping("/history")
   @PreAuthorize("hasRole('REVIEWER')")
-  public ResponseEntity<PagedResponse<ReviewResultResponse>> getReviewHistory(
+  public ResponseEntity<ApiResponse<List<ReviewResultResponse>>> getReviewHistory(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @RequestParam(name = "decision", required = false) ReviewDecision decision,
       @RequestParam(name = "dateFrom", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant dateFrom,
@@ -228,6 +228,6 @@ public class ReviewRequestController {
     Page<ReviewResultResponse> result = reviewRequestService.getReviewerHistory(
         reviewerId, filter, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(result, "Review history retrieved successfully"));
+    return ResponseEntity.ok(ApiResponse.page(result, "Review history retrieved successfully"));
   }
 }

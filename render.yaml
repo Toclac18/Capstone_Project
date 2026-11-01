@@ -23,7 +23,7 @@ services:
       # These need to be set manually in Render Dashboard:
       # - JWT_SECRET (sync with BE)
       # - NEXT_PUBLIC_FE_DOMAIN
-      # - NEXT_PUBLIC_API_BASE_URL
+      # - API_BASE_URL  (server-only; tên cũ NEXT_PUBLIC_API_BASE_URL vẫn đọc được)
     healthCheckPath: /
 
   # Backend - Spring Boot (already deployed)

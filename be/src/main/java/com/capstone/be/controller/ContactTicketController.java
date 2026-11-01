@@ -1,8 +1,8 @@
 
 package com.capstone.be.controller;
 
+import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.domain.enums.ContactStatus;
-import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.admin.CreateContactTicketRequest;
 import com.capstone.be.dto.request.admin.UpdateContactTicketRequest;
 import com.capstone.be.dto.response.admin.ContactTicketResponse;
@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -135,7 +136,7 @@ ContactTicketController {
   @Operation(summary = "Get tickets with filters (admin only)",
              description = "Get contact tickets with dynamic filters (status, email) and custom sorting. " +
                  "All filters are optional and can be combined.")
-  public ResponseEntity<PagedResponse<ContactTicketResponse>> getTicketsWithFilters(
+  public ResponseEntity<ApiResponse<List<ContactTicketResponse>>> getTicketsWithFilters(
       @RequestParam(name = "status", required = false) ContactStatus status,
       @RequestParam(name = "email", required = false) String email,
       @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -146,7 +147,7 @@ ContactTicketController {
     Page<ContactTicketResponse> page = contactTicketService.getTicketsWithFilters(status, email,
         pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(page));
+    return ResponseEntity.ok(ApiResponse.page(page));
   }
 
   /**

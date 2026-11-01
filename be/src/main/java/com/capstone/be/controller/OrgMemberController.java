@@ -1,7 +1,7 @@
 package com.capstone.be.controller;
 
+import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.domain.enums.OrgEnrollStatus;
-import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.organization.InviteMembersRequest;
 import com.capstone.be.dto.request.organization.UpdateEnrollStatusRequest;
 import com.capstone.be.dto.response.organization.ImportResultItemResponse;
@@ -11,6 +11,7 @@ import com.capstone.be.dto.response.organization.OrgEnrollmentResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.OrgEnrollmentService;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -98,7 +99,7 @@ public class OrgMemberController {
    */
   @GetMapping
   @PreAuthorize("hasRole('ORGANIZATION_ADMIN')")
-  public ResponseEntity<PagedResponse<OrgEnrollmentResponse>> getOrganizationMembers(
+  public ResponseEntity<ApiResponse<List<OrgEnrollmentResponse>>> getOrganizationMembers(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @RequestParam(name = "status", required = false) OrgEnrollStatus status,
       @RequestParam(name = "search", required = false) String search,
@@ -110,7 +111,7 @@ public class OrgMemberController {
     Page<OrgEnrollmentResponse> members = orgEnrollmentService.getOrganizationMembers(
         adminId, status, search, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(members));
+    return ResponseEntity.ok(ApiResponse.page(members));
   }
 
   /**
@@ -204,7 +205,7 @@ public class OrgMemberController {
    */
   @GetMapping("/import-batches")
   @PreAuthorize("hasRole('ORGANIZATION_ADMIN')")
-  public ResponseEntity<PagedResponse<MemberImportBatchResponse>> getImportBatches(
+  public ResponseEntity<ApiResponse<List<MemberImportBatchResponse>>> getImportBatches(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @RequestParam(required = false) String q,
       Pageable pageable) {
@@ -214,7 +215,7 @@ public class OrgMemberController {
     Page<MemberImportBatchResponse> batches = orgEnrollmentService.getImportBatches(
         adminId, q, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(batches));
+    return ResponseEntity.ok(ApiResponse.page(batches));
   }
 
   /**
@@ -228,7 +229,7 @@ public class OrgMemberController {
    */
   @GetMapping("/import-batches/{importBatchId}/enrollments")
   @PreAuthorize("hasRole('ORGANIZATION_ADMIN')")
-  public ResponseEntity<PagedResponse<OrgEnrollmentResponse>> getImportBatchEnrollments(
+  public ResponseEntity<ApiResponse<List<OrgEnrollmentResponse>>> getImportBatchEnrollments(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @PathVariable(name = "importBatchId") UUID importBatchId,
       Pageable pageable) {
@@ -238,7 +239,7 @@ public class OrgMemberController {
     Page<OrgEnrollmentResponse> enrollments = orgEnrollmentService.getImportBatchEnrollments(
         adminId, importBatchId, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(enrollments));
+    return ResponseEntity.ok(ApiResponse.page(enrollments));
   }
 
   /**
@@ -252,7 +253,7 @@ public class OrgMemberController {
    */
   @GetMapping("/import-batches/{importBatchId}/results")
   @PreAuthorize("hasRole('ORGANIZATION_ADMIN')")
-  public ResponseEntity<PagedResponse<ImportResultItemResponse>> getImportResultItems(
+  public ResponseEntity<ApiResponse<List<ImportResultItemResponse>>> getImportResultItems(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       @PathVariable(name = "importBatchId") UUID importBatchId,
       Pageable pageable) {
@@ -262,7 +263,7 @@ public class OrgMemberController {
     Page<ImportResultItemResponse> results = orgEnrollmentService.getImportResultItems(
         adminId, importBatchId, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(results));
+    return ResponseEntity.ok(ApiResponse.page(results));
   }
 
   /**

@@ -4,7 +4,6 @@ import com.capstone.be.domain.enums.DocStatus;
 import com.capstone.be.domain.enums.DocVisibility;
 import com.capstone.be.domain.enums.LogAction;
 import com.capstone.be.dto.common.ApiResponse;
-import com.capstone.be.dto.common.PagedResponse;
 import com.capstone.be.dto.request.admin.UpdateDocumentStatusRequest;
 import com.capstone.be.dto.response.document.AdminDocumentListResponse;
 import com.capstone.be.dto.response.document.DocumentDetailResponse;
@@ -12,6 +11,7 @@ import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.DocumentService;
 import com.capstone.be.util.AuditLogHelper;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +47,7 @@ public class AdminDocumentController {
 
   @GetMapping
   @PreAuthorize("hasRole('BUSINESS_ADMIN')")
-  public ResponseEntity<PagedResponse<AdminDocumentListResponse>> getAllDocuments(
+  public ResponseEntity<ApiResponse<List<AdminDocumentListResponse>>> getAllDocuments(
       @RequestParam(name = "title", required = false) String title,
       @RequestParam(name = "uploaderId", required = false) UUID uploaderId,
       @RequestParam(name = "organizationId", required = false) UUID organizationId,
@@ -72,7 +72,7 @@ public class AdminDocumentController {
         title, uploaderId, organizationId, docTypeId, specializationId, status, visibility,
         isPremium, dateFrom, dateTo, pageable);
 
-    PagedResponse<AdminDocumentListResponse> response = PagedResponse.of(page,
+    ApiResponse<List<AdminDocumentListResponse>> response = ApiResponse.page(page,
         "Documents retrieved successfully");
 
     return ResponseEntity.ok(response);

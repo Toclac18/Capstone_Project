@@ -1,10 +1,11 @@
 package com.capstone.be.controller;
 
-import com.capstone.be.dto.common.PagedResponse;
+import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.dto.request.admin.SystemLogQueryRequest;
 import com.capstone.be.dto.response.admin.SystemLogResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +41,7 @@ public class SystemLogController {
      */
     @GetMapping
     @Operation(summary = "Get system logs with filters", description = "Get paginated system logs with various filters")
-    public ResponseEntity<PagedResponse<SystemLogResponse>> getLogs(
+    public ResponseEntity<ApiResponse<List<SystemLogResponse>>> getLogs(
         @RequestParam(required = false) String action,
         @RequestParam(required = false) java.util.List<String> actions,
         @RequestParam(required = false) UUID userId,
@@ -68,7 +69,7 @@ public class SystemLogController {
             .build();
 
         var page = systemLogService.getLogs(queryRequest, pageable);
-        return ResponseEntity.ok(PagedResponse.of(page, "Logs retrieved successfully"));
+        return ResponseEntity.ok(ApiResponse.page(page, "Logs retrieved successfully"));
     }
 
     /**
@@ -77,13 +78,13 @@ public class SystemLogController {
      */
     @GetMapping("/action/{action}")
     @Operation(summary = "Get logs by action", description = "Get logs filtered by specific action type")
-    public ResponseEntity<PagedResponse<SystemLogResponse>> getLogsByAction(
+    public ResponseEntity<ApiResponse<List<SystemLogResponse>>> getLogsByAction(
         @PathVariable String action,
         @PageableDefault(size = 20, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable
     ) {
         log.info("System admin querying logs by action: {}", action);
         var page = systemLogService.getLogsByAction(action, pageable);
-        return ResponseEntity.ok(PagedResponse.of(page, "Logs retrieved successfully"));
+        return ResponseEntity.ok(ApiResponse.page(page, "Logs retrieved successfully"));
     }
 
     /**
@@ -92,13 +93,13 @@ public class SystemLogController {
      */
     @GetMapping("/user/{userId}")
     @Operation(summary = "Get logs by user", description = "Get all logs for a specific user")
-    public ResponseEntity<PagedResponse<SystemLogResponse>> getLogsByUserId(
+    public ResponseEntity<ApiResponse<List<SystemLogResponse>>> getLogsByUserId(
         @PathVariable UUID userId,
         @PageableDefault(size = 20, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable
     ) {
         log.info("System admin querying logs for user: {}", userId);
         var page = systemLogService.getLogsByUserId(userId, pageable);
-        return ResponseEntity.ok(PagedResponse.of(page, "Logs retrieved successfully"));
+        return ResponseEntity.ok(ApiResponse.page(page, "Logs retrieved successfully"));
     }
 
     /**
@@ -107,14 +108,14 @@ public class SystemLogController {
      */
     @GetMapping("/date-range")
     @Operation(summary = "Get logs by date range", description = "Get logs within a specific date range")
-    public ResponseEntity<PagedResponse<SystemLogResponse>> getLogsByDateRange(
+    public ResponseEntity<ApiResponse<List<SystemLogResponse>>> getLogsByDateRange(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
         @PageableDefault(size = 20, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable
     ) {
         log.info("System admin querying logs from {} to {}", startDate, endDate);
         var page = systemLogService.getLogsByDateRange(startDate, endDate, pageable);
-        return ResponseEntity.ok(PagedResponse.of(page, "Logs retrieved successfully"));
+        return ResponseEntity.ok(ApiResponse.page(page, "Logs retrieved successfully"));
     }
 
     /**
@@ -123,7 +124,7 @@ public class SystemLogController {
      */
     @GetMapping("/login-failed")
     @Operation(summary = "Get login failed attempts", description = "Get all failed login attempts for security monitoring")
-    public ResponseEntity<PagedResponse<SystemLogResponse>> getLoginFailedAttempts(
+    public ResponseEntity<ApiResponse<List<SystemLogResponse>>> getLoginFailedAttempts(
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
         @PageableDefault(size = 20, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable
@@ -137,7 +138,7 @@ public class SystemLogController {
 
         log.info("System admin querying login failed attempts from {} to {}", startDate, endDate);
         var page = systemLogService.getLoginFailedAttempts(startDate, endDate, pageable);
-        return ResponseEntity.ok(PagedResponse.of(page, "Login failed attempts retrieved successfully"));
+        return ResponseEntity.ok(ApiResponse.page(page, "Login failed attempts retrieved successfully"));
     }
 
     /**
@@ -146,7 +147,7 @@ public class SystemLogController {
      */
     @GetMapping("/login-failed/ip/{ipAddress}")
     @Operation(summary = "Get login failed attempts by IP", description = "Get failed login attempts from a specific IP address")
-    public ResponseEntity<PagedResponse<SystemLogResponse>> getLoginFailedAttemptsByIp(
+    public ResponseEntity<ApiResponse<List<SystemLogResponse>>> getLoginFailedAttemptsByIp(
         @PathVariable String ipAddress,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
@@ -161,7 +162,7 @@ public class SystemLogController {
 
         log.info("System admin querying login failed attempts for IP: {} from {} to {}", ipAddress, startDate, endDate);
         var page = systemLogService.getLoginFailedAttemptsByIp(ipAddress, startDate, endDate, pageable);
-        return ResponseEntity.ok(PagedResponse.of(page, "Login failed attempts retrieved successfully"));
+        return ResponseEntity.ok(ApiResponse.page(page, "Login failed attempts retrieved successfully"));
     }
 
     /**

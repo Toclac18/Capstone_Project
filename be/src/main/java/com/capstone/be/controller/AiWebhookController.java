@@ -33,8 +33,8 @@ public class AiWebhookController {
   /**
    * Webhook endpoint to receive AI processing results
    * POST /api/v1/ai/webhook
-   * Note: This endpoint should be accessible from AI service (internal network)
-   * Consider adding IP whitelist or secret token validation in production
+   * Xác thực bằng HMAC-SHA256 trong AiWebhookSignatureFilter: request không có
+   * chữ ký hợp lệ bị chặn ở tầng security, không vào tới đây.
    */
   @PostMapping("/webhook")
   @Transactional

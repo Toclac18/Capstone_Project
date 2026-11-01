@@ -1,9 +1,10 @@
 package com.capstone.be.controller;
 
-import com.capstone.be.dto.common.PagedResponse;
+import com.capstone.be.dto.common.ApiResponse;
 import com.capstone.be.dto.response.organization.OrgEnrollmentResponse;
 import com.capstone.be.security.model.UserPrincipal;
 import com.capstone.be.service.OrgEnrollmentService;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +40,7 @@ public class ReaderEnrollmentController {
    * @return Paged response of pending invitations
    */
   @GetMapping("/invitations")
-  public ResponseEntity<PagedResponse<OrgEnrollmentResponse>> getMyPendingInvitations(
+  public ResponseEntity<ApiResponse<List<OrgEnrollmentResponse>>> getMyPendingInvitations(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       Pageable pageable) {
     UUID readerId = userPrincipal.getId();
@@ -48,7 +49,7 @@ public class ReaderEnrollmentController {
     Page<OrgEnrollmentResponse> invitations = orgEnrollmentService.getMyPendingInvitations(
         readerId, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(invitations));
+    return ResponseEntity.ok(ApiResponse.page(invitations));
   }
 
   /**
@@ -60,7 +61,7 @@ public class ReaderEnrollmentController {
    * @return Paged response of joined organizations
    */
   @GetMapping("/organizations")
-  public ResponseEntity<PagedResponse<OrgEnrollmentResponse>> getMyOrganizations(
+  public ResponseEntity<ApiResponse<List<OrgEnrollmentResponse>>> getMyOrganizations(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
       Pageable pageable) {
     UUID readerId = userPrincipal.getId();
@@ -69,7 +70,7 @@ public class ReaderEnrollmentController {
     Page<OrgEnrollmentResponse> organizations =
         orgEnrollmentService.getMyOrganizations(readerId, pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(organizations));
+    return ResponseEntity.ok(ApiResponse.page(organizations));
   }
 
   /**

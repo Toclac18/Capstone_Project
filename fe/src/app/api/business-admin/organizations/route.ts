@@ -86,8 +86,10 @@ async function handleGET(request: Request) {
   const responseData = await upstream.json();
   // Backend returns Page<AdminOrganizationResponse>
   // Convert to OrganizationResponse format
-  const pageData = responseData?.content || responseData?.data?.content || [];
-  const total = responseData?.totalElements || responseData?.total || 0;
+  // ApiResponse: data là mảng, thông tin trang nằm ở pageInfo.
+  // Trước đây BE trả Page<T> thô nên đoạn này phải đoán giữa hai hình dạng.
+  const pageData = responseData?.data ?? [];
+  const total = responseData?.pageInfo?.totalElements ?? 0;
 
   // Map AdminOrganizationResponse to Organization format
   // Note: AdminOrganizationResponse now includes organizationId

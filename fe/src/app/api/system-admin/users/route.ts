@@ -196,22 +196,21 @@ async function handlePOST(req: NextRequest): Promise<Response> {
     const responseBody = await upstream.json().catch(() => ({}));
 
     if (responseBody && typeof responseBody === "object") {
-      const data = responseBody.data || responseBody;
+      const data = responseBody.data;
+      const pageInfo = responseBody.pageInfo;
 
-      // Spring Page format
-      if (
-        Array.isArray(data.content) &&
-        typeof data.totalElements === "number"
-      ) {
-        const users = (data.content || []).map((user: any) => ({
+      // ApiResponse phân trang: data là mảng, pageInfo mô tả trang.
+      // Trước đây BE trả Page<T> thô (content/totalElements/number/size).
+      if (Array.isArray(data) && pageInfo) {
+        const users = data.map((user: any) => ({
           ...user,
           name: user.fullName || user.name || "",
         }));
         const mapped = {
           users,
-          total: data.totalElements || 0,
-          page: (data.number || 0) + 1, // 0-based -> 1-based
-          limit: data.size || 10,
+          total: pageInfo.totalElements ?? 0,
+          page: (pageInfo.page ?? 0) + 1, // 0-based -> 1-based
+          limit: pageInfo.size ?? 10,
         };
         return jsonResponse(mapped, {
           status: upstream.status,
@@ -219,9 +218,10 @@ async function handlePOST(req: NextRequest): Promise<Response> {
         });
       }
 
-      // Already in { users, total, page, limit } format
-      if (data.users && Array.isArray(data.users)) {
-        const mappedUsers = data.users.map((user: any) => ({
+      // Dạng { users, total, page, limit } (một số nhánh mock/cũ)
+      const legacy = responseBody.data ?? responseBody;
+      if (legacy?.users && Array.isArray(legacy.users)) {
+        const mappedUsers = legacy.users.map((user: any) => ({
           ...user,
           name: user.fullName || user.name || "",
         }));

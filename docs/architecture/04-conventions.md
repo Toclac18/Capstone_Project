@@ -296,6 +296,33 @@ Vượt ngưỡng không phải lỗi, nhưng phải giải thích trong PR:
 | Dependency một service | 8 | **6** file (cao nhất: 26) |
 | LOC một component React | 300 | **58** file (cao nhất: 1.270) |
 | LOC một `page.tsx` | 150 | **12** file |
-| `any` trong file mới | 0 | **303** toàn FE |
+| `any` trong file mới | 0 | **286** warning `no-explicit-any` từ eslint (grep `: any`/`as any`/`<any>`: 272 chỗ, 220 trong đó ngoài `mock/`) |
+| Import không dùng ở `be/` | 0 | **0** — Checkstyle chặn, xem dưới |
 
 > 58 component vượt ngưỡng là con số lớn — đây là việc của giai đoạn refactor chi tiết từng luồng, **không** thuộc phạm vi global. Ngưỡng này chỉ áp cho code mới kể từ khi chốt tài liệu.
+
+---
+
+## 8. Cổng import ở `be/`
+
+`be/config/checkstyle/checkstyle.xml` — **cố ý chỉ có hai luật**, cả hai về import:
+
+| luật | chặn |
+|---|---|
+| `UnusedImports` | import không dùng tới (`processJavadoc=true`, nên tên chỉ xuất hiện trong `{@link}` vẫn tính là đang dùng) |
+| `RedundantImport` | import trùng cùng một lớp, import lớp trong `java.lang` hoặc cùng package |
+
+Ngưỡng là **0**, không dùng ngân sách như `fe/` (`--max-warnings 353`) và `ai/` (tập luật
+ruff siết dần), vì chỗ này đã dọn sạch hẳn — 500 import trong 38 file, nợ do đợt tách god
+service ở PR #182 sinh ra.
+
+**Đừng bật thêm luật style vào file này mà không dọn trước.** Luật đặt tên, độ dài dòng
+hay javadoc sẽ bật ra hàng nghìn vi phạm ở code có sẵn, và cách duy nhất để build lại xanh
+là `ignoreFailures = true` — tức biến một cổng đang chặn được thành một cổng không chặn gì.
+Mở rộng theo đúng kiểu ratchet: dọn sạch một luật, rồi mới thêm luật đó.
+
+Plugin `checkstyle` tự nối `checkstyleMain`/`checkstyleTest` vào `check`, và `build` phụ
+thuộc `check`, nên `./gradlew build` ở CI bắt được mà không cần sửa workflow.
+
+Kiểm cổng còn sống: chèn một import không dùng vào file nào đó rồi chạy `./gradlew build`
+— phải thấy `Task :checkstyleMain FAILED`.

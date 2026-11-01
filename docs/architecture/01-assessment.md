@@ -198,6 +198,33 @@ Ví dụ feature *document*: `app/reader/upload-document/` + `app/api/documents/
 - Không Dockerfile, không nằm trong `render.yaml`, không nằm trong CI, không lock dependency, không test.
 - `test6.pdf` (169 KB) commit ở thư mục gốc `ai/`.
 
+**P2-12c. 500 import không dùng trong 38 file — nợ do chính đợt refactor sinh ra.**
+
+Không phải lỗi có từ đầu: đợt tách god service ở PR #182 chép khối import của class gốc
+sang từng class mới mà không tỉa. Mỗi class nhỏ vì thế mang theo import của tất cả các
+phần đã chuyển đi đâu khác.
+
+| file | import không dùng |
+|---|---|
+| `service/helper/DocumentTagWriter.java` | 54 (trên 67 dòng import, trong file 237 dòng) |
+| `service/helper/ReviewManagementListBuilder.java` | 43 |
+| `service/impl/DocumentCommandServiceImpl.java` | 39 |
+| `service/impl/DocumentUploadServiceImpl.java` | 38 |
+| `service/impl/BaDashboardStatisticsServiceImpl.java` | 37 |
+| `service/impl/BaUserStatisticsServiceImpl.java` | 37 |
+
+Kể cả **interface** cũng bị: `UserAccountService` khai 15 import, dùng 4 — 11 cái còn lại
+thuộc các phương thức đã chuyển sang `AdminUserService`, nên đọc file đó thì tưởng nó vẫn
+còn phần quản trị.
+
+Compiler Java không báo gì về import không dùng, nên không có gì chặn nó mọc lại. Đã dọn
+hết và thêm cổng Checkstyle (xem §4 của `02-target-architecture.md`).
+
+> Bài học về công cụ: script tự viết tìm `\bTên\b` ngoài phần import bỏ sót 11 ca mà
+> Checkstyle bắt được — tên dùng ở dạng đầy đủ (`com.capstone...UserRole.SYSTEM_ADMIN`),
+> tên chỉ còn trong code đã comment, import lớp lồng khi code dùng lớp lồng cùng tên của
+> class khác, import trùng, và import cùng package. Đọc AST khác với khớp chuỗi.
+
 **P2-13. CI có cổng nhưng không chặn được gì.**
 
 Đã đọc lại `.github/workflows/ci.yml` từng dòng. Những gì CI **đã làm**:

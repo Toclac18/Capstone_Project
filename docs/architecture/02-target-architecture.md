@@ -290,6 +290,7 @@ Giai đoạn global **chưa** cần Redis/Celery. Đủ và rẻ:
 |---|---|---|
 | BE | **ArchUnit** (test thường) | **đang chạy:** controller→repository, controller→entity, `@Transactional` ở controller, controller trả `Page<?>`, seeder thiếu `@Profile`, field injection, tầng service/repository/entity. 4 luật đầu dùng `FreezingArchRule` vì còn vi phạm |
 | BE | ArchUnit (tiếp) | **cần Phase 3:** import chéo module, `shared`→`modules` |
+| BE | **Checkstyle** (`UnusedImports`, `RedundantImport`) | import không dùng, import trùng, import cùng package — **đang chạy**, ngưỡng 0. Cố ý chỉ có luật về import: bật thêm luật style sẽ ra hàng nghìn vi phạm ở code có sẵn và biến cổng đang chặn được thành cổng phải tắt |
 | FE | `no-restricted-imports` (sẵn có) | `services/`, `types/`, `utils/`, `components/`, `hooks/` không import lên tầng ngoài hay vào `mock/` — **đang chạy** |
 | FE | **eslint-plugin-boundaries** | `features/a` → `features/b` bằng capture cùng tên — **cần Phase 3**, trước đó `no-restricted-imports` đủ |
 | FE | `no-restricted-imports` | `@/app/(template)` sau khi đã tách |

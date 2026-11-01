@@ -23,6 +23,13 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import mammoth from "mammoth";
 import styles from "./styles.module.css";
+import {
+  fileTypeLabel,
+  formatFileSize,
+  previewKindFor,
+  rejectFile,
+  titleFromFileName,
+} from "./documentFile";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
@@ -173,111 +180,70 @@ export default function UploadDocumentPage() {
     };
   }, [filePreview]);
 
-  // Helper function to format file size
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + " " + sizes[i];
-  };
-
-  // Helper function to get file type display name
-  const getFileTypeName = (type: string): string => {
-    if (type === "application/pdf") return "PDF";
-    if (type === "application/msword") return "DOC";
-    if (type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "DOCX";
-    return type;
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-
-    // Validate file type (PDF and DOCX only)
-    const allowedTypes = [
-      "application/pdf",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ];
-    if (!allowedTypes.includes(selectedFile.type)) {
-      setErrors({
-        ...errors,
-        file: "Please upload a PDF or DOCX document only",
-      });
+  // Một đường duy nhất cho cả chọn-qua-input và kéo-thả. Trước đây
+  // handleFileChange và handleDrop là hai bản chép ~85 dòng mỗi bản.
+  const acceptFile = (selectedFile: File) => {
+    const rejection = rejectFile(selectedFile);
+    if (rejection) {
+      setErrors({ ...errors, file: rejection.message });
       showToast({
         type: "error",
-        title: "Invalid file type",
-        message: "Only PDF and DOCX files are supported.",
-        duration: 3000,
+        title: rejection.reason === "type" ? "Invalid file type" : "File Too Large",
+        message:
+          rejection.reason === "type"
+            ? "Only PDF and DOCX files are supported."
+            : rejection.message,
+        duration: rejection.reason === "type" ? 3000 : 5000,
       });
       return;
     }
 
-    // Validate file size (max 10MB)
-    if (selectedFile.size > 10 * 1024 * 1024) {
-      const errorMsg = "File size must be less than 10MB";
-      setErrors({
-        ...errors,
-        file: errorMsg,
-      });
-      showToast({
-        type: "error",
-        title: "File Too Large",
-        message: errorMsg,
-        duration: 5000,
-      });
-      return;
-    }
-
-    // Cleanup previous preview if exists
+    // Thu hồi preview trước đó
     if (filePreview && filePreview.startsWith("blob:")) {
       URL.revokeObjectURL(filePreview);
     }
 
-    // Store file info
     setFile(selectedFile);
     setFileName(selectedFile.name);
     setFileSize(selectedFile.size);
     setFileType(selectedFile.type);
-    setTitle(selectedFile.name.replace(/\.[^/.]+$/, "")); // Auto-fill title from filename
+    setTitle(titleFromFileName(selectedFile.name));
     setFileSelected(true);
     setPdfError(null);
     setNumPages(null);
     setDocxHtml(null);
     setDocxError(null);
-    
-    // Generate preview for PDF (create blob URL for better performance)
-    if (selectedFile.type === "application/pdf") {
-      // Create blob URL for PDF preview
-      const blobUrl = URL.createObjectURL(selectedFile);
-      setFilePreview(blobUrl);
-    } else if (selectedFile.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-      // Preview DOCX using mammoth
+
+    const previewKind = previewKindFor(selectedFile.type);
+    if (previewKind === "pdf") {
+      setFilePreview(URL.createObjectURL(selectedFile));
+    } else if (previewKind === "docx") {
       setFilePreview(null);
       const reader = new FileReader();
-      reader.onload = async (e) => {
+      reader.onload = async (event) => {
         try {
-          const arrayBuffer = e.target?.result as ArrayBuffer;
+          const arrayBuffer = event.target?.result as ArrayBuffer;
           const result = await mammoth.convertToHtml({ arrayBuffer });
           setDocxHtml(result.value);
           setDocxError(null);
-        } catch (error) {
-          console.error("DOCX conversion error:", error);
+        } catch {
           setDocxError("Failed to preview DOCX file");
           setDocxHtml(null);
         }
       };
       reader.readAsArrayBuffer(selectedFile);
     } else {
-      // For DOC (old format) or other file types, no preview available
       setFilePreview(null);
-      setDocxHtml(null);
-      setDocxError(null);
     }
-    
+
     if (errors.file) {
       setErrors({ ...errors, file: "" });
     }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) acceptFile(selectedFile);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -293,95 +259,8 @@ export default function UploadDocumentPage() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
     const droppedFile = e.dataTransfer.files?.[0];
-    if (!droppedFile) return;
-
-    // Validate file type (PDF and DOCX only)
-    const allowedTypes = [
-      "application/pdf",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ];
-    
-    if (!allowedTypes.includes(droppedFile.type)) {
-      setErrors({
-        ...errors,
-        file: "Please upload a PDF or DOCX document only",
-      });
-      showToast({
-        type: "error",
-        title: "Invalid file type",
-        message: "Only PDF and DOCX files are supported.",
-        duration: 3000,
-      });
-      return;
-    }
-
-    // Validate file size (max 10MB)
-    if (droppedFile.size > 10 * 1024 * 1024) {
-      const errorMsg = "File size must be less than 10MB";
-      setErrors({
-        ...errors,
-        file: errorMsg,
-      });
-      showToast({
-        type: "error",
-        title: "File Too Large",
-        message: errorMsg,
-        duration: 5000,
-      });
-      return;
-    }
-
-    // Cleanup previous preview if exists
-    if (filePreview && filePreview.startsWith("blob:")) {
-      URL.revokeObjectURL(filePreview);
-    }
-
-    // Store file info
-    setFile(droppedFile);
-    setFileName(droppedFile.name);
-    setFileSize(droppedFile.size);
-    setFileType(droppedFile.type);
-    setTitle(droppedFile.name.replace(/\.[^/.]+$/, "")); // Auto-fill title from filename
-    setFileSelected(true);
-    setPdfError(null);
-    setNumPages(null);
-    setDocxHtml(null);
-    setDocxError(null);
-    
-    // Generate preview for PDF (create blob URL for better performance)
-    if (droppedFile.type === "application/pdf") {
-      // Create blob URL for PDF preview
-      const blobUrl = URL.createObjectURL(droppedFile);
-      setFilePreview(blobUrl);
-    } else if (droppedFile.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-      // Preview DOCX using mammoth
-      setFilePreview(null);
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const arrayBuffer = e.target?.result as ArrayBuffer;
-          const result = await mammoth.convertToHtml({ arrayBuffer });
-          setDocxHtml(result.value);
-          setDocxError(null);
-        } catch (error) {
-          console.error("DOCX conversion error:", error);
-          setDocxError("Failed to preview DOCX file");
-          setDocxHtml(null);
-        }
-      };
-      reader.readAsArrayBuffer(droppedFile);
-    } else {
-      // For DOC (old format) or other file types, no preview available
-      setFilePreview(null);
-      setDocxHtml(null);
-      setDocxError(null);
-    }
-    
-    if (errors.file) {
-      setErrors({ ...errors, file: "" });
-    }
+    if (droppedFile) acceptFile(droppedFile);
   };
 
   // Validate tag name: only letters, numbers, spaces, and hyphens (max 50 chars)
@@ -762,7 +641,7 @@ export default function UploadDocumentPage() {
               <div className={styles["preview-column"]}>
                 <div className={styles["preview-card"]}>
                   <div className={styles["preview-label"]}>
-                    {fileType === "application/pdf" ? "PDF" : getFileTypeName(fileType)}
+                    {fileType === "application/pdf" ? "PDF" : fileTypeLabel(fileType)}
                   </div>
                   {filePreview && fileType === "application/pdf" ? (
                     <div className={styles["preview-content"]}>
@@ -841,7 +720,7 @@ export default function UploadDocumentPage() {
                       <p className={styles["preview-text"]}>Preview not available for DOC files</p>
                       <div className={styles["preview-file-info"]}>
                         <p className={styles["preview-file-type"]}>
-                          Type: {getFileTypeName(fileType)}
+                          Type: {fileTypeLabel(fileType)}
                         </p>
                         <p className={styles["preview-file-size"]}>
                           Size: {formatFileSize(fileSize)}
@@ -855,7 +734,7 @@ export default function UploadDocumentPage() {
                       <p className={styles["preview-text"]}>Document Preview</p>
                       <div className={styles["preview-file-info"]}>
                         <p className={styles["preview-file-type"]}>
-                          Type: {getFileTypeName(fileType)}
+                          Type: {fileTypeLabel(fileType)}
                         </p>
                         <p className={styles["preview-file-size"]}>
                           Size: {formatFileSize(fileSize)}

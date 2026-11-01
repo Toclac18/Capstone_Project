@@ -1,5 +1,5 @@
 """
-Hậu xử lý của model gán nhãn ảnh.
+Hậu xử lý dùng chung của hai model kiểm duyệt, và phần chia lô của model ảnh.
 
 `labelled_results` là hàm thuần nên test được không cần torch/GPU/checkpoint.
 """
@@ -10,10 +10,9 @@ from tests.test_api_contract import _stub_ml_libs
 _stub_ml_libs()
 
 from src.services.image_moderation_service import (  # noqa: E402
-    LABELS,
     ImageModerationService,
-    labelled_results,
 )
+from src.services.moderation_labels import LABELS, labelled_results  # noqa: E402
 
 
 class TestLabelledResults:
@@ -150,3 +149,24 @@ class TestChiaLoAnh:
         assert len(results) == 13
         assert sum(service.batch_sizes) == 13
         assert all(size >= 1 for size in service.batch_sizes)
+
+
+def test_hai_service_dung_chung_mot_ham_hau_xu_ly():
+    """
+    Lỗi thiếu softmax xảy ra được vì mỗi service tự chép phần hậu xử lý. Test
+    này chốt việc cả hai trỏ về cùng một hàm, nên không lệch lại được.
+    """
+    from src.services import (
+        image_moderation_service,
+        moderation_labels,
+        text_moderation_service,
+    )
+
+    assert (
+        image_moderation_service.labelled_results
+        is moderation_labels.labelled_results
+    )
+    assert (
+        text_moderation_service.labelled_results
+        is moderation_labels.labelled_results
+    )

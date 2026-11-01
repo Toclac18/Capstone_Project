@@ -1,6 +1,6 @@
 from typing import List
 
-from .settings import SAFE_INPUT_TOKENS
+from ..config import SAFE_INPUT_TOKENS
 
 
 def split_ids(

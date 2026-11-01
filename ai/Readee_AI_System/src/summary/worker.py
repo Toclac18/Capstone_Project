@@ -9,7 +9,7 @@ from .generation import (
     generate_with_budget,
     generate_triple_one_shot,
 )
-from .settings import SAFE_INPUT_TOKENS
+from ..config import SAFE_INPUT_TOKENS
 
 
 def _bullets_to_paragraphs(text: str) -> str:

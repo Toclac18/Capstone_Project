@@ -1,7 +1,13 @@
+# src.config phải được import TRƯỚC torch: nó đặt PYTORCH_CUDA_ALLOC_CONF
+# và TOKENIZERS_PARALLELISM, các biến chỉ có tác dụng nếu đặt trước khi
+# torch/transformers khởi tạo.
+import src.config  # noqa: F401  (import vì side effect: nạp .env + env flags)
+
 import logging
-import torch
 import asyncio
 import os
+
+import torch
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

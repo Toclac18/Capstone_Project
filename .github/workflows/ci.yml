@@ -116,7 +116,7 @@ jobs:
         run: npm run build
 
   ai:
-    name: AI - Lint
+    name: AI - Test & Lint
     runs-on: ubuntu-latest
     needs: changes
     if: needs.changes.outputs.ai == 'true'
@@ -129,15 +129,21 @@ jobs:
         with:
           python-version: "3.11"
 
-      # Trước PR này ai/ không được CI chạm tới chút nào.
-      # Chỉ kiểm cú pháp và lỗi chắc chắn — không cài requirements.txt
-      # (cần GPU/torch, quá nặng cho CI) nên không chạy được test thật.
+      # requirements.txt cần torch/GPU nên CI không cài được. Thay vào đó cài
+      # requirements-dev.txt (pytest + fastapi, không torch): test ở
+      # ai/Readee_AI_System/tests stub các lib ML để chạy không cần model.
+      - name: Install dev dependencies
+        run: pip install --quiet -r ai/Readee_AI_System/requirements-dev.txt
+
       - name: Compile check
         run: python -m compileall -q ai/Readee_AI_System/src ai/OCR_Service/src
 
+      - name: Pytest
+        working-directory: ai/Readee_AI_System
+        run: python -m pytest
+
       - name: Ruff (chỉ lỗi thật)
         run: |
-          pip install --quiet ruff==0.8.4
           # E9  = lỗi cú pháp / thụt lề
           # F63 = so sánh sai kiểu
           # F7  = câu lệnh sai chỗ (break ngoài loop...)

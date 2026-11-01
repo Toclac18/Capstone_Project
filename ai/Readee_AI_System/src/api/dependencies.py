@@ -5,6 +5,7 @@ Bốn service đều nạp model vào GPU nên phải là singleton — tạo m�
 là nạp lại model. Chúng được tạo lười (lần gọi đầu) chứ không lúc import, để
 `uvicorn --reload` và `compileall` không phải chạm tới GPU.
 """
+import hmac
 import logging
 from typing import Optional
 
@@ -18,6 +19,8 @@ from src.services.text_moderation_service import TextModerationService
 
 logger = logging.getLogger(__name__)
 
+_api_key_open_warning_logged = False
+
 
 def verify_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Key")):
     """
@@ -25,9 +28,14 @@ def verify_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Key")):
     - Nếu API_KEY trong .env không được set -> cho phép tất cả (development mode)
     - Nếu API_KEY trong .env có set -> BẮT BUỘC phải có header X-API-Key và phải đúng
     """
+    global _api_key_open_warning_logged
+
     if API_KEY is None:
         # Nếu không set API_KEY trong .env -> cho phép tất cả (development mode)
-        logger.warning("API_KEY not set in .env - API is open to all requests")
+        # Chỉ cảnh báo MỘT lần: dòng này trước đây in ra mỗi request.
+        if not _api_key_open_warning_logged:
+            logger.warning("API_KEY not set in .env - API is open to all requests")
+            _api_key_open_warning_logged = True
         return True
 
     # Nếu API_KEY đã được set trong .env -> BẮT BUỘC phải có header
@@ -37,7 +45,9 @@ def verify_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Key")):
             detail="API key required. Please provide X-API-Key header."
         )
 
-    if x_api_key != API_KEY:
+    # compare_digest: so sánh thời gian hằng. `!=` dừng ở byte đầu khác nhau,
+    # nên thời gian phản hồi rò độ dài phần prefix đã đúng.
+    if not hmac.compare_digest(x_api_key, API_KEY):
         raise HTTPException(
             status_code=401,
             detail="Invalid API key. Please provide a valid X-API-Key header."

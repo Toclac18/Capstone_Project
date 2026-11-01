@@ -3,9 +3,10 @@
 # torch/transformers khởi tạo.
 import src.config  # noqa: F401  (import vì side effect: nạp .env + env flags)
 
-import logging
 import asyncio
+import logging
 import os
+from contextlib import asynccontextmanager, suppress
 
 import torch
 from fastapi import FastAPI
@@ -16,86 +17,105 @@ from src.api.summary_router import router as summary_router
 from src.services.document_pipeline import process_document_internal
 from src.services.queue_manager import get_queue_manager
 
-# Setup logging với màu trắng (không dùng màu)
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    style='%',
-    force=True  # Override existing config
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    force=True,  # Override existing config
 )
-# Tắt màu cho tất cả loggers
-for handler in logging.root.handlers:
-    if hasattr(handler, 'setFormatter'):
-        handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Readee AI System")
+CLEANUP_INTERVAL_SECONDS = 3600
+JOB_MAX_AGE_HOURS = 24
 
-# Log GPU info khi start app
-@app.on_event("startup")
-async def startup_event():
+
+def _log_system_info() -> None:
     logger.info("=" * 60)
     logger.info("System Information:")
     logger.info(f"  CUDA available: {torch.cuda.is_available()}")
-    if torch.cuda.is_available():
-        logger.info(f"  CUDA version: {torch.version.cuda}")
-        logger.info(f"  PyTorch version: {torch.__version__}")
-        logger.info(f"  GPU count: {torch.cuda.device_count()}")
-        for i in range(torch.cuda.device_count()):
-            logger.info(f"  GPU {i}: {torch.cuda.get_device_name(i)}")
-            props = torch.cuda.get_device_properties(i)
-            logger.info(f"    Total Memory: {props.total_memory / 1024**3:.2f} GB")
-            logger.info(f"    Compute Capability: {props.major}.{props.minor}")
-    else:
+    if not torch.cuda.is_available():
         logger.warning("  ⚠️  CUDA NOT AVAILABLE - Models will run on CPU (VERY SLOW!)")
+        logger.info("=" * 60)
+        return
+
+    logger.info(f"  CUDA version: {torch.version.cuda}")
+    logger.info(f"  PyTorch version: {torch.__version__}")
+    logger.info(f"  GPU count: {torch.cuda.device_count()}")
+    for i in range(torch.cuda.device_count()):
+        props = torch.cuda.get_device_properties(i)
+        logger.info(f"  GPU {i}: {torch.cuda.get_device_name(i)}")
+        logger.info(f"    Total Memory: {props.total_memory / 1024**3:.2f} GB")
+        logger.info(f"    Compute Capability: {props.major}.{props.minor}")
     logger.info("=" * 60)
-    
-    # Start queue worker để xử lý documents tuần tự
-    async def processing_callback(job_id: str, file_path: str, filename: str):
-        """Callback để xử lý job từ queue."""
-        try:
-            result = await process_document_internal(job_id, file_path, filename)
-            return result
-        finally:
-            # Cleanup: Xóa file tạm sau khi xử lý xong
-            if os.path.exists(file_path):
-                try:
-                    os.unlink(file_path)
-                    logger.info(f"Deleted temporary file: {file_path}")
-                except Exception as e:
-                    logger.warning(f"Failed to delete temporary file {file_path}: {e}")
-    
-    queue_manager = get_queue_manager()
-    await queue_manager.start_worker(processing_callback)
-    logger.info("✓ Queue worker started - documents will be processed sequentially")
-    
-    # Start background task để cleanup old jobs định kỳ
-    async def cleanup_task():
-        while True:
-            await asyncio.sleep(3600)  # Cleanup mỗi giờ
+
+
+async def _processing_callback(job_id: str, file_path: str, filename: str):
+    """Queue worker gọi hàm này cho từng job."""
+    try:
+        return await process_document_internal(job_id, file_path, filename)
+    finally:
+        # Xóa file tạm sau khi xử lý xong, kể cả khi job lỗi
+        if os.path.exists(file_path):
             try:
-                await queue_manager.cleanup_old_jobs(max_age_hours=24)
-            except Exception as e:
-                logger.error(f"Error in cleanup task: {e}", exc_info=True)
-    
-    asyncio.create_task(cleanup_task())
+                os.unlink(file_path)
+                logger.info(f"Deleted temporary file: {file_path}")
+            except OSError as e:
+                logger.warning(f"Failed to delete temporary file {file_path}: {e}")
+
+
+async def _cleanup_loop(queue_manager) -> None:
+    """Xoá job cũ khỏi dict trong RAM mỗi giờ."""
+    while True:
+        await asyncio.sleep(CLEANUP_INTERVAL_SECONDS)
+        try:
+            await queue_manager.cleanup_old_jobs(max_age_hours=JOB_MAX_AGE_HOURS)
+        except Exception as e:
+            logger.error(f"Error in cleanup task: {e}", exc_info=True)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Startup/shutdown. Dùng lifespan thay `@app.on_event`: on_event đã
+    deprecated trong FastAPI, và nó không cho đảm bảo cleanup task được huỷ
+    khi app tắt — task cũ sống sót qua shutdown.
+    """
+    _log_system_info()
+
+    queue_manager = get_queue_manager()
+    await queue_manager.start_worker(_processing_callback)
+    logger.info("✓ Queue worker started - documents will be processed sequentially")
+
+    cleanup_task = asyncio.create_task(_cleanup_loop(queue_manager))
     logger.info("✓ Cleanup task started")
 
+    try:
+        yield
+    finally:
+        logger.info("Shutting down queue worker...")
+        cleanup_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await cleanup_task
+        await queue_manager.stop_worker()
+        logger.info("✓ Queue worker stopped")
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Stop queue worker khi app shutdown."""
-    logger.info("Shutting down queue worker...")
-    queue_manager = get_queue_manager()
-    await queue_manager.stop_worker()
-    logger.info("✓ Queue worker stopped")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app = FastAPI(title="Readee AI System", lifespan=lifespan)
+
+# Service này chỉ được backend gọi server-to-server với X-API-Key, không có
+# trang web nào gọi trực tiếp. Mở CORS cho mọi origin là không cần thiết;
+# đặt AI_CORS_ORIGINS nếu thật sự cần (phân cách bằng dấu phẩy).
+_cors_origins = [
+    origin.strip()
+    for origin in os.getenv("AI_CORS_ORIGINS", "").split(",")
+    if origin.strip()
+]
+if _cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # /api/v1/process-document — nhận file, trả job_id, kết quả qua webhook/polling
 app.include_router(document_router)
@@ -114,13 +134,16 @@ def health():
 if __name__ == "__main__":
     import uvicorn
 
-    # Tắt màu trong uvicorn logs
+    # "src.app:app", không "app:app": import trong file này là `from src...`
+    # nên phải chạy từ thư mục Readee_AI_System.
+    #   python -m src.app        hoặc
+    #   uvicorn src.app:app --port 8000
     uvicorn.run(
-        "app:app", 
-        host="0.0.0.0", 
-        port=8000,
-        timeout_keep_alive=600, 
+        "src.app:app",
+        host=os.getenv("AI_HOST", "0.0.0.0"),
+        port=int(os.getenv("AI_PORT", "8000")),
+        timeout_keep_alive=600,
         reload=True,
-        log_config=None,  # Disable uvicorn's default colored logging
-        use_colors=False  # Disable colors in uvicorn
+        log_config=None,  # Giữ cấu hình logging ở trên, không để uvicorn ghi đè
+        use_colors=False,
     )

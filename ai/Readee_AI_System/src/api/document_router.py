@@ -6,6 +6,7 @@ trả trạng thái/kết quả job. Toàn bộ pipeline (OCR -> moderation -> s
 nằm ở `src/services/document_pipeline.py`.
 """
 import logging
+import os
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -14,6 +15,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 
 from src.api.dependencies import verify_api_key
 from src.api.schemas import DocumentResponse, JobStatusResponse, JobSubmitResponse
+from src.config import MAX_UPLOAD_BYTES
 from src.services.queue_manager import get_queue_manager
 
 logger = logging.getLogger(__name__)
@@ -21,6 +23,44 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["document"])
 
 ALLOWED_EXTENSIONS = (".pdf", ".docx")
+UPLOAD_CHUNK_BYTES = 1024 * 1024
+
+
+async def _save_upload_within_limit(
+    file: UploadFile, suffix: str, max_bytes: int
+) -> tuple[str, int]:
+    """
+    Ghi file upload ra file tạm, dừng ngay khi vượt `max_bytes`.
+
+    Trước đây là `content = await file.read()` rồi mới kiểm `len(content)`:
+    toàn bộ body vào RAM trước khi biết nó có quá lớn hay không, nên một
+    request 2GB làm hết RAM dù giới hạn chỉ 10MB.
+
+    Trả (đường dẫn file tạm, số byte). Raise HTTPException 413 nếu quá lớn,
+    và dọn file tạm trước khi raise.
+    """
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp:
+        temp_path = temp.name
+        size = 0
+        while chunk := await file.read(UPLOAD_CHUNK_BYTES):
+            size += len(chunk)
+            if size > max_bytes:
+                temp.close()
+                os.unlink(temp_path)
+                raise HTTPException(
+                    status_code=413,
+                    detail=(
+                        f"File size exceeds maximum allowed size of "
+                        f"{max_bytes / 1024 / 1024:.0f}MB"
+                    ),
+                )
+            temp.write(chunk)
+
+    if size == 0:
+        os.unlink(temp_path)
+        raise HTTPException(status_code=400, detail="File is empty")
+
+    return temp_path, size
 
 
 @router.post("/process-document", response_model=JobSubmitResponse)
@@ -54,36 +94,20 @@ async def process_document(
                 status_code=400, detail="File must be PDF or DOCX format"
             )
 
-        # Kiểm tra kích thước file (giới hạn 10MB)
-        MAX_FILE_SIZE = 10 * 1024 * 1024
-        content = await file.read()
-        file_size = len(content)
-        file_size_mb = file_size / 1024 / 1024
+        # Ghi ra file tạm, dừng ngay khi vượt giới hạn
+        temp_file_path, file_size = await _save_upload_within_limit(
+            file, file_extension, MAX_UPLOAD_BYTES
+        )
 
-        logger.info(f"   File size: {file_size_mb:.2f} MB ({file_size:,} bytes)")
-
-        if file_size > MAX_FILE_SIZE:
-            logger.warning(f"   ❌ File too large: {file_size_mb:.2f}MB > 10MB")
-            raise HTTPException(
-                status_code=400,
-                detail=f"File size ({file_size_mb:.2f}MB) exceeds maximum allowed size of 10MB"
-            )
-
-        if file_size == 0:
-            logger.warning("   ❌ File is empty")
-            raise HTTPException(status_code=400, detail="File is empty")
-
+        logger.info(
+            f"   File size: {file_size / 1024 / 1024:.2f} MB ({file_size:,} bytes)"
+        )
         logger.info("   ✓ File validation passed")
         logger.info("========================================")
 
-        # Save uploaded file temporarily
-        with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp:
-            temp.write(content)
-            temp_file_path = temp.name
-        del content
-
         # Validate callback_url nếu có
         if callback_url and not callback_url.startswith(("http://", "https://")):
+            os.unlink(temp_file_path)
             raise HTTPException(
                 status_code=400,
                 detail="callback_url must be a valid HTTP/HTTPS URL"

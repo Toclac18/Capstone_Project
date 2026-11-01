@@ -190,7 +190,22 @@ Ví dụ feature *document*: `app/reader/upload-document/` + `app/api/documents/
 - component dir: `AlertDialog/` (Pascal) lẫn `ui/`, `layouts/` (kebab).
 - page components: 42 thư mục `_components/`, 1 thư mục `components/`.
 
-**P2-11. Component quá lớn:** **58 component React vượt 300 LOC**, 12 `page.tsx` vượt 150 LOC. Lớn nhất: `upload-document/page.tsx` 1.270, `Signup.tsx` 1.060, `ReviewManagement.tsx` 1.002, `EditDocumentModal.tsx` 760, `profile/page.tsx` 760.
+**P2-11. Component quá lớn:** **58 component React vượt 300 LOC** (đo lại: 59), 12 `page.tsx` vượt 150 LOC. Lớn nhất: `upload-document/page.tsx` 1.270, `Signup.tsx` 1.060, `ReviewManagement.tsx` 1.002, `EditDocumentModal.tsx` 760, `profile/page.tsx` 760.
+
+**P2-11b. Lỗi đúng/sai trong các component lớn** (phát hiện khi review, bản rà soát đầu chỉ đếm LOC nên không thấy):
+
+| | |
+|---|---|
+| `upload-document` | `router.push` sau khi upload trỏ về **chính trang đang đứng** — upload xong không đi đâu cả, dù chú thích nói "redirect to documents list" |
+| `upload-document` | effect `[tagSearch]` gọi `fetchTags()` (hàm **không có** tham số tìm kiếm) mỗi ký tự người dùng gõ, lọc thì đã làm ở client ⇒ 1 request vô ích / ký tự |
+| `upload-document` | effect `[selectedDomainId, selectedSpecializationId]` vừa **set** vừa **phụ thuộc** cùng state ⇒ chọn chuyên ngành là gọi lại API chuyên ngành |
+| `upload-document` | `handleFileChange` và `handleDrop` là bản chép y hệt — đối chiếu bằng diff sau khi chuẩn hoá tên biến: khác nhau đúng 4 dòng đầu, 85 dòng sau trùng từng ký tự |
+| `sign-up`, `forgot-password` | `finally { setLoading(false) }` bật lại nút submit trong 2–3 giây chờ điều hướng, form còn nguyên dữ liệu ⇒ gửi đăng ký trùng / dùng lại `resetToken` đã tiêu |
+| `ReviewManagement` | đối chiếu document × review request quét toàn bộ danh sách ở **ba** chỗ ⇒ đã đếm được 1,78–2,78 triệu phép so sánh mỗi lần render (tuỳ tab) với 100 tài liệu / 10.000 request |
+
+Tất cả đã sửa, mỗi lỗi một commit.
+
+**P2-11c. `ReviewManagement` xin 10.000 dòng rồi phân trang bằng JS.** `getAllReviewRequests(0, 10000)` + `fetchReviewResults({size: 1000})`, trong khi BE đã có phân trang thật. Đây là **vách**, không chỉ là chậm: quá 10.000 request thì trang âm thầm phân loại sai tab. Chưa sửa — lọc theo tab cần đối chiếu document với review request, mà BE chưa có endpoint trả về cặp đó.
 
 **P2-12. AI service đứng ngoài hệ thống:**
 - Hàng đợi **trong bộ nhớ** (`asyncio.Queue` + `Dict[str, Job]`, 1 worker tuần tự) ⇒ restart là mất sạch job đang chạy, BE treo chờ webhook không bao giờ tới. **Còn nguyên** — xem §3 của `02-target-architecture.md`.
@@ -222,6 +237,7 @@ Khoảng trống thật là ba chỗ:
 
 1. **Trigger `push` bị comment** ⇒ code merge thẳng vào `dev` không được kiểm gì. Chỉ PR mới chạy CI.
 2. **`npm run lint` không có ngân sách warning** ⇒ nó pass dù có bao nhiêu warning cũng được, nên nợ lint tăng mà không ai thấy.
+2b. **`npm test` không được gọi** — phát hiện sau, ở vòng review FE. `vitest` nằm trong devDependencies, `"test": "vitest run"` có trong `package.json`, và `src/server/bff.test.ts` có 16 test chạy xanh. Nhưng job frontend chỉ có typegen / tsc / eslint / build. Nên sửa vỡ bảng route thì CI vẫn xanh. Đây là dạng nặng hơn "cổng rỗng" ở BE: test **có sẵn** mà cổng không gọi tới.
 3. **`ai/` bị bỏ ngoài hoàn toàn** — không có job nào chạm tới.
 
 Cộng thêm: fail test không để lại báo cáo, nên log CI chỉ nói "test failed" mà không nói test nào.

@@ -116,7 +116,7 @@ jobs:
         run: npm run build
 
   ai:
-    name: AI - Lint
+    name: AI - Test & Lint
     runs-on: ubuntu-latest
     needs: changes
     if: needs.changes.outputs.ai == 'true'
@@ -129,18 +129,33 @@ jobs:
         with:
           python-version: "3.11"
 
-      # Trước PR này ai/ không được CI chạm tới chút nào.
-      # Chỉ kiểm cú pháp và lỗi chắc chắn — không cài requirements.txt
-      # (cần GPU/torch, quá nặng cho CI) nên không chạy được test thật.
+      # requirements.txt cần torch/GPU nên CI không cài được. Thay vào đó cài
+      # requirements-dev.txt (pytest + fastapi, không torch): test ở
+      # ai/Readee_AI_System/tests stub các lib ML để chạy không cần model.
+      - name: Install dev dependencies
+        run: pip install --quiet -r ai/Readee_AI_System/requirements-dev.txt
+
       - name: Compile check
         run: python -m compileall -q ai/Readee_AI_System/src ai/OCR_Service/src
 
-      - name: Ruff (chỉ lỗi thật)
-        run: |
-          pip install --quiet ruff==0.8.4
-          # E9  = lỗi cú pháp / thụt lề
-          # F63 = so sánh sai kiểu
-          # F7  = câu lệnh sai chỗ (break ngoài loop...)
-          # F82 = dùng tên chưa định nghĩa
-          # Tập này gần như không có false positive. Mở rộng dần khi ai/ được dọn.
-          ruff check --select=E9,F63,F7,F82 ai/
+      # Chạy local thì dùng đúng 3.11 như ở đây. Từ Python 3.14 (PEP 649)
+      # annotation được evaluate lười, nên annotation lỗi im lặng trên máy
+      # dev 3.14 mà làm vỡ import ở bước này.
+      # tests/test_annotations_resolve.py chặn đúng lớp lỗi đó.
+      - name: Pytest
+        working-directory: ai/Readee_AI_System
+        run: python -m pytest
+
+      # Tập luật siết lên sau khi ai/ đã dọn sạch (PR này). Trước đó chỉ có
+      # E9,F63,F7,F82 vì còn 45 vi phạm. Siết theo trạng thái sau khi gộp:
+      #   F   = pyflakes đủ bộ (import/biến không dùng, tên chưa định nghĩa)
+      #   E4  = import sai chỗ
+      #   E7  = so sánh/câu lệnh sai (== None, except trần, l làm tên biến)
+      #   E9  = lỗi cú pháp / thụt lề
+      #   B   = bugbear (raise mất nguyên nhân, biến vòng lặp không dùng...)
+      #   SIM = đơn giản hoá chắc chắn đúng
+      # Bỏ B008: `File(...)` trong default tham số là idiom chuẩn của FastAPI.
+      # Chưa bật UP (pyupgrade): còn 105 chỗ `Dict`/`List` trong summary/,
+      # đổi hết thành một commit ồn mà không sửa gì thật.
+      - name: Ruff
+        run: ruff check --select=F,E4,E7,E9,B,SIM --ignore=B008 ai/

@@ -260,16 +260,30 @@ Chạy trong CI và fail nếu diff ⇒ BE đổi DTO mà FE chưa cập nhật 
 ai/
 ├── readee-ai/
 │   ├── src/readee_ai/
-│   │   ├── api/            router tách theo nhóm (thay 1 file 1.055 LOC)
-│   │   ├── services/
+│   │   ├── api/            router tách theo nhóm (thay 1 file 1.055 LOC)   ✔
+│   │   ├── services/                                                       ✔
 │   │   ├── workers/
-│   │   └── config.py       pydantic-settings, validate lúc khởi động
-│   ├── tests/
+│   │   └── config.py       pydantic-settings, validate lúc khởi động       ◐
+│   ├── tests/                                                              ✔
 │   ├── Dockerfile          ← chưa có
 │   └── pyproject.toml      ← thay requirements.txt, có lock
-├── ocr-service/            cấu trúc tương tự
-└── (bỏ test6.pdf khỏi repo)
+├── ocr-service/            cấu trúc tương tự                               ◐
+└── (bỏ test6.pdf khỏi repo)                                                ✔
 ```
+
+**Đã làm** (giữ nguyên tên thư mục `Readee_AI_System/` + `OCR_Service/`; đổi
+tên thư mục là việc riêng, nó làm vỡ mọi đường dẫn trong lệnh chạy và CI):
+
+| | |
+|---|---|
+| `api/` tách theo nhóm | `dependencies.py`, `schemas.py`, `document_router.py`, `summary_router.py` |
+| `services/` | thêm `document_pipeline.py`, `text_chunker.py`, `moderation_labels.py` |
+| `tests/` | 96 test, chạy trong CI, không cần GPU |
+| cấu hình một nguồn | `src/config.py` — bỏ `summary/settings.py` vốn khai báo trùng 8 biến với thư mục gốc khác nhau |
+
+**Chưa làm:** `workers/` riêng (queue manager vẫn ở `services/`),
+pydantic-settings (vẫn `os.getenv` nhưng đã gom một chỗ), Dockerfile,
+pyproject+lock.
 
 **Hàng đợi:** `asyncio.Queue` trong RAM là điểm gãy thật — restart khi đang xử lý thì job biến mất và BE chờ webhook vĩnh viễn.
 

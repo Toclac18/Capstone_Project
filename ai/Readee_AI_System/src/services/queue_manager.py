@@ -11,7 +11,6 @@ import time
 from typing import Dict, Any, Optional, Callable, List
 from enum import Enum
 from dataclasses import dataclass, field
-from pathlib import Path
 import json
 import httpx
 
@@ -341,7 +340,7 @@ class QueueManager:
         """
         async with self._lock:
             jobs_list = []
-            for job_id, job in list(self.jobs.items())[:limit]:
+            for job in list(self.jobs.values())[:limit]:
                 jobs_list.append({
                     "job_id": job.job_id,
                     "filename": job.filename,

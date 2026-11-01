@@ -4,7 +4,7 @@ from typing import Dict, Tuple, Any
 
 import torch
 
-from .settings import SAFE_INPUT_TOKENS, PER_CHUNK_BUDGET, CFG
+from ..config import SAFE_INPUT_TOKENS, PER_CHUNK_BUDGET, CFG
 from .prompts import system_prompt, instruction_for
 from .chunking import split_ids
 from .model import model_device

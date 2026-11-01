@@ -171,13 +171,17 @@ luật ngay trên nợ hiện tại, và ngân sách `--max-warnings` làm đi�
    lint đổi sang `--max-warnings <số hiện tại>`; upload test report khi fail.
 4. `ai/` vào CI: `python -m compileall` + `ruff --select=E9,F63,F7,F82` (lỗi cú pháp, so
    sánh sai kiểu, câu lệnh sai chỗ, tên chưa định nghĩa — gần như không false positive).
+   **Siết sau khi dọn `ai/`:** `pytest` (96 test) + `ruff --select=F,E4,E7,E9,B,SIM`.
 
 **Chưa làm:**
 
 | Việc | Vì sao |
 |---|---|
 | Job `contract`: sinh lại `api.ts` từ OpenAPI rồi `git diff --exit-code` | Cần dựng được BE trong CI để lấy `/v3/api-docs`, tức cần Postgres service container. Việc riêng. |
-| `pytest` cho `ai/` | Chưa có test nào, và cài `requirements.txt` cần GPU/torch — quá nặng cho CI runner. |
+| ~~`pytest` cho `ai/`~~ | **Đã làm.** Lý do cũ ("cài requirements cần GPU/torch") chỉ đúng với test đầu-cuối. Phần lõi — chia chunk, map số trang, hậu xử lý nhãn, chặn đường dẫn, kiểm đầu vào upload — là logic thuần. Cách làm: `requirements-dev.txt` riêng (pytest + fastapi, không torch, ~15MB thay vì ~2.5GB) và test tự stub torch/transformers/torchvision/PIL/fitz/docx bằng module giả để import được `src.app` thật mà không nạp model. 96 test, 0,26s. |
+| Dockerfile + `render.yaml` cho `ai/` | Chưa làm. Cần quyết định chỗ chạy GPU trước. |
+| Hàng đợi bền vững cho `ai/` | Chưa làm — xem §3 của `02-target-architecture.md`: chưa cần Redis/Celery, đủ dùng là BE thêm scheduler quét job `PROCESSING` quá hạn. `GET /process-document/{job_id}/status` ở AI đã có sẵn để BE chủ động hỏi. |
+| `pyproject.toml` + lock cho `ai/` | Chưa làm. `requirements.txt` đã ghim phiên bản nhưng không lock transitive. |
 | Luật ranh giới module trong ArchUnit | Cần `modules/` tồn tại, tức sau Phase 3. |
 | Hạ dần ngân sách `--max-warnings` | Ratchet: dọn bớt warning thì hạ số xuống. 317/408 warning là `no-explicit-any`. |
 

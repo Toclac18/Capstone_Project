@@ -44,7 +44,6 @@ ENV/
 
 # OCR Outputs
 OCR_Service/ocr_outputs/
-*.txt
 
 # Model files (usually large, should be downloaded separately)
 # Ignore entire models directory

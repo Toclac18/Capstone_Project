@@ -3,35 +3,35 @@ fastapi==0.115.0
 uvicorn[standard]==0.30.3
 python-multipart==0.0.6
 python-dotenv==1.0.1
-aiofiles==23.2.1
 httpx==0.27.0
+
+# PyTorch — KHÔNG có trong file này trước đây, dù app.py,
+# image_moderation_service.py và text_moderation_service.py đều import.
+# Cài từ requirements.txt rồi chạy là ImportError ngay dòng đầu.
+# Bản CUDA cài riêng theo CUDA của máy, ví dụ:
+#   pip install torch==2.5.1 torchvision==0.20.1 \
+#       --index-url https://download.pytorch.org/whl/cu124
+torch==2.5.1
+torchvision==0.20.1
 
 # Transformers & LLM
 transformers==4.45.2
+# accelerate: transformers cần cho device_map="auto" + offload_folder.
 accelerate==0.34.2
 bitsandbytes==0.43.3
+# sentencepiece: tokenizer chậm của DeBERTa (model kiểm duyệt text) cần, dù
+# không file nào import trực tiếp.
 sentencepiece==0.2.0
-peft==0.12.0
 huggingface-hub>=0.20.0
 
 # PDF / DOCX / Image processing
 PyMuPDF==1.23.8
 python-docx==1.1.0
-pdf2image==1.16.3
-opencv-python==4.8.1.78
 Pillow==10.1.0
 
-# Data & ML utils
+# numpy ghim < 2: torch 2.5 build sẵn vẫn link numpy 1.x, numpy 2 làm vỡ
+# lúc import. Không file nào import trực tiếp nhưng ghim để pip không tự nâng.
 numpy==1.26.4
-scikit-learn==1.5.2
-pandas==2.2.3
-matplotlib==3.9.2
-
-# Monitoring / utilities
-tensorboard==2.17.1
-tensorboardX==2.6.2.2
-psutil==6.0.0
-tqdm==4.66.5
 
 # Safety & typing
 pydantic==2.8.2

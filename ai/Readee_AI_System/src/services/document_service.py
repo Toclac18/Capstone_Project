@@ -18,17 +18,92 @@ Sau đó:
 
 from __future__ import annotations
 
-import io
-import tempfile
 import asyncio
+import io
+import logging
+import tempfile
 from pathlib import Path
-from typing import List, Tuple, Dict
+from typing import Dict, List, Optional, Tuple
 
 import fitz  # PyMuPDF
 from docx import Document
 from PIL import Image
 
-from src.services.ocr_client import run_ocr_on_file, run_ocr_on_file_parallel, run_ocr_on_pages
+from src.services.ocr_client import run_ocr_on_pages
+
+logger = logging.getLogger(__name__)
+
+
+# Max 1280x1280 - đủ cho moderation, nhanh hơn
+MAX_IMAGE_SIZE = (1280, 1280)
+
+# DOCX không có khái niệm "trang": phân trang do trình soạn thảo quyết định
+# lúc render, python-docx không biết. Số trang của text là ƯỚC TÍNH theo số
+# đoạn; với ảnh thì ngay cả ước tính cũng không có cơ sở (quan hệ ảnh trong
+# `doc.part.rels` không mang thứ tự so với đoạn văn), nên không báo trang.
+PARAGRAPHS_PER_PAGE = 50
+
+
+def _load_image(data: bytes) -> Image.Image:
+    """
+    bytes -> PIL.Image đã RGB và resize về trong MAX_IMAGE_SIZE.
+
+    Dùng cho cả PDF và DOCX: hai nhánh trước đây chép nguyên 20 dòng này.
+    """
+    with io.BytesIO(data) as buffer:
+        image = Image.open(buffer)
+        # Load toàn bộ vào memory trước khi buffer đóng
+        image.load()
+
+    # Convert sang RGB nếu cần (giảm memory cho RGBA)
+    if image.mode != "RGB":
+        image = image.convert("RGB")
+
+    # Resize nếu quá lớn (giảm RAM usage và tăng tốc độ inference)
+    if (
+        image.size[0] > MAX_IMAGE_SIZE[0]
+        or image.size[1] > MAX_IMAGE_SIZE[1]
+    ):
+        image.thumbnail(MAX_IMAGE_SIZE, Image.Resampling.LANCZOS)
+
+    return image
+
+
+def estimate_docx_page_ranges(
+    paragraphs: List[str], paragraphs_per_page: int = PARAGRAPHS_PER_PAGE
+) -> Dict[int, Tuple[int, int]]:
+    """
+    Ước tính (start, end) trong full_text của từng trang DOCX.
+
+    Các khoảng LIỀN NHAU và không rỗng. Bản cũ ghi `(current_pos, current_pos)`
+    — khoảng RỖNG — cho mọi trang trừ trang cuối, và chỉ ra đúng số trang nhờ
+    nhánh dự phòng `page_num - 1` trong `find_page_for_position` tình cờ bù
+    lại (đối chiếu 2.504 offset trên 40 DOCX ngẫu nhiên: lệch 1). Tức là kết
+    quả đúng nhưng phụ thuộc một chi tiết của hàm khác — đổi hàm đó là vỡ.
+
+    Bản cũ cũng gọi `len("\n".join(texts[:i]))` ngay trong vòng lặp: O(n²)
+    trên số đoạn, và dựng lại chuỗi đó mỗi 50 đoạn.
+    """
+    if not paragraphs:
+        return {}
+
+    ranges: Dict[int, Tuple[int, int]] = {}
+    page_num = 1
+    page_start = 0
+    pos = 0
+    last = len(paragraphs) - 1
+
+    for i, text in enumerate(paragraphs):
+        if i > 0 and i % paragraphs_per_page == 0:
+            ranges[page_num] = (page_start, pos)
+            page_num += 1
+            page_start = pos
+        pos += len(text)
+        if i < last:
+            pos += 1  # ký tự "\n" mà "\n".join thêm vào
+
+    ranges[page_num] = (page_start, pos)
+    return ranges
 
 
 class DocumentService:
@@ -46,45 +121,22 @@ class DocumentService:
         images: List[Image.Image] = []
         page_numbers: List[int] = []
         doc = fitz.open(pdf_path)
-        max_size = (1280, 1280)  # Max 1280x1280 - đủ cho moderation, nhanh hơn
-        
+
         try:
             for page_index in range(len(doc)):
                 page = doc.load_page(page_index)
                 page_num = page_index + 1  # 1-indexed
-                
+
                 for img in page.get_images():
-                    xref = img[0]
-                    base_image = doc.extract_image(xref)
-                    image_bytes = base_image["image"]
-                    
-                    # Mở và xử lý ảnh - load toàn bộ vào memory trước khi đóng buffer
-                    img_buffer = io.BytesIO(image_bytes)
-                    img_obj = Image.open(img_buffer)
-                    # Load toàn bộ image vào memory để tránh lỗi khi buffer đóng
-                    img_obj.load()
-                    # Đóng buffer sau khi đã load xong
-                    img_buffer.close()
-                    
-                    # Convert sang RGB nếu cần (giảm memory cho RGBA)
-                    if img_obj.mode != "RGB":
-                        img_obj = img_obj.convert("RGB")
-                    
-                    # Resize nếu quá lớn (giảm RAM usage và tăng tốc độ inference)
-                    if img_obj.size[0] > max_size[0] or img_obj.size[1] > max_size[1]:
-                        img_obj.thumbnail(max_size, Image.Resampling.LANCZOS)
-                    
-                    images.append(img_obj)
+                    base_image = doc.extract_image(img[0])
+                    images.append(_load_image(base_image["image"]))
                     page_numbers.append(page_num)
-                    
-                    # Clear image_bytes ngay sau khi tạo Image object
-                    del image_bytes, base_image
-                
+                    del base_image
+
                 # Clear page object sau mỗi page để giải phóng memory
                 del page
         finally:
             doc.close()
-            del doc
         return images, page_numbers
     
     def _extract_text_by_pages_from_pdf(self, pdf_path: str) -> Tuple[str, Dict[int, Tuple[int, int]]]:
@@ -129,11 +181,12 @@ class DocumentService:
 
     def _extract_text_and_images_from_docx(
         self, docx_path: str
-    ) -> Tuple[str, List[Image.Image], List[int], Dict[int, Tuple[int, int]]]:
+    ) -> Tuple[str, List[Image.Image], List[None], Dict[int, Tuple[int, int]]]:
         """
         Trích text và ảnh từ DOCX.
         Trả về: (full_text, images, image_page_numbers, page_ranges)
-        Note: DOCX không có khái niệm "trang" rõ ràng, nên ta ước tính dựa trên số đoạn.
+
+        `image_page_numbers` toàn None: xem ghi chú ở PARAGRAPHS_PER_PAGE.
         """
         doc = Document(docx_path)
 
@@ -148,65 +201,15 @@ class DocumentService:
                     if cell.text.strip():
                         texts.append(cell.text.strip())
 
-        images: List[Image.Image] = []
-        image_page_numbers: List[int] = []
-        
-        # Ước tính page number cho ảnh dựa trên vị trí trong document
-        # Giả sử mỗi ~50 dòng text = 1 trang (ước tính)
-        paragraphs_per_page = 50
-        current_paragraph_count = 0
-        max_size = (1280, 1280)  # Max 1280x1280 - đủ cho moderation, nhanh hơn
-        
-        for rel in doc.part.rels.values():
-            if "image" in rel.reltype:
-                img_data = rel.target_part.blob
-                
-                # Mở và xử lý ảnh - load toàn bộ vào memory trước khi đóng buffer
-                img_buffer = io.BytesIO(img_data)
-                img_obj = Image.open(img_buffer)
-                # Load toàn bộ image vào memory để tránh lỗi khi buffer đóng
-                img_obj.load()
-                # Đóng buffer sau khi đã load xong
-                img_buffer.close()
-                
-                # Convert sang RGB nếu cần (giảm memory cho RGBA)
-                if img_obj.mode != "RGB":
-                    img_obj = img_obj.convert("RGB")
-                
-                # Resize nếu quá lớn (giảm RAM usage và tăng tốc độ inference)
-                if img_obj.size[0] > max_size[0] or img_obj.size[1] > max_size[1]:
-                    img_obj.thumbnail(max_size, Image.Resampling.LANCZOS)
-                
-                images.append(img_obj)
-                # Ước tính page number (1-indexed)
-                estimated_page = max(1, (current_paragraph_count // paragraphs_per_page) + 1)
-                image_page_numbers.append(estimated_page)
-                
-                # Clear img_data ngay sau khi tạo Image object
-                del img_data
-        
-        # Tạo page_ranges cho text (ước tính)
+        images: List[Image.Image] = [
+            _load_image(rel.target_part.blob)
+            for rel in doc.part.rels.values()
+            if "image" in rel.reltype
+        ]
+
         full_text = "\n".join(texts)
-        page_ranges: Dict[int, Tuple[int, int]] = {}
-        if texts:
-            chars_per_page = len(full_text) // max(1, (len(texts) // paragraphs_per_page) + 1)
-            current_pos = 0
-            page_num = 1
-            
-            for i, text in enumerate(texts):
-                if i > 0 and i % paragraphs_per_page == 0:
-                    # Bắt đầu trang mới
-                    page_ranges[page_num] = (current_pos, current_pos)
-                    page_num += 1
-                    current_pos = len("\n".join(texts[:i]))
-            
-            # Trang cuối
-            if page_num not in page_ranges:
-                page_ranges[page_num] = (current_pos, len(full_text))
-        
-        # Clear texts list sau khi join
-        del texts
-        return full_text, images, image_page_numbers, page_ranges
+        page_ranges = estimate_docx_page_ranges(texts)
+        return full_text, images, [None] * len(images), page_ranges
 
     # --------------------- Public API ---------------------
 
@@ -224,9 +227,6 @@ class DocumentService:
         
         Returns: (full_text, text_path, images, image_page_numbers, page_ranges)
         """
-        import logging
-        logger = logging.getLogger(__name__)
-        
         # Extract images và text trực tiếp từ PDF (song song để tăng tốc)
         (images, image_page_numbers), (direct_text, page_ranges) = await asyncio.gather(
             asyncio.to_thread(self._extract_images_from_pdf, pdf_path),
@@ -258,7 +258,7 @@ class DocumentService:
         
         # Nếu không có trang nào cần OCR → dùng text trực tiếp
         if not pages_to_ocr:
-            logger.info(f"All pages have sufficient direct text. Using direct text extraction (fast path).")
+            logger.info("All pages have sufficient direct text. Using direct text extraction (fast path).")
             with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".txt", encoding="utf-8") as tf:
                 tf.write(direct_text)
                 text_path = tf.name
@@ -319,7 +319,11 @@ class DocumentService:
         
         return full_text, text_path, images, image_page_numbers, new_page_ranges
 
-    def process_docx(self, docx_path: str) -> Tuple[str, str, List[Image.Image], List[int], Dict[int, Tuple[int, int]]]:
+    def process_docx(
+        self, docx_path: str
+    ) -> Tuple[
+        str, str, List[Image.Image], List[Optional[int]], Dict[int, Tuple[int, int]]
+    ]:
         """
         Xử lý DOCX:
         - Trích text + ảnh bằng python-docx.

@@ -3,8 +3,9 @@ Summary Service Wrapper for Readee_AI_System.
 Sử dụng lại cấu trúc từ TestOcr/src/ddd/summary_service.py.
 """
 import logging
-import os
 from typing import Dict, Any, Optional
+
+from ..config import MAX_GPU_CONCURRENCY
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +39,8 @@ class SummaryService:
                     logger.info(f"  GPU: {torch.cuda.get_device_name(device.index)}")
                     logger.info(f"  GPU memory: {torch.cuda.memory_allocated(device.index) / 1024**3:.2f} GB allocated")
 
-                # Cho phép cấu hình concurrency qua ENV, mặc định 2 cho RTX 5070 12GB
-                max_conc = int(os.getenv("MAX_GPU_CONCURRENCY", "2"))
+                # Mặc định 2, đủ cho RTX 5070 12GB. Đổi qua MAX_GPU_CONCURRENCY.
+                max_conc = MAX_GPU_CONCURRENCY
 
                 _summarizer = AsyncSummarizer(
                     model=model,

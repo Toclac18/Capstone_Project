@@ -7,7 +7,7 @@ import torch.nn as nn
 import torchvision.transforms as transforms
 from PIL import Image
 
-from ..config import BASE_DIR, IMAGE_MODEL_PATH
+from ..config import BASE_DIR, IMAGE_BATCH_SIZE, IMAGE_MODEL_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,12 @@ class ImageModerationService:
         try:
             logger.info(f"Loading image model from {self.model_path}")
 
-            checkpoint = torch.load(self.model_path, map_location=self.device)
+            # weights_only=True: torch.load mặc định dùng pickle, tức là một
+            # file .pth thay được ở đường dẫn IMAGE_MODEL_PATH có thể chạy code
+            # bất kỳ khi nạp. Chỉ cần tensor nên không mở cửa đó.
+            checkpoint = torch.load(
+                self.model_path, map_location=self.device, weights_only=True
+            )
 
             if "model_state_dict" in checkpoint:
                 logger.info(
@@ -92,6 +97,13 @@ class ImageModerationService:
             else:
                 logger.info("Detected pure state_dict file — loading directly...")
                 state_dict = checkpoint
+
+            # Checkpoint lưu từ DataParallel có tiền tố "module." ở mọi key;
+            # không bỏ thì load_state_dict(strict=False) báo thiếu TẤT CẢ và
+            # model chạy với trọng số khởi tạo ngẫu nhiên.
+            if state_dict and all(k.startswith("module.") for k in state_dict):
+                logger.info("Checkpoint có tiền tố 'module.' — đang bỏ tiền tố")
+                state_dict = {k[len("module."):]: v for k, v in state_dict.items()}
 
             from torchvision.models import mobilenet_v3_large
 
@@ -103,9 +115,22 @@ class ImageModerationService:
             missing, unexpected = self.model.load_state_dict(
                 state_dict, strict=False
             )
-            logger.info(
-                f"Model loaded successfully! Missing: {len(missing)}, Unexpected: {len(unexpected)}"
-            )
+            if unexpected:
+                logger.warning(
+                    f"Checkpoint có {len(unexpected)} key model không dùng "
+                    f"(bỏ qua): {list(unexpected)[:5]}"
+                )
+            # strict=False nghĩa là key thiếu chỉ bị BỎ QUA: lớp tương ứng giữ
+            # trọng số khởi tạo ngẫu nhiên và model vẫn "load thành công",
+            # rồi gán nhãn ảnh bằng số ngẫu nhiên. Phải là lỗi.
+            if missing:
+                raise RuntimeError(
+                    f"Checkpoint thiếu {len(missing)} tham số so với "
+                    f"mobilenet_v3_large 2 lớp — các lớp đó sẽ giữ trọng số "
+                    f"ngẫu nhiên. Sai file checkpoint? "
+                    f"Thiếu: {list(missing)[:5]}"
+                )
+            logger.info(f"Model loaded successfully! Unexpected: {len(unexpected)}")
 
             self.model.to(self.device)
             self.model.eval()
@@ -168,15 +193,31 @@ class ImageModerationService:
             logger.error(f"Error in image prediction: {e}", exc_info=True)
             raise
 
-    def predict_batch(self, images: List[Image.Image]) -> List[Dict[str, Any]]:
-        """Dự đoán batch ảnh."""
+    def predict_batch(
+        self, images: List[Image.Image], batch_size: int | None = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Dự đoán nhiều ảnh, chia thành lô `batch_size` ảnh mỗi lượt.
+
+        Trước đây cả danh sách được `torch.stack` vào MỘT tensor: một PDF 400
+        ảnh là 400x3x224x224 — khoảng 230 MB FP16 chỉ riêng input, cộng
+        activation của MobileNet. Đủ để OOM trên GPU 12GB đang giữ cả model
+        Llama của summary, và lỗi đó trước đây còn bị tính thành "ảnh sạch".
+        """
         try:
             if not images:
                 return []
 
-            batch_tensors = [self.preprocess_image(image) for image in images]
-            batch_tensor = torch.cat(batch_tensors, dim=0)
-            return labelled_results(self._probabilities(batch_tensor))
+            size = max(1, batch_size or IMAGE_BATCH_SIZE)
+            probabilities: List[List[float]] = []
+            for start in range(0, len(images), size):
+                window = images[start : start + size]
+                batch_tensor = torch.cat(
+                    [self.preprocess_image(image) for image in window], dim=0
+                )
+                probabilities.extend(self._probabilities(batch_tensor))
+
+            return labelled_results(probabilities)
         except Exception as e:
             logger.error(f"Error in batch image prediction: {e}", exc_info=True)
             raise

@@ -97,7 +97,7 @@ class TestSoTrangCuaChunk:
     def test_pdf_nhieu_dong_trong_va_thut_le_van_dung_trang(self):
         def page(p: int) -> str:
             lines = []
-            for para in range(8):
+            for _para in range(8):
                 for _ in range(2):
                     lines.append(
                         "    " + " ".join(f"p{p}w{i:02d}" for i in range(9))

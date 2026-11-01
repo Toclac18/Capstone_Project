@@ -11,6 +11,7 @@ _stub_ml_libs()
 
 from src.services.image_moderation_service import (  # noqa: E402
     LABELS,
+    ImageModerationService,
     labelled_results,
 )
 
@@ -81,3 +82,71 @@ class TestQuenSoftmax:
     def test_so_lop_khac_2_bi_tu_choi(self):
         with pytest.raises(ValueError, match="cần 2"):
             labelled_results([[0.2, 0.3, 0.5]])
+
+
+class ChiaLoService(ImageModerationService):
+    """
+    Bỏ qua __init__ (nạp checkpoint) và thay `_probabilities` bằng hàm ghi lại
+    kích thước từng lô. Chỉ còn kiểm đúng phần chia lô + ghép kết quả.
+    """
+
+    def __init__(self):  # noqa: D107  (cố ý không gọi super)
+        self.batch_sizes: list[int] = []
+
+    def preprocess_image(self, image):
+        return image
+
+    def _probabilities(self, batch_tensor):
+        self.batch_sizes.append(len(batch_tensor))
+        return [[0.8, 0.2] for _ in batch_tensor]
+
+
+class FakeTorchCat:
+    """`torch.cat(list, dim=0)` trong predict_batch — ở đây chỉ cần nối list."""
+
+    @staticmethod
+    def cat(tensors, dim=0):
+        return list(tensors)
+
+
+class TestChiaLoAnh:
+    """
+    Regression: trước đây cả danh sách ảnh được stack vào MỘT tensor. PDF 400
+    ảnh = 400x3x224x224 (~230MB FP16 chỉ riêng input) trên GPU đang giữ model
+    Llama của summary.
+    """
+
+    @pytest.fixture
+    def service(self, monkeypatch):
+        import src.services.image_moderation_service as module
+
+        monkeypatch.setattr(module, "torch", FakeTorchCat)
+        return ChiaLoService()
+
+    def test_chia_dung_kich_thuoc_lo(self, service):
+        service.predict_batch([f"img{i}" for i in range(70)], batch_size=32)
+        assert service.batch_sizes == [32, 32, 6]
+
+    def test_so_ket_qua_bang_so_anh(self, service):
+        results = service.predict_batch([f"img{i}" for i in range(70)], batch_size=32)
+        assert len(results) == 70
+        assert all(r["prediction"] == "non-toxic" for r in results)
+
+    def test_it_anh_hon_mot_lo_thi_chi_mot_luot(self, service):
+        service.predict_batch(["a", "b", "c"], batch_size=32)
+        assert service.batch_sizes == [3]
+
+    def test_list_rong_khong_goi_model(self, service):
+        assert service.predict_batch([]) == []
+        assert service.batch_sizes == []
+
+    @pytest.mark.parametrize("batch_size", [0, -1, 1, 5, 1000, None])
+    def test_moi_batch_size_deu_xu_ly_du_anh_va_khong_lap_vo_han(
+        self, service, batch_size
+    ):
+        # 0 và None rơi về IMAGE_BATCH_SIZE, số âm bị kẹp lên 1.
+        images = [f"img{i}" for i in range(13)]
+        results = service.predict_batch(images, batch_size=batch_size)
+        assert len(results) == 13
+        assert sum(service.batch_sizes) == 13
+        assert all(size >= 1 for size in service.batch_sizes)

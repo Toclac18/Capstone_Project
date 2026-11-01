@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!--
+  Cổng lint cho be/ — CỐ Ý chỉ có luật về import.
+
+  Vì sao hẹp thế này: đợt tách god service ở PR #182 chép khối import của class
+  gốc sang từng class mới mà không tỉa, để lại 500 import không dùng trong 38
+  file. Compiler không báo gì, nên không có gì chặn nó mọc lại.
+
+  Không bật thêm luật style (đặt tên, độ dài dòng, javadoc...) trong PR này:
+  chúng sẽ bật ra hàng nghìn vi phạm ở code có sẵn và biến một cổng đang chặn
+  được thành một cổng phải tắt. Mở rộng dần, mỗi lần một luật đã dọn sạch —
+  giống cách fe/ dùng ngân sách warning của eslint và ai/ siết dần tập luật ruff.
+  Xem docs/architecture/04-conventions.md.
+-->
+<module name="Checker">
+  <property name="severity" value="error"/>
+  <property name="charset" value="UTF-8"/>
+
+  <module name="TreeWalker">
+    <!-- import không dùng tới -->
+    <module name="UnusedImports">
+      <!-- Tên chỉ xuất hiện trong javadoc {@link} vẫn tính là đang dùng. -->
+      <property name="processJavadoc" value="true"/>
+    </module>
+
+    <!-- import cùng một lớp hai lần, hoặc import lớp trong java.lang / cùng package -->
+    <module name="RedundantImport"/>
+  </module>
+</module>
